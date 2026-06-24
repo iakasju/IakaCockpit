@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · H1 « L'Atelier » — NaonEdge dark+or modernisé (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   H1 « L'Atelier » — NaonEdge dark+or, exécution premium 2026.
+   100% autonome : aucun CDN, aucune police externe, aucun asset réseau.
+   Tokens NaonEdge/dark repris de iakagraph/theme/naonedge/dark/tokens.css.
+   ========================================================================= */
+:root{
+  --bg-primary:#0a0a0a; --bg-card:#161616; --bg-deep:#101010;
+  --line:#262626; --line-soft:#1c1c1c;
+  --text-primary:#f0f0f0; --text-secondary:#8a8a8a; --text-muted:#555;
+  --accent-gold:#c8a44e; --accent-gold-light:#e8c960; --accent-rgb:200,164,78;
+  --gradient-accent:linear-gradient(135deg,#c8a44e,#e8c960);
+  --red:#e74c3c; --green:#2ecc71; --blue:#3498db; --orange:#e67e22; --cyan:#1abc9c; --purple:#9b59b6;
+  --radius-md:14px; --radius-lg:22px;
+  /* couleurs d'agents (point d'identité) */
+  --ag-odin:#c8a44e; --ag-aragorn:#3498db; --ag-gandalf:#9b59b6; --ag-gimli:#e67e22;
+  --ag-legolas:#2ecc71; --ag-helm:#e74c3c; --ag-loki:#1abc9c; --ag-nathalie:#e8c960;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(200,164,78,.06), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(200,164,78,.04), transparent 60%),
+    var(--bg-primary);
+  color:var(--text-primary); font-family:var(--font-sans);
+  font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column; height:100vh; overflow:hidden;
+}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);
+  font-size:10px;letter-spacing:.5px;color:#000;background:repeating-linear-gradient(45deg,#e8c960,#e8c960 8px,#c8a44e 8px,#c8a44e 16px);
+  padding:3px 9px;border-radius:6px;opacity:.85;pointer-events:none}
+
+/* ---------- TOP BAR ---------- */
+.topbar{height:52px;flex:0 0 52px;display:flex;align-items:center;gap:18px;
+  padding:0 18px;background:rgba(12,12,12,.7);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-serif);font-weight:600;font-size:16px}
+.grue{width:24px;height:24px;flex:0 0 24px}
+.proj-pick{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);
+  border-radius:10px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--text-secondary)}
+.proj-pick b{color:var(--text-primary);font-weight:600}
+.proj-pick .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.tabs{display:flex;gap:2px;margin-left:6px}
+.tab{padding:7px 15px;border-radius:9px;font-size:13.5px;color:var(--text-secondary);cursor:pointer;
+  border:1px solid transparent;transition:.15s}
+.tab:hover{color:var(--text-primary);background:var(--bg-card)}
+.tab.active{color:var(--accent-gold-light);border-color:rgba(200,164,78,.35);
+  background:linear-gradient(180deg,rgba(200,164,78,.12),rgba(200,164,78,.04))}
+.spacer{flex:1}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg-card);
+  color:var(--text-secondary);cursor:pointer;font-size:15px;display:grid;place-items:center;transition:.15s}
+.iconbtn:hover{color:var(--accent-gold-light);border-color:rgba(200,164,78,.35)}
+
+/* ---------- MAIN ---------- */
+.main{flex:1;display:grid;grid-template-columns:1fr 380px;gap:0;overflow:hidden}
+.stage{overflow-y:auto;padding:26px 30px 90px}
+.viewhead{display:flex;align-items:baseline;gap:14px;margin-bottom:4px}
+.viewhead h1{font-family:var(--font-serif);font-weight:600;font-size:27px;letter-spacing:-.01em}
+.viewhead .sub{color:var(--text-secondary);font-size:13px;font-family:var(--mono)}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--accent-gold);margin-bottom:22px;display:block}
+
+/* next step hero */
+.hero{position:relative;background:linear-gradient(140deg,#191613,#121212 55%);
+  border:1px solid rgba(200,164,78,.28);border-radius:var(--radius-lg);padding:24px 26px;margin-bottom:26px;
+  overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(500px 200px at 90% 0%,rgba(200,164,78,.12),transparent 70%);pointer-events:none}
+.hero .lab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-gold);display:flex;align-items:center;gap:8px}
+.hero h2{font-family:var(--font-serif);font-size:21px;font-weight:600;margin:9px 0 6px;letter-spacing:-.01em}
+.hero p{color:var(--text-secondary);font-size:13.5px;max-width:64ch}
+.hero .by{margin-top:14px;display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-muted);font-family:var(--mono)}
+.hero .actions{margin-top:18px;display:flex;gap:10px}
+.btn{font-family:var(--font-sans);font-size:13px;font-weight:600;padding:9px 17px;border-radius:10px;cursor:pointer;border:1px solid var(--line);background:var(--bg-card);color:var(--text-primary);transition:.15s}
+.btn:hover{border-color:rgba(200,164,78,.4)}
+.btn.gold{background:var(--gradient-accent);color:#0a0a0a;border:none;box-shadow:0 6px 22px rgba(200,164,78,.22)}
+.btn.gold:hover{filter:brightness(1.06)}
+
+/* cards grid */
+.sectlabel{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin:6px 0 13px;display:flex;align-items:center;gap:9px}
+.sectlabel::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
+.pcard{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:17px 18px;cursor:pointer;transition:.18s;position:relative}
+.pcard:hover{border-color:rgba(200,164,78,.4);transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.pcard .ph{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.pcard .ph .gd{width:16px;height:16px;opacity:.9}
+.pcard .ph b{font-size:15px;font-weight:600;font-family:var(--font-serif)}
+.pcard .ph .st{margin-left:auto;width:8px;height:8px;border-radius:50%}
+.pcard .desc{color:var(--text-secondary);font-size:12.5px;min-height:34px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0 13px}
+.chip{font-family:var(--mono);font-size:10.5px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--line-soft);padding:2px 8px;border-radius:6px}
+.pfoot{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--text-muted);padding-top:11px;border-top:1px solid var(--line-soft)}
+.gbadge{display:inline-flex;align-items:center;gap:5px}
+.gbadge.ok{color:var(--green)} .gbadge.warn{color:var(--orange)}
+.ahead{margin-left:auto;color:var(--accent-gold)}
+
+/* ---------- RIGHT: main courante 3-canaux ---------- */
+.rail{border-left:1px solid var(--line);background:rgba(16,16,16,.55);display:flex;flex-direction:column;overflow:hidden}
+.railhead{padding:16px 18px 12px;border-bottom:1px solid var(--line-soft)}
+.railhead .t{font-family:var(--font-serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.railhead .t .live{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;color:var(--green);border:1px solid rgba(46,204,113,.4);border-radius:5px;padding:1px 6px;display:flex;align-items:center;gap:5px}
+.railhead .t .live::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.fbtn{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--bg-card);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:5px;transition:.13s;user-select:none}
+.fbtn[data-on="1"]{color:#0a0a0a;background:var(--gradient-accent);border-color:transparent}
+.fbtn .g{font-size:11px}
+.feed{flex:1;overflow-y:auto;padding:8px 14px 26px}
+.line{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:7px 4px;border-radius:9px;position:relative}
+.line:hover{background:#141414}
+.dotcol{display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:3px}
+.adot{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+.line .meta{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);display:flex;align-items:center;gap:7px;margin-bottom:1px}
+.line .meta .ag{color:var(--text-secondary)}
+.line .body{font-size:13px}
+.line.addr .body{color:var(--text-primary)}
+.line.geste{background:var(--bg-deep)}
+.line.geste .body{font-family:var(--mono);font-size:11.5px;color:var(--accent-gold-light)}
+.line.pensee .body{font-style:italic;color:var(--text-muted);font-size:12px}
+.line.agent{border-left:2px solid var(--purple);padding-left:10px;margin-left:2px}
+.line.agent .body{font-family:var(--mono);font-size:11.5px;color:var(--text-secondary)}
+.gly{font-size:11px;color:var(--text-muted);margin-right:2px}
+/* scroll */
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:#3a3a3a;background-clip:padding-box}
+
+/* ---------- DOCK ---------- */
+.dock{position:absolute;left:0;right:380px;bottom:0;height:0}
+.dockbar{position:fixed;bottom:18px;left:50%;transform:translateX(calc(-50% - 190px));
+  display:flex;gap:6px;background:rgba(20,20,20,.8);backdrop-filter:blur(16px);
+  border:1px solid var(--line);border-radius:16px;padding:7px 9px;box-shadow:0 16px 40px rgba(0,0,0,.5);z-index:50}
+.dockbtn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);
+  padding:7px 13px;border-radius:11px;cursor:pointer;transition:.14s}
+.dockbtn:hover{color:var(--text-primary);background:#222}
+.dockbtn.active{color:var(--accent-gold-light);background:rgba(200,164,78,.1)}
+.dockbtn .e{font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg class="grue" viewBox="0 0 24 24" fill="none"><path d="M4 20 L4 4 L15 4" stroke="#c8a44e" stroke-width="1.6"/><path d="M4 4 L19 13" stroke="#c8a44e" stroke-width="1.6"/><path d="M19 13 L19 17" stroke="#e8c960" stroke-width="1.6"/><circle cx="19" cy="18.5" r="1.4" fill="#e8c960"/></svg>
+    IakaCockpit
+  </div>
+  <div class="proj-pick"><span class="dot"></span><b>iakacockpit</b> · 29 projets ▾</div>
+  <div class="tabs">
+    <div class="tab active">Atelier</div>
+    <div class="tab">Portefeuille</div>
+    <div class="tab">Terminaux</div>
+    <div class="tab">Main courante</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="iconbtn" title="thème">◐</div>
+  <div class="iconbtn" title="réglages">⚙</div>
+</div>
+
+<div class="main">
+  <!-- STAGE -->
+  <div class="stage">
+    <span class="kicker">Atelier · iakacockpit · branch main</span>
+
+    <!-- NEXT STEP HERO -->
+    <div class="hero">
+      <div class="lab">✦ Prochaine étape · suggérée par l'IA</div>
+      <h2>Câbler le client LiteLLM derrière l'abstraction backend.</h2>
+      <p>Le scaffolding S1 est en place et le dashboard scanne le chapeau. L'étape la plus rentable maintenant : exposer un provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape » (S5) sans attendre le backend Rust.</p>
+      <div class="by">analyse de 6 specs + git log · contexte ~4,2k car. · modèle via LiteLLM</div>
+      <div class="actions">
+        <button class="btn gold">Ouvrir l'instruction</button>
+        <button class="btn">Lancer un terminal ici</button>
+        <button class="btn">Régénérer</button>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO PREVIEW -->
+    <div class="sectlabel">Portefeuille · 4 projets actifs</div>
+    <div class="cards">
+      <div class="pcard">
+        <div class="ph"><svg class="gd" viewBox="0 0 16 16"><path d="M3 13V3h7M3 3l9 7" stroke="#c8a44e" stroke-width="1.2" fill="none"/></svg><b>iakacockpit</b><span class="st" style="background:var(--green)"></span></div>
+        <div class="desc">Cœur de l'écosystème iakaProject. Orchestrateur chapeau.</div>
+        <div class="chips"><span class="chip">Tauri</span><span class="chip">React</span><span class="chip">TS</span><span class="chip">SQLite</span></div>
+        <div class="pfoot"><span class="gbadge ok">✓ qgate</span><span>v0.1.0</span><span class="ahead">↑2</span></div>
+      </div>
+      <div class="pcard">
+        <div class="ph"><svg class="gd" viewBox="0 0 16 16"><path d="M3 13V3h7M3 3l9 7" stroke="#c8a44e" stroke-width="1.2" fill="none"/></svg><b>iakaide</b><span class="st" style="background:var(--orange)"></span></div>
+        <div class="desc">IDE Tauri d'origine — matériau de salvage backend.</div>
+        <div class="chips"><span class="chip">Tauri</span><span class="chip">React</span></div>
+        <div class="pfoot"><span class="gbadge warn">⚠ qgate</span><span>v3.1.2</span><span class="ahead">arbre sale</span></div>
+      </div>
+      <div class="pcard">
+        <div class="ph"><svg class="gd" viewBox="0 0 16 16"><path d="M3 13V3h7M3 3l9 7" stroke="#c8a44e" stroke-width="1.2" fill="none"/></svg><b>iakagraph</b><span class="st" style="background:var(--green)"></span></div>
+        <div class="desc">Réservoir des iakachartes (familles, tokens, vignettes).</div>
+        <div class="chips"><span class="chip">CSS</span><span class="chip">thèmes</span></div>
+        <div class="pfoot"><span class="gbadge ok">✓ qgate</span><span>v0.4.0</span><span class="ahead">à jour</span></div>
+      </div>
+      <div class="pcard">
+        <div class="ph"><svg class="gd" viewBox="0 0 16 16"><path d="M3 13V3h7M3 3l9 7" stroke="#c8a44e" stroke-width="1.2" fill="none"/></svg><b>iakaboxlogs</b><span class="st" style="background:var(--green)"></span></div>
+        <div class="desc">Mains courantes (MQTT → CouchDB), déployé VM2.</div>
+        <div class="chips"><span class="chip">MQTT</span><span class="chip">CouchDB</span></div>
+        <div class="pfoot"><span class="gbadge ok">✓ qgate</span><span>v1.0.0</span><span class="ahead">à jour</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT RAIL : MAIN COURANTE 3-CANAUX -->
+  <div class="rail">
+    <div class="railhead">
+      <div class="t">Main courante <span class="live">live</span></div>
+      <div class="filters" id="filters">
+        <div class="fbtn" data-on="1" data-c="addr"><span class="g">💬</span>adresse</div>
+        <div class="fbtn" data-on="1" data-c="geste"><span class="g">⚙</span>geste</div>
+        <div class="fbtn" data-on="1" data-c="pensee"><span class="g">…</span>pensée</div>
+        <div class="fbtn" data-on="1" data-c="agent"><span class="g">@</span>agent</div>
+      </div>
+    </div>
+    <div class="feed" id="feed">
+      <div class="line addr" data-c="addr"><div class="dotcol"><span class="adot" style="background:var(--ag-odin)"></span></div><div><div class="meta">🟠 <span class="ag">odin</span> 12:04:02</div><div class="body">Je lance le cadrage design du Cockpit et je délègue à Loki.</div></div></div>
+      <div class="line agent" data-c="agent"><div class="dotcol"><span class="adot" style="background:var(--ag-loki)"></span></div><div><div class="meta"><span class="ag">odin → loki</span> 12:04:03</div><div class="body"><span class="gly">⮌</span> task(loki, « direction design »)</div></div></div>
+      <div class="line pensee" data-c="pensee"><div class="dotcol"><span class="adot" style="background:var(--ag-loki)"></span></div><div><div class="meta"><span class="ag">loki</span> 12:04:05</div><div class="body">je lis le réservoir iakagraph, je récupère les tokens NaonEdge…</div></div></div>
+      <div class="line geste" data-c="geste"><div class="dotcol"><span class="adot" style="background:var(--ag-loki)"></span></div><div><div class="meta"><span class="ag">loki</span> 12:04:09</div><div class="body"><span class="gly">→</span> read tokens.css (naonedge/dark) ·· ok</div></div></div>
+      <div class="line addr" data-c="addr"><div class="dotcol"><span class="adot" style="background:var(--ag-loki)"></span></div><div><div class="meta">🟠 <span class="ag">loki</span> 12:04:31</div><div class="body">Charte retenue : NaonEdge dark, exécution premium. J'embarque les tokens.</div></div></div>
+      <div class="line geste" data-c="geste"><div class="dotcol"><span class="adot" style="background:var(--ag-gimli)"></span></div><div><div class="meta"><span class="ag">gimli</span> 12:09:14</div><div class="body"><span class="gly">→</span> npm run build ·· ✓ 2.1s</div></div></div>
+      <div class="line pensee" data-c="pensee"><div class="dotcol"><span class="adot" style="background:var(--ag-gandalf)"></span></div><div><div class="meta"><span class="ag">gandalf</span> 12:09:40</div><div class="body">le scaffolding tient, reste à brancher LiteLLM derrière l'abstraction…</div></div></div>
+      <div class="line addr" data-c="addr"><div class="dotcol"><span class="adot" style="background:var(--ag-gandalf)"></span></div><div><div class="meta">🟣 <span class="ag">gandalf</span> 12:10:02</div><div class="body">Prochaine étape proposée : câbler le client LiteLLM (mock en dev d'abord).</div></div></div>
+      <div class="line agent" data-c="agent"><div class="dotcol"><span class="adot" style="background:var(--ag-legolas)"></span></div><div><div class="meta"><span class="ag">gandalf → legolas</span> 12:10:05</div><div class="body"><span class="gly">⮌</span> task(legolas, « tests garde-fous chemins »)</div></div></div>
+      <div class="line geste" data-c="geste"><div class="dotcol"><span class="adot" style="background:var(--ag-legolas)"></span></div><div><div class="meta"><span class="ag">legolas</span> 12:10:31</div><div class="body"><span class="gly">→</span> cargo test safe_path ·· ✓ 12 passed</div></div></div>
+      <div class="line addr" data-c="addr"><div class="dotcol"><span class="adot" style="background:var(--ag-legolas)"></span></div><div><div class="meta">🟢 <span class="ag">legolas</span> 12:10:44</div><div class="body">Garde-fous chemins couverts (path-traversal testé). Gate qualité ✓.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="dockbar">
+  <div class="dockbtn active"><span class="e">✦</span>Étape</div>
+  <div class="dockbtn"><span class="e">⬡</span>Terminal</div>
+  <div class="dockbtn"><span class="e">💬</span>Journal</div>
+  <div class="dockbtn"><span class="e">👥</span>Team</div>
+  <div class="dockbtn"><span class="e">＋</span>Widget</div>
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<script>
+/* filtres 3-canaux : démontre que le filtrage est la signature de la méthode */
+const filters=document.getElementById('filters');
+const feed=document.getElementById('feed');
+filters.addEventListener('click',e=>{
+  const b=e.target.closest('.fbtn'); if(!b)return;
+  b.dataset.on = b.dataset.on==='1'?'0':'1';
+  const on=[...filters.querySelectorAll('.fbtn')].filter(x=>x.dataset.on==='1').map(x=>x.dataset.c);
+  feed.querySelectorAll('.line').forEach(l=>{l.style.display=on.includes(l.dataset.c)?'':'none'});
+});
+/* dock toggles (cosmétique) */
+document.querySelectorAll('.dockbtn').forEach(d=>d.addEventListener('click',()=>{
+  document.querySelectorAll('.dockbtn').forEach(x=>x.classList.remove('active'));d.classList.add('active');}));
+</script>
+</body>
+</html>

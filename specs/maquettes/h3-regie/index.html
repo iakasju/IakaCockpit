@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · H3 « La Régie » — la main courante 3-canaux comme colonne vertébrale (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   H3 « La Régie / Mission Control » — parti pris : la MAIN COURANTE 3-CANAUX
+   est la colonne vertébrale (timeline-first), pas un panneau secondaire.
+   On lit l'activité de TOUT le portefeuille comme un flux ; le pilotage se
+   greffe dessus. Atmosphère « salle de contrôle ». Dark sobre, accent ambre.
+   100% autonome : aucun CDN, aucune police externe, aucun asset réseau.
+   ========================================================================= */
+:root{
+  --bg:#0c0e12; --panel:#14171d; --panel-2:#171b22; --sunk:#0e1015;
+  --line:#222831; --line-soft:#1a1e25;
+  --ink:#e8eaef; --ink-2:#8b94a3; --ink-3:#5a6273;
+  --accent:#d4a24c; --accent-2:#f0c468; --accent-soft:rgba(212,162,76,.13);
+  --red:#ef5350; --green:#46c98b; --blue:#5aa9f0; --amber:#f0b232; --teal:#2dd4bf; --violet:#a978e0;
+  --ag-odin:#d4a24c; --ag-aragorn:#5aa9f0; --ag-gandalf:#a978e0; --ag-gimli:#e9913a;
+  --ag-legolas:#46c98b; --ag-helm:#ef5350; --ag-loki:#2dd4bf; --ag-nathalie:#f0c468;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:11px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);font-size:10px;color:#000;
+  background:#f0c468;padding:3px 9px;border-radius:6px;opacity:.78;pointer-events:none}
+
+/* TOP STRIP — portfolio pulse */
+.strip{flex:0 0 auto;border-bottom:1px solid var(--line);background:var(--panel);padding:9px 16px;display:flex;align-items:center;gap:14px}
+.strip .brand{display:flex;align-items:center;gap:9px;font-weight:650;font-size:14px;padding-right:6px;border-right:1px solid var(--line);margin-right:4px}
+.strip .brand .o{width:9px;height:9px;border-radius:2px;background:var(--accent);transform:rotate(45deg);box-shadow:0 0 10px var(--accent)}
+.pp{display:flex;gap:7px;flex:1;overflow-x:auto;padding-bottom:1px}
+.pchip{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.14s;white-space:nowrap}
+.pchip:hover{border-color:var(--accent);background:#1b1f27}
+.pchip.live{border-color:rgba(212,162,76,.5)}
+.pchip .d{width:7px;height:7px;border-radius:50%}
+.pchip b{font-size:12.5px;font-weight:600}
+.pchip .vs{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.pchip .wk{font-family:var(--mono);font-size:9.5px;color:var(--accent);display:flex;align-items:center;gap:4px}
+.pchip .wk::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pl 1.3s infinite}
+@keyframes pl{50%{opacity:.3}}
+.strip .glob{font-family:var(--mono);font-size:11px;color:var(--ink-3);display:flex;gap:14px;padding-left:8px;border-left:1px solid var(--line)}
+.strip .glob b{color:var(--ink)}
+
+/* MAIN : régie 3 colonnes */
+.regie{flex:1;display:grid;grid-template-columns:230px 1fr 320px;overflow:hidden}
+
+/* LEFT : channel control */
+.ctrl{border-right:1px solid var(--line);background:var(--panel);padding:16px 14px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.ctrl h3{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:9px}
+.chan{display:flex;flex-direction:column;gap:6px}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;border:1px solid var(--line-soft);background:var(--panel-2);cursor:pointer;transition:.13s;user-select:none}
+.crow .gl{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;flex:0 0 24px}
+.crow .nm{font-size:13px;font-weight:600;flex:1}
+.crow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-3)}
+.crow .sw{width:30px;height:17px;border-radius:9px;background:#2a313c;position:relative;flex:0 0 30px;transition:.15s}
+.crow .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#6b7484;transition:.15s}
+.crow[data-on="1"] .sw{background:var(--accent)}
+.crow[data-on="1"] .sw::after{left:15px;background:#0c0e12}
+.crow.addr .gl{background:rgba(232,234,239,.1);color:var(--ink)}
+.crow.geste .gl{background:var(--accent-soft);color:var(--accent)}
+.crow.pensee .gl{background:rgba(90,98,115,.18);color:var(--ink-2)}
+.crow.agent .gl{background:rgba(169,120,224,.16);color:var(--violet)}
+.agf{display:flex;flex-wrap:wrap;gap:6px}
+.agpill{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--ink-2);transition:.12s}
+.agpill .d{width:7px;height:7px;border-radius:50%}
+.agpill:hover{border-color:var(--ink-2)}
+.agpill.off{opacity:.35}
+
+/* CENTER : timeline spine */
+.spine{overflow-y:auto;padding:18px 26px 40px;position:relative}
+.spine .now{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 60%,transparent);padding-bottom:14px;margin:-18px -26px 6px;padding:14px 26px 12px;display:flex;align-items:center;gap:12px}
+.spine .now h2{font-size:15px;font-weight:680;letter-spacing:-.01em}
+.spine .now .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.spine .now .lv{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--green);border:1px solid rgba(70,201,139,.4);border-radius:6px;padding:2px 8px;display:flex;align-items:center;gap:5px}
+.spine .now .lv::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);animation:pl 1.6s infinite}
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:4px;bottom:0;width:2px;background:linear-gradient(180deg,var(--line),transparent)}
+.ev{position:relative;padding:9px 0 9px 4px;display:grid;grid-template-columns:1fr;gap:2px}
+.ev::before{content:"";position:absolute;left:-25px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--ink-3);z-index:1}
+.ev .top{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.ev .top .who{font-weight:600;display:flex;align-items:center;gap:6px}
+.ev .top .who .pj{color:var(--ink-3);font-weight:400}
+.ev .top .ch{margin-left:auto;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border-radius:5px}
+.ev .bd{font-size:13.5px;color:var(--ink);padding:2px 0 0 1px}
+/* per-channel styling on timeline */
+.ev.addr::before{border-color:var(--ink);background:var(--ink)}
+.ev.addr .ch{background:rgba(232,234,239,.08);color:var(--ink-2)}
+.ev.geste::before{border-color:var(--accent);background:var(--accent)}
+.ev.geste .ch{background:var(--accent-soft);color:var(--accent)}
+.ev.geste .bd{font-family:var(--mono);font-size:12px;color:var(--accent-2)}
+.ev.pensee::before{border-color:var(--ink-3);background:transparent}
+.ev.pensee .ch{background:rgba(90,98,115,.16);color:var(--ink-3)}
+.ev.pensee .bd{font-style:italic;color:var(--ink-3);font-size:12.5px}
+.ev.agent::before{border-color:var(--violet);background:var(--violet)}
+.ev.agent .ch{background:rgba(169,120,224,.16);color:var(--violet)}
+.ev.agent .bd{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+
+/* RIGHT : next step + actions for selected project */
+.aside{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);padding:15px 15px}
+.card .lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.card h4{font-size:15px;font-weight:680;letter-spacing:-.01em;line-height:1.32;margin-bottom:7px}
+.card p{font-size:12.5px;color:var(--ink-2)}
+.card .src{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:9px}
+.card .acts{display:flex;flex-direction:column;gap:7px;margin-top:13px}
+.btn{font-size:12.5px;font-weight:600;padding:9px 13px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);text-align:center;transition:.13s}
+.btn:hover{border-color:var(--accent)}
+.btn.gold{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0c0e12;border:none}
+.miniterm{font-family:var(--mono);font-size:11px;background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px;color:var(--ink-2)}
+.miniterm .tt{display:flex;align-items:center;gap:7px;color:var(--ink-3);font-size:10px;margin-bottom:8px}
+.miniterm .tt b{color:var(--ag-gimli)}
+.miniterm .ln{white-space:pre-wrap}
+.miniterm .pr{color:var(--accent)}
+.miniterm .ok{color:var(--green)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#262c35;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+.pp::-webkit-scrollbar{height:0}
+</style>
+</head>
+<body>
+
+<!-- TOP STRIP : portfolio pulse -->
+<div class="strip">
+  <div class="brand"><span class="o"></span>Régie</div>
+  <div class="pp">
+    <div class="pchip live"><span class="d" style="background:var(--green)"></span><b>iakacockpit</b><span class="vs">v0.1.0 ↑2</span><span class="wk">working</span></div>
+    <div class="pchip"><span class="d" style="background:var(--amber)"></span><b>iakaide</b><span class="vs">v3.1.2 ·sale</span></div>
+    <div class="pchip"><span class="d" style="background:var(--green)"></span><b>iakagraph</b><span class="vs">v0.4.0</span></div>
+    <div class="pchip live"><span class="d" style="background:var(--green)"></span><b>iakaboxlogs</b><span class="vs">v1.0.0</span><span class="wk">working</span></div>
+    <div class="pchip"><span class="d" style="background:var(--ink-3)"></span><b>naonedge-dashboard</b><span class="vs">v0.2.0</span></div>
+  </div>
+  <div class="glob">29&nbsp;<b style="color:var(--ink-2)">projets</b> · <b>2</b> actifs · <b>1</b> ⚠</div>
+</div>
+
+<!-- REGIE -->
+<div class="regie">
+
+  <!-- LEFT : channel control desk -->
+  <div class="ctrl">
+    <div class="chan">
+      <h3>Canaux · 3-canaux + agent</h3>
+      <div class="crow addr" data-on="1" data-c="addr"><div class="gl">💬</div><div class="nm">adresse<small>parole à l'humain</small></div><div class="sw"></div></div>
+      <div class="crow geste" data-on="1" data-c="geste"><div class="gl">⚙</div><div class="nm">geste<small>actes, outils, délégations</small></div><div class="sw"></div></div>
+      <div class="crow pensee" data-on="1" data-c="pensee"><div class="gl">…</div><div class="nm">pensée<small>délibération privée</small></div><div class="sw"></div></div>
+      <div class="crow agent" data-on="1" data-c="agent"><div class="gl">@</div><div class="nm">agent<small>dispatch / relais</small></div><div class="sw"></div></div>
+    </div>
+    <div class="chan">
+      <h3>Filtrer par agent</h3>
+      <div class="agf" id="agf">
+        <span class="agpill"><span class="d" style="background:var(--ag-odin)"></span>odin</span>
+        <span class="agpill"><span class="d" style="background:var(--ag-gandalf)"></span>gandalf</span>
+        <span class="agpill"><span class="d" style="background:var(--ag-gimli)"></span>gimli</span>
+        <span class="agpill"><span class="d" style="background:var(--ag-legolas)"></span>legolas</span>
+        <span class="agpill"><span class="d" style="background:var(--ag-loki)"></span>loki</span>
+        <span class="agpill"><span class="d" style="background:var(--ag-helm)"></span>helm</span>
+      </div>
+    </div>
+    <div class="chan">
+      <h3>Source &amp; portée</h3>
+      <div class="crow" data-on="1"><div class="gl" style="background:rgba(90,169,240,.16);color:var(--blue)">⌂</div><div class="nm">tout le chapeau<small>les 4 projets actifs</small></div><div class="sw"></div></div>
+    </div>
+  </div>
+
+  <!-- CENTER : timeline spine -->
+  <div class="spine">
+    <div class="now">
+      <div><h2>Flux de la méthode</h2><div class="sub">tous projets · aujourd'hui · 11 événements</div></div>
+      <span class="lv">live</span>
+    </div>
+    <div class="tl" id="tl">
+      <div class="ev addr" data-c="addr" data-ag="odin"><div class="top"><span class="who" style="color:var(--ag-odin)">odin <span class="pj">· iakacockpit</span></span> <span style="margin-left:6px">🟠 12:04:02</span><span class="ch">adresse</span></div><div class="bd">Je lance le cadrage design du Cockpit et je délègue à Loki.</div></div>
+      <div class="ev agent" data-c="agent" data-ag="odin"><div class="top"><span class="who" style="color:var(--ag-loki)">odin → loki <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:04:03</span><span class="ch">agent</span></div><div class="bd">⮌ task(loki, « direction design »)</div></div>
+      <div class="ev pensee" data-c="pensee" data-ag="loki"><div class="top"><span class="who" style="color:var(--ag-loki)">loki <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:04:05</span><span class="ch">pensée</span></div><div class="bd">je lis le réservoir iakagraph, je récupère les tokens NaonEdge…</div></div>
+      <div class="ev geste" data-c="geste" data-ag="loki"><div class="top"><span class="who" style="color:var(--ag-loki)">loki <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:04:09</span><span class="ch">geste</span></div><div class="bd">→ read tokens.css (naonedge/dark) ·· ok</div></div>
+      <div class="ev addr" data-c="addr" data-ag="loki"><div class="top"><span class="who" style="color:var(--ag-loki)">loki <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">🟠 12:04:31</span><span class="ch">adresse</span></div><div class="bd">Charte retenue : NaonEdge dark. J'embarque les tokens, exécution premium.</div></div>
+      <div class="ev geste" data-c="geste" data-ag="gimli"><div class="top"><span class="who" style="color:var(--ag-gimli)">gimli <span class="pj">· iakaboxlogs</span></span><span style="margin-left:6px">12:09:14</span><span class="ch">geste</span></div><div class="bd">→ npm run build ·· ✓ 2.1s</div></div>
+      <div class="ev pensee" data-c="pensee" data-ag="gandalf"><div class="top"><span class="who" style="color:var(--ag-gandalf)">gandalf <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:09:40</span><span class="ch">pensée</span></div><div class="bd">le scaffolding tient, reste à brancher LiteLLM derrière l'abstraction…</div></div>
+      <div class="ev addr" data-c="addr" data-ag="gandalf"><div class="top"><span class="who" style="color:var(--ag-gandalf)">gandalf <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">🟣 12:10:02</span><span class="ch">adresse</span></div><div class="bd">Prochaine étape proposée : câbler le client LiteLLM (mock en dev d'abord).</div></div>
+      <div class="ev agent" data-c="agent" data-ag="gandalf"><div class="top"><span class="who" style="color:var(--ag-legolas)">gandalf → legolas <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:10:05</span><span class="ch">agent</span></div><div class="bd">⮌ task(legolas, « tests garde-fous chemins »)</div></div>
+      <div class="ev geste" data-c="geste" data-ag="legolas"><div class="top"><span class="who" style="color:var(--ag-legolas)">legolas <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">12:10:31</span><span class="ch">geste</span></div><div class="bd">→ cargo test safe_path ·· ✓ 12 passed</div></div>
+      <div class="ev addr" data-c="addr" data-ag="legolas"><div class="top"><span class="who" style="color:var(--ag-legolas)">legolas <span class="pj">· iakacockpit</span></span><span style="margin-left:6px">🟢 12:10:44</span><span class="ch">adresse</span></div><div class="bd">Garde-fous chemins couverts (path-traversal testé). Gate qualité ✓.</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT : focus projet -->
+  <div class="aside">
+    <div class="card">
+      <div class="lab">✦ prochaine étape · iakacockpit</div>
+      <h4>Câbler le client LiteLLM derrière l'abstraction backend.</h4>
+      <p>Provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape » sans attendre le backend Rust.</p>
+      <div class="src">↳ 6 specs + git log · ~4,2k car. · via LiteLLM</div>
+      <div class="acts">
+        <button class="btn gold">Ouvrir l'instruction</button>
+        <button class="btn">Lancer un terminal</button>
+      </div>
+    </div>
+    <div class="miniterm">
+      <div class="tt">⬡ PTY · <b>[IAKACOCKPIT][Gimli]</b> · working</div>
+      <div class="ln"><span class="pr">$</span> npm run dev
+▸ vite ready on :3010
+<span class="pr">$</span> cargo test
+<span class="ok">test result: ok. 12 passed</span></div>
+    </div>
+    <div class="card">
+      <div class="lab">◎ gate qualité</div>
+      <p style="font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--ink-2)">
+        build <span style="color:var(--green)">✓</span><br>
+        typecheck <span style="color:var(--green)">✓</span><br>
+        lint <span style="color:var(--green)">✓</span><br>
+        tests <span style="color:var(--green)">✓ 12</span><br>
+        couverture <span style="color:var(--amber)">~38% (honnête)</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<script>
+const tl=document.getElementById('tl');
+function apply(){
+  const chans=[...document.querySelectorAll('.crow[data-c]')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);
+  const agOff=[...document.querySelectorAll('.agpill.off')].map(p=>p.textContent.trim());
+  tl.querySelectorAll('.ev').forEach(ev=>{
+    const okC=chans.includes(ev.dataset.c);
+    const okA=!agOff.includes(ev.dataset.ag);
+    ev.style.display=(okC&&okA)?'':'none';
+  });
+}
+document.querySelectorAll('.crow[data-c]').forEach(c=>c.addEventListener('click',()=>{
+  c.dataset.on=c.dataset.on==='1'?'0':'1';apply();}));
+document.getElementById('agf').addEventListener('click',e=>{
+  const p=e.target.closest('.agpill');if(!p)return;p.classList.toggle('off');apply();});
+</script>
+</body>
+</html>

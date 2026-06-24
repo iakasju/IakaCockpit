@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · H2 « Studio clair » — identité produit propre, lumineuse (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   H2 « Studio clair » — identité PRODUIT propre, claire/légère, craft 2026.
+   Pas de marque NaonEdge : palette neutre + accent indigo. Question ouverte
+   pour Stéphane : le Cockpit est-il un produit générique ou un support de marque ?
+   100% autonome : aucun CDN, aucune police externe, aucun asset réseau.
+   ========================================================================= */
+:root{
+  --bg:#fbfbfc; --panel:#ffffff; --panel-2:#f5f6f8; --sunk:#f0f1f4;
+  --line:#e7e8ec; --line-2:#eef0f3;
+  --ink:#16181d; --ink-2:#5b6270; --ink-3:#9aa0ad;
+  --accent:#5b5bd6; --accent-2:#7a78ff; --accent-soft:#eeeefb; --on-accent:#fff;
+  --red:#e5484d; --green:#30a46c; --amber:#f5a623; --blue:#3b82f6; --teal:#12a594; --violet:#8e4ec6;
+  --radius:13px; --radius-lg:18px;
+  --ag-odin:#caa64a; --ag-aragorn:#3b82f6; --ag-gandalf:#8e4ec6; --ag-gimli:#e67e22;
+  --ag-legolas:#30a46c; --ag-helm:#e5484d; --ag-loki:#12a594; --ag-nathalie:#caa64a;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --shadow-sm:0 1px 2px rgba(20,22,28,.05),0 1px 3px rgba(20,22,28,.04);
+  --shadow-md:0 4px 14px rgba(20,22,28,.07),0 1px 3px rgba(20,22,28,.05);
+  --shadow-lg:0 18px 50px rgba(20,22,28,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;display:flex;height:100vh;overflow:hidden}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);font-size:10px;
+  letter-spacing:.4px;color:#fff;background:#16181d;padding:3px 9px;border-radius:6px;opacity:.7;pointer-events:none}
+
+/* ---------- SIDEBAR ---------- */
+.side{width:240px;flex:0 0 240px;background:var(--panel-2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:14px 12px}
+.logo{display:flex;align-items:center;gap:9px;padding:6px 8px 16px}
+.logo .mk{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;box-shadow:var(--shadow-sm)}
+.logo .nm{font-weight:650;font-size:14.5px;letter-spacing:-.01em}
+.logo .nm small{display:block;font-weight:500;font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+.scope{margin:4px 4px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:9px 11px;font-size:12.5px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:var(--shadow-sm)}
+.scope .ic{width:18px;height:18px;border-radius:5px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:11px}
+.scope b{font-weight:600} .scope .ch{margin-left:auto;color:var(--ink-3)}
+.navlbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:10px 10px 5px}
+.nav{display:flex;flex-direction:column;gap:1px}
+.navi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:13.5px;color:var(--ink-2);cursor:pointer;transition:.12s}
+.navi .e{width:18px;text-align:center;font-size:14px;opacity:.85}
+.navi:hover{background:var(--panel);color:var(--ink)}
+.navi.active{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:var(--shadow-sm)}
+.navi.active .e{color:var(--accent);opacity:1}
+.navi .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);background:var(--sunk);padding:1px 6px;border-radius:6px}
+.side .bottom{margin-top:auto;display:flex;flex-direction:column;gap:1px}
+
+/* ---------- CONTENT ---------- */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chead{height:56px;flex:0 0 56px;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(251,251,252,.8);backdrop-filter:blur(10px)}
+.chead h1{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.chead .crumb{color:var(--ink-3);font-size:13px}
+.chead .sp{flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:12.5px;color:var(--ink-3);width:230px;box-shadow:var(--shadow-sm)}
+.search kbd{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--sunk);border-radius:4px;padding:1px 5px;color:var(--ink-3)}
+.ghostbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;cursor:pointer;color:var(--ink-2);box-shadow:var(--shadow-sm)}
+
+.scroll{flex:1;overflow-y:auto;padding:24px 26px 36px}
+.grid2{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start;max-width:1180px}
+
+/* next step */
+.next{background:linear-gradient(180deg,#fff,#fcfcff);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:20px 22px;box-shadow:var(--shadow-md);position:relative;overflow:hidden;margin-bottom:22px}
+.next::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),var(--accent-2))}
+.next .tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);padding:4px 10px;border-radius:7px;letter-spacing:.01em}
+.next h2{font-size:19px;font-weight:680;margin:13px 0 7px;letter-spacing:-.015em;line-height:1.3}
+.next p{color:var(--ink-2);font-size:13.5px;max-width:62ch}
+.next .src{margin-top:11px;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.next .row{margin-top:16px;display:flex;gap:9px}
+.btn{font-size:13px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:var(--shadow-sm);transition:.13s}
+.btn:hover{border-color:#d4d6dc}
+.btn.primary{background:var(--accent);color:#fff;border:none;box-shadow:0 4px 14px rgba(91,91,214,.3)}
+.btn.primary:hover{background:#4f4fc9}
+
+/* portfolio */
+.shl{font-size:12px;font-weight:600;color:var(--ink-2);margin:4px 0 12px;display:flex;align-items:center;gap:8px}
+.shl .cnt{font-family:var(--mono);color:var(--ink-3);font-weight:500}
+.plist{display:flex;flex-direction:column;gap:9px}
+.prow{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:13px 16px;cursor:pointer;transition:.14s;box-shadow:var(--shadow-sm)}
+.prow:hover{box-shadow:var(--shadow-md);border-color:#dcdee4;transform:translateY(-1px)}
+.prow .av{width:36px;height:36px;flex:0 0 36px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:14px}
+.prow .mid{flex:1;min-width:0}
+.prow .nm{font-weight:650;font-size:14px;display:flex;align-items:center;gap:8px}
+.prow .nm .gdot{width:7px;height:7px;border-radius:50%}
+.prow .ds{color:var(--ink-3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .meta{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.prow .meta .v{color:var(--ink-2)}
+.prow .qg{font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px}
+.qg.ok{color:var(--green);background:#e9f6ef} .qg.warn{color:#bd6f10;background:#fdf3e3}
+.prow .ahead{color:var(--accent);font-weight:600}
+
+/* main courante panel */
+.mcpanel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);overflow:hidden;position:sticky;top:0}
+.mchead{padding:15px 17px 12px;border-bottom:1px solid var(--line-2)}
+.mchead .t{font-weight:680;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.mchead .t .live{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--green);display:flex;align-items:center;gap:5px;font-weight:600}
+.mchead .t .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);animation:pl 1.6s infinite}
+@keyframes pl{50%{opacity:.3}}
+.segs{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap}
+.seg{font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.12s;user-select:none}
+.seg[data-on="1"]{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(91,91,214,.25)}
+.mcfeed{max-height:430px;overflow-y:auto;padding:8px 12px 14px}
+.li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 6px;border-radius:9px}
+.li:hover{background:var(--panel-2)}
+.li .ad{width:9px;height:9px;border-radius:50%;margin-top:5px}
+.li .mt{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);display:flex;gap:7px;align-items:center;margin-bottom:1px}
+.li .bd{font-size:12.5px;color:var(--ink)}
+.li.addr .bd{color:var(--ink)}
+.li.geste .bd{font-family:var(--mono);font-size:11.5px;color:var(--teal);background:var(--sunk);padding:3px 8px;border-radius:6px;display:inline-block}
+.li.pensee .bd{font-style:italic;color:var(--ink-3);font-size:12px}
+.li.agent{border-left:2px solid var(--violet);padding-left:9px}
+.li.agent .bd{font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#d8dade;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:#c4c7cd;background-clip:padding-box}
+.note{font-size:11.5px;color:var(--ink-3);background:var(--accent-soft);border:1px solid #e0e0f7;border-radius:10px;padding:10px 13px;margin-bottom:18px;display:flex;gap:9px;align-items:flex-start}
+.note b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="side">
+  <div class="logo">
+    <div class="mk">◆</div>
+    <div class="nm">Cockpit<small>iakaProject · chapeau</small></div>
+  </div>
+  <div class="scope"><span class="ic">⌂</span><b>~/work</b><span class="ch">▾</span></div>
+  <div class="navlbl">Pilotage</div>
+  <div class="nav">
+    <div class="navi active"><span class="e">◇</span>Vue d'ensemble</div>
+    <div class="navi"><span class="e">▦</span>Portefeuille<span class="cnt">29</span></div>
+    <div class="navi"><span class="e">⬡</span>Terminaux<span class="cnt">3</span></div>
+    <div class="navi"><span class="e">≋</span>Main courante</div>
+    <div class="navi"><span class="e">✦</span>Prochaines étapes<span class="cnt">7</span></div>
+  </div>
+  <div class="navlbl">Méthode</div>
+  <div class="nav">
+    <div class="navi"><span class="e">👥</span>Équipe &amp; royaumes</div>
+    <div class="navi"><span class="e">◎</span>Gates qualité</div>
+  </div>
+  <div class="bottom">
+    <div class="navi"><span class="e">⚙</span>Réglages</div>
+    <div class="navi"><span class="e">◐</span>Apparence</div>
+  </div>
+</aside>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="chead">
+    <h1>Vue d'ensemble</h1>
+    <span class="crumb">· ~/work · 4 projets actifs</span>
+    <div class="sp"></div>
+    <div class="search">🔍 Rechercher un projet, un agent… <kbd>⌘K</kbd></div>
+    <div class="ghostbtn">⚙</div>
+  </div>
+
+  <div class="scroll">
+    <div class="note"><span>💡</span><div><b>Hypothèse « identité produit propre ».</b> Cette direction n'affiche PAS la marque NaonEdge — palette neutre + accent indigo, comme un outil générique distribuable. À arbitrer : le Cockpit porte-t-il la marque du cabinet, ou une identité d'outil&nbsp;?</div></div>
+
+    <div class="grid2">
+      <!-- LEFT -->
+      <div>
+        <div class="next">
+          <span class="tag">✦ Prochaine étape · IA</span>
+          <h2>Câbler le client LiteLLM derrière l'abstraction backend.</h2>
+          <p>S1 est en place, le dashboard scanne le chapeau. L'étape la plus rentable : exposer un provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape » sans attendre le backend Rust.</p>
+          <div class="src">↳ 6 specs + git log · contexte ~4,2k car. · via LiteLLM (mock dev)</div>
+          <div class="row">
+            <button class="btn primary">Ouvrir l'instruction</button>
+            <button class="btn">Terminal ici</button>
+            <button class="btn">Régénérer</button>
+          </div>
+        </div>
+
+        <div class="shl">Portefeuille <span class="cnt">· trié par activité</span></div>
+        <div class="plist">
+          <div class="prow"><div class="av">ic</div><div class="mid"><div class="nm"><span class="gdot" style="background:var(--green)"></span>iakacockpit</div><div class="ds">Cœur de l'écosystème · orchestrateur chapeau</div></div><div class="meta"><span class="v">v0.1.0</span><span class="ahead">↑2</span><span class="qg ok">qgate ✓</span></div></div>
+          <div class="prow"><div class="av">id</div><div class="mid"><div class="nm"><span class="gdot" style="background:var(--amber)"></span>iakaide</div><div class="ds">IDE Tauri d'origine · salvage backend Rust</div></div><div class="meta"><span class="v">v3.1.2</span><span style="color:var(--amber)">sale</span><span class="qg warn">qgate ⚠</span></div></div>
+          <div class="prow"><div class="av">ig</div><div class="mid"><div class="nm"><span class="gdot" style="background:var(--green)"></span>iakagraph</div><div class="ds">Réservoir des iakachartes · tokens &amp; vignettes</div></div><div class="meta"><span class="v">v0.4.0</span><span>à jour</span><span class="qg ok">qgate ✓</span></div></div>
+          <div class="prow"><div class="av">ib</div><div class="mid"><div class="nm"><span class="gdot" style="background:var(--green)"></span>iakaboxlogs</div><div class="ds">Mains courantes MQTT → CouchDB · VM2</div></div><div class="meta"><span class="v">v1.0.0</span><span>à jour</span><span class="qg ok">qgate ✓</span></div></div>
+        </div>
+      </div>
+
+      <!-- RIGHT : MAIN COURANTE -->
+      <div class="mcpanel">
+        <div class="mchead">
+          <div class="t">Main courante <span class="live">live</span></div>
+          <div class="segs" id="segs">
+            <div class="seg" data-on="1" data-c="addr">💬 adresse</div>
+            <div class="seg" data-on="1" data-c="geste">⚙ geste</div>
+            <div class="seg" data-on="1" data-c="pensee">… pensée</div>
+            <div class="seg" data-on="1" data-c="agent">@ agent</div>
+          </div>
+        </div>
+        <div class="mcfeed" id="feed">
+          <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-odin)"></span><div><div class="mt">🟠 odin · 12:04</div><div class="bd">Je lance le cadrage design et je délègue à Loki.</div></div></div>
+          <div class="li agent" data-c="agent"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">odin → loki · 12:04</div><div class="bd">⮌ task(loki, « direction design »)</div></div></div>
+          <div class="li pensee" data-c="pensee"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">loki · 12:04</div><div class="bd">je lis le réservoir, je récupère les tokens…</div></div></div>
+          <div class="li geste" data-c="geste"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">loki · 12:04</div><div class="bd">→ read tokens.css ·· ok</div></div></div>
+          <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">🟠 loki · 12:04</div><div class="bd">Direction produit : palette neutre + accent indigo, craft 2026.</div></div></div>
+          <div class="li geste" data-c="geste"><span class="ad" style="background:var(--ag-gimli)"></span><div><div class="mt">gimli · 12:09</div><div class="bd">→ npm run build ·· ✓ 2.1s</div></div></div>
+          <div class="li pensee" data-c="pensee"><span class="ad" style="background:var(--ag-gandalf)"></span><div><div class="mt">gandalf · 12:09</div><div class="bd">reste à brancher LiteLLM derrière l'abstraction…</div></div></div>
+          <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-gandalf)"></span><div><div class="mt">🟣 gandalf · 12:10</div><div class="bd">Prochaine étape : câbler LiteLLM (mock dev d'abord).</div></div></div>
+          <div class="li agent" data-c="agent"><span class="ad" style="background:var(--ag-legolas)"></span><div><div class="mt">gandalf → legolas · 12:10</div><div class="bd">⮌ task(legolas, « tests garde-fous »)</div></div></div>
+          <div class="li geste" data-c="geste"><span class="ad" style="background:var(--ag-legolas)"></span><div><div class="mt">legolas · 12:10</div><div class="bd">→ cargo test safe_path ·· ✓ 12 passed</div></div></div>
+          <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-legolas)"></span><div><div class="mt">🟢 legolas · 12:10</div><div class="bd">Garde-fous chemins couverts. Gate qualité ✓.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<script>
+const segs=document.getElementById('segs'),feed=document.getElementById('feed');
+segs.addEventListener('click',e=>{const s=e.target.closest('.seg');if(!s)return;
+  s.dataset.on=s.dataset.on==='1'?'0':'1';
+  const on=[...segs.querySelectorAll('.seg')].filter(x=>x.dataset.on==='1').map(x=>x.dataset.c);
+  feed.querySelectorAll('.li').forEach(l=>l.style.display=on.includes(l.dataset.c)?'':'none');});
+document.querySelectorAll('.navi').forEach(n=>n.addEventListener('click',()=>{
+  if(n.closest('.bottom'))return;
+  document.querySelectorAll('.nav .navi').forEach(x=>x.classList.remove('active'));n.classList.add('active');}));
+</script>
+</body>
+</html>

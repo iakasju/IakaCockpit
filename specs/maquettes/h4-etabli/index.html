@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · H4 « L'Établi » — métaphore bureau-OS spatial (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   H4 « L'Établi / bureau-OS » — métaphore desktop spatial (piste iakastart/
+   iakapages, explicitement DIFFÉRÉE en v0.1 mais « à explorer avec Loki »).
+   Fenêtres flottantes déplaçables, dock, chaque projet/outil = une fenêtre.
+   Risque assumé : peut dérouter (cf. PROJET.md). Démo : le drag est réel.
+   100% autonome : aucun CDN, aucune police externe, aucun asset réseau.
+   ========================================================================= */
+:root{
+  --bg:#0a0b0e; --win:#14161c; --winbar:#181b22; --sunk:#0e1014;
+  --line:#262b34; --line-soft:#1b1f26;
+  --ink:#eceef3; --ink-2:#8a93a3; --ink-3:#565e6e;
+  --gold:#c8a44e; --gold-2:#e8c960; --gold-soft:rgba(200,164,78,.14);
+  --red:#ef5350; --green:#46c98b; --blue:#5aa9f0; --amber:#f0b232; --teal:#2dd4bf; --violet:#a978e0;
+  --ag-odin:#c8a44e; --ag-aragorn:#5aa9f0; --ag-gandalf:#a978e0; --ag-gimli:#e9913a;
+  --ag-legolas:#46c98b; --ag-helm:#ef5350; --ag-loki:#2dd4bf; --ag-nathalie:#e8c960;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);font-size:13px;color:var(--ink);overflow:hidden;height:100vh;
+  background:
+    radial-gradient(1100px 700px at 75% 12%, rgba(200,164,78,.07), transparent 55%),
+    radial-gradient(900px 600px at 10% 90%, rgba(90,169,240,.05), transparent 55%),
+    linear-gradient(160deg,#0d0f14,#0a0b0e);
+  -webkit-font-smoothing:antialiased}
+.mock-flag{position:fixed;bottom:78px;right:14px;z-index:9999;font-family:var(--mono);font-size:10px;color:#000;
+  background:repeating-linear-gradient(45deg,#e8c960,#e8c960 8px,#c8a44e 8px,#c8a44e 16px);padding:3px 9px;border-radius:6px;opacity:.85;pointer-events:none}
+
+/* MENU BAR (top, façon macOS) */
+.menubar{position:fixed;top:0;left:0;right:0;height:30px;z-index:100;display:flex;align-items:center;gap:18px;
+  padding:0 16px;background:rgba(16,18,24,.62);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:12.5px}
+.menubar .ap{font-weight:700;color:var(--gold);font-size:13px;display:flex;align-items:center;gap:7px}
+.menubar .ap .o{width:8px;height:8px;background:var(--gold);transform:rotate(45deg);box-shadow:0 0 9px var(--gold)}
+.menubar .mi{color:var(--ink-2);cursor:default}
+.menubar .mi:hover{color:var(--ink)}
+.menubar .sp{flex:1}
+.menubar .stat{font-family:var(--mono);font-size:11px;color:var(--ink-3);display:flex;gap:14px}
+.menubar .stat b{color:var(--ink-2)}
+.menubar .stat .wk{color:var(--gold)}
+
+/* DESKTOP */
+.desk{position:absolute;inset:30px 0 70px 0;overflow:hidden}
+
+/* WINDOW */
+.window{position:absolute;background:var(--win);border:1px solid var(--line);border-radius:13px;
+  box-shadow:0 24px 70px rgba(0,0,0,.6),0 2px 0 rgba(255,255,255,.03) inset;overflow:hidden;display:flex;flex-direction:column;min-width:260px}
+.window.focus{border-color:rgba(200,164,78,.4);box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 0 1px rgba(200,164,78,.25)}
+.titlebar{height:36px;flex:0 0 36px;display:flex;align-items:center;gap:9px;padding:0 12px;
+  background:var(--winbar);border-bottom:1px solid var(--line-soft);cursor:grab;user-select:none}
+.titlebar:active{cursor:grabbing}
+.traffic{display:flex;gap:7px}
+.traffic i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.traffic .r{background:#ff5f57} .traffic .y{background:#febc2e} .traffic .g{background:#28c840}
+.titlebar .tt{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.titlebar .tt .d{width:7px;height:7px;border-radius:50%}
+.titlebar .tt .badge{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.winbody{flex:1;overflow:auto;padding:14px 15px}
+
+/* portfolio window content */
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;align-items:center;gap:11px;background:var(--sunk);border:1px solid var(--line-soft);border-radius:9px;padding:9px 11px;cursor:pointer;transition:.13s}
+.prow:hover{border-color:var(--gold)}
+.prow .d{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+.prow b{font-size:12.5px;font-weight:600;flex:1}
+.prow .vs{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.prow .qg{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.qg.ok{color:var(--green);background:rgba(70,201,139,.12)} .qg.warn{color:var(--amber);background:rgba(240,178,50,.12)}
+
+/* next step window */
+.nslab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);display:flex;gap:7px;align-items:center;margin-bottom:8px}
+.nsh{font-size:15px;font-weight:680;line-height:1.34;letter-spacing:-.01em;margin-bottom:7px}
+.nsp{font-size:12.5px;color:var(--ink-2)}
+.nssrc{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:9px}
+.nsacts{display:flex;gap:8px;margin-top:13px}
+.btn{font-size:12px;font-weight:600;padding:8px 13px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--winbar);color:var(--ink);transition:.13s}
+.btn:hover{border-color:var(--gold)}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#0a0b0e;border:none}
+
+/* terminal window */
+.term{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--ink-2);background:var(--sunk);height:100%;border-radius:8px;padding:11px 13px;white-space:pre-wrap}
+.term .pr{color:var(--gold)} .term .ok{color:var(--green)} .term .dim{color:var(--ink-3)}
+
+/* main courante window */
+.mcseg{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.mcseg .s{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+.mcseg .s[data-on="1"]{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#0a0b0e;border-color:transparent}
+.li{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:6px 3px;border-radius:7px}
+.li:hover{background:var(--sunk)}
+.li .ad{width:8px;height:8px;border-radius:50%;margin-top:5px}
+.li .mt{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.li .bd{font-size:12px}
+.li.addr .bd{color:var(--ink)}
+.li.geste .bd{font-family:var(--mono);font-size:11px;color:var(--gold-2)}
+.li.pensee .bd{font-style:italic;color:var(--ink-3);font-size:11.5px}
+.li.agent{border-left:2px solid var(--violet);padding-left:8px}
+.li.agent .bd{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+
+/* DOCK */
+.dock{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:flex-end;gap:8px;
+  background:rgba(20,22,28,.6);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.07);
+  border-radius:20px;padding:8px 12px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.dock .it{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:22px;cursor:pointer;
+  background:linear-gradient(160deg,#20242c,#171a20);border:1px solid var(--line-soft);transition:.16s;position:relative}
+.dock .it:hover{transform:translateY(-9px) scale(1.12)}
+.dock .it.on::after{content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.dock .sep{width:1px;height:34px;background:var(--line);margin:0 3px;align-self:center}
+.dock .it .tip{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);background:#000;color:#fff;font-size:10.5px;
+  padding:3px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;font-family:var(--mono)}
+.dock .it:hover .tip{opacity:1}
+
+.hint{position:fixed;top:42px;left:16px;z-index:90;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+  background:rgba(20,22,28,.7);border:1px solid var(--line-soft);border-radius:8px;padding:6px 11px;backdrop-filter:blur(8px)}
+.hint b{color:var(--gold)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#2a2f38;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+</style>
+</head>
+<body>
+
+<!-- MENU BAR -->
+<div class="menubar">
+  <div class="ap"><span class="o"></span>IakaCockpit</div>
+  <span class="mi">Chapeau</span><span class="mi">Projet</span><span class="mi">Terminal</span><span class="mi">Fenêtre</span><span class="mi">Aide</span>
+  <div class="sp"></div>
+  <div class="stat"><span>~/work · <b>29 projets</b></span><span><b>2</b> actifs · <span class="wk">2 working</span></span><span>NaonEdge dark</span><span>12:11</span></div>
+</div>
+
+<div class="hint">Métaphore <b>bureau-OS</b> · glisse les barres de titre pour déplacer les fenêtres (piste différée — à explorer)</div>
+
+<!-- DESKTOP -->
+<div class="desk" id="desk">
+
+  <!-- WINDOW : portefeuille -->
+  <div class="window focus" style="left:34px;top:54px;width:330px;height:282px;z-index:3">
+    <div class="titlebar"><div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="tt">▦ Portefeuille</div></div>
+    <div class="winbody">
+      <div class="plist">
+        <div class="prow"><span class="d" style="background:var(--green)"></span><b>iakacockpit</b><span class="vs">v0.1.0 ↑2</span><span class="qg ok">✓</span></div>
+        <div class="prow"><span class="d" style="background:var(--amber)"></span><b>iakaide</b><span class="vs">v3.1.2 sale</span><span class="qg warn">⚠</span></div>
+        <div class="prow"><span class="d" style="background:var(--green)"></span><b>iakagraph</b><span class="vs">v0.4.0</span><span class="qg ok">✓</span></div>
+        <div class="prow"><span class="d" style="background:var(--green)"></span><b>iakaboxlogs</b><span class="vs">v1.0.0</span><span class="qg ok">✓</span></div>
+        <div class="prow"><span class="d" style="background:var(--ink-3)"></span><b>naonedge-dashboard</b><span class="vs">v0.2.0</span><span class="qg ok">✓</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW : prochaine étape -->
+  <div class="window" style="left:392px;top:54px;width:352px;height:230px;z-index:2">
+    <div class="titlebar"><div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="tt">✦ Prochaine étape <span class="badge">iakacockpit</span></div></div>
+    <div class="winbody">
+      <div class="nslab">✦ suggérée par l'IA</div>
+      <div class="nsh">Câbler le client LiteLLM derrière l'abstraction backend.</div>
+      <div class="nsp">Provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape ».</div>
+      <div class="nssrc">↳ 6 specs + git log · ~4,2k car. · via LiteLLM</div>
+      <div class="nsacts"><button class="btn gold">Ouvrir l'instruction</button><button class="btn">Terminal</button></div>
+    </div>
+  </div>
+
+  <!-- WINDOW : terminal -->
+  <div class="window" style="left:392px;top:300px;width:352px;height:196px;z-index:1">
+    <div class="titlebar"><div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="tt"><span class="d" style="background:var(--ag-gimli)"></span>⬡ [IAKACOCKPIT][Gimli] <span class="badge">working</span></div></div>
+    <div class="winbody" style="padding:8px">
+      <div class="term"><span class="pr">$</span> npm run dev
+<span class="dim">▸ vite</span> ready on :3010
+<span class="pr">$</span> cargo test safe_path
+<span class="ok">test result: ok. 12 passed</span>
+<span class="pr">$</span> <span style="animation:bl 1s steps(1) infinite">▊</span></div>
+    </div>
+  </div>
+
+  <!-- WINDOW : main courante 3-canaux -->
+  <div class="window" style="left:34px;top:352px;width:330px;height:300px;z-index:2">
+    <div class="titlebar"><div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div><div class="tt">≋ Main courante <span class="badge">3-canaux</span></div></div>
+    <div class="winbody">
+      <div class="mcseg" id="seg">
+        <div class="s" data-on="1" data-c="addr">💬 adresse</div>
+        <div class="s" data-on="1" data-c="geste">⚙ geste</div>
+        <div class="s" data-on="1" data-c="pensee">… pensée</div>
+        <div class="s" data-on="1" data-c="agent">@ agent</div>
+      </div>
+      <div id="feed">
+        <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-odin)"></span><div><div class="mt">🟠 odin · 12:04</div><div class="bd">Je lance le cadrage et je délègue à Loki.</div></div></div>
+        <div class="li agent" data-c="agent"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">odin → loki · 12:04</div><div class="bd">⮌ task(loki, « direction design »)</div></div></div>
+        <div class="li pensee" data-c="pensee"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">loki · 12:04</div><div class="bd">je lis le réservoir iakagraph…</div></div></div>
+        <div class="li geste" data-c="geste"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">loki · 12:04</div><div class="bd">→ read tokens.css ·· ok</div></div></div>
+        <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-loki)"></span><div><div class="mt">🟠 loki · 12:04</div><div class="bd">Charte : NaonEdge dark, façon bureau spatial.</div></div></div>
+        <div class="li geste" data-c="geste"><span class="ad" style="background:var(--ag-legolas)"></span><div><div class="mt">legolas · 12:10</div><div class="bd">→ cargo test safe_path ·· ✓ 12 passed</div></div></div>
+        <div class="li addr" data-c="addr"><span class="ad" style="background:var(--ag-legolas)"></span><div><div class="mt">🟢 legolas · 12:10</div><div class="bd">Garde-fous chemins couverts. Gate ✓.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DOCK -->
+<div class="dock">
+  <div class="it on" title="Portefeuille">▦<span class="tip">Portefeuille</span></div>
+  <div class="it on" title="Prochaine étape">✦<span class="tip">Prochaine étape</span></div>
+  <div class="it on" title="Terminaux">⬡<span class="tip">Terminaux</span></div>
+  <div class="it on" title="Main courante">≋<span class="tip">Main courante 3-canaux</span></div>
+  <div class="sep"></div>
+  <div class="it" title="Équipe">👥<span class="tip">Équipe &amp; royaumes</span></div>
+  <div class="it" title="Gates">◎<span class="tip">Gates qualité</span></div>
+  <div class="sep"></div>
+  <div class="it" title="Apparence">◐<span class="tip">Apparence / thème</span></div>
+  <div class="it" title="Réglages">⚙<span class="tip">Réglages</span></div>
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<style>@keyframes bl{50%{opacity:0}}</style>
+<script>
+/* drag des fenêtres (réel, pour rendre la métaphore tangible) */
+let zTop=10;
+document.querySelectorAll('.window').forEach(w=>{
+  const bar=w.querySelector('.titlebar');
+  const focus=()=>{document.querySelectorAll('.window').forEach(x=>x.classList.remove('focus'));w.classList.add('focus');w.style.zIndex=++zTop;};
+  w.addEventListener('mousedown',focus);
+  bar.addEventListener('mousedown',e=>{
+    focus();
+    const r=w.getBoundingClientRect(),desk=document.getElementById('desk').getBoundingClientRect();
+    const ox=e.clientX-r.left,oy=e.clientY-r.top;
+    const mv=ev=>{w.style.left=Math.max(0,ev.clientX-desk.left-ox)+'px';w.style.top=Math.max(0,ev.clientY-desk.top-oy)+'px';};
+    const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+  });
+});
+/* filtres 3-canaux dans la fenêtre main courante */
+const seg=document.getElementById('seg'),feed=document.getElementById('feed');
+seg.addEventListener('click',e=>{const s=e.target.closest('.s');if(!s)return;
+  s.dataset.on=s.dataset.on==='1'?'0':'1';
+  const on=[...seg.querySelectorAll('.s')].filter(x=>x.dataset.on==='1').map(x=>x.dataset.c);
+  feed.querySelectorAll('.li').forEach(l=>l.style.display=on.includes(l.dataset.c)?'':'none');});
+</script>
+</body>
+</html>

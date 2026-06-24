@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · MOVE 2 — Comparaison des hypothèses UX (MAQUETTES FAKE JETABLES)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   Page de COMPARAISON des hypothèses UX du Cockpit (MOVE 2). Par Loki.
+   100% autonome : aucun CDN, aucune police externe, aucun asset réseau.
+   ========================================================================= */
+:root{
+  --bg:#0a0a0a; --card:#161616; --deep:#101010; --line:#262626; --line-soft:#1c1c1c;
+  --ink:#f0f0f0; --ink-2:#8a8a8a; --ink-3:#555;
+  --gold:#c8a44e; --gold-2:#e8c960; --gold-soft:rgba(200,164,78,.12);
+  --green:#2ecc71; --red:#e74c3c; --amber:#e67e22; --teal:#1abc9c; --blue:#3498db; --violet:#9b59b6;
+  --serif:"Fraunces",Georgia,serif; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:
+    radial-gradient(1300px 800px at 80% -15%, rgba(200,164,78,.06), transparent 60%),
+    var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:14.5px;padding-bottom:80px}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 26px}
+
+/* HERO */
+header{padding:64px 0 30px;text-align:center;border-bottom:1px solid var(--line-soft)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+header h1{font-family:var(--serif);font-weight:600;font-size:42px;letter-spacing:-.02em;line-height:1.1}
+header h1 em{font-style:italic;color:var(--gold-2)}
+header .lead{color:var(--ink-2);max-width:70ch;margin:18px auto 0;font-size:15px}
+.flag{display:inline-flex;align-items:center;gap:8px;margin-top:22px;font-family:var(--mono);font-size:11px;color:#000;
+  background:repeating-linear-gradient(45deg,#e8c960,#e8c960 9px,#c8a44e 9px,#c8a44e 18px);padding:5px 13px;border-radius:8px}
+
+/* CONTEXT STRIP */
+.ctx{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:36px 0 8px}
+.ctx .c{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px}
+.ctx .c h4{font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.ctx .c p{font-size:13px;color:var(--ink-2)}
+.ctx .c b{color:var(--ink)}
+
+/* SECTION TITLE */
+.stitle{font-family:var(--serif);font-size:26px;font-weight:600;margin:50px 0 6px;letter-spacing:-.01em}
+.ssub{color:var(--ink-2);font-size:13.5px;margin-bottom:26px}
+
+/* HYPO CARDS */
+.hgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.hypo{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:.2s;position:relative}
+.hypo:hover{border-color:rgba(200,164,78,.4);transform:translateY(-3px);box-shadow:0 22px 50px rgba(0,0,0,.5)}
+.hypo .preview{height:172px;position:relative;overflow:hidden;border-bottom:1px solid var(--line);display:grid;place-items:center}
+.hypo .tagn{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:10px;letter-spacing:1px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid var(--line);color:var(--gold-2);padding:3px 9px;border-radius:7px;z-index:2}
+/* mini-preview compositions (pure CSS, no assets) */
+.pv{width:100%;height:100%;display:flex;flex-direction:column}
+.pv .bar{height:18px;display:flex;align-items:center;gap:5px;padding:0 8px;font-size:8px}
+.pv .dot{width:5px;height:5px;border-radius:50%}
+.pv .area{flex:1;display:flex;gap:5px;padding:7px}
+.pv .col{border-radius:5px;flex:1}
+.pv .lines{display:flex;flex-direction:column;gap:4px;padding:6px}
+.pv .ln{height:5px;border-radius:3px;background:rgba(255,255,255,.08)}
+.pv .ln.g{background:rgba(200,164,78,.45)}
+.pv .ln.s{width:60%} .pv .ln.m{width:80%}
+
+/* H1 atelier dark+gold */
+.pv1{background:radial-gradient(300px 120px at 80% 0,rgba(200,164,78,.18),transparent),#0c0c0c}
+.pv1 .bar{background:#161616;border-bottom:1px solid #262626;color:#c8a44e}
+.pv1 .hero{margin:7px;border:1px solid rgba(200,164,78,.4);border-radius:6px;background:linear-gradient(140deg,#191613,#121212);padding:7px;flex:0 0 auto}
+.pv1 .rail{width:38%;background:#101010;border-left:1px solid #262626}
+/* H2 studio clair */
+.pv2{background:#fbfbfc}
+.pv2 .side{width:26%;background:#f5f6f8;border-right:1px solid #e7e8ec}
+.pv2 .ln{background:rgba(20,22,28,.1)} .pv2 .ln.g{background:#5b5bd6}
+.pv2 .main{flex:1;background:#fff}
+.pv2 .card{margin:6px;border:1px solid #e7e8ec;border-radius:6px;background:#fff;box-shadow:0 4px 12px rgba(20,22,28,.06)}
+/* H3 régie */
+.pv3{background:#0c0e12}
+.pv3 .strip{background:#14171d;border-bottom:1px solid #222831}
+.pv3 .three{display:flex;flex:1}
+.pv3 .l{width:24%;background:#14171d;border-right:1px solid #222831}
+.pv3 .c{flex:1;position:relative}
+.pv3 .spine{position:absolute;left:14px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,#d4a24c,transparent)}
+.pv3 .r{width:28%;background:#14171d;border-left:1px solid #222831}
+.pv3 .ln.g{background:#d4a24c}
+/* H4 établi */
+.pv4{background:radial-gradient(260px 110px at 75% 10%,rgba(200,164,78,.12),transparent),linear-gradient(160deg,#0d0f14,#0a0b0e)}
+.pv4 .win{position:absolute;background:#14161c;border:1px solid #262b34;border-radius:6px;box-shadow:0 10px 26px rgba(0,0,0,.6)}
+.pv4 .win .tb{height:9px;background:#181b22;border-bottom:1px solid #1b1f26;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:3px;padding:0 5px}
+.pv4 .win .tb i{width:3.5px;height:3.5px;border-radius:50%}
+.pv4 .dock{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(20,22,28,.7);border:1px solid #262b34;border-radius:8px;padding:4px 6px}
+.pv4 .dock i{width:11px;height:11px;border-radius:3px;background:linear-gradient(160deg,#20242c,#171a20)}
+
+.hypo .body{padding:18px 19px 20px;flex:1;display:flex;flex-direction:column}
+.hypo h3{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em}
+.hypo h3 .num{color:var(--gold);font-family:var(--mono);font-size:13px;margin-right:8px}
+.hypo .parti{color:var(--gold-2);font-size:13px;font-style:italic;margin:5px 0 12px}
+.hypo .desc{color:var(--ink-2);font-size:13px;margin-bottom:14px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.fr .col h5{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.fr .force h5{color:var(--green)} .fr .risk h5{color:var(--amber)}
+.fr ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.fr li{font-size:12px;color:var(--ink-2);padding-left:14px;position:relative;line-height:1.4}
+.fr .force li::before{content:"▸";position:absolute;left:0;color:var(--green)}
+.fr .risk li::before{content:"▸";position:absolute;left:0;color:var(--amber)}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:15px}
+.mtag{font-family:var(--mono);font-size:10px;color:var(--ink-2);background:var(--deep);border:1px solid var(--line-soft);padding:3px 8px;border-radius:6px}
+.mtag.brand{color:var(--gold-2);border-color:rgba(200,164,78,.3)}
+.mtag.product{color:var(--blue);border-color:rgba(52,152,219,.3)}
+.open{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:600;font-size:13.5px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#0a0a0a;padding:11px;border-radius:11px;transition:.15s}
+.open:hover{filter:brightness(1.07)}
+
+/* MATRIX */
+.matrix{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;background:var(--deep)}
+td:first-child{font-weight:600;color:var(--ink)}
+tr:last-child td{border-bottom:none}
+td .y{color:var(--green)} td .n{color:var(--ink-3)} td .p{color:var(--amber)}
+
+/* RECO */
+.reco{margin-top:50px;background:linear-gradient(140deg,#191613,#121212);border:1px solid rgba(200,164,78,.32);border-radius:20px;padding:30px 32px;position:relative;overflow:hidden}
+.reco::before{content:"";position:absolute;inset:0;background:radial-gradient(500px 220px at 90% 0,rgba(200,164,78,.14),transparent 70%);pointer-events:none}
+.reco .lab{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.reco h2{font-family:var(--serif);font-size:24px;font-weight:600;margin:10px 0 16px;letter-spacing:-.01em}
+.reco p{color:var(--ink-2);max-width:78ch;margin-bottom:12px;font-size:14px}
+.reco p b{color:var(--ink)}
+.reco .q{background:rgba(200,164,78,.08);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:16px;font-size:14px}
+.reco .q b{color:var(--gold-2)}
+.byline{margin-top:34px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+
+@media(max-width:880px){.hgrid,.ctx{grid-template-columns:1fr}.fr{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kick">IakaCockpit · MOVE 2 · prototypes UX</div>
+    <h1>Quatre manières d'habiter<br>le <em>cockpit</em>.</h1>
+    <p class="lead">Quatre hypothèses UX divergentes, chacune avec un parti pris assumé. Toutes servent les mêmes besoins — piloter le portefeuille, ouvrir des terminaux, obtenir la prochaine étape IA, lire les mains courantes 3-canaux — mais l'organisent et l'habillent différemment. À vous d'arbitrer la direction.</p>
+    <div class="flag">⚠ MAQUETTES FAKE JETABLES — données mockées, ne pas porter en prod</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- CONTEXT -->
+  <div class="ctx">
+    <div class="c"><h4>La singularité à magnifier</h4><p><b>Méthode iakaframe</b> + <b>mains courantes 3-canaux</b> (adresse / geste / pensée / agent) + <b>pilotage de portefeuille</b> au niveau chapeau. Aucun concurrent (OpenWebUI, LM Studio, Claude Desktop…) ne l'offre.</p></div>
+    <div class="c"><h4>L'anti-modèle</h4><p><b>iakaIDE</b> — pas par sa palette, mais par son <b>exécution datée</b> : densité dashboard-2012, tout-monospace, utilitaire. On vise le craft 2026 : respiration, hiérarchie typo, surfaces douces, beaux états.</p></div>
+    <div class="c"><h4>La question ouverte</h4><p>Le Cockpit porte-t-il la <b>marque NaonEdge</b> (dark+or, gravitas « avocat ») ou une <b>identité produit propre</b> (c'est un outil, peut-être générique plus tard) ? Les 4 hypothèses éclairent ce choix.</p></div>
+  </div>
+
+  <h2 class="stitle">Les quatre hypothèses</h2>
+  <p class="ssub">Chaque vignette est cliquable et ouvre la maquette runnable correspondante (hors-ligne, autonome).</p>
+
+  <div class="hgrid">
+
+    <!-- H1 -->
+    <div class="hypo">
+      <a class="preview" href="h1-atelier/index.html">
+        <span class="tagn">H1 · NaonEdge dark+or</span>
+        <div class="pv pv1">
+          <div class="bar"><span class="dot" style="background:#c8a44e"></span>◆ Atelier · main · ●●●</div>
+          <div class="hero"><div class="ln g s"></div><div class="ln m" style="margin-top:4px"></div></div>
+          <div class="area"><div class="lines" style="flex:1"><div class="ln m"></div><div class="ln s"></div><div class="ln" style="width:70%"></div><div class="ln g s"></div></div><div class="rail"><div class="lines"><div class="ln s"></div><div class="ln g s"></div><div class="ln m"></div><div class="ln s"></div></div></div></div>
+        </div>
+      </a>
+      <div class="body">
+        <h3><span class="num">H1</span>L'Atelier</h3>
+        <div class="parti">« La marque assumée, exécutée comme en 2026. »</div>
+        <div class="desc">NaonEdge dark+or modernisé : fond profond, un seul accent or, Fraunces en titres, respiration généreuse. La « prochaine étape » est un hero noble en haut, la main courante 3-canaux vit en rail permanent à droite, un dock flottant façon 2026 remplace la barre d'outils dense.</div>
+        <div class="meta-row"><span class="mtag brand">marque NaonEdge</span><span class="mtag">dark</span><span class="mtag">rail journal permanent</span><span class="mtag">dock flottant</span></div>
+        <div class="fr">
+          <div class="col force"><h5>✦ Forces</h5><ul><li>Fidèle à la marque cabinet (gravitas, vend l'expertise)</li><li>Réutilise les tokens NaonEdge tels quels</li><li>Journal toujours visible = la signature en évidence</li></ul></div>
+          <div class="col risk"><h5>⚠ Risques</h5><ul><li>Lie l'outil à une marque (gêne si générique un jour)</li><li>Dark permanent moins confortable en plein jour</li></ul></div>
+        </div>
+        <a class="open" href="h1-atelier/index.html">Ouvrir la maquette →</a>
+      </div>
+    </div>
+
+    <!-- H2 -->
+    <div class="hypo">
+      <a class="preview" href="h2-studio-clair/index.html">
+        <span class="tagn">H2 · identité produit · clair</span>
+        <div class="pv pv2" style="flex-direction:row">
+          <div class="side"><div class="lines"><div class="ln g s"></div><div class="ln m"></div><div class="ln s"></div><div class="ln m"></div></div></div>
+          <div class="main"><div class="bar" style="color:#9aa0ad">◆ Cockpit · vue d'ensemble</div><div class="card" style="padding:7px"><div class="ln g s"></div><div class="ln m" style="margin-top:4px"></div></div><div class="card" style="padding:6px;display:flex;gap:5px"><div class="ln" style="flex:1"></div></div><div class="card" style="padding:6px;display:flex;gap:5px"><div class="ln" style="flex:1"></div></div></div>
+        </div>
+      </a>
+      <div class="body">
+        <h3><span class="num">H2</span>Studio clair</h3>
+        <div class="parti">« Un outil qui assume d'être un outil — clair, neutre, distribuable. »</div>
+        <div class="desc">Identité produit propre, sans marque NaonEdge : fond papier clair, accent indigo, ombres douces, sidebar de navigation façon Linear/Raycast. Lisible en plein jour, sobre, « SaaS premium ». La main courante est un panneau structuré ; tout respire la neutralité d'un produit qu'on pourrait vendre à d'autres.</div>
+        <div class="meta-row"><span class="mtag product">identité produit</span><span class="mtag">clair</span><span class="mtag">sidebar nav</span><span class="mtag">accent indigo</span></div>
+        <div class="fr">
+          <div class="col force"><h5>✦ Forces</h5><ul><li>Confort diurne, lisibilité maximale</li><li>Générique : prêt à être distribué hors cabinet</li><li>Code de la modernité « produit » 2026 reconnu</li></ul></div>
+          <div class="col risk"><h5>⚠ Risques</h5><ul><li>Perd la gravitas / l'identité du cabinet</li><li>Risque de ressembler à « un SaaS de plus »</li></ul></div>
+        </div>
+        <a class="open" href="h2-studio-clair/index.html">Ouvrir la maquette →</a>
+      </div>
+    </div>
+
+    <!-- H3 -->
+    <div class="hypo">
+      <a class="preview" href="h3-regie/index.html">
+        <span class="tagn">H3 · 3-canaux = colonne vertébrale</span>
+        <div class="pv pv3">
+          <div class="strip" style="height:16px;display:flex;align-items:center;gap:4px;padding:0 6px"><span class="dot" style="background:#46c98b"></span><span class="dot" style="background:#f0b232"></span><span class="dot" style="background:#46c98b"></span></div>
+          <div class="three"><div class="l"><div class="lines"><div class="ln g s"></div><div class="ln s"></div><div class="ln s"></div></div></div><div class="c"><div class="spine"></div><div class="lines" style="padding-left:22px"><div class="ln m"></div><div class="ln g s"></div><div class="ln" style="width:70%"></div><div class="ln s"></div><div class="ln g m"></div></div></div><div class="r"><div class="lines"><div class="ln g s"></div><div class="ln m"></div><div class="ln s"></div></div></div></div>
+        </div>
+      </a>
+      <div class="body">
+        <h3><span class="num">H3</span>La Régie</h3>
+        <div class="parti">« La main courante n'est pas un panneau : c'est le cœur. »</div>
+        <div class="desc">Mission Control : la main courante 3-canaux devient une <b>timeline verticale centrale</b> où défile l'activité de TOUT le portefeuille. À gauche, un pupitre de canaux (interrupteurs adresse/geste/pensée + filtre agent) ; à droite, la prochaine étape + le PTY du projet focalisé ; en haut, le pouls du portefeuille. On pilote depuis le flux.</div>
+        <div class="meta-row"><span class="mtag brand">dark NaonEdge</span><span class="mtag">timeline-first</span><span class="mtag">pupitre de canaux</span><span class="mtag">multi-projet</span></div>
+        <div class="fr">
+          <div class="col force"><h5>✦ Forces</h5><ul><li>Magnifie LA signature (3-canaux au centre)</li><li>Vue d'ensemble temps réel de tout le portefeuille</li><li>Différenciation radicale vs tous les concurrents</li></ul></div>
+          <div class="col risk"><h5>⚠ Risques</h5><ul><li>Plus audacieux : courbe d'appropriation</li><li>Le « faire » (terminal, étape) passe au second plan</li></ul></div>
+        </div>
+        <a class="open" href="h3-regie/index.html">Ouvrir la maquette →</a>
+      </div>
+    </div>
+
+    <!-- H4 -->
+    <div class="hypo">
+      <a class="preview" href="h4-etabli/index.html">
+        <span class="tagn">H4 · bureau-OS (piste différée)</span>
+        <div class="pv pv4">
+          <div class="bar" style="height:13px;background:rgba(16,18,24,.6);color:#c8a44e;font-size:7px">◆ IakaCockpit</div>
+          <div style="position:relative;flex:1">
+            <div class="win" style="left:10px;top:8px;width:46%;height:54%"><div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><div class="lines"><div class="ln s"></div><div class="ln m"></div><div class="ln s"></div></div></div>
+            <div class="win" style="right:10px;top:14px;width:44%;height:40%"><div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><div class="lines"><div class="ln g s"></div><div class="ln m"></div></div></div>
+            <div class="dock"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </a>
+      <div class="body">
+        <h3><span class="num">H4</span>L'Établi</h3>
+        <div class="parti">« Un bureau spatial : chaque outil est une fenêtre qu'on dispose. »</div>
+        <div class="desc">Métaphore desktop-OS (piste iakastart/iakapages, <b>explicitement différée</b> en v0.1 mais « à explorer avec Loki » selon la doc). Fenêtres flottantes déplaçables — portefeuille, prochaine étape, terminal titré <code>[ROYAUME][Agent]</code>, main courante — un dock façon macOS, menu bar. La maquette laisse réellement <b>glisser les fenêtres</b>.</div>
+        <div class="meta-row"><span class="mtag brand">dark NaonEdge</span><span class="mtag">fenêtres flottantes</span><span class="mtag">dock + menu bar</span><span class="mtag">piste différée</span></div>
+        <div class="fr">
+          <div class="col force"><h5>✦ Forces</h5><ul><li>Familier (macOS/Ubuntu), composable à volonté</li><li>Plusieurs projets/terminaux visibles ensemble</li><li>Concrétise une vision de Stéphane (iakastart)</li></ul></div>
+          <div class="col risk"><h5>⚠ Risques</h5><ul><li>« Peut dérouter les users » (dixit PROJET.md)</li><li>Coût technique (WM maison) ; hors socle v0.1</li><li>Désordre possible si mal cadré</li></ul></div>
+        </div>
+        <a class="open" href="h4-etabli/index.html">Ouvrir la maquette →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MATRIX -->
+  <h2 class="stitle">Lecture croisée</h2>
+  <p class="ssub">Les mêmes besoins, organisés différemment.</p>
+  <div class="matrix">
+    <table>
+      <tr><th>Critère</th><th>H1 · Atelier</th><th>H2 · Studio clair</th><th>H3 · Régie</th><th>H4 · Établi</th></tr>
+      <tr><td>Identité</td><td><span class="p">marque NaonEdge</span></td><td><span class="y">produit propre</span></td><td><span class="p">marque NaonEdge</span></td><td><span class="p">marque NaonEdge</span></td></tr>
+      <tr><td>Clair / sombre</td><td>sombre</td><td><span class="y">clair</span></td><td>sombre</td><td>sombre</td></tr>
+      <tr><td>3-canaux mis en valeur</td><td>rail permanent</td><td>panneau</td><td><span class="y">colonne centrale</span></td><td>fenêtre</td></tr>
+      <tr><td>Portefeuille</td><td>cartes</td><td>liste dense</td><td><span class="y">pouls + flux</span></td><td>fenêtre liste</td></tr>
+      <tr><td>Audace / risque</td><td>faible</td><td>faible</td><td><span class="p">moyenne</span></td><td><span class="p">élevée</span></td></tr>
+      <tr><td>Alignement socle v0.1</td><td><span class="y">fort (grille+dock+onglets)</span></td><td><span class="y">fort</span></td><td>moyen (vue dédiée)</td><td><span class="n">hors v0.1 (différé)</span></td></tr>
+      <tr><td>Confort diurne</td><td>moyen</td><td><span class="y">fort</span></td><td>moyen</td><td>moyen</td></tr>
+    </table>
+  </div>
+
+  <!-- RECO -->
+  <div class="reco">
+    <div class="lab">🎭 Recommandation de Loki</div>
+    <h2>H1 comme socle, H3 comme âme, H2 en réserve.</h2>
+    <p>Ma recommandation : partir de <b>H1 « L'Atelier »</b> comme base du socle v0.1 — c'est la plus fidèle à la marque NaonEdge (la gravitas « avocat » que vend le cabinet), elle réutilise les tokens existants, et elle colle au modèle UX signé (grille + dock + onglets/vues). Mais <b>j'emprunte à H3 « La Régie » son idée maîtresse</b> : faire de la main courante 3-canaux non pas un panneau parmi d'autres, mais un mode plein-écran « timeline-first » qu'on peut convoquer — c'est là que le Cockpit est <b>seul au monde</b>, et il faut le théâtraliser.</p>
+    <p><b>H2 « Studio clair »</b> n'est pas un rival mais une <b>réponse à la question d'identité</b> : si un jour le Cockpit se généralise hors cabinet, le mécanisme « embarquer les iakachartes » (thème commutable) permet de basculer en clair sans réécrire l'app. On garde donc H2 comme <b>variante de thème</b>, pas comme direction concurrente.</p>
+    <p><b>H4 « L'Établi »</b> reste une exploration précieuse — la doc la dit explicitement « à explorer avec Loki » — mais hors socle v0.1 (risque de dérouter, coût d'un window-manager). À garder pour l'horizon, en mode optionnel.</p>
+    <div class="q"><b>Question pour Stéphane —</b> Le Cockpit doit-il <b>porter la marque NaonEdge</b> (H1, gravitas cabinet) ou viser dès maintenant une <b>identité produit neutre</b> (H2, vue généralisation) ? Et veux-tu que la <b>main courante 3-canaux</b> soit un rail discret (H1) ou la <b>colonne vertébrale</b> de l'app (H3) ? Mon pari : marque NaonEdge en défaut + 3-canaux théâtralisé en mode dédié. À toi de trancher.</div>
+  </div>
+
+  <div class="byline">🎭 [IAKACOCKPIT][Loki] · MOVE 2 · 4 hypothèses + comparaison · maquettes fake jetables, 100% hors-ligne</div>
+</div>
+
+</body>
+</html>
