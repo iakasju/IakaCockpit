@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable" data-theme="naonedge-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · CONVERGENCE v2 — projet actif + interaction agents (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   IakaCockpit · CONVERGENCE v2 (MOVE 2). Par Loki.
+   Colonne vertébrale = LE PROJET ACTIF. Interaction agents façon WhatsApp Web
+   (liste projets-conversations à gauche, fil au centre, composeur adressé).
+   Deux styles de conversation : terminal / messages (bulles + portraits).
+   Non-lu sur le canal « adresse ». Preview rattaché au projet actif.
+   8 chartes commutables EN LIVE (tokens réels bakés, dont la nouvelle studio/clair).
+   Portraits base64 RÉUTILISÉS depuis ../convergence/portraits.data.js (non ré-encodés ;
+   studio/clair n'a pas de vignettes → fallback initiale).
+   100% autonome : aucun réseau/CDN. NaonEdge dark = défaut.
+   ========================================================================= */
+
+/* ===================== CHARTES — TOKENS RÉELS BAKÉS (8) ===================== */
+html[data-theme="naonedge-dark"]{
+  --bg-primary:#0a0a0a;--bg-card:#161616;--bg-deep:#101010;--line:#262626;--line-soft:#1c1c1c;
+  --text-primary:#f0f0f0;--text-secondary:#8a8a8a;--text-muted:#555;
+  --accent:#c8a44e;--accent-light:#e8c960;--accent-rgb:200,164,78;--grad:linear-gradient(135deg,#c8a44e,#e8c960);--on-accent:#0a0a0a;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --radius-md:14px;--radius-lg:22px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+html[data-theme="naonedge-light"]{
+  --bg-primary:#f7f6f2;--bg-card:#ffffff;--bg-deep:#f0ede5;--line:#e3ddcf;--line-soft:#ece8dd;
+  --text-primary:#1a1815;--text-secondary:#5f5a4f;--text-muted:#9a9384;
+  --accent:#9a7521;--accent-light:#c8a44e;--accent-rgb:154,117,33;--grad:linear-gradient(135deg,#9a7521,#c8a44e);--on-accent:#1a1510;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --radius-md:14px;--radius-lg:22px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+html[data-theme="studio-clair"]{
+  --bg-primary:#fbfbfc;--bg-card:#ffffff;--bg-deep:#f0f1f4;--line:#e7e8ec;--line-soft:#eef0f3;
+  --text-primary:#16181d;--text-secondary:#5b6270;--text-muted:#9aa0ad;
+  --accent:#5b5bd6;--accent-light:#7a78ff;--accent-rgb:91,91,214;--grad:linear-gradient(135deg,#5b5bd6,#7a78ff);--on-accent:#ffffff;
+  --red:#e5484d;--green:#30a46c;--blue:#3b82f6;--orange:#f5a623;--cyan:#12a594;--purple:#8e4ec6;
+  --radius-md:13px;--radius-lg:18px;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Inter",system-ui,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+html[data-theme="grimoire-dark-fantasy"]{
+  --bg-primary:#e7dcc0;--bg-card:#efe6cf;--bg-deep:#d9c9a3;--line:#c2b08a;--line-soft:#d8c9a8;
+  --text-primary:#1b2b34;--text-secondary:#4a4031;--text-muted:#857a63;
+  --accent:#a84b2a;--accent-light:#c56a3f;--accent-rgb:168,75,42;--grad:linear-gradient(135deg,#a84b2a,#7f8c3a);--on-accent:#f3ead2;
+  --red:#9c2f23;--green:#5b6e2a;--blue:#34495e;--orange:#b5651d;--cyan:#3f7d7a;--purple:#6b4a6b;
+  --radius-md:4px;--radius-lg:8px;
+  --font-sans:"EB Garamond",Georgia,serif;--font-serif:"Cinzel","EB Garamond",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="cartoon-std"]{
+  --bg-primary:#fff7e6;--bg-card:#ffffff;--bg-deep:#fff0c2;--line:#ffd98a;--line-soft:#fff1cf;
+  --text-primary:#2b2b2b;--text-secondary:#5a5a5a;--text-muted:#9a9384;
+  --accent:#ff5a5f;--accent-light:#ffc400;--accent-rgb:255,90,95;--grad:linear-gradient(135deg,#ff5a5f,#ffc400);--on-accent:#ffffff;
+  --red:#ff4d4f;--green:#2ecc71;--blue:#4dabf7;--orange:#ff922b;--cyan:#22d3ee;--purple:#9775fa;
+  --radius-md:18px;--radius-lg:28px;
+  --font-sans:"Fredoka","Baloo 2",system-ui,sans-serif;--font-serif:"Fredoka",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="os-macos"]{
+  --bg-primary:#ececec;--bg-card:#ffffff;--bg-deep:#e3e3e3;--line:#d6d6d6;--line-soft:#e6e6e6;
+  --text-primary:#1d1d1f;--text-secondary:#6e6e73;--text-muted:#a1a1a6;
+  --accent:#007aff;--accent-light:#3897ff;--accent-rgb:0,122,255;--grad:linear-gradient(135deg,#007aff,#3897ff);--on-accent:#ffffff;
+  --red:#ff3b30;--green:#34c759;--blue:#007aff;--orange:#ff9500;--cyan:#32ade6;--purple:#af52de;
+  --radius-md:10px;--radius-lg:16px;
+  --font-sans:"Inter","SF Pro Text",-apple-system,system-ui,sans-serif;--font-serif:"New York",Georgia,serif;--mono:"SF Mono",Menlo,ui-monospace,monospace;
+}
+html[data-theme="os-ubuntu"]{
+  --bg-primary:#fafafa;--bg-card:#ffffff;--bg-deep:#f2f2f2;--line:#e0e0e0;--line-soft:#ededed;
+  --text-primary:#1d1d1d;--text-secondary:#5e5e5e;--text-muted:#a0a0a0;
+  --accent:#e95420;--accent-light:#f47e54;--accent-rgb:233,84,32;--grad:linear-gradient(135deg,#e95420,#77216f);--on-accent:#ffffff;
+  --red:#c7162b;--green:#0e8420;--blue:#0073e6;--orange:#e95420;--cyan:#007aa6;--purple:#77216f;
+  --radius-md:6px;--radius-lg:10px;
+  --font-sans:"Ubuntu",system-ui,-apple-system,"Segoe UI",sans-serif;--font-serif:"Ubuntu",Georgia,serif;--mono:"Ubuntu Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="os-android"]{
+  --bg-primary:#fef7ff;--bg-card:#ffffff;--bg-deep:#f3edf7;--line:#e7e0ec;--line-soft:#f0eaf4;
+  --text-primary:#1d1b20;--text-secondary:#49454f;--text-muted:#79747e;
+  --accent:#6750a4;--accent-light:#7f67be;--accent-rgb:103,80,164;--grad:linear-gradient(135deg,#6750a4,#7f67be);--on-accent:#ffffff;
+  --red:#b3261e;--green:#146c2e;--blue:#0b57d0;--orange:#e8710a;--cyan:#00696e;--purple:#6750a4;
+  --radius-md:16px;--radius-lg:24px;
+  --font-sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;--font-serif:"Roboto Serif",Georgia,serif;--mono:"Roboto Mono",ui-monospace,Consolas,monospace;
+}
+:root{--ag-odin:#c8a44e;--ag-aragorn:#3498db;--ag-gandalf:#9b59b6;--ag-gimli:#e67e22;--ag-legolas:#2ecc71;--ag-helm:#e74c3c;--ag-loki:#1abc9c;--ag-nathalie:#e8c960;}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:radial-gradient(1200px 700px at 80% -10%,rgba(var(--accent-rgb),.07),transparent 60%),var(--bg-primary);
+  color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:background .3s,color .3s}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);font-size:10px;color:#000;
+  background:repeating-linear-gradient(45deg,#e8c960,#e8c960 8px,#c8a44e 8px,#c8a44e 16px);padding:3px 9px;border-radius:6px;opacity:.85;pointer-events:none}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+.btn{font-family:var(--font-sans);font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-primary);transition:.15s}
+.btn:hover{border-color:var(--accent)}
+.btn.gold{background:var(--grad);color:var(--on-accent);border:none}
+.btn.sm{font-size:11px;padding:5px 9px;border-radius:7px}
+.horizon-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--orange);border:1px solid var(--orange);border-radius:6px;padding:2px 7px;display:inline-flex;align-items:center;gap:5px}
+
+/* portrait helper */
+.portrait{border-radius:50%;overflow:hidden;flex:0 0 auto;border:2px solid var(--line);background:var(--bg-deep)}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait .fb{width:100%;height:100%;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;color:var(--on-accent);background:var(--grad)}
+
+/* ---------- TOP BAR ---------- */
+.topbar{height:54px;flex:0 0 54px;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--bg-card);border-bottom:1px solid var(--line);position:relative;z-index:60}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-serif);font-weight:600;font-size:16px}
+.grue{width:24px;height:24px}
+.activeproj{display:flex;align-items:center;gap:9px;background:var(--bg-deep);border:1px solid var(--accent);border-radius:10px;padding:5px 13px;font-size:13px}
+.activeproj .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.activeproj b{color:var(--text-primary)} .activeproj .d{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.tabs{display:flex;gap:2px;margin-left:4px}
+.tab{padding:7px 13px;border-radius:9px;font-size:13px;color:var(--text-secondary);cursor:pointer;border:1px solid transparent;transition:.15s;white-space:nowrap;position:relative}
+.tab:hover{color:var(--text-primary);background:var(--bg-deep)}
+.tab.active{color:var(--on-accent);background:var(--grad);border-color:transparent;font-weight:600}
+.tab .nu{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 4px}
+.spacer{flex:1}
+.themewrap{position:relative}
+.themebtn{display:flex;align-items:center;gap:9px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text-secondary)}
+.themebtn .sw{width:15px;height:15px;border-radius:5px;background:var(--grad);border:1px solid var(--line)}
+.themebtn b{color:var(--text-primary)}
+.thememenu{position:absolute;right:0;top:44px;width:268px;background:var(--bg-card);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.4);padding:8px;display:none;z-index:200}
+.thememenu.open{display:block}
+.thememenu .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:9px 9px 5px}
+.tio{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:9px;cursor:pointer;font-size:13px}
+.tio:hover{background:var(--bg-deep)} .tio.active{background:var(--bg-deep);outline:1px solid var(--accent)}
+.tio .pill{width:34px;height:18px;border-radius:5px;flex:0 0 34px;border:1px solid rgba(0,0,0,.15)}
+.tio small{color:var(--text-muted);font-size:11px;margin-left:auto;font-family:var(--mono)}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-secondary);cursor:pointer;font-size:15px;display:grid;place-items:center}
+
+/* ---------- VIEW HOST ---------- */
+.host{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;overflow:hidden;display:none}.view.active{display:flex}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:16px}
+.sectlabel{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin:8px 0 13px;display:flex;align-items:center;gap:9px}
+.sectlabel::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.explo{font-size:11.5px;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--accent);border-radius:11px;padding:10px 13px;margin-bottom:16px;display:flex;gap:9px;align-items:flex-start}
+.explo b{color:var(--accent)}
+
+/* ===================== DASHBOARD ===================== */
+#v-dash{flex-direction:column}
+.dashscroll{flex:1;overflow-y:auto;padding:24px 30px 40px}
+.statbar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:2px 0 22px}
+.stat{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:14px 16px}
+.stat .n{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.pcard{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:17px 18px;cursor:pointer;transition:.18s;position:relative}
+.pcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.25)}
+.pcard.isactive{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.pcard .ph{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.pcard .ph b{font-size:15px;font-weight:600;font-family:var(--font-serif)}
+.pcard .ph .st{margin-left:auto;width:8px;height:8px;border-radius:50%}
+.pcard .desc{color:var(--text-secondary);font-size:12.5px;min-height:34px}
+.pcard .working{position:absolute;top:14px;right:36px;font-family:var(--mono);font-size:9.5px;color:var(--accent);display:flex;align-items:center;gap:5px}
+.pcard .working::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pl 1.3s infinite}
+.pcard .unread{position:absolute;top:12px;right:12px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 5px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0 13px}
+.chip{font-family:var(--mono);font-size:10.5px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--line-soft);padding:2px 8px;border-radius:6px}
+.pfoot{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--text-muted);padding-top:11px;border-top:1px solid var(--line-soft)}
+.gbadge.ok{color:var(--green)} .gbadge.warn{color:var(--orange)}
+.git .clean{color:var(--green)} .git .dirty{color:var(--orange)} .git .ahead{color:var(--accent)}
+.git{margin-left:auto}
+.pcard .act{margin-top:12px;width:100%;text-align:center}
+@keyframes pl{50%{opacity:.3}}
+
+/* ===================== ESPACE PROJET (WhatsApp Web) ===================== */
+#v-chat{flex-direction:row}
+/* colonne gauche : liste projets-conversations */
+.convlist{width:300px;flex:0 0 300px;border-right:1px solid var(--line);background:var(--bg-card);display:flex;flex-direction:column;overflow:hidden}
+.convhead{padding:14px 14px 10px;border-bottom:1px solid var(--line-soft)}
+.convhead .top{display:flex;align-items:center;gap:9px}
+.convhead .top .lg{width:28px;height:28px;border-radius:8px;background:var(--grad);display:grid;place-items:center;color:var(--on-accent);font-weight:700}
+.convhead .top .nm{font-weight:650;font-size:14px}
+.convhead .top .cnt{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.convhead .top .plus{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg-deep);cursor:pointer;display:grid;place-items:center;color:var(--accent);font-size:16px}
+.convsearch{margin-top:10px;background:var(--bg-deep);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+.convscroll{flex:1;overflow-y:auto;padding:6px}
+.convlbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);padding:10px 8px 5px}
+.conv{display:flex;align-items:center;gap:11px;padding:10px;border-radius:11px;cursor:pointer;transition:.13s;position:relative}
+.conv:hover{background:var(--bg-deep)}
+.conv.active{background:var(--bg-deep);outline:1px solid var(--accent)}
+.conv .av{width:42px;height:42px;border-radius:12px;flex:0 0 42px;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;font-size:15px;color:var(--on-accent);background:var(--grad);position:relative}
+.conv .av .wk{position:absolute;bottom:-2px;right:-2px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg-card);background:var(--accent);animation:pl 1.3s infinite}
+.conv .mid{flex:1;min-width:0}
+.conv .nm{font-weight:650;font-size:13.5px;display:flex;align-items:center;gap:7px}
+.conv.unread .nm{color:var(--text-primary)}
+.conv .preview{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.conv.unread .preview{color:var(--text-secondary);font-weight:500}
+.conv .right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.conv .time{font-family:var(--mono);font-size:9.5px;color:var(--text-muted)}
+.conv .badge{min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 5px}
+.conv .x{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;display:none;place-items:center;font-size:11px;color:var(--text-muted);background:var(--bg-card)}
+.conv.active .x{display:grid}
+
+/* panneau central : conversation */
+.chatpane{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg-primary)}
+.chathead{flex:0 0 auto;padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg-card)}
+.chathead .av{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;color:var(--on-accent);background:var(--grad)}
+.chathead .ti{flex:1}
+.chathead .ti h2{font-family:var(--font-serif);font-size:17px;font-weight:600}
+.chathead .ti .stat{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px}
+.chathead .ti .stat .d{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.chathead .tools{display:flex;align-items:center;gap:7px}
+/* filtres + style toggle */
+.chatfilters{flex:0 0 auto;padding:9px 18px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:7px;background:var(--bg-card);flex-wrap:wrap}
+.cf{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+.cf[data-on="1"]{background:var(--grad);color:var(--on-accent);border-color:transparent}
+.styletoggle{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.styletoggle .so{font-size:11.5px;padding:5px 12px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+.styletoggle .so.active{background:var(--grad);color:var(--on-accent);font-weight:600}
+
+/* fil de conversation */
+.thread{flex:1;overflow-y:auto;padding:18px 22px 10px;display:flex;flex-direction:column;gap:12px}
+/* mode messages (bulles) */
+.msg{display:flex;gap:10px;max-width:78%}
+.msg .pa{width:34px;height:34px;border-radius:50%;flex:0 0 34px;align-self:flex-end}
+.msg .bub{background:var(--bg-card);border:1px solid var(--line);border-radius:14px;padding:10px 13px;position:relative}
+.msg .who{font-size:11.5px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px}
+.msg .who .pin{font-size:10px}
+.msg .bd{font-size:13px;color:var(--text-primary)}
+.msg .time{font-family:var(--mono);font-size:9.5px;color:var(--text-muted);margin-top:5px;text-align:right}
+.msg .relay{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.user .bub{background:var(--grad);border:none;color:var(--on-accent)}
+.msg.user .bd{color:var(--on-accent)}
+.msg.user .time{color:var(--on-accent);opacity:.7}
+/* canal geste = bloc terminal inséré dans le fil */
+.gblock{align-self:stretch;max-width:100%;background:var(--bg-deep);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gblock .gh{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:8px}
+.gblock .gh .act{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--accent);display:flex;align-items:center;gap:5px}
+.gblock pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:10px 12px;color:var(--accent-light);white-space:pre-wrap}
+.gblock .gfoot{display:flex;gap:7px;padding:8px 12px;border-top:1px solid var(--line-soft)}
+/* canal pensée = note discrète centrée */
+.thought{align-self:center;font-style:italic;font-size:12px;color:var(--text-muted);max-width:70%;text-align:center;padding:2px 0}
+/* canal agent = ligne de relais fine */
+.relayline{align-self:center;font-family:var(--mono);font-size:11px;color:var(--purple);display:flex;align-items:center;gap:7px;padding:3px 10px;border:1px solid var(--line-soft);border-radius:8px;background:var(--bg-deep)}
+
+/* mode terminal */
+.thread.tty{font-family:var(--mono);gap:2px;padding:14px 18px}
+.thread.tty .msg,.thread.tty .gblock,.thread.tty .thought,.thread.tty .relayline{display:none}
+.thread.tty .ttyline{display:flex;gap:10px;font-size:12px;padding:2px 0;max-width:100%;align-self:stretch}
+.thread:not(.tty) .ttyline{display:none}
+.ttyline .ts{color:var(--text-muted);flex:0 0 auto}
+.ttyline .ag{font-weight:700;flex:0 0 88px}
+.ttyline .gl{flex:0 0 16px;color:var(--text-muted)}
+.ttyline.addr .bd{color:var(--text-primary)}
+.ttyline.geste .bd{color:var(--accent)}
+.ttyline.pensee .bd{color:var(--text-muted);font-style:italic}
+.ttyline.agent .bd{color:var(--purple)}
+
+/* composeur */
+.composer{flex:0 0 auto;border-top:1px solid var(--line);background:var(--bg-card);padding:11px 16px;display:flex;align-items:center;gap:10px}
+.agentpick{display:flex;align-items:center;gap:8px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;padding:5px 10px 5px 6px;cursor:pointer;position:relative}
+.agentpick .pa{width:26px;height:26px;border-radius:50%;flex:0 0 26px}
+.agentpick .nm{font-size:12.5px;font-weight:600}
+.agentpick .ch{color:var(--text-muted);font-size:11px}
+.agentmenu{position:absolute;bottom:42px;left:0;width:200px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;box-shadow:0 -10px 40px rgba(0,0,0,.35);padding:6px;display:none;z-index:30}
+.agentmenu.open{display:block}
+.agentmenu .ai{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12.5px}
+.agentmenu .ai:hover{background:var(--bg-deep)}
+.agentmenu .ai .pa{width:24px;height:24px;border-radius:50%;flex:0 0 24px}
+.composer .field{flex:1;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--text-primary);font-family:var(--font-sans)}
+.composer .attach{display:flex;gap:5px}
+.composer .attach .ib{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-secondary);cursor:pointer;display:grid;place-items:center;font-size:15px}
+.composer .send{font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:10px;background:var(--grad);color:var(--on-accent);border:none;cursor:pointer;white-space:nowrap}
+
+/* ===================== WORK / 3-CANAUX / ADMIN / PREVIEW (repris v1, autour du projet actif) ===================== */
+.simplewrap{flex:1;overflow-y:auto;padding:24px 30px 40px}
+.hero{position:relative;background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:22px 24px;margin-bottom:18px}
+.hero .lab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}
+.hero h2{font-family:var(--font-serif);font-size:20px;font-weight:600;margin:9px 0 6px}
+.hero p{color:var(--text-secondary);font-size:13.5px;max-width:64ch}
+.hero .by{margin-top:12px;font-size:12px;color:var(--text-muted);font-family:var(--mono)}
+.hero .actions{margin-top:16px;display:flex;gap:9px}
+.wgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.widget{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:15px 16px}
+.widget:hover{border-color:var(--accent)}
+.widget .wh{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.widget .wh .e{color:var(--accent)}
+.widget.span2{grid-column:span 2}
+.kv{font-family:var(--mono);font-size:12px;line-height:2;color:var(--text-secondary)}
+.kv .ok{color:var(--green)} .kv .warn{color:var(--orange)}
+.miniterm{font-family:var(--mono);font-size:11.5px;line-height:1.7;background:var(--bg-deep);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;color:var(--text-secondary);white-space:pre-wrap}
+.miniterm .pr{color:var(--accent)} .miniterm .ok{color:var(--green)}
+
+/* 3-canaux (timeline) */
+#v-regie{flex-direction:row}
+.ctrl{width:230px;flex:0 0 230px;border-right:1px solid var(--line);background:var(--bg-card);padding:16px 14px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.ctrl h3{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-bottom:9px}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid var(--line-soft);background:var(--bg-deep);cursor:pointer;user-select:none}
+.crow .gl{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;flex:0 0 24px;background:var(--bg-card)}
+.crow .nm{font-size:13px;font-weight:600;flex:1}.crow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--text-muted)}
+.crow .sw{width:30px;height:17px;border-radius:9px;background:var(--line);position:relative;flex:0 0 30px}
+.crow .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--text-muted);transition:.15s}
+.crow[data-on="1"] .sw{background:var(--accent)}.crow[data-on="1"] .sw::after{left:15px;background:var(--on-accent)}
+.agf{display:flex;flex-wrap:wrap;gap:6px}
+.agpill{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
+.agpill .d{width:7px;height:7px;border-radius:50%}.agpill.off{opacity:.32}
+.spine{flex:1;overflow-y:auto;padding:18px 28px 40px}
+.spinehead{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.spinehead h2{font-family:var(--font-serif);font-size:18px;font-weight:600}
+.spinehead .sub{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:4px;bottom:0;width:2px;background:linear-gradient(180deg,var(--line),transparent)}
+.ev{position:relative;padding:9px 0 9px 4px}
+.ev::before{content:"";position:absolute;left:-25px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--bg-primary);border:2px solid var(--text-muted)}
+.ev .top{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--text-muted)}
+.ev .top .who{font-weight:600}.ev .top .ch{margin-left:auto;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border-radius:5px;background:var(--bg-deep)}
+.ev .bd{font-size:13.5px;color:var(--text-primary);padding:3px 0 0 1px}
+.ev.geste .bd{font-family:var(--mono);font-size:12px;color:var(--accent)}.ev.pensee .bd{font-style:italic;color:var(--text-muted);font-size:12.5px}.ev.agent .bd{font-family:var(--mono);font-size:12px;color:var(--text-secondary)}
+.ev.geste::before{border-color:var(--accent)}.ev.agent::before{border-color:var(--purple)}.ev.addr::before{background:var(--text-primary)}
+
+/* admin */
+#v-admin{flex-direction:row}
+.aglist{width:230px;flex:0 0 230px;border-right:1px solid var(--line);background:var(--bg-card);padding:14px 12px;overflow-y:auto}
+.aglist h3{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin:6px 6px 10px}
+.agitem{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer}
+.agitem:hover{background:var(--bg-deep)}.agitem.active{background:var(--bg-deep);outline:1px solid var(--accent)}
+.agitem .portrait{width:34px;height:34px;border-width:1px}
+.agitem .n{font-size:13.5px;font-weight:600}.agitem .r{font-size:11px;color:var(--text-muted)}
+.agitem .pin{margin-left:auto;font-size:11px}
+.adminmain{flex:1;overflow-y:auto;padding:22px 26px 40px}
+.adminhead{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.adminhead .portrait{width:84px;height:84px;border-width:2px}
+.adminhead h2{font-family:var(--font-serif);font-size:24px;font-weight:600}
+.adminhead .sub{color:var(--text-secondary);font-size:13px}
+.adminhead .pmenu{display:flex;gap:7px;margin-top:8px}
+.adminhead .pmenu .mini{font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);color:var(--text-secondary);cursor:pointer}
+.adcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.adblock{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px}
+.adblock .bh{font-family:var(--mono);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+textarea.md{width:100%;min-height:190px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;color:var(--text-primary);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;resize:vertical}
+.prompt-in{display:flex;gap:8px;margin-top:6px}
+.prompt-in input{flex:1;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;color:var(--text-primary);padding:10px 13px;font-size:13px}
+.diff{margin-top:14px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:none}
+.diff.show{display:block}
+.diff .dh{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--line-soft)}
+.diff pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:10px 12px;white-space:pre-wrap}
+.diff .add{color:var(--green);background:rgba(46,204,113,.08);display:block}
+.diff .dactions{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line-soft)}
+.matrix{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.matrix th,.matrix td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line-soft)}
+.matrix th{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--text-muted)}
+.matrix td.t{font-weight:600}
+.selout{font-family:var(--mono);font-size:11.5px;background:var(--bg-deep);border:1px solid var(--line);border-radius:8px;padding:5px 10px;color:var(--text-secondary);cursor:pointer}
+
+/* preview */
+#v-preview{flex-direction:column}
+.pvtop{padding:16px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pvtop h2{font-family:var(--font-serif);font-size:18px;font-weight:600}
+.pvtop .pjctx{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:7px;padding:3px 9px}
+.targetsel{display:flex;gap:6px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:4px}
+.tgt{font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tgt .d{width:7px;height:7px;border-radius:50%}.tgt.active{background:var(--grad);color:var(--on-accent);font-weight:600}
+.pvbody{flex:1;display:grid;grid-template-columns:1fr 320px;overflow:hidden}
+.webview{margin:18px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg-card);display:flex;flex-direction:column}
+.wvbar{height:38px;flex:0 0 38px;background:var(--bg-deep);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;padding:0 12px}
+.wvbar .dots{display:flex;gap:6px}.wvbar .dots i{width:10px;height:10px;border-radius:50%}
+.wvbar .url{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--text-secondary);padding:4px 10px}
+.wvcontent{flex:1;display:grid;place-items:center;background:repeating-linear-gradient(45deg,transparent,transparent 18px,var(--bg-deep) 18px,var(--bg-deep) 19px)}
+.fakeapp{text-align:center;padding:30px}.fakeapp .lg{width:64px;height:64px;border-radius:18px;background:var(--grad);display:grid;place-items:center;margin:0 auto 14px;font-size:30px;color:var(--on-accent)}
+.fakeapp h3{font-family:var(--font-serif);font-size:22px;margin-bottom:6px}.fakeapp p{color:var(--text-secondary);font-size:13px}
+.pvside{border-left:1px solid var(--line);background:var(--bg-card);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.tcard{background:var(--bg-deep);border:1px solid var(--line);border-radius:12px;padding:14px}
+.tcard .th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
+.tcard .kv{line-height:1.9}
+</style>
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<div class="topbar">
+  <div class="brand">
+    <svg class="grue" viewBox="0 0 24 24" fill="none"><path d="M4 20 L4 4 L15 4" stroke="var(--accent)" stroke-width="1.6"/><path d="M4 4 L19 13" stroke="var(--accent)" stroke-width="1.6"/><path d="M19 13 L19 17" stroke="var(--accent-light)" stroke-width="1.6"/><circle cx="19" cy="18.5" r="1.4" fill="var(--accent-light)"/></svg>
+    IakaCockpit
+  </div>
+  <div class="activeproj"><span class="d"></span><span class="lbl">projet actif</span><b id="activeprojname">iakacockpit</b> ▾</div>
+  <div class="tabs" id="tabs">
+    <div class="tab" data-v="dash">Portefeuille</div>
+    <div class="tab active" data-v="chat">Espace projet<span class="nu" id="chatnu">2</span></div>
+    <div class="tab" data-v="regie">3-canaux</div>
+    <div class="tab" data-v="work">Work</div>
+    <div class="tab" data-v="admin">Agents</div>
+    <div class="tab" data-v="preview">Preview</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="themewrap">
+    <div class="themebtn" id="themebtn"><span class="sw"></span>Charte : <b id="themename">NaonEdge dark</b> ▾</div>
+    <div class="thememenu" id="thememenu">
+      <div class="grp">NaonEdge — marque du cabinet</div>
+      <div class="tio active" data-t="naonedge-dark" data-n="NaonEdge dark"><span class="pill" style="background:linear-gradient(135deg,#0a0a0a 60%,#c8a44e)"></span>NaonEdge dark<small>défaut</small></div>
+      <div class="tio" data-t="naonedge-light" data-n="NaonEdge light"><span class="pill" style="background:linear-gradient(135deg,#f7f6f2 60%,#9a7521)"></span>NaonEdge light<small>clair</small></div>
+      <div class="grp">Studio — identité produit (NOUVEAU)</div>
+      <div class="tio" data-t="studio-clair" data-n="Studio clair"><span class="pill" style="background:linear-gradient(135deg,#fbfbfc 55%,#5b5bd6)"></span>Studio clair<small>indigo</small></div>
+      <div class="grp">Immersifs</div>
+      <div class="tio" data-t="grimoire-dark-fantasy" data-n="Grimoire"><span class="pill" style="background:linear-gradient(135deg,#e7dcc0 55%,#a84b2a)"></span>Grimoire<small>fantasy</small></div>
+      <div class="tio" data-t="cartoon-std" data-n="Cartoon"><span class="pill" style="background:linear-gradient(135deg,#fff7e6 50%,#ff5a5f)"></span>Cartoon<small>pop</small></div>
+      <div class="grp">OS — mimétisme natif</div>
+      <div class="tio" data-t="os-macos" data-n="macOS"><span class="pill" style="background:linear-gradient(135deg,#ececec 55%,#007aff)"></span>macOS<small>aqua</small></div>
+      <div class="tio" data-t="os-ubuntu" data-n="Ubuntu"><span class="pill" style="background:linear-gradient(135deg,#fafafa 55%,#e95420)"></span>Ubuntu<small>yaru</small></div>
+      <div class="tio" data-t="os-android" data-n="Android"><span class="pill" style="background:linear-gradient(135deg,#fef7ff 55%,#6750a4)"></span>Android<small>material</small></div>
+    </div>
+  </div>
+  <div class="iconbtn" title="réglages">⚙</div>
+</div>
+
+<!-- ===================== VIEW HOST ===================== -->
+<div class="host">
+
+  <!-- =============== DASHBOARD =============== -->
+  <div class="view" id="v-dash">
+    <div class="dashscroll">
+      <span class="kicker">Portefeuille · ~/work · clic sur un projet = le rendre ACTIF</span>
+      <div class="statbar">
+        <div class="stat"><div class="n">29</div><div class="l">projets</div></div>
+        <div class="stat"><div class="n">4</div><div class="l">actifs</div></div>
+        <div class="stat"><div class="n">2</div><div class="l">working</div></div>
+        <div class="stat"><div class="n">2</div><div class="l">non-lus</div></div>
+        <div class="stat"><div class="n">1</div><div class="l">alerte</div></div>
+      </div>
+      <div class="sectlabel">Projets</div>
+      <div class="cards" id="dashcards"></div>
+    </div>
+  </div>
+
+  <!-- =============== ESPACE PROJET (WhatsApp Web) =============== -->
+  <div class="view active" id="v-chat">
+    <!-- gauche : projets-conversations -->
+    <div class="convlist">
+      <div class="convhead">
+        <div class="top"><span class="lg">◆</span><span class="nm">Projets</span><span class="cnt" id="convcount">(4 working)</span><span class="plus" title="ajouter un projet">＋</span></div>
+        <div class="convsearch">🔍 Rechercher un projet…</div>
+      </div>
+      <div class="convscroll">
+        <div class="convlbl">Working · attente d'avis</div>
+        <div id="convworking"></div>
+        <div class="convlbl">Working · en cours</div>
+        <div id="convactive"></div>
+        <div class="convlbl">Au repos</div>
+        <div id="convidle"></div>
+      </div>
+    </div>
+    <!-- centre : conversation -->
+    <div class="chatpane">
+      <div class="chathead">
+        <div class="av" id="chav">◆</div>
+        <div class="ti"><h2 id="chtitle">iakacockpit</h2><div class="stat"><span class="d" id="chdot"></span><span id="chstatus">Working · Gandalf demande un avis</span></div></div>
+        <div class="tools"><button class="btn sm gold">OK / valider</button><button class="btn sm">⚙</button></div>
+      </div>
+      <div class="chatfilters">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">canaux</span>
+        <div class="cf" data-on="1" data-c="addr">💬 adresse</div>
+        <div class="cf" data-on="1" data-c="geste">⚙ geste</div>
+        <div class="cf" data-on="1" data-c="pensee">… pensée</div>
+        <div class="cf" data-on="1" data-c="agent">@ agent</div>
+        <div class="styletoggle" id="styletoggle">
+          <div class="so active" data-s="msg">💬 messages</div>
+          <div class="so" data-s="tty">⬡ terminal</div>
+        </div>
+      </div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <div class="agentpick" id="agentpick">
+          <span class="portrait pa" id="ap-portrait" data-ag="gandalf"></span>
+          <div><div class="nm" id="ap-name">Gandalf</div><div class="ch">destinataire</div></div>
+          <span style="color:var(--text-muted);margin-left:4px">▾</span>
+          <div class="agentmenu" id="agentmenu"></div>
+        </div>
+        <input class="field" id="composefield" placeholder="Message à iakacockpit…">
+        <div class="attach"><span class="ib" title="fichiers">📎</span><span class="ib" title="images">🖼</span></div>
+        <button class="send" id="sendbtn">Envoyer à Gandalf</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== 3-CANAUX (timeline plein écran) =============== -->
+  <div class="view" id="v-regie">
+    <div class="ctrl">
+      <div><h3>Mode 3-canaux · plein écran</h3><div style="font-size:11.5px;color:var(--text-secondary);line-height:1.5">Le flux de la méthode sur tout le portefeuille — le rail de l'espace projet en grand.</div></div>
+      <div><h3>Canaux</h3><div style="display:flex;flex-direction:column;gap:6px">
+        <div class="crow" data-on="1" data-c="addr"><div class="gl">💬</div><div class="nm">adresse<small>parole à l'humain</small></div><div class="sw"></div></div>
+        <div class="crow" data-on="1" data-c="geste"><div class="gl">⚙</div><div class="nm">geste<small>actes, délégations</small></div><div class="sw"></div></div>
+        <div class="crow" data-on="1" data-c="pensee"><div class="gl">…</div><div class="nm">pensée<small>délibération privée</small></div><div class="sw"></div></div>
+        <div class="crow" data-on="1" data-c="agent"><div class="gl">@</div><div class="nm">agent<small>dispatch / relais</small></div><div class="sw"></div></div>
+      </div></div>
+      <div><h3>Filtrer par agent</h3><div class="agf" id="regagf"></div></div>
+    </div>
+    <div class="spine">
+      <div class="spinehead"><div><h2>Flux de la méthode</h2><div class="sub">tous projets · aujourd'hui</div></div></div>
+      <div class="tl" id="regtl"></div>
+    </div>
+  </div>
+
+  <!-- =============== WORK =============== -->
+  <div class="view" id="v-work">
+    <div class="simplewrap">
+      <span class="kicker">Work · <span id="worktitle">iakacockpit</span> · branch main</span>
+      <div class="hero">
+        <div class="lab">✦ Prochaine étape · suggérée par l'IA</div>
+        <h2>Câbler le client LiteLLM derrière l'abstraction backend.</h2>
+        <p>Provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape » sans attendre le backend Rust.</p>
+        <div class="by">↳ 6 specs + git log · ~4,2k car. · via LiteLLM</div>
+        <div class="actions"><button class="btn gold">Ouvrir l'instruction</button><button class="btn">Terminal ici</button><button class="btn">Régénérer</button></div>
+      </div>
+      <div class="wgrid">
+        <div class="widget"><div class="wh"><span class="e">◎</span>Gate qualité</div><div class="kv">build <span class="ok">✓</span><br>typecheck <span class="ok">✓</span><br>lint <span class="ok">✓</span><br>tests <span class="ok">✓ 12</span><br>couverture <span class="warn">~38%</span></div></div>
+        <div class="widget"><div class="wh"><span class="e">⬡</span>PTY · [IAKACOCKPIT][Gimli]</div><div class="miniterm"><span class="pr">$</span> npm run dev
+▸ ready :3010
+<span class="pr">$</span> cargo test
+<span class="ok">ok. 12 passed</span></div></div>
+        <div class="widget"><div class="wh"><span class="e">👥</span>Team · 8 agents</div><div class="agf" id="workteam" style="margin-top:2px"></div></div>
+        <div class="widget span2"><div class="wh"><span class="e">▦</span>Jalons</div><div class="kv">S1 <span class="ok">✓</span> · S2 <span class="warn">en cours</span> · S5 next-step <span style="color:var(--text-muted)">→ LiteLLM</span></div></div>
+        <div class="widget"><div class="wh"><span class="e">🖥</span>Preview</div><div class="kv">cible <span style="color:var(--accent)">Sandbox</span><br><span class="ok">● live :1420</span></div><button class="btn sm" style="margin-top:9px;width:100%" onclick="go('preview')">Ouvrir le preview →</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== ADMIN AGENT =============== -->
+  <div class="view" id="v-admin">
+    <div class="aglist" id="aglist"><h3>Équipe · royaumes</h3></div>
+    <div class="adminmain">
+      <div class="explo"><span>🧭</span><div><b>Exploration (HORIZON pour le build v0.1).</b> Admin-par-prompt et matrice target/modèle montrés pour valider la VISION UX ; hors socle v0.1.</div></div>
+      <div class="adminhead">
+        <div class="portrait" id="ad-portrait" data-ag="loki"></div>
+        <div><h2 id="ad-name">Loki</h2><div class="sub" id="ad-sub">IAKACOCKPIT · design / supports</div>
+          <div class="pmenu"><span class="mini">⬆ upload</span><span class="mini">✦ générer (ComfyUI)</span><span class="mini">⟲ réf charte active</span></div></div>
+      </div>
+      <div class="adcols">
+        <div class="adblock"><div class="bh">📝 agent.md · éditable</div><textarea class="md" id="ad-md"></textarea><div style="font-size:11px;color:var(--text-muted);margin-top:7px">Source de vérité = le .md. Édition directe ou via prompt (diff proposé).</div></div>
+        <div class="adblock"><div class="bh">🪄 admin par prompt <span class="horizon-tag">horizon</span></div>
+          <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px">Décris une modif ; le Cockpit propose un <b>diff</b> (jamais d'écriture aveugle).</div>
+          <div class="prompt-in"><input id="ad-prompt" placeholder='ex : "ajoute une règle de contraste AA"'><button class="btn gold" id="ad-go">▶</button></div>
+          <div class="diff" id="ad-diff"><div class="dh">↳ diff proposé sur <b>agent.md</b></div>
+            <pre><span style="color:var(--text-muted)">  ## Périmètre</span>
+<span class="add">+ ## Accessibilité (ajoutée par prompt)</span>
+<span class="add">+ - Contraste AA obligatoire (ratio ≥ 4.5:1).</span>
+<span class="add">+ - Vérifier l'accent sur chaque charte avant livraison.</span></pre>
+            <div class="dactions"><button class="btn gold">Appliquer</button><button class="btn" id="ad-cancel">Annuler</button></div></div>
+          <div style="margin-top:18px"><div class="bh">🎯 matrice target / modèle <span class="horizon-tag">horizon</span></div>
+            <table class="matrix"><tr><th>Tâche</th><th>Modèle (LiteLLM)</th><th>Cible</th></tr>
+              <tr><td class="t">design</td><td><span class="selout">claude-opus ▾</span></td><td><span class="selout">local ▾</span></td></tr>
+              <tr><td class="t">itération</td><td><span class="selout">ollama/qwen ▾</span></td><td><span class="selout">local ▾</span></td></tr>
+              <tr><td class="t">preview</td><td>—</td><td><span class="selout">Docker LAN ▾</span></td></tr></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== PREVIEW (rattaché au projet actif) =============== -->
+  <div class="view" id="v-preview">
+    <div style="display:flex;flex-direction:column;width:100%;overflow:hidden">
+      <div class="pvtop">
+        <h2>Preview / Test</h2>
+        <span class="pjctx">⛓ rattaché au projet actif · <b id="pv-proj">iakacockpit</b></span>
+        <span class="horizon-tag">horizon · multi-target</span>
+        <div class="spacer" style="flex:1"></div>
+        <div class="targetsel" id="targetsel">
+          <div class="tgt active" data-tg="sandbox"><span class="d" style="background:var(--green)"></span>Sandbox</div>
+          <div class="tgt" data-tg="local"><span class="d" style="background:var(--blue)"></span>Docker local</div>
+          <div class="tgt" data-tg="lan"><span class="d" style="background:var(--orange)"></span>Docker LAN</div>
+          <div class="tgt" data-tg="wan"><span class="d" style="background:var(--purple)"></span>Docker WAN</div>
+        </div>
+      </div>
+      <div class="pvbody">
+        <div class="webview">
+          <div class="wvbar"><div class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><div class="url" id="pv-url">http://localhost:1420 · sandbox</div></div>
+          <div class="wvcontent"><div class="fakeapp"><div class="lg">◆</div><h3 id="pv-appname">iakacockpit (preview)</h3><p>rendu live sur la cible <b id="pv-tgname">Sandbox</b></p></div></div>
+        </div>
+        <div class="pvside">
+          <div class="tcard"><div class="th" id="pv-th">Cible · sandbox</div><div class="kv" id="pv-info"></div></div>
+          <div class="tcard"><div class="th">Actions</div><div style="display:flex;flex-direction:column;gap:7px"><button class="btn gold">▸ Démarrer / déployer</button><button class="btn">↻ Recharger</button><button class="btn">⊘ Arrêter</button></div></div>
+          <div class="explo" style="margin:0"><span>⛓</span><div><b>Preview-par-projet.</b> La cible et l'URL suivent le <b>projet actif</b> ; changer de projet (dashboard ou liste de gauche) recharge ce preview sur le bon livrable.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<!-- portraits base64 réutilisés (NON ré-encodés) depuis la convergence v1 -->
+<script src="../convergence/portraits.data.js"></script>
+<script>
+/* ===================== DONNÉES MOCKÉES COHÉRENTES ===================== */
+const AGENTS=[
+  {id:"odin",name:"Odin",role:"portefeuille / orchestrateur",color:"var(--ag-odin)",pin:"🟠"},
+  {id:"aragorn",name:"Aragorn",role:"coordination projet",color:"var(--ag-aragorn)",pin:"🔵"},
+  {id:"gandalf",name:"Gandalf",role:"architecture / specs",color:"var(--ag-gandalf)",pin:"🟣"},
+  {id:"gimli",name:"Gimli",role:"implémentation / forge",color:"var(--ag-gimli)",pin:"🟠"},
+  {id:"legolas",name:"Legolas",role:"tests / qualité",color:"var(--ag-legolas)",pin:"🟢"},
+  {id:"helm",name:"Helm",role:"garde / sécurité / CI",color:"var(--ag-helm)",pin:"🔴"},
+  {id:"loki",name:"Loki",role:"design / supports",color:"var(--ag-loki)",pin:"🟦"},
+  {id:"nathalie",name:"Nathalie",role:"doc / relation",color:"var(--ag-nathalie)",pin:"🟡"},
+];
+const PROJECTS=[
+  {id:"iakacockpit",desc:"Cœur de l'écosystème · orchestrateur chapeau",stack:["Tauri","React","TS"],st:"green",v:"v0.1.0",git:"ahead",ahead:2,qg:"ok",working:true,unread:1,wait:true,last:"Gandalf : avis sur le câblage LiteLLM ?",time:"12:10"},
+  {id:"iakaboxlogs",desc:"Mains courantes MQTT → CouchDB · VM2",stack:["MQTT","CouchDB"],st:"green",v:"v1.0.0",git:"clean",qg:"ok",working:true,unread:2,wait:true,last:"Helm : faut-il rotater le token CouchDB ?",time:"12:08"},
+  {id:"iakagraph",desc:"Réservoir des iakachartes · tokens & vignettes",stack:["CSS","thèmes"],st:"green",v:"v0.4.0",git:"clean",qg:"ok",working:true,unread:0,wait:false,last:"Loki : charte studio/clair ajoutée.",time:"11:54"},
+  {id:"iakaide",desc:"IDE Tauri · salvage backend Rust",stack:["Tauri","React"],st:"orange",v:"v3.1.2",git:"dirty",qg:"warn",working:true,unread:0,wait:false,last:"Gimli : build en cours…",time:"11:40"},
+  {id:"naonedge-dashboard",desc:"Dashboard portefeuille",stack:["HTML","JS"],st:"muted",v:"v0.2.0",git:"clean",qg:"ok",working:false,unread:0,wait:false,last:"—",time:"hier"},
+  {id:"iakafreevision",desc:"Catalogue génératif · ComfyUI .12",stack:["ComfyUI"],st:"muted",v:"v0.25.0",git:"behind",behind:3,qg:"ok",working:false,unread:0,wait:false,last:"—",time:"hier"},
+];
+/* conversations par projet (canaux : addr/geste/pensee/agent) */
+const CONVS={
+  iakacockpit:[
+    {k:"addr",ag:"odin",t:"12:04",bd:"Je lance le cadrage design et je délègue à Loki."},
+    {k:"agent",who:"odin → loki",ag:"loki",t:"12:04",bd:"⮌ délégation : « direction design »"},
+    {k:"pensee",ag:"loki",t:"12:04",bd:"je lis le réservoir, je récupère les tokens…"},
+    {k:"geste",ag:"loki",t:"12:04",cmd:"read tokens.css (naonedge/dark)\n→ ok · 7 chartes recensées",acts:10},
+    {k:"addr",ag:"loki",t:"12:05",bd:"Convergence v2 : interaction agents façon WhatsApp, projet actif au centre."},
+    {k:"user",t:"12:08",bd:"OK pour le style messages + terminal. Branche LiteLLM ensuite."},
+    {k:"pensee",ag:"gandalf",t:"12:09",bd:"le scaffolding tient, reste à brancher LiteLLM…"},
+    {k:"addr",ag:"gandalf",t:"12:10",bd:"Avis ? Je propose de câbler le client LiteLLM en mock dev d'abord, avant le backend Rust. Tu valides ?",wait:true},
+  ],
+  iakaboxlogs:[
+    {k:"geste",ag:"gimli",t:"12:00",cmd:"npm run build\n→ ✓ 2.1s",acts:4},
+    {k:"addr",ag:"gimli",t:"12:01",bd:"Build OK. Le pont MQTT→CouchDB tourne."},
+    {k:"pensee",ag:"helm",t:"12:07",bd:"le token CouchDB date de 40 jours, rotation conseillée…"},
+    {k:"addr",ag:"helm",t:"12:08",bd:"Avis ? Le token CouchDB a 40 jours. Je le rotate maintenant (coupure ~5s) ou j'attends la fenêtre de maintenance ?",wait:true},
+    {k:"addr",ag:"helm",t:"12:08",bd:"Deuxième point : faut-il chiffrer les payloads `pensee` au repos ? (RGPD interne)",wait:true},
+  ],
+  iakagraph:[
+    {k:"agent",who:"odin → loki",ag:"loki",t:"11:50",bd:"⮌ délégation : « formaliser studio/clair »"},
+    {k:"geste",ag:"loki",t:"11:52",cmd:"write studio/clair/tokens.css\nwrite studio/clair/components.css",acts:3},
+    {k:"addr",ag:"loki",t:"11:54",bd:"Charte studio/clair ajoutée au réservoir (indigo, fallback initiale)."},
+  ],
+  iakaide:[
+    {k:"geste",ag:"gimli",t:"11:38",cmd:"cargo build\n→ … compiling (salvage backend)",acts:6},
+    {k:"addr",ag:"gimli",t:"11:40",bd:"Build en cours sur le backend salvagé. Arbre encore sale (dé-Windows-isation)."},
+  ],
+  "naonedge-dashboard":[{k:"addr",ag:"odin",t:"hier",bd:"Projet au repos. Rien à signaler."}],
+  iakafreevision:[{k:"addr",ag:"odin",t:"hier",bd:"En retard de 3 commits sur l'image figée. Au repos."}],
+};
+const FEED=[
+  {ag:"odin",c:"addr",t:"12:04",pj:"iakacockpit",bd:"Je lance le cadrage et je délègue à Loki."},
+  {ag:"loki",c:"agent",t:"12:04",who:"odin → loki",pj:"iakacockpit",bd:"⮌ task(loki, « direction design »)"},
+  {ag:"loki",c:"geste",t:"12:04",pj:"iakacockpit",bd:"→ read tokens.css ·· ok"},
+  {ag:"loki",c:"addr",t:"12:05",pj:"iakacockpit",bd:"Convergence v2 : projet actif + WhatsApp Web."},
+  {ag:"helm",c:"addr",t:"12:08",pj:"iakaboxlogs",bd:"Avis ? Rotation du token CouchDB maintenant ou plus tard ?"},
+  {ag:"gandalf",c:"pensee",t:"12:09",pj:"iakacockpit",bd:"reste à brancher LiteLLM…"},
+  {ag:"gandalf",c:"addr",t:"12:10",pj:"iakacockpit",bd:"Avis ? Câbler LiteLLM en mock dev d'abord ?"},
+  {ag:"legolas",c:"geste",t:"12:10",pj:"iakacockpit",bd:"→ cargo test safe_path ·· ✓ 12 passed"},
+];
+const AGENTMD={
+  loki:"# Loki — design / supports\n\n## Mission\nProduire des livrables visuels on-brand,\nen appliquant la bonne charte du catalogue.\n\n## Périmètre\n- Fait : docs HTML, slides, logos, pages.\n- Ne fait pas : palette hors charte.",
+  gandalf:"# Gandalf — architecture / specs\n\n## Mission\nCadrer, spécifier, rédiger les instructions\navant tout code.\n\n## Périmètre\n- Fait : specs, PROJET.md, instructions.\n- Ne fait pas : implémenter.",
+  odin:"# Odin — portefeuille\n\n## Mission\nPiloter le portefeuille au niveau chapeau,\narbitrer, valider les gates.",
+};
+const md=id=>AGENTMD[id]||("# "+id+"\n\n## Mission\n(fiche mockée)\n\n## Périmètre\n- …");
+
+/* ===================== PORTRAITS (base64 réutilisé + fallback) ===================== */
+const P=window.PORTRAITS||{};
+function portraitHTML(agId){
+  const theme=document.documentElement.getAttribute("data-theme");
+  const uri=(P[theme]&&P[theme][agId])||null; // studio-clair absent → fallback
+  const init=(agId||"?").charAt(0).toUpperCase();
+  if(uri)return '<img src="'+uri+'" alt="'+agId+'">';
+  return '<span class="fb">'+init+'</span>';
+}
+function refreshPortraits(){document.querySelectorAll('.portrait[data-ag]').forEach(p=>p.innerHTML=portraitHTML(p.dataset.ag));}
+const agColor=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.color:'var(--text-muted)';};
+const agName=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.name:id;};
+const agPin=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.pin:'';};
+
+/* ===================== STATE ===================== */
+let ACTIVE="iakacockpit";
+let DEST="gandalf";
+
+/* ===================== DASHBOARD ===================== */
+function gitBadge(p){
+  if(p.git==="clean")return '<span class="clean">● propre</span>';
+  if(p.git==="dirty")return '<span class="dirty">◑ sale</span>';
+  if(p.git==="ahead")return '<span class="ahead">↑'+p.ahead+'</span>';
+  if(p.git==="behind")return '<span style="color:var(--text-muted)">↓'+p.behind+'</span>';
+  return "";
+}
+function renderDash(){
+  document.getElementById('dashcards').innerHTML=PROJECTS.map(p=>`
+    <div class="pcard ${p.id===ACTIVE?'isactive':''}" data-proj="${p.id}">
+      ${p.unread?`<span class="unread">${p.unread}</span>`:''}
+      ${p.working?'<span class="working">working</span>':''}
+      <div class="ph"><b>${p.id}</b><span class="st" style="background:var(--${p.st==='muted'?'text-muted':p.st})"></span></div>
+      <div class="desc">${p.desc}</div>
+      <div class="chips">${p.stack.map(s=>`<span class="chip">${s}</span>`).join('')}</div>
+      <div class="pfoot"><span class="gbadge ${p.qg}">${p.qg==='ok'?'✓':'⚠'} qgate</span><span>${p.v}</span><span class="git">${gitBadge(p)}</span></div>
+      <button class="btn sm gold act">${p.id===ACTIVE?'● projet actif':'Activer ce projet →'}</button>
+    </div>`).join('');
+}
+
+/* ===================== CONVERSATIONS LIST ===================== */
+function convRow(p){
+  return `<div class="conv ${p.unread?'unread':''} ${p.id===ACTIVE?'active':''}" data-proj="${p.id}">
+    <div class="av">${p.id.charAt(0).toUpperCase()}${p.working?'<span class="wk"></span>':''}</div>
+    <div class="mid"><div class="nm">${p.id}</div><div class="preview">${p.last}</div></div>
+    <div class="right"><span class="time">${p.time}</span>${p.unread?`<span class="badge">${p.unread}</span>`:''}</div>
+    <span class="x" title="fermer">✕</span>
+  </div>`;
+}
+function renderConvs(){
+  document.getElementById('convworking').innerHTML=PROJECTS.filter(p=>p.working&&p.wait).map(convRow).join('');
+  document.getElementById('convactive').innerHTML=PROJECTS.filter(p=>p.working&&!p.wait).map(convRow).join('');
+  document.getElementById('convidle').innerHTML=PROJECTS.filter(p=>!p.working).map(convRow).join('');
+  const totalUnread=PROJECTS.reduce((s,p)=>s+(p.unread||0),0);
+  const nu=document.getElementById('chatnu'); if(totalUnread>0){nu.textContent=totalUnread;nu.style.display='';}else nu.style.display='none';
+}
+
+/* ===================== THREAD (messages / terminal) ===================== */
+function gly(k){return k==="addr"?"»":k==="geste"?"→":k==="pensee"?"~":"@";}
+function renderThread(){
+  const conv=CONVS[ACTIVE]||[];
+  const t=document.getElementById('thread');
+  let html="";
+  conv.forEach(m=>{
+    // version terminal (toujours présente, masquée selon le mode)
+    const ttyAg=m.k==="user"?"vous":(m.who||agName(m.ag));
+    const ttyBd=m.k==="geste"?(m.cmd||"").replace(/\n/g," ; "):m.bd;
+    const ttyCls=m.k==="user"?"addr":m.k;
+    html+=`<div class="ttyline ${ttyCls}" data-c="${m.k==='user'?'addr':m.k}"><span class="ts">[${m.t}]</span><span class="ag" style="color:${m.k==='user'?'var(--text-primary)':agColor(m.ag)}">${ttyAg}</span><span class="gl">${gly(m.k)}</span><span class="bd">${ttyBd}</span></div>`;
+    // version messages
+    if(m.k==="user"){
+      html+=`<div class="msg user" data-c="addr"><div class="bub"><div class="bd">${m.bd}</div><div class="time">${m.t} ✓✓</div></div></div>`;
+    }else if(m.k==="addr"){
+      html+=`<div class="msg" data-c="addr"><span class="portrait pa" data-ag="${m.ag}"></span><div class="bub"><div class="who" style="color:${agColor(m.ag)}">${agName(m.ag)} <span class="pin">${agPin(m.ag)}</span>${m.wait?' <span class="horizon-tag" style="color:var(--accent);border-color:var(--accent)">demande un avis</span>':''}</div><div class="bd">${m.bd}</div><div class="relay"><button class="btn sm">↪ Envoyer à Gimli</button><button class="btn sm">↪ Envoyer à Legolas</button><button class="btn sm">⧉ Copier</button></div><div class="time">${m.t}</div></div></div>`;
+    }else if(m.k==="geste"){
+      html+=`<div class="gblock" data-c="geste"><div class="gh">⬡ ${agName(m.ag)} · geste<span class="act">● Activité (${m.acts})</span></div><pre>$ ${m.cmd}</pre><div class="gfoot"><button class="btn sm">↪ Envoyer à Gandalf</button><button class="btn sm">⧉ Copier la sortie</button></div></div>`;
+    }else if(m.k==="pensee"){
+      html+=`<div class="thought" data-c="pensee">~ ${agName(m.ag)} réfléchit : ${m.bd}</div>`;
+    }else if(m.k==="agent"){
+      html+=`<div class="relayline" data-c="agent">⮌ ${m.who} · ${m.bd}</div>`;
+    }
+  });
+  t.innerHTML=html;
+  applyChatFilters();
+  t.scrollTop=t.scrollHeight;
+}
+function applyChatFilters(){
+  const on=[...document.querySelectorAll('.chatfilters .cf')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);
+  document.querySelectorAll('#thread [data-c]').forEach(el=>{el.dataset.hidden=on.includes(el.dataset.c)?'':'1';el.style.display=on.includes(el.dataset.c)?'':'none';});
+}
+
+/* ===================== SET ACTIVE PROJECT ===================== */
+function setActive(id){
+  ACTIVE=id;
+  const p=PROJECTS.find(x=>x.id===id);
+  if(p){p.unread=0;p.wait=p.wait&&false;} // ouvrir = marquer lu
+  document.getElementById('activeprojname').textContent=id;
+  document.getElementById('worktitle').textContent=id;
+  document.getElementById('pv-proj').textContent=id;
+  document.getElementById('pv-appname').textContent=id+" (preview)";
+  // chat head
+  document.getElementById('chav').textContent=id.charAt(0).toUpperCase();
+  document.getElementById('chtitle').textContent=id;
+  const wait=PROJECTS.find(x=>x.id===id);
+  document.getElementById('chstatus').textContent= wait&&wait.working?(CONVS[id]&&CONVS[id].some(m=>m.wait)?"Working · un agent demande un avis":"Working · en cours"):"Au repos · rien à signaler";
+  document.getElementById('composefield').placeholder="Message à "+id+"…";
+  renderConvs();renderDash();renderThread();refreshPortraits();
+}
+
+/* ===================== AGENT DESTINATAIRE ===================== */
+function renderAgentMenu(){
+  document.getElementById('agentmenu').innerHTML=AGENTS.map(a=>`<div class="ai" data-ag="${a.id}"><span class="portrait pa" data-ag="${a.id}"></span><div><div style="font-weight:600">${a.name}</div><div style="font-size:10.5px;color:var(--text-muted)">${a.role}</div></div></div>`).join('');
+  refreshPortraits();
+}
+function setDest(id){
+  DEST=id;
+  document.getElementById('ap-name').textContent=agName(id);
+  document.getElementById('ap-portrait').dataset.ag=id;
+  document.getElementById('sendbtn').textContent="Envoyer à "+agName(id);
+  refreshPortraits();
+}
+
+/* ===================== 3-CANAUX TIMELINE ===================== */
+function renderRegie(){
+  document.getElementById('regtl').innerHTML=FEED.map(f=>`
+    <div class="ev ${f.c}" data-c="${f.c}" data-ag="${f.ag}">
+      <div class="top"><span class="who" style="color:${agColor(f.ag)}">${f.who||agName(f.ag)} · ${f.pj}</span><span style="margin-left:6px">${f.t}</span><span class="ch">${f.c}</span></div>
+      <div class="bd">${f.bd}</div></div>`).join('');
+  document.getElementById('regagf').innerHTML=AGENTS.slice(0,6).map(a=>`<span class="agpill" data-ag="${a.id}"><span class="d" style="background:${a.color}"></span>${a.id}</span>`).join('');
+}
+function applyReg(){
+  const chans=[...document.querySelectorAll('#v-regie .crow[data-c]')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);
+  const off=[...document.querySelectorAll('#regagf .agpill.off')].map(p=>p.dataset.ag);
+  document.querySelectorAll('#regtl .ev').forEach(ev=>ev.style.display=(chans.includes(ev.dataset.c)&&!off.includes(ev.dataset.ag))?'':'none');
+}
+
+/* ===================== ADMIN ===================== */
+function renderAdminList(){
+  const h='<h3>Équipe · royaumes</h3>'+AGENTS.map((a,i)=>`<div class="agitem ${a.id==='loki'?'active':''}" data-ag="${a.id}"><span class="portrait" data-ag="${a.id}"></span><div><div class="n">${a.name}</div><div class="r">${a.role}</div></div><span class="pin">${a.pin}</span></div>`).join('');
+  document.getElementById('aglist').innerHTML=h;
+  document.getElementById('workteam').innerHTML=AGENTS.map(a=>`<span class="portrait" data-ag="${a.id}" style="width:30px;height:30px;border-width:1px"></span>`).join('');
+}
+function selectAgent(id){
+  const a=AGENTS.find(x=>x.id===id);
+  document.querySelectorAll('.agitem').forEach(x=>x.classList.toggle('active',x.dataset.ag===id));
+  document.getElementById('ad-portrait').dataset.ag=id;
+  document.getElementById('ad-name').textContent=a.name;
+  document.getElementById('ad-sub').textContent="IAKACOCKPIT · "+a.role+" · "+a.pin;
+  document.getElementById('ad-md').value=md(id);
+  document.getElementById('ad-diff').classList.remove('show');
+  refreshPortraits();
+}
+
+/* ===================== PREVIEW TARGETS ===================== */
+const TG={
+  sandbox:{name:"Sandbox",url:p=>"http://localhost:1420 · "+p+" · sandbox",info:`hôte <span style="color:var(--text-primary)">local éphémère</span><br>réseau <span style="color:var(--text-muted)">isolé</span><br>statut <span style="color:var(--green)">prêt</span>`},
+  local:{name:"Docker local",url:p=>"http://localhost:8080 · "+p,info:`hôte <span style="color:var(--text-primary)">docker desktop</span><br>stack <span style="color:var(--text-muted)">PROJ-dev-*</span><br>statut <span style="color:var(--orange)">à démarrer</span>`},
+  lan:{name:"Docker LAN",url:p=>"http://192.168.2.11:3xxx · "+p,info:`hôte <span style="color:var(--text-primary)">iakabox .11</span><br>accès <span style="color:var(--text-muted)">double rebond SSH</span><br>statut <span style="color:var(--green)">joignable</span>`},
+  wan:{name:"Docker WAN",url:p=>"https://preview.iakaproject.net · "+p,info:`hôte <span style="color:var(--text-primary)">VPS public</span><br>réseau <span style="color:var(--text-muted)">WAN / TLS</span><br>statut <span style="color:var(--text-muted)">non provisionné</span>`},
+};
+function setTarget(tg){
+  const d=TG[tg];
+  document.getElementById('pv-url').textContent=d.url(ACTIVE);
+  document.getElementById('pv-tgname').textContent=d.name;
+  document.getElementById('pv-th').textContent="Cible · "+tg;
+  document.getElementById('pv-info').innerHTML=d.info;
+}
+
+/* ===================== NAV ===================== */
+function go(v){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.v===v));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+}
+
+/* ===================== WIRING ===================== */
+document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)go(t.dataset.v);});
+// dashboard → activer projet + ouvrir l'espace projet
+document.getElementById('dashcards').addEventListener('click',e=>{
+  const c=e.target.closest('.pcard');if(!c)return;setActive(c.dataset.proj);go('chat');});
+// liste conversations → bascule le projet du widget
+document.querySelector('.convscroll').addEventListener('click',e=>{
+  if(e.target.classList.contains('x')){e.stopPropagation();return;}
+  const c=e.target.closest('.conv');if(c)setActive(c.dataset.proj);});
+// filtres canaux
+document.querySelector('.chatfilters').addEventListener('click',e=>{
+  const f=e.target.closest('.cf');if(!f)return;f.dataset.on=f.dataset.on==='1'?'0':'1';applyChatFilters();});
+// toggle style messages/terminal
+document.getElementById('styletoggle').addEventListener('click',e=>{
+  const s=e.target.closest('.so');if(!s)return;
+  document.querySelectorAll('#styletoggle .so').forEach(x=>x.classList.remove('active'));s.classList.add('active');
+  document.getElementById('thread').classList.toggle('tty',s.dataset.s==='tty');
+  applyChatFilters();});
+// composeur : agent destinataire
+document.getElementById('agentpick').addEventListener('click',e=>{
+  if(e.target.closest('.agentmenu'))return;
+  document.getElementById('agentmenu').classList.toggle('open');});
+document.getElementById('agentmenu').addEventListener('click',e=>{
+  const a=e.target.closest('.ai');if(!a)return;setDest(a.dataset.ag);document.getElementById('agentmenu').classList.remove('open');});
+document.addEventListener('click',e=>{if(!e.target.closest('.agentpick'))document.getElementById('agentmenu').classList.remove('open');});
+// 3-canaux filters
+document.querySelectorAll('#v-regie .crow[data-c]').forEach(c=>c.addEventListener('click',()=>{c.dataset.on=c.dataset.on==='1'?'0':'1';applyReg();}));
+document.getElementById('regagf')?.addEventListener('click',e=>{const p=e.target.closest('.agpill');if(p){p.classList.toggle('off');applyReg();}});
+// admin
+document.getElementById('aglist').addEventListener('click',e=>{const it=e.target.closest('.agitem');if(it)selectAgent(it.dataset.ag);});
+document.getElementById('ad-go').addEventListener('click',()=>document.getElementById('ad-diff').classList.add('show'));
+document.getElementById('ad-cancel').addEventListener('click',()=>document.getElementById('ad-diff').classList.remove('show'));
+// preview targets
+document.getElementById('targetsel').addEventListener('click',e=>{
+  const t=e.target.closest('.tgt');if(!t)return;
+  document.querySelectorAll('.tgt').forEach(x=>x.classList.remove('active'));t.classList.add('active');setTarget(t.dataset.tg);});
+// theme picker
+const tbtn=document.getElementById('themebtn'),tmenu=document.getElementById('thememenu');
+tbtn.addEventListener('click',()=>tmenu.classList.toggle('open'));
+document.addEventListener('click',e=>{if(!e.target.closest('.themewrap'))tmenu.classList.remove('open');});
+tmenu.addEventListener('click',e=>{const o=e.target.closest('.tio');if(!o)return;
+  document.documentElement.setAttribute('data-theme',o.dataset.t);
+  document.getElementById('themename').textContent=o.dataset.n;
+  tmenu.querySelectorAll('.tio').forEach(x=>x.classList.toggle('active',x===o));
+  tmenu.classList.remove('open');refreshPortraits();});
+
+/* ===================== INIT ===================== */
+renderDash();renderConvs();renderRegie();renderAdminList();renderAgentMenu();
+selectAgent('loki');setDest('gandalf');setActive('iakacockpit');setTarget('sandbox');
+refreshPortraits();
+</script>
+</body>
+</html>

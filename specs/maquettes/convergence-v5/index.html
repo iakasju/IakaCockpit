@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable" data-theme="naonedge-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · CONVERGENCE v5 — assistant projet par défaut · header allégé (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   IakaCockpit · CONVERGENCE v5 (MOVE 2). Par Loki.
+   Socle v4 (FLAT : zéro ombre/dégradé/filet) inchangé, + 2 changements :
+   - Réglages → Settings projet : slot « Modèle par défaut / Assistant du projet »
+     (le « bras droit », Aragorn-proxy) — répond quand aucun agent n'est adressé,
+     trie/résume, peut répondre en l'absence du user. Reflété dans le composeur
+     Working : destinataire par défaut = cet assistant tant qu'on ne cible personne.
+   - Header allégé : suppression du badge global « projet actif · <nom> ».
+     (La nav tuile→Working reste : c'est une navigation, pas un état affiché.)
+   8 chartes + custom. Portraits base64 réutilisés (../convergence/portraits.data.js).
+   100% autonome : aucun réseau/CDN. NaonEdge dark = défaut.
+   ========================================================================= */
+
+/* ===================== CHARTES — TOKENS RÉELS BAKÉS (8), FLAT ===================== */
+html[data-theme="naonedge-dark"]{
+  --bg:#0a0a0a;--surf:#161616;--surf-2:#202020;--surf-3:#0f0f0f;--field:#101010;
+  --text:#f0f0f0;--text-2:#9a9a9a;--text-3:#5a5a5a;
+  --accent:#c8a44e;--accent-2:#e8c960;--accent-rgb:200,164,78;--on-accent:#0a0a0a;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --r:14px;--r-lg:20px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+html[data-theme="naonedge-light"]{
+  --bg:#f4f2ec;--surf:#ffffff;--surf-2:#e9e4d8;--surf-3:#faf8f3;--field:#efece3;
+  --text:#1a1815;--text-2:#5f5a4f;--text-3:#9a9384;
+  --accent:#9a7521;--accent-2:#c8a44e;--accent-rgb:154,117,33;--on-accent:#ffffff;
+  --red:#e74c3c;--green:#27ae60;--blue:#2c80c4;--orange:#d3771a;--cyan:#159c84;--purple:#8e4fa6;
+  --r:14px;--r-lg:20px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+html[data-theme="studio-clair"]{
+  --bg:#f4f5f7;--surf:#ffffff;--surf-2:#e9eaef;--surf-3:#fafbfc;--field:#eef0f3;
+  --text:#16181d;--text-2:#5b6270;--text-3:#9aa0ad;
+  --accent:#5b5bd6;--accent-2:#7a78ff;--accent-rgb:91,91,214;--on-accent:#ffffff;
+  --red:#e5484d;--green:#30a46c;--blue:#3b82f6;--orange:#f5a623;--cyan:#12a594;--purple:#8e4ec6;
+  --r:13px;--r-lg:18px;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Inter",system-ui,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+html[data-theme="grimoire-dark-fantasy"]{
+  --bg:#e7dcc0;--surf:#efe6cf;--surf-2:#d6c39a;--surf-3:#ece2c6;--field:#ddccaa;
+  --text:#1b2b34;--text-2:#4a4031;--text-3:#857a63;
+  --accent:#a84b2a;--accent-2:#7f8c3a;--accent-rgb:168,75,42;--on-accent:#f3ead2;
+  --red:#9c2f23;--green:#5b6e2a;--blue:#34495e;--orange:#b5651d;--cyan:#3f7d7a;--purple:#6b4a6b;
+  --r:4px;--r-lg:8px;
+  --font-sans:"EB Garamond",Georgia,serif;--font-serif:"Cinzel","EB Garamond",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="cartoon-std"]{
+  --bg:#fff7e6;--surf:#ffffff;--surf-2:#ffe6a8;--surf-3:#fffaf0;--field:#fff0c2;
+  --text:#2b2b2b;--text-2:#5a5a5a;--text-3:#9a9384;
+  --accent:#ff5a5f;--accent-2:#ffc400;--accent-rgb:255,90,95;--on-accent:#ffffff;
+  --red:#ff4d4f;--green:#2ecc71;--blue:#4dabf7;--orange:#ff922b;--cyan:#22d3ee;--purple:#9775fa;
+  --r:18px;--r-lg:28px;
+  --font-sans:"Fredoka","Baloo 2",system-ui,sans-serif;--font-serif:"Fredoka",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="os-macos"]{
+  --bg:#ececec;--surf:#ffffff;--surf-2:#dfdfdf;--surf-3:#f6f6f6;--field:#e3e3e3;
+  --text:#1d1d1f;--text-2:#6e6e73;--text-3:#a1a1a6;
+  --accent:#007aff;--accent-2:#3897ff;--accent-rgb:0,122,255;--on-accent:#ffffff;
+  --red:#ff3b30;--green:#34c759;--blue:#007aff;--orange:#ff9500;--cyan:#32ade6;--purple:#af52de;
+  --r:10px;--r-lg:16px;
+  --font-sans:"Inter","SF Pro Text",-apple-system,system-ui,sans-serif;--font-serif:"New York",Georgia,serif;--mono:"SF Mono",Menlo,ui-monospace,monospace;
+}
+html[data-theme="os-ubuntu"]{
+  --bg:#fafafa;--surf:#ffffff;--surf-2:#ececec;--surf-3:#f6f6f6;--field:#f2f2f2;
+  --text:#1d1d1d;--text-2:#5e5e5e;--text-3:#a0a0a0;
+  --accent:#e95420;--accent-2:#77216f;--accent-rgb:233,84,32;--on-accent:#ffffff;
+  --red:#c7162b;--green:#0e8420;--blue:#0073e6;--orange:#e95420;--cyan:#007aa6;--purple:#77216f;
+  --r:6px;--r-lg:10px;
+  --font-sans:"Ubuntu",system-ui,-apple-system,"Segoe UI",sans-serif;--font-serif:"Ubuntu",Georgia,serif;--mono:"Ubuntu Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="os-android"]{
+  --bg:#fef7ff;--surf:#ffffff;--surf-2:#eee4f4;--surf-3:#f9f4fb;--field:#f3edf7;
+  --text:#1d1b20;--text-2:#49454f;--text-3:#79747e;
+  --accent:#6750a4;--accent-2:#7f67be;--accent-rgb:103,80,164;--on-accent:#ffffff;
+  --red:#b3261e;--green:#146c2e;--blue:#0b57d0;--orange:#e8710a;--cyan:#00696e;--purple:#6750a4;
+  --r:16px;--r-lg:24px;
+  --font-sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;--font-serif:"Roboto Serif",Georgia,serif;--mono:"Roboto Mono",ui-monospace,Consolas,monospace;
+}
+html[data-theme="custom"]{
+  --bg:#0c0d12;--surf:#181a22;--surf-2:#222530;--surf-3:#121319;--field:#14161d;
+  --text:#eef0f5;--text-2:#99a0b0;--text-3:#5a6070;
+  --accent:#4ea1c8;--accent-2:#6fc0e8;--accent-rgb:78,161,200;--on-accent:#08090c;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --r:14px;--r-lg:20px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+:root{--ag-odin:#c8a44e;--ag-aragorn:#3498db;--ag-gandalf:#9b59b6;--ag-gimli:#e67e22;--ag-legolas:#2ecc71;--ag-helm:#e74c3c;--ag-loki:#1abc9c;--ag-nathalie:#e8c960;}
+
+*{box-sizing:border-box;margin:0;padding:0;box-shadow:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:background .25s,color .25s}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);font-size:10px;color:#000;background:#e8c960;padding:3px 9px;border-radius:6px;opacity:.8;pointer-events:none}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--surf-2);border-radius:6px;border:3px solid transparent;background-clip:padding-box}
+.btn{font-family:var(--font-sans);font-size:12.5px;font-weight:600;padding:9px 15px;border-radius:10px;cursor:pointer;border:none;background:var(--surf-2);color:var(--text);transition:.13s}
+.btn:hover{background:var(--field)}
+.btn.accent{background:var(--accent);color:var(--on-accent)}.btn.accent:hover{background:var(--accent-2)}
+.btn.sm{font-size:11px;padding:6px 11px;border-radius:8px}
+.tagh{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--on-accent);background:var(--orange);border-radius:6px;padding:2px 8px;display:inline-flex;align-items:center;gap:5px}
+.portrait{border-radius:50%;overflow:hidden;flex:0 0 auto;background:var(--surf-2)}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait .fb{width:100%;height:100%;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;color:var(--on-accent);background:var(--accent)}
+.h-serif{font-family:var(--font-serif);font-weight:600;letter-spacing:-.01em}
+
+/* ---------- TOP BAR — 3 boutons, header allégé (plus de badge projet actif) ---------- */
+.topbar{height:60px;flex:0 0 60px;display:flex;align-items:center;gap:18px;padding:0 22px;background:var(--surf);position:relative;z-index:60}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--font-serif);font-weight:600;font-size:17px}
+.grue{width:25px;height:25px}
+.nav{display:flex;gap:6px;background:var(--surf-2);padding:5px;border-radius:14px}
+.navbtn{padding:9px 22px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text-2);cursor:pointer;transition:.13s;display:flex;align-items:center;gap:8px}
+.navbtn:hover{color:var(--text)}.navbtn.active{color:var(--on-accent);background:var(--accent)}
+.navbtn .nu{min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 5px}
+.navbtn.active .nu{background:var(--on-accent);color:var(--accent)}
+.spacer{flex:1}
+/* contrôles globaux du header (à droite) : sélecteur de charte rapide */
+.hctrl{display:flex;align-items:center;gap:9px;background:var(--surf-2);border-radius:11px;padding:7px 13px;cursor:pointer;font-size:12.5px;color:var(--text-2)}
+.hctrl .sw{width:15px;height:15px;border-radius:5px;background:var(--accent)}
+.hctrl b{color:var(--text)}
+
+.host{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;overflow:hidden;display:none}.view.active{display:flex}
+.explo{font-size:11.5px;color:var(--text-2);background:var(--surf-2);border-radius:11px;padding:11px 14px;margin-bottom:18px;display:flex;gap:9px;align-items:flex-start}
+.explo b{color:var(--accent)}
+
+/* ===================== PORTFOLIO ===================== */
+#v-portfolio{flex-direction:row}
+.pfcol{width:430px;flex:0 0 430px;overflow-y:auto;padding:26px 24px 40px;background:var(--bg)}
+.pfcol .head h1{font-size:23px}
+.pfcol .head .sub{font-family:var(--mono);font-size:11px;color:var(--text-3);margin-top:6px}
+.statline{display:flex;gap:10px;margin:16px 0 22px}
+.statline .s{flex:1;background:var(--surf);border-radius:var(--r);padding:13px 14px}
+.statline .s .n{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent)}
+.statline .s .l{font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px}
+.tiles{display:flex;flex-direction:column;gap:12px}
+.tile{background:var(--surf);border-radius:var(--r);padding:16px 17px;cursor:pointer;transition:.14s}
+.tile:hover{background:var(--surf-3)}.tile.isactive{background:var(--surf);outline:2px solid var(--accent)}
+.tile .th{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.tile .th b{font-size:15px;font-weight:650;font-family:var(--font-serif)}
+.tile .th .st{width:9px;height:9px;border-radius:50%}
+.tile .th .unread{margin-left:auto;min-width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 6px}
+.tile .th .working{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--accent);display:flex;align-items:center;gap:5px}
+.tile .th .working::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pl 1.3s infinite}
+.tile .desc{color:var(--text-2);font-size:12.5px;margin-bottom:11px}
+.tile .meta{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--text-3);margin-bottom:11px}
+.tile .meta .v{color:var(--text-2)}.tile .meta .qg{padding:2px 8px;border-radius:6px;font-weight:700;background:var(--surf-2)}
+.tile .meta .qg.ok{color:var(--green)}.tile .meta .qg.warn{color:var(--orange)}
+.tile .meta .git{margin-left:auto}.tile .meta .clean{color:var(--green)}.tile .meta .dirty{color:var(--orange)}.tile .meta .ahead{color:var(--accent)}
+.tile .tacts{display:flex;gap:7px}
+@keyframes pl{50%{opacity:.3}}
+.pfchan{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--surf-3)}
+.pfchanhead{padding:24px 28px 14px}.pfchanhead h2{font-size:19px}
+.pfchanhead .sub{font-family:var(--mono);font-size:11px;color:var(--text-3);margin-top:5px}
+.chanfilters{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.cf{font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:9px;background:var(--surf-2);color:var(--text-2);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+.cf[data-on="1"]{background:var(--accent);color:var(--on-accent)}
+.agf{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.agpill{font-family:var(--mono);font-size:10.5px;padding:5px 10px;border-radius:8px;background:var(--surf-2);cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text-2)}
+.agpill .d{width:7px;height:7px;border-radius:50%}.agpill.off{opacity:.3}
+.feed{flex:1;overflow-y:auto;padding:14px 28px 30px;display:flex;flex-direction:column;gap:14px}
+.ev{display:flex;gap:13px}
+.ev .marker{width:11px;height:11px;border-radius:50%;flex:0 0 11px;margin-top:5px;background:var(--text-3)}
+.ev.geste .marker{background:var(--accent)}.ev.agent .marker{background:var(--purple)}.ev.addr .marker{background:var(--text)}
+.ev .body .top{font-family:var(--mono);font-size:10.5px;color:var(--text-3);display:flex;align-items:center;gap:9px;margin-bottom:2px}
+.ev .body .top .who{font-weight:700}.ev .body .top .ch{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);background:var(--surf-2);padding:1px 7px;border-radius:5px}
+.ev .body .bd{font-size:13.5px;color:var(--text)}
+.ev.geste .body .bd{font-family:var(--mono);font-size:12px;color:var(--accent)}.ev.pensee .body .bd{font-style:italic;color:var(--text-3);font-size:12.5px}.ev.agent .body .bd{font-family:var(--mono);font-size:12px;color:var(--text-2)}
+
+/* ===================== WORKING ===================== */
+#v-working{flex-direction:row}
+.convlist{width:312px;flex:0 0 312px;background:var(--surf);display:flex;flex-direction:column;overflow:hidden}
+.convhead{padding:18px 16px 12px}.convhead .top{display:flex;align-items:center;gap:10px}
+.convhead .top .lg{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:var(--on-accent);font-weight:700}
+.convhead .top .nm{font-weight:650;font-size:15px}.convhead .top .cnt{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.convhead .top .plus{margin-left:auto;width:30px;height:30px;border-radius:9px;background:var(--surf-2);cursor:pointer;display:grid;place-items:center;color:var(--accent);font-size:17px}
+.convsearch{margin-top:12px;background:var(--field);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:8px}
+.convscroll{flex:1;overflow-y:auto;padding:8px}
+.convlbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);padding:12px 8px 6px}
+.conv{display:flex;align-items:center;gap:12px;padding:11px;border-radius:12px;cursor:pointer;transition:.12s}
+.conv:hover{background:var(--surf-3)}.conv.active{background:var(--surf-2)}
+.conv .av{width:44px;height:44px;border-radius:13px;flex:0 0 44px;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;font-size:16px;color:var(--on-accent);background:var(--accent);position:relative}
+.conv .av .wk{position:absolute;bottom:-2px;right:-2px;width:13px;height:13px;border-radius:50%;background:var(--green);outline:3px solid var(--surf)}
+.conv .mid{flex:1;min-width:0}.conv .nm{font-weight:650;font-size:13.5px}
+.conv .preview{font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.conv.unread .preview{color:var(--text-2);font-weight:500}
+.conv .right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.conv .time{font-family:var(--mono);font-size:9.5px;color:var(--text-3)}
+.conv .badge{min-width:19px;height:19px;border-radius:10px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:var(--mono);padding:0 5px}
+.chatpane{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chathead{flex:0 0 auto;padding:16px 20px;display:flex;align-items:center;gap:13px;background:var(--surf)}
+.chathead .av{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-family:var(--font-serif);font-weight:700;color:var(--on-accent);background:var(--accent)}
+.chathead .ti{flex:1}.chathead .ti h2{font-size:18px}.chathead .ti .stat{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:7px;margin-top:2px}
+.chathead .ti .stat .d{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.chathead .tools{display:flex;gap:8px}
+.chatfilters{flex:0 0 auto;padding:11px 20px;display:flex;align-items:center;gap:7px;background:var(--surf-3);flex-wrap:wrap}
+.styletoggle{margin-left:auto;display:flex;background:var(--surf-2);border-radius:10px;padding:3px}
+.styletoggle .so{font-size:11.5px;padding:6px 13px;border-radius:8px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:6px}
+.styletoggle .so.active{background:var(--accent);color:var(--on-accent);font-weight:600}
+.thread{flex:1;overflow-y:auto;padding:22px 24px 12px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:11px;max-width:78%}
+.msg .pa{width:36px;height:36px;border-radius:50%;flex:0 0 36px;align-self:flex-end;cursor:pointer}
+.msg .bub{background:var(--surf);border-radius:15px;padding:11px 14px}
+.msg .who{font-size:11.5px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.msg .bd{font-size:13px;color:var(--text)}
+.msg .time{font-family:var(--mono);font-size:9.5px;color:var(--text-3);margin-top:6px;text-align:right}
+.msg .relay{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.user .bub{background:var(--accent);color:var(--on-accent)}.msg.user .bd,.msg.user .time{color:var(--on-accent)}.msg.user .time{opacity:.75}
+.gblock{align-self:stretch;max-width:100%;background:var(--surf-3);border-radius:13px;overflow:hidden}
+.gblock .gh{font-family:var(--mono);font-size:10.5px;color:var(--text-3);padding:10px 14px;display:flex;align-items:center;gap:8px;background:var(--surf-2)}
+.gblock .gh .act{margin-left:auto;color:var(--accent)}
+.gblock pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:12px 14px;color:var(--accent);white-space:pre-wrap}
+.gblock .gfoot{display:flex;gap:7px;padding:10px 14px;background:var(--surf-2)}
+.thought{align-self:center;font-style:italic;font-size:12px;color:var(--text-3);max-width:70%;text-align:center}
+.relayline{align-self:center;font-family:var(--mono);font-size:11px;color:var(--purple);padding:5px 12px;background:var(--surf-2);border-radius:9px}
+.thread.tty{font-family:var(--mono);gap:3px;padding:16px 20px}
+.thread.tty .msg,.thread.tty .gblock,.thread.tty .thought,.thread.tty .relayline{display:none}
+.thread.tty .ttyline{display:flex;gap:11px;font-size:12px;padding:2px 0;max-width:100%;align-self:stretch}
+.thread:not(.tty) .ttyline{display:none}
+.ttyline .ts{color:var(--text-3)}.ttyline .ag{font-weight:700;flex:0 0 92px}.ttyline .gl{flex:0 0 16px;color:var(--text-3)}
+.ttyline.addr .bd{color:var(--text)}.ttyline.geste .bd{color:var(--accent)}.ttyline.pensee .bd{color:var(--text-3);font-style:italic}.ttyline.agent .bd{color:var(--purple)}
+.composer{flex:0 0 auto;background:var(--surf);padding:13px 18px;display:flex;align-items:center;gap:11px}
+.agentpick{display:flex;align-items:center;gap:9px;background:var(--surf-2);border-radius:11px;padding:6px 11px 6px 7px;cursor:pointer;position:relative}
+.agentpick .pa{width:28px;height:28px;border-radius:50%;flex:0 0 28px}
+.agentpick .nm{font-size:12.5px;font-weight:600}.agentpick .ch{color:var(--text-3);font-size:11px}
+/* l'option « assistant par défaut » a un liseré accent pour la distinguer */
+.agentpick.isdefault{outline:1px solid var(--accent)}
+.agentmenu{position:absolute;bottom:46px;left:0;width:230px;background:var(--surf);border-radius:13px;padding:7px;display:none;z-index:30}
+.agentmenu.open{display:block}.agentmenu .ai{display:flex;align-items:center;gap:9px;padding:8px;border-radius:9px;cursor:pointer;font-size:12.5px}
+.agentmenu .ai:hover{background:var(--surf-2)}.agentmenu .ai .pa{width:26px;height:26px;border-radius:50%;flex:0 0 26px}
+.agentmenu .ai.def{background:var(--surf-3);outline:1px solid var(--accent)}
+.agentmenu .ai .deftag{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--accent)}
+.agentmenu .sep{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);padding:8px 8px 4px}
+.composer .field{flex:1;background:var(--field);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--text);border:none;font-family:var(--font-sans)}
+.composer .ib{width:36px;height:36px;border-radius:10px;background:var(--surf-2);color:var(--text-2);cursor:pointer;display:grid;place-items:center;font-size:15px}
+.composer .send{font-size:12.5px;font-weight:600;padding:11px 17px;border-radius:11px;background:var(--accent);color:var(--on-accent);border:none;cursor:pointer;white-space:nowrap}
+
+/* ===================== RÉGLAGES ===================== */
+#v-settings{flex-direction:row}
+.setnav{width:240px;flex:0 0 240px;background:var(--surf);overflow-y:auto;padding:22px 14px}
+.setnav h3{font-family:var(--mono);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);padding:8px 10px;margin-top:10px}
+.seti{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;font-size:13.5px;color:var(--text-2)}
+.seti:hover{background:var(--surf-2)}.seti.active{background:var(--accent);color:var(--on-accent);font-weight:600}
+.seti .e{width:18px;text-align:center}
+.setmain{flex:1;overflow-y:auto;padding:28px 30px 50px}
+.setpanel{display:none}.setpanel.active{display:block}
+.setpanel h1{font-size:24px;margin-bottom:6px}
+.setpanel .lead{color:var(--text-2);font-size:13.5px;margin-bottom:24px;max-width:72ch}
+.projselbar{display:flex;align-items:center;gap:12px;background:var(--surf);border-radius:13px;padding:12px 16px;margin-bottom:24px}
+.projselbar .lbl{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.projselbar select{background:var(--field);color:var(--text);border:none;border-radius:9px;padding:9px 13px;font-size:13.5px;font-family:var(--font-sans);font-weight:600;cursor:pointer}
+.block{background:var(--surf);border-radius:var(--r-lg);padding:22px 24px;margin-bottom:18px}
+.block .bt{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.block .bt h2{font-size:17px;font-family:var(--font-serif)}.block .bt .e{font-size:18px;color:var(--accent)}.block .bt .tagh{margin-left:auto}
+.fieldrow{display:flex;align-items:center;gap:18px;padding:13px 0}
+.fieldrow .lab{flex:0 0 220px}.fieldrow .lab .t{font-size:13.5px;font-weight:600}.fieldrow .lab .d{font-size:11.5px;color:var(--text-3)}
+.fieldrow .ctl{flex:1;display:flex;align-items:center;gap:10px}
+.seg{display:flex;background:var(--surf-2);border-radius:10px;padding:3px}
+.seg .o{font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;color:var(--text-2)}.seg .o.active{background:var(--accent);color:var(--on-accent);font-weight:600}
+.range{flex:1;height:8px;border-radius:5px;background:var(--surf-2);position:relative;max-width:240px}
+.range .fill{position:absolute;left:0;top:0;bottom:0;width:60%;background:var(--accent);border-radius:5px}
+.range .knob{position:absolute;left:60%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:var(--accent)}
+.themegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.tcard{background:var(--surf-3);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:9px}
+.tcard.sel{outline:2px solid var(--accent)}
+.tcard .swatch{height:40px;border-radius:8px;display:flex;overflow:hidden}.tcard .swatch i{flex:1}
+.tcard .nm{font-size:12.5px;font-weight:600}.tcard .nm small{display:block;font-family:var(--mono);font-size:10px;color:var(--text-3);font-weight:400}
+.customwrap{margin-top:16px;background:var(--surf-3);border-radius:14px;padding:18px;display:none}
+.customwrap.show{display:block}
+.customgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.cpick{display:flex;align-items:center;gap:11px;background:var(--surf);border-radius:11px;padding:10px 12px}
+.cpick input[type=color]{width:34px;height:34px;border:none;border-radius:8px;background:none;cursor:pointer;padding:0}
+.cpick .cl{flex:1}.cpick .cl .t{font-size:12.5px;font-weight:600}.cpick .cl .v{font-family:var(--mono);font-size:10.5px;color:var(--text-3)}
+
+/* === carte ASSISTANT PROJET (modif v5) === */
+.assistantcard{background:var(--surf);border-radius:var(--r-lg);padding:22px 24px;margin-bottom:18px;outline:2px solid var(--accent)}
+.assistantcard .bt{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.assistantcard .bt .ava{width:46px;height:46px;border-radius:13px;flex:0 0 46px}
+.assistantcard .bt .ti h2{font-size:17px;font-family:var(--font-serif)}
+.assistantcard .bt .ti .d{font-size:12px;color:var(--text-2)}
+.assistantcard .bt .badge{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--surf-2);border-radius:7px;padding:4px 10px}
+.assistantcard .roles{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.assistantcard .roles .rr{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text-2)}
+.assistantcard .roles .rr .b{color:var(--accent);flex:0 0 auto;margin-top:1px}
+.assistantcard .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.assistantcard .ctl-card{background:var(--surf-3);border-radius:12px;padding:13px 15px}
+.assistantcard .ctl-card .l{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:9px}
+.bigsel{display:flex;align-items:center;gap:9px;background:var(--field);border-radius:10px;padding:10px 13px;cursor:pointer;font-size:13px;font-weight:600}
+.bigsel .pa{width:26px;height:26px;border-radius:50%;flex:0 0 26px}
+.bigsel .arr{margin-left:auto;color:var(--text-3)}
+.modelsel{display:flex;flex-wrap:wrap;gap:6px}
+.ms{font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:8px;background:var(--field);color:var(--text-2);cursor:pointer}
+.ms.sel{background:var(--accent);color:var(--on-accent)}
+
+/* team assembly enrichi */
+.teamtools{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.teamtool{flex:1;min-width:220px;background:var(--surf-3);border-radius:13px;padding:15px}
+.teamtool .h{display:flex;align-items:center;gap:9px;margin-bottom:9px}.teamtool .h .e{font-size:17px;color:var(--accent)}.teamtool .h b{font-size:13.5px}
+.teamtool .d{font-size:11.5px;color:var(--text-3);margin-bottom:11px}
+.teamtool .pi{display:flex;gap:7px}.teamtool .pi input{flex:1;background:var(--field);border:none;border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--text)}
+.skillfilter{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.skf{font-size:11px;padding:4px 9px;border-radius:7px;background:var(--surf-2);color:var(--text-2);cursor:pointer}.skf.on{background:var(--accent);color:var(--on-accent)}
+.teamgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tmember{background:var(--surf-3);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;cursor:pointer}
+.tmember .portrait{width:56px;height:56px}.tmember .nm{font-size:13px;font-weight:650}.tmember .ro{font-size:10.5px;color:var(--text-3)}
+.tmember .tog{width:38px;height:21px;border-radius:11px;background:var(--surf-2);position:relative}.tmember .tog::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--text-3);transition:.15s}
+.tmember.on .tog{background:var(--accent)}.tmember.on .tog::after{left:19px;background:var(--on-accent)}.tmember.off{opacity:.5}
+.tmember.new{justify-content:center;border:2px dashed var(--surf-2);color:var(--accent)}
+.tmember.new .plus{font-size:30px}
+
+/* fiche de perso d'agent */
+.persosheet{display:grid;grid-template-columns:240px 1fr;gap:22px}
+.persoside{background:var(--surf-3);border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.persoside .portrait{width:148px;height:148px;margin-bottom:8px}
+.persoside .pn{font-size:20px;font-weight:700;font-family:var(--font-serif)}
+.persoside .pr{font-size:12px;color:var(--text-2)}
+.persoside .pp{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;background:var(--surf-2);border-radius:8px;padding:5px 11px;margin-top:8px}
+.persoside .pp .d{width:9px;height:9px;border-radius:50%}
+.persoside .pmenu{display:flex;flex-direction:column;gap:6px;margin-top:14px;width:100%}
+.persobody{display:flex;flex-direction:column;gap:16px}
+.agpicker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.agchip{display:flex;align-items:center;gap:8px;background:var(--surf-3);border-radius:10px;padding:7px 11px 7px 8px;cursor:pointer;font-size:12.5px}
+.agchip .portrait{width:26px;height:26px}.agchip.sel{background:var(--accent);color:var(--on-accent)}
+textarea.md{width:100%;min-height:180px;background:var(--field);border:none;border-radius:11px;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:13px;resize:vertical}
+.prompt-in{display:flex;gap:8px;margin-top:8px}
+.prompt-in input{flex:1;background:var(--field);border:none;border-radius:10px;color:var(--text);padding:11px 13px;font-size:13px}
+.diff{margin-top:14px;background:var(--surf-3);border-radius:11px;overflow:hidden;display:none}.diff.show{display:block}
+.diff .dh{font-family:var(--mono);font-size:10.5px;color:var(--text-3);padding:9px 13px;background:var(--surf-2)}
+.diff pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:11px 13px;white-space:pre-wrap}
+.diff .add{color:var(--green);background:var(--surf-2);display:block}
+.diff .dactions{display:flex;gap:8px;padding:11px 13px;background:var(--surf-2)}
+.matrix{width:100%;border-collapse:separate;border-spacing:0 4px;font-size:12.5px}
+.matrix th{font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--text-3);text-align:left;padding:4px 11px}
+.matrix td{padding:11px;background:var(--surf-3);vertical-align:middle}
+.matrix td:first-child{border-radius:9px 0 0 9px;font-weight:600}.matrix td:last-child{border-radius:0 9px 9px 0}
+.selout{font-family:var(--mono);font-size:11.5px;background:var(--field);border-radius:8px;padding:6px 11px;color:var(--text-2);cursor:pointer;display:inline-block}
+.skillchips{display:flex;gap:6px;flex-wrap:wrap}
+.skillchip{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:7px;background:var(--surf-2);color:var(--text-2)}
+.skillrow{display:flex;align-items:center;gap:14px;background:var(--surf-3);border-radius:11px;padding:13px 16px;margin-bottom:8px}
+.skillrow .ic{width:36px;height:36px;border-radius:10px;background:var(--surf-2);display:grid;place-items:center;font-size:17px;color:var(--accent)}
+.skillrow .mid{flex:1}.skillrow .nm{font-size:13.5px;font-weight:600}.skillrow .d{font-size:11.5px;color:var(--text-3)}
+.skillrow .tog{width:40px;height:22px;border-radius:11px;background:var(--surf-2);position:relative;cursor:pointer;flex:0 0 40px}.skillrow .tog::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text-3);transition:.15s}
+.skillrow.on .tog{background:var(--accent)}.skillrow.on .tog::after{left:20px;background:var(--on-accent)}
+.targetcards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
+.tgcard{background:var(--surf-3);border-radius:13px;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:8px}.tgcard.sel{outline:2px solid var(--accent)}
+.tgcard .h{display:flex;align-items:center;gap:9px}.tgcard .h .d{width:9px;height:9px;border-radius:50%}.tgcard .h b{font-size:14px;font-weight:650}
+.tgcard .kv{font-family:var(--mono);font-size:11px;color:var(--text-3);line-height:1.8}.tgcard .kv b{color:var(--text-2)}
+
+/* ===================== ÉDITEUR DE MÉTHODE (méta) ===================== */
+.methtabs{display:flex;gap:6px;background:var(--surf-2);padding:5px;border-radius:12px;margin-bottom:20px;width:fit-content}
+.mt{font-size:12.5px;padding:8px 15px;border-radius:9px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:7px}
+.mt.active{background:var(--accent);color:var(--on-accent);font-weight:600}
+.methpanel{display:none}.methpanel.active{display:block}
+.hookrow{display:flex;align-items:center;gap:14px;background:var(--surf-3);border-radius:12px;padding:14px 16px;margin-bottom:9px}
+.hookrow .ic{width:38px;height:38px;border-radius:10px;background:var(--surf-2);display:grid;place-items:center;font-size:17px;color:var(--accent)}
+.hookrow .mid{flex:1}.hookrow .nm{font-size:13.5px;font-weight:650;font-family:var(--mono)}.hookrow .d{font-size:11.5px;color:var(--text-3)}
+.hookrow .ev2{font-family:var(--mono);font-size:10px;color:var(--text-3);background:var(--surf-2);border-radius:6px;padding:2px 8px}
+.hookrow .tog{width:40px;height:22px;border-radius:11px;background:var(--surf-2);position:relative;cursor:pointer;flex:0 0 40px}.hookrow .tog::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text-3);transition:.15s}
+.hookrow.on .tog{background:var(--accent)}.hookrow.on .tog::after{left:20px;background:var(--on-accent)}
+.denylist{background:var(--surf-3);border-radius:12px;padding:6px;margin-bottom:14px}
+.denyrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;font-family:var(--mono);font-size:12px}
+.denyrow:hover{background:var(--surf-2)}
+.denyrow .cmd{flex:1;color:var(--red)}.denyrow .x{cursor:pointer;color:var(--text-3)}
+.jalon{display:flex;align-items:center;gap:14px;background:var(--surf-3);border-radius:12px;padding:14px 16px;margin-bottom:9px}
+.jalon .ph{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:700;font-family:var(--mono);color:var(--on-accent);font-size:13px}
+.jalon .mid{flex:1}.jalon .nm{font-size:13.5px;font-weight:650}.jalon .d{font-size:11.5px;color:var(--text-3)}
+.jalon .gate{font-family:var(--mono);font-size:10px;color:var(--text-2);background:var(--surf-2);border-radius:6px;padding:3px 9px}
+.graphwrap{background:var(--surf-3);border-radius:var(--r-lg);padding:20px;position:relative;min-height:380px;overflow:hidden}
+.graphwrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.gnode{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:grab;transform:translate(-50%,-50%);user-select:none}
+.gnode .portrait{width:52px;height:52px;outline:2px solid var(--surf)}
+.gnode .gl{font-size:11px;font-weight:700;font-family:var(--mono);background:var(--surf);border-radius:7px;padding:2px 8px}
+.graphlegend{position:absolute;bottom:14px;left:18px;font-family:var(--mono);font-size:10.5px;color:var(--text-3);display:flex;gap:16px}
+.graphlegend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:5px}
+</style>
+</head>
+<body>
+
+<!-- ===================== TOP BAR — 3 boutons, allégé (plus de badge projet actif) ===================== -->
+<div class="topbar">
+  <div class="brand">
+    <svg class="grue" viewBox="0 0 24 24" fill="none"><path d="M4 20 L4 4 L15 4" stroke="var(--accent)" stroke-width="1.7"/><path d="M4 4 L19 13" stroke="var(--accent)" stroke-width="1.7"/><path d="M19 13 L19 17" stroke="var(--accent-2)" stroke-width="1.7"/><circle cx="19" cy="18.5" r="1.5" fill="var(--accent-2)"/></svg>
+    IakaCockpit
+  </div>
+  <div class="nav" id="nav">
+    <div class="navbtn active" data-v="portfolio">Portfolio</div>
+    <div class="navbtn" data-v="working">Working <span class="nu" id="worknu">2</span></div>
+    <div class="navbtn" data-v="settings">Réglages</div>
+  </div>
+  <div class="spacer"></div>
+  <!-- contrôle global : charte (le badge « projet actif » a été retiré en v5) -->
+  <div class="hctrl" id="hctrl"><span class="sw"></span>Charte : <b id="hctrl-name">NaonEdge dark</b> ▾</div>
+</div>
+
+<div class="host">
+
+  <!-- =============== PORTFOLIO =============== -->
+  <div class="view active" id="v-portfolio">
+    <div class="pfcol">
+      <div class="head"><h1 class="h-serif">Portefeuille</h1><div class="sub">~/work · scan il y a 2 min · clic = ouvre Working sur ce projet · « Aperçu » = preview contextuel</div></div>
+      <div class="statline">
+        <div class="s"><div class="n">29</div><div class="l">projets</div></div>
+        <div class="s"><div class="n">4</div><div class="l">actifs</div></div>
+        <div class="s"><div class="n">2</div><div class="l">non-lus</div></div>
+        <div class="s"><div class="n">1</div><div class="l">alerte</div></div>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <div class="pfchan">
+      <div class="pfchanhead">
+        <h2 class="h-serif">Mains courantes · 3-canaux</h2>
+        <div class="sub">tous projets · aujourd'hui · flux de la méthode</div>
+        <div class="chanfilters" id="chanfilters">
+          <div class="cf" data-on="1" data-c="addr">💬 adresse</div><div class="cf" data-on="1" data-c="geste">⚙ geste</div>
+          <div class="cf" data-on="1" data-c="pensee">… pensée</div><div class="cf" data-on="1" data-c="agent">@ agent</div>
+        </div>
+        <div class="agf" id="chanagf"></div>
+      </div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <!-- =============== WORKING =============== -->
+  <div class="view" id="v-working">
+    <div class="convlist">
+      <div class="convhead">
+        <div class="top"><span class="lg">◆</span><span class="nm">Projets</span><span class="cnt">(4 working)</span><span class="plus">＋</span></div>
+        <div class="convsearch">🔍 Rechercher un projet…</div>
+      </div>
+      <div class="convscroll">
+        <div class="convlbl">Working · attente d'avis</div><div id="convworking"></div>
+        <div class="convlbl">Working · en cours</div><div id="convactive"></div>
+        <div class="convlbl">Au repos</div><div id="convidle"></div>
+      </div>
+    </div>
+    <div class="chatpane">
+      <div class="chathead">
+        <div class="av" id="chav">◆</div>
+        <div class="ti"><h2 class="h-serif" id="chtitle">iakacockpit</h2><div class="stat"><span class="d"></span><span id="chstatus">Working · Gandalf demande un avis</span></div></div>
+        <div class="tools"><button class="btn accent sm" id="workpreview">🖥 Aperçu</button><button class="btn accent sm">OK / valider</button><button class="btn sm">⚙</button></div>
+      </div>
+      <div class="chatfilters">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px">canaux</span>
+        <div class="cf" data-on="1" data-c="addr">💬 adresse</div><div class="cf" data-on="1" data-c="geste">⚙ geste</div>
+        <div class="cf" data-on="1" data-c="pensee">… pensée</div><div class="cf" data-on="1" data-c="agent">@ agent</div>
+        <div class="styletoggle" id="styletoggle"><div class="so active" data-s="msg">💬 messages</div><div class="so" data-s="tty">⬡ terminal</div></div>
+      </div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <div class="agentpick isdefault" id="agentpick">
+          <span class="portrait pa" id="ap-portrait" data-ag="aragorn"></span>
+          <div><div class="nm" id="ap-name">Assistant (Aragorn)</div><div class="ch" id="ap-ch">destinataire par défaut</div></div>
+          <span style="color:var(--text-3);margin-left:4px">▾</span>
+          <div class="agentmenu" id="agentmenu"></div>
+        </div>
+        <input class="field" id="composefield" placeholder="Message à iakacockpit… (sans cibler personne → l'Assistant répond)">
+        <span class="ib" title="fichiers">📎</span><span class="ib" title="images">🖼</span>
+        <button class="send" id="sendbtn">Envoyer à l'Assistant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== RÉGLAGES =============== -->
+  <div class="view" id="v-settings">
+    <div class="setnav">
+      <h3>Globaux</h3>
+      <div class="seti active" data-set="general"><span class="e">🎛</span>Settings généraux</div>
+      <div class="seti" data-set="method"><span class="e">⚖</span>Méthode iakaframe</div>
+      <h3>Projet · <span id="setprojname" style="color:var(--accent)">iakacockpit</span></h3>
+      <div class="seti" data-set="assistant"><span class="e">🤝</span>Assistant du projet</div>
+      <div class="seti" data-set="team"><span class="e">👥</span>Assemblage team</div>
+      <div class="seti" data-set="agents"><span class="e">🪪</span>Fiche &amp; settings agents</div>
+      <div class="seti" data-set="skills"><span class="e">🧩</span>Settings skills</div>
+      <div class="seti" data-set="target"><span class="e">🎯</span>Settings target</div>
+    </div>
+    <div class="setmain">
+
+      <!-- GÉNÉRAUX + CUSTOM -->
+      <div class="setpanel active" id="set-general">
+        <h1 class="h-serif">Settings généraux</h1>
+        <div class="lead">Réglages globaux de l'interface, au niveau chapeau.</div>
+        <div class="block">
+          <div class="bt"><span class="e">🖥</span><h2>Interface</h2></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Densité</div><div class="d">confort ↔ compact</div></div><div class="ctl"><div class="seg"><div class="o">Confort</div><div class="o active">Standard</div><div class="o">Compact</div></div></div></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Échelle / taille</div><div class="d">zoom de l'IHM</div></div><div class="ctl"><div class="range"><div class="fill"></div><div class="knob"></div></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-2)">110%</span></div></div>
+        </div>
+        <div class="block">
+          <div class="bt"><span class="e">🎨</span><h2>Charte (thème)</h2></div>
+          <div class="lead" style="margin-bottom:14px">Le clic repeint TOUTE l'app en direct. « Custom » ouvre des color pickers pour composer ton thème.</div>
+          <div class="themegrid" id="themegrid"></div>
+          <div class="customwrap" id="customwrap">
+            <div class="bt"><span class="e">🖌</span><h2 style="font-size:15px">Thème custom — repeint en live</h2><span class="tagh" style="margin-left:auto;background:var(--accent)">par-dessus le contrat de tokens</span></div>
+            <div class="customgrid" id="customgrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MÉTHODE (méta) -->
+      <div class="setpanel" id="set-method">
+        <h1 class="h-serif">Méthode iakaframe</h1>
+        <div class="lead">Éditeur méta : le Cockpit configure sa propre méthode (global, niveau chapeau). <span class="tagh">horizon</span></div>
+        <div class="methtabs" id="methtabs">
+          <div class="mt active" data-m="hooks">🪝 Hooks</div>
+          <div class="mt" data-m="deny">🚫 Deny</div>
+          <div class="mt" data-m="jalons">🏁 Jalons</div>
+          <div class="mt" data-m="graph">🕸 Relations inter-agents</div>
+        </div>
+        <div class="methpanel active" id="meth-hooks"><div class="block"><div class="bt"><span class="e">🪝</span><h2>Hooks / gardes</h2></div><div id="hooklist"></div></div></div>
+        <div class="methpanel" id="meth-deny"><div class="block"><div class="bt"><span class="e">🚫</span><h2>Denylist / permissions</h2></div><div class="denylist" id="denylist"></div><div class="prompt-in"><input placeholder="ajouter un motif refusé… ex : rm -rf /"><button class="btn accent">+ Ajouter</button></div></div></div>
+        <div class="methpanel" id="meth-jalons"><div class="block"><div class="bt"><span class="e">🏁</span><h2>Jalons / gates</h2></div><div id="jalonlist"></div><button class="btn sm" style="margin-top:6px">+ Définir un jalon</button></div></div>
+        <div class="methpanel" id="meth-graph"><div class="block"><div class="bt"><span class="e">🕸</span><h2>Graphe de délégation — qui délègue à qui</h2><span class="tagh">éditable</span></div>
+          <div class="lead" style="margin:0 0 14px">Glisse les nœuds. Une flèche = une relation de délégation autorisée. (Mock : graphe non persistant.)</div>
+          <div class="graphwrap" id="graphwrap"><svg id="graphsvg"></svg><div class="graphlegend"><span><i style="background:var(--accent)"></i>délégation</span><span><i style="background:var(--purple)"></i>relais / restitution</span></div></div></div></div>
+      </div>
+
+      <!-- ASSISTANT DU PROJET (modif v5) -->
+      <div class="setpanel" id="set-assistant">
+        <h1 class="h-serif">Assistant du projet</h1>
+        <div class="lead">Le « bras droit » du projet (proxy Aragorn), <b>distinct de la matrice target/modèle par agent</b>. Il tient la barre quand tu n'es pas là.</div>
+        <div class="projselbar"><span class="lbl">projet</span><select id="assistproj"></select></div>
+        <div class="assistantcard">
+          <div class="bt"><span class="portrait ava" id="assist-portrait" data-ag="aragorn"></span>
+            <div class="ti"><h2>Modèle par défaut / Assistant</h2><div class="d">répond, trie, résume — supervisé</div></div>
+            <span class="badge">proxy projet</span></div>
+          <div class="roles">
+            <div class="rr"><span class="b">▸</span><span>Répond quand <b>aucun agent n'est explicitement adressé</b> dans le composeur de Working (le destinataire « par défaut »).</span></div>
+            <div class="rr"><span class="b">▸</span><span>Trie / résume / rédige pour toi : <b>triage des projets qui réclament un avis</b>.</span></div>
+            <div class="rr"><span class="b">▸</span><span>Peut répondre <b>en ton absence</b> (pilote supervisé).</span></div>
+          </div>
+          <div class="ctrls">
+            <div class="ctl-card"><div class="l">Agent-proxy</div><div class="bigsel"><span class="portrait pa" data-ag="aragorn"></span>Aragorn<span class="arr">▾</span></div><div style="font-size:11px;color:var(--text-3);margin-top:7px">par défaut le coordinateur du projet</div></div>
+            <div class="ctl-card"><div class="l">Modèle (via LiteLLM)</div><div class="modelsel" id="assistmodel"><span class="ms sel">claude-sonnet</span><span class="ms">claude-opus</span><span class="ms">ollama/qwen</span><span class="ms">ollama/llama</span></div><div style="font-size:11px;color:var(--text-3);margin-top:9px">le routage réel passe par LiteLLM</div></div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="bt"><span class="e">⚙</span><h2>Comportement</h2></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Réponse en l'absence du user</div><div class="d">pilote supervisé</div></div><div class="ctl"><div class="seg"><div class="o active">Proposer (brouillon)</div><div class="o">Répondre auto</div><div class="o">Silencieux</div></div></div></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Triage des avis</div><div class="d">projets réclamant un avis</div></div><div class="ctl"><div class="seg"><div class="o active">Résumer + prioriser</div><div class="o">Lister seulement</div></div></div></div>
+        </div>
+      </div>
+
+      <!-- TEAM enrichi -->
+      <div class="setpanel" id="set-team">
+        <h1 class="h-serif">Assemblage de la team</h1>
+        <div class="lead">Composer l'équipe du projet : armer/désarmer, créer un agent, ou générer une team par prompt / par skills.</div>
+        <div class="projselbar"><span class="lbl">projet</span><select id="teamproj"></select></div>
+        <div class="teamtools">
+          <div class="teamtool"><div class="h"><span class="e">✨</span><b>Créer une team par prompt</b></div><div class="d">Décris la team voulue → composition d'agents proposée.</div><div class="pi"><input placeholder='ex : "une team sécu + tests pour un service API"'><button class="btn accent sm">▶</button></div></div>
+          <div class="teamtool"><div class="h"><span class="e">🧩</span><b>Assembler par skills</b></div><div class="d">Filtre les agents par compétence.</div><div class="skillfilter" id="skillfilter"><span class="skf on">design</span><span class="skf">tests</span><span class="skf">sécurité</span><span class="skf">specs</span><span class="skf">forge</span><span class="skf">doc</span></div></div>
+        </div>
+        <div class="block"><div class="bt"><span class="e">👥</span><h2>Royaumes &amp; agents</h2></div><div class="teamgrid" id="teamgrid"></div></div>
+      </div>
+
+      <!-- FICHE & SETTINGS AGENTS -->
+      <div class="setpanel" id="set-agents">
+        <h1 class="h-serif">Fiche &amp; settings des agents</h1>
+        <div class="lead">Fiche de perso (portrait, identité, skills) + agent.md éditable + admin-par-prompt + matrice target/modèle. <span class="tagh">migré ici</span></div>
+        <div class="projselbar"><span class="lbl">projet</span><select id="agentproj"></select></div>
+        <div class="agpicker" id="agpicker"></div>
+        <div class="persosheet">
+          <div class="persoside">
+            <div class="portrait" id="perso-portrait" data-ag="loki"></div>
+            <div class="pn" id="perso-name">Loki</div>
+            <div class="pr" id="perso-role">design / supports · IAKACOCKPIT</div>
+            <div class="pp"><span class="d" id="perso-dot" style="background:var(--ag-loki)"></span><span id="perso-pin">🟦 pastille cyan</span></div>
+            <div class="skillchips" id="perso-skills" style="margin-top:12px;justify-content:center"></div>
+            <div class="pmenu"><button class="btn sm">⬆ upload portrait</button><button class="btn sm">✦ générer (ComfyUI)</button><button class="btn sm">⟲ réf charte active</button></div>
+          </div>
+          <div class="persobody">
+            <div class="block" style="margin:0"><div class="bt"><span class="e">📝</span><h2>agent.md</h2></div><textarea class="md" id="ad-md"></textarea><div style="font-size:11px;color:var(--text-3);margin-top:8px">Source de vérité = le .md.</div></div>
+            <div class="block" style="margin:0"><div class="bt"><span class="e">🪄</span><h2>Admin par prompt</h2><span class="tagh">horizon</span></div>
+              <div style="font-size:12.5px;color:var(--text-2);margin-bottom:8px">Modifier cet agent, ou <b>créer un nouvel agent</b> par description (diff proposé, jamais d'écriture aveugle).</div>
+              <div class="prompt-in"><input id="ad-prompt" placeholder='ex : "ajoute une règle AA" — ou — "crée un agent QA accessibilité"'><button class="btn accent" id="ad-go">▶</button></div>
+              <div class="diff" id="ad-diff"><div class="dh">↳ diff proposé sur agent.md</div><pre><span style="color:var(--text-3)">  ## Périmètre</span>
+<span class="add">+ ## Accessibilité (ajoutée par prompt)</span>
+<span class="add">+ - Contraste AA obligatoire (≥ 4.5:1).</span></pre><div class="dactions"><button class="btn accent sm">Appliquer</button><button class="btn sm" id="ad-cancel">Annuler</button></div></div>
+            </div>
+            <div class="block" style="margin:0"><div class="bt"><span class="e">🎯</span><h2>Matrice target / modèle</h2><span class="tagh">horizon</span></div>
+              <table class="matrix"><tr><th>Tâche</th><th>Modèle (LiteLLM)</th><th>Cible</th></tr>
+                <tr><td>design</td><td><span class="selout">claude-opus ▾</span></td><td><span class="selout">local ▾</span></td></tr>
+                <tr><td>itération</td><td><span class="selout">ollama/qwen ▾</span></td><td><span class="selout">local ▾</span></td></tr></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SKILLS -->
+      <div class="setpanel" id="set-skills">
+        <h1 class="h-serif">Settings des skills</h1>
+        <div class="lead">Inventaire et activation des skills pour ce projet.</div>
+        <div class="projselbar"><span class="lbl">projet</span><select id="skillproj"></select></div>
+        <div class="block"><div class="bt"><span class="e">🧩</span><h2>Skills</h2></div><div id="skilllist"></div></div>
+      </div>
+
+      <!-- TARGET -->
+      <div class="setpanel" id="set-target">
+        <h1 class="h-serif">Settings de la target</h1>
+        <div class="lead">Où est Docker pour ce projet + type de projet (cadre le preview contextuel). <span class="tagh">horizon · multi-target</span></div>
+        <div class="projselbar"><span class="lbl">projet</span><select id="targetproj"></select></div>
+        <div class="block"><div class="bt"><span class="e">🎯</span><h2>Où est Docker</h2></div>
+          <div class="targetcards" id="targetcards">
+            <div class="tgcard sel" data-tg="sandbox"><div class="h"><span class="d" style="background:var(--green)"></span><b>Sandbox</b></div><div class="kv"><b>hôte</b> local éphémère · <b>statut</b> prêt</div></div>
+            <div class="tgcard" data-tg="local"><div class="h"><span class="d" style="background:var(--blue)"></span><b>Docker local</b></div><div class="kv"><b>hôte</b> docker desktop · <b>statut</b> à démarrer</div></div>
+            <div class="tgcard" data-tg="lan"><div class="h"><span class="d" style="background:var(--orange)"></span><b>Docker LAN</b></div><div class="kv"><b>hôte</b> iakabox .11 · <b>statut</b> joignable</div></div>
+            <div class="tgcard" data-tg="wan"><div class="h"><span class="d" style="background:var(--purple)"></span><b>Docker WAN</b></div><div class="kv"><b>hôte</b> VPS · <b>statut</b> non prov.</div></div>
+          </div>
+        </div>
+        <div class="block"><div class="bt"><span class="e">📦</span><h2>Type de projet</h2></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Type</div><div class="d">cadre la cible</div></div><div class="ctl"><div class="seg"><div class="o active">Tauri desktop</div><div class="o">Web/SPA</div><div class="o">Service/API</div></div></div></div>
+          <div class="fieldrow"><div class="lab"><div class="t">Port hôte preview</div><div class="d">distinct par projet</div></div><div class="ctl"><span class="selout">1420</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== PREVIEW OVERLAY (contextuel) ===================== -->
+<div id="pvoverlay" style="position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)">
+  <div style="width:min(880px,92vw);height:min(620px,88vh);background:var(--surf);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--surf-2)">
+      <span style="font-size:17px" class="h-serif">🖥 Aperçu</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--surf);border-radius:8px;padding:4px 10px">⛓ projet : <b id="pvo-proj">iakacockpit</b></span>
+      <span class="tagh">horizon</span>
+      <div style="flex:1"></div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text-3)">cible <b id="pvo-tg" style="color:var(--text-2)">Sandbox</b> · réglée dans Réglages → target</span>
+      <button class="btn sm" id="pvo-close">✕ Fermer</button>
+    </div>
+    <div style="height:38px;flex:0 0 38px;background:var(--surf-3);display:flex;align-items:center;gap:9px;padding:0 14px">
+      <span style="display:flex;gap:6px"><i style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></i><i style="width:11px;height:11px;border-radius:50%;background:#febc2e"></i><i style="width:11px;height:11px;border-radius:50%;background:#28c840"></i></span>
+      <span style="flex:1;background:var(--surf);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--text-2);padding:5px 11px" id="pvo-url">http://localhost:1420</span>
+      <span class="btn sm">↻</span>
+    </div>
+    <div style="flex:1;display:grid;place-items:center;background:var(--surf-3)">
+      <div style="text-align:center;padding:30px">
+        <div style="width:68px;height:68px;border-radius:20px;background:var(--accent);display:grid;place-items:center;margin:0 auto 16px;font-size:32px;color:var(--on-accent)">◆</div>
+        <h3 class="h-serif" style="font-size:23px;margin-bottom:7px" id="pvo-appname">iakacockpit (preview)</h3>
+        <p style="color:var(--text-2);font-size:13px">aperçu embarqué · cible <b id="pvo-tg2">Sandbox</b> · <span style="color:var(--green)">live</span></p>
+      </div>
+    </div>
+    <div style="padding:14px 20px;background:var(--surf-2);display:flex;gap:8px"><button class="btn accent sm">▸ Démarrer</button><button class="btn sm">↻ Recharger</button><button class="btn sm">⊘ Arrêter</button></div>
+  </div>
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<script src="../convergence/portraits.data.js"></script>
+<script>
+/* ===================== DONNÉES (alignées v4) ===================== */
+const AGENTS=[
+  {id:"odin",name:"Odin",role:"portefeuille",color:"var(--ag-odin)",pin:"🟠",on:true,skills:["specs","arbitrage"]},
+  {id:"aragorn",name:"Aragorn",role:"coordination",color:"var(--ag-aragorn)",pin:"🔵",on:true,skills:["coordination"]},
+  {id:"gandalf",name:"Gandalf",role:"architecture / specs",color:"var(--ag-gandalf)",pin:"🟣",on:true,skills:["specs"]},
+  {id:"gimli",name:"Gimli",role:"implémentation",color:"var(--ag-gimli)",pin:"🟠",on:true,skills:["forge"]},
+  {id:"legolas",name:"Legolas",role:"tests / qualité",color:"var(--ag-legolas)",pin:"🟢",on:true,skills:["tests"]},
+  {id:"helm",name:"Helm",role:"sécurité / CI",color:"var(--ag-helm)",pin:"🔴",on:true,skills:["sécurité"]},
+  {id:"loki",name:"Loki",role:"design / supports",color:"var(--ag-loki)",pin:"🟦",on:true,skills:["design"]},
+  {id:"nathalie",name:"Nathalie",role:"doc / relation",color:"var(--ag-nathalie)",pin:"🟡",on:false,skills:["doc"]},
+];
+const PROJECTS=[
+  {id:"iakacockpit",desc:"Cœur de l'écosystème · orchestrateur chapeau",st:"green",v:"v0.1.0",git:"ahead",ahead:2,qg:"ok",working:true,unread:1,wait:true,last:"Gandalf : avis sur le câblage LiteLLM ?",time:"12:10"},
+  {id:"iakaboxlogs",desc:"Mains courantes MQTT → CouchDB · VM2",st:"green",v:"v1.0.0",git:"clean",qg:"ok",working:true,unread:2,wait:true,last:"Helm : rotater le token CouchDB ?",time:"12:08"},
+  {id:"iakagraph",desc:"Réservoir des iakachartes",st:"green",v:"v0.4.0",git:"clean",qg:"ok",working:true,unread:0,wait:false,last:"Loki : charte studio/clair ajoutée.",time:"11:54"},
+  {id:"iakaide",desc:"IDE Tauri · salvage backend Rust",st:"orange",v:"v3.1.2",git:"dirty",qg:"warn",working:true,unread:0,wait:false,last:"Gimli : build en cours…",time:"11:40"},
+  {id:"naonedge-dashboard",desc:"Dashboard portefeuille",st:"muted",v:"v0.2.0",git:"clean",qg:"ok",working:false,unread:0,wait:false,last:"—",time:"hier"},
+  {id:"iakafreevision",desc:"Catalogue génératif · ComfyUI .12",st:"muted",v:"v0.25.0",git:"behind",behind:3,qg:"ok",working:false,unread:0,wait:false,last:"—",time:"hier"},
+];
+const CONVS={
+  iakacockpit:[
+    {k:"addr",ag:"odin",t:"12:04",bd:"Je lance le cadrage design et je délègue à Loki."},
+    {k:"agent",who:"odin → loki",ag:"loki",t:"12:04",bd:"⮌ délégation : « direction design »"},
+    {k:"pensee",ag:"loki",t:"12:04",bd:"je lis le réservoir, je récupère les tokens…"},
+    {k:"geste",ag:"loki",t:"12:04",cmd:"read tokens.css (naonedge/dark)\n→ ok",acts:10},
+    {k:"addr",ag:"loki",t:"12:05",bd:"Convergence v5 : assistant projet par défaut + header allégé."},
+    {k:"user",t:"12:08",bd:"OK. L'Assistant répond quand je ne cible personne. Continue."},
+    {k:"addr",ag:"aragorn",t:"12:09",bd:"Reçu. Je résume : 2 projets attendent un avis (iakacockpit · LiteLLM ; iakaboxlogs · token). Je te prépare une synthèse.",assist:true},
+    {k:"addr",ag:"gandalf",t:"12:10",bd:"Avis ? Je câble le client LiteLLM en mock dev d'abord. Tu valides ?",wait:true},
+  ],
+  iakaboxlogs:[
+    {k:"geste",ag:"gimli",t:"12:00",cmd:"npm run build\n→ ✓ 2.1s",acts:4},
+    {k:"addr",ag:"helm",t:"12:08",bd:"Avis ? Je rotate le token CouchDB maintenant ou à la maintenance ?",wait:true},
+  ],
+  iakagraph:[
+    {k:"geste",ag:"loki",t:"11:52",cmd:"write studio/clair/tokens.css",acts:3},
+    {k:"addr",ag:"loki",t:"11:54",bd:"Charte studio/clair ajoutée (indigo, fallback initiale)."},
+  ],
+  iakaide:[{k:"addr",ag:"gimli",t:"11:40",bd:"Build en cours. Arbre encore sale."}],
+  "naonedge-dashboard":[{k:"addr",ag:"odin",t:"hier",bd:"Projet au repos."}],
+  iakafreevision:[{k:"addr",ag:"odin",t:"hier",bd:"Au repos."}],
+};
+const FEED=[
+  {ag:"odin",c:"addr",t:"12:04",pj:"iakacockpit",bd:"Je lance le cadrage et je délègue à Loki."},
+  {ag:"loki",c:"agent",t:"12:04",who:"odin → loki",pj:"iakacockpit",bd:"⮌ task(loki, « direction design »)"},
+  {ag:"loki",c:"geste",t:"12:04",pj:"iakacockpit",bd:"→ read tokens.css ·· ok"},
+  {ag:"loki",c:"addr",t:"12:05",pj:"iakacockpit",bd:"Convergence v5 : assistant projet + header allégé."},
+  {ag:"aragorn",c:"addr",t:"12:09",pj:"iakacockpit",bd:"Triage : 2 projets attendent un avis."},
+  {ag:"helm",c:"addr",t:"12:08",pj:"iakaboxlogs",bd:"Avis ? Rotation du token CouchDB ?"},
+  {ag:"gandalf",c:"pensee",t:"12:09",pj:"iakacockpit",bd:"reste à brancher LiteLLM…"},
+  {ag:"gandalf",c:"addr",t:"12:10",pj:"iakacockpit",bd:"Avis ? Câbler LiteLLM en mock dev d'abord ?"},
+];
+const AGENTMD={
+  loki:"# Loki — design / supports\n\n## Mission\nProduire des livrables visuels on-brand,\nen appliquant la bonne charte du catalogue.\n\n## Périmètre\n- Fait : docs HTML, slides, logos, pages.\n- Ne fait pas : palette hors charte.",
+  aragorn:"# Aragorn — coordination projet\n\n## Mission\nCoordonner le travail intra-projet ;\nbras droit du user (assistant par défaut).",
+  gandalf:"# Gandalf — architecture / specs\n\n## Mission\nCadrer, spécifier, rédiger les instructions.",
+  odin:"# Odin — portefeuille\n\n## Mission\nPiloter le portefeuille, arbitrer, valider les gates.",
+};
+const md=id=>AGENTMD[id]||("# "+id+"\n\n## Mission\n(fiche mockée)\n\n## Périmètre\n- …");
+const SKILLS=[
+  {ic:"📓",nm:"log-conversation",d:"push mains courantes → iakaboxlogs (MQTT)",on:true},
+  {ic:"🚀",nm:"iakaframe-onboard",d:"init/update projet + Forgejo",on:true},
+  {ic:"📸",nm:"iakaframe-snapshot",d:"état des lieux (MD + HTML)",on:true},
+  {ic:"🎨",nm:"iakaframe-naonedge",d:"supports chartés (Loki)",on:true},
+  {ic:"🖼",nm:"comfyui-generate",d:"génération d'images (ComfyUI .12)",on:false},
+];
+const THEMES=[
+  {t:"naonedge-dark",n:"NaonEdge dark",g:"NaonEdge",sw:["#0a0a0a","#161616","#c8a44e"]},
+  {t:"naonedge-light",n:"NaonEdge light",g:"NaonEdge",sw:["#f4f2ec","#ffffff","#9a7521"]},
+  {t:"studio-clair",n:"Studio clair",g:"Studio",sw:["#f4f5f7","#ffffff","#5b5bd6"]},
+  {t:"grimoire-dark-fantasy",n:"Grimoire",g:"Immersif",sw:["#e7dcc0","#efe6cf","#a84b2a"]},
+  {t:"cartoon-std",n:"Cartoon",g:"Immersif",sw:["#fff7e6","#ffffff","#ff5a5f"]},
+  {t:"os-macos",n:"macOS",g:"OS",sw:["#ececec","#ffffff","#007aff"]},
+  {t:"os-ubuntu",n:"Ubuntu",g:"OS",sw:["#fafafa","#ffffff","#e95420"]},
+  {t:"os-android",n:"Android",g:"OS",sw:["#fef7ff","#ffffff","#6750a4"]},
+  {t:"custom",n:"Custom",g:"À toi",sw:["#0c0d12","#181a22","#4ea1c8"]},
+];
+const CUSTOM_TOKENS=[
+  {k:"--accent",t:"Accent",d:"couleur signature",v:"#4ea1c8"},
+  {k:"--bg",t:"Fond",d:"fond global",v:"#0c0d12"},
+  {k:"--surf",t:"Surface",d:"cartes / panneaux",v:"#181a22"},
+  {k:"--surf-2",t:"Surface +1",d:"séparation par aplat",v:"#222530"},
+  {k:"--text",t:"Texte",d:"texte principal",v:"#eef0f5"},
+  {k:"--text-2",t:"Texte secondaire",d:"libellés",v:"#99a0b0"},
+];
+const HOOKS=[
+  {nm:"identity-guard",d:"force le double badge START/STOP (ouverture+clôture)",ev:"Stop · SubagentStop",on:true},
+  {nm:"perimeter-guard",d:"borne les écritures d'un agent à son périmètre",ev:"PreToolUse",on:true},
+  {nm:"delegation-guard",d:"garde le canal des gestes lors d'un Task",ev:"PreToolUse · PostToolUse",on:true},
+  {nm:"remind-identity",d:"rappel d'identité sur la saisie utilisateur",ev:"UserPromptSubmit",on:false},
+];
+const DENY=["rm -rf /","git reset --hard","git push --force","DROP TABLE","sudo rm","curl … | sh"];
+const JALONS=[
+  {n:"P1",c:"var(--purple)",nm:"Cadrage (specs)",d:"instruction écrite avant code",gate:"gate humain"},
+  {n:"P2",c:"var(--orange)",nm:"Build",d:"implémentation + commits atomiques",gate:"build ✓"},
+  {n:"P3",c:"var(--green)",nm:"Qualité",d:"typecheck · lint · tests · couverture honnête",gate:"gate Legolas"},
+  {n:"P4",c:"var(--red)",nm:"Garde",d:"sécurité · CSP · garde-fous chemins",gate:"gate Helm"},
+];
+
+/* ===================== PORTRAITS ===================== */
+const P=window.PORTRAITS||{};
+function portraitHTML(agId){
+  let theme=document.documentElement.getAttribute("data-theme");
+  if(theme==="custom")theme="naonedge-dark";
+  const uri=(P[theme]&&P[theme][agId])||null;
+  if(uri)return '<img src="'+uri+'" alt="'+agId+'">';
+  return '<span class="fb">'+(agId||"?").charAt(0).toUpperCase()+'</span>';
+}
+function refreshPortraits(){document.querySelectorAll('.portrait[data-ag]').forEach(p=>p.innerHTML=portraitHTML(p.dataset.ag));}
+const agColor=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.color:'var(--text-3)';};
+const agName=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.name:id;};
+const agPin=id=>{const a=AGENTS.find(x=>x.id===id);return a?a.pin:'';};
+
+/* ACTIVE = contexte de navigation (Working), pas un état affiché en header (v5) */
+let ACTIVE="iakacockpit",DEST="__default__",PVTG="Sandbox";
+const ASSISTANT_AGENT="aragorn"; // proxy par défaut, réglé dans Settings projet → Assistant
+
+/* ===================== PORTFOLIO ===================== */
+function gitB(p){if(p.git==="clean")return '<span class="clean">● propre</span>';if(p.git==="dirty")return '<span class="dirty">◑ sale</span>';if(p.git==="ahead")return '<span class="ahead">↑'+p.ahead+'</span>';if(p.git==="behind")return '<span style="color:var(--text-3)">↓'+p.behind+'</span>';return "";}
+function renderTiles(){
+  document.getElementById('tiles').innerHTML=PROJECTS.map(p=>`
+    <div class="tile ${p.id===ACTIVE?'isactive':''}" data-proj="${p.id}">
+      <div class="th"><span class="st" style="background:var(--${p.st==='muted'?'text-3':p.st})"></span><b>${p.id}</b>${p.unread?`<span class="unread">${p.unread}</span>`:(p.working?'<span class="working">working</span>':'')}</div>
+      <div class="desc">${p.desc}</div>
+      <div class="meta"><span class="qg ${p.qg}">${p.qg==='ok'?'✓ qgate':'⚠ qgate'}</span><span class="v">${p.v}</span><span class="git">${gitB(p)}</span></div>
+      <div class="tacts"><button class="btn accent sm tact-open" data-proj="${p.id}">Ouvrir →</button><button class="btn sm tact-pv" data-proj="${p.id}">🖥 Aperçu</button></div>
+    </div>`).join('');
+}
+function renderFeed(){
+  document.getElementById('feed').innerHTML=FEED.map(f=>`
+    <div class="ev ${f.c}" data-c="${f.c}" data-ag="${f.ag}"><span class="marker"></span>
+      <div class="body"><div class="top"><span class="who" style="color:${agColor(f.ag)}">${f.who||agName(f.ag)}</span><span>${f.pj}</span><span>${f.t}</span><span class="ch">${f.c}</span></div><div class="bd">${f.bd}</div></div></div>`).join('');
+  document.getElementById('chanagf').innerHTML=AGENTS.slice(0,6).map(a=>`<span class="agpill" data-ag="${a.id}"><span class="d" style="background:${a.color}"></span>${a.id}</span>`).join('');
+}
+function applyChan(){
+  const on=[...document.querySelectorAll('#chanfilters .cf')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);
+  const off=[...document.querySelectorAll('#chanagf .agpill.off')].map(p=>p.dataset.ag);
+  document.querySelectorAll('#feed .ev').forEach(ev=>ev.style.display=(on.includes(ev.dataset.c)&&!off.includes(ev.dataset.ag))?'':'none');
+}
+
+/* ===================== WORKING ===================== */
+function convRow(p){return `<div class="conv ${p.unread?'unread':''} ${p.id===ACTIVE?'active':''}" data-proj="${p.id}"><div class="av">${p.id.charAt(0).toUpperCase()}${p.working?'<span class="wk"></span>':''}</div><div class="mid"><div class="nm">${p.id}</div><div class="preview">${p.last}</div></div><div class="right"><span class="time">${p.time}</span>${p.unread?`<span class="badge">${p.unread}</span>`:''}</div></div>`;}
+function renderConvs(){
+  document.getElementById('convworking').innerHTML=PROJECTS.filter(p=>p.working&&p.wait).map(convRow).join('');
+  document.getElementById('convactive').innerHTML=PROJECTS.filter(p=>p.working&&!p.wait).map(convRow).join('');
+  document.getElementById('convidle').innerHTML=PROJECTS.filter(p=>!p.working).map(convRow).join('');
+  const tu=PROJECTS.reduce((s,p)=>s+(p.unread||0),0);const nu=document.getElementById('worknu');if(tu>0){nu.textContent=tu;nu.style.display='';}else nu.style.display='none';
+}
+function gly(k){return k==="addr"?"»":k==="geste"?"→":k==="pensee"?"~":"@";}
+function renderThread(){
+  const conv=CONVS[ACTIVE]||[];let html="";
+  conv.forEach(m=>{
+    const ttyAg=m.k==="user"?"vous":(m.who||agName(m.ag));const ttyBd=m.k==="geste"?(m.cmd||"").replace(/\n/g," ; "):m.bd;const ttyCls=m.k==="user"?"addr":m.k;
+    html+=`<div class="ttyline ${ttyCls}" data-c="${m.k==='user'?'addr':m.k}"><span class="ts">[${m.t}]</span><span class="ag" style="color:${m.k==='user'?'var(--text)':agColor(m.ag)}">${ttyAg}</span><span class="gl">${gly(m.k)}</span><span class="bd">${ttyBd}</span></div>`;
+    if(m.k==="user")html+=`<div class="msg user" data-c="addr"><div class="bub"><div class="bd">${m.bd}</div><div class="time">${m.t} ✓✓</div></div></div>`;
+    else if(m.k==="addr")html+=`<div class="msg" data-c="addr"><span class="portrait pa" data-ag="${m.ag}"></span><div class="bub"><div class="who" style="color:${agColor(m.ag)}">${agName(m.ag)} ${agPin(m.ag)}${m.assist?' <span class="tagh" style="background:var(--accent)">assistant</span>':''}${m.wait?' <span class="tagh" style="background:var(--accent)">demande un avis</span>':''}</div><div class="bd">${m.bd}</div><div class="relay"><button class="btn sm">↪ Gimli</button><button class="btn sm">↪ Legolas</button><button class="btn sm">⧉ Copier</button></div><div class="time">${m.t}</div></div></div>`;
+    else if(m.k==="geste")html+=`<div class="gblock" data-c="geste"><div class="gh">⬡ ${agName(m.ag)} · geste<span class="act">● Activité (${m.acts})</span></div><pre>$ ${m.cmd}</pre><div class="gfoot"><button class="btn sm">↪ Envoyer à Gandalf</button><button class="btn sm">⧉ Copier</button></div></div>`;
+    else if(m.k==="pensee")html+=`<div class="thought" data-c="pensee">~ ${agName(m.ag)} réfléchit : ${m.bd}</div>`;
+    else if(m.k==="agent")html+=`<div class="relayline" data-c="agent">⮌ ${m.who} · ${m.bd}</div>`;
+  });
+  const t=document.getElementById('thread');t.innerHTML=html;applyChat();t.scrollTop=t.scrollHeight;refreshPortraits();
+}
+function applyChat(){const on=[...document.querySelectorAll('#v-working .chatfilters .cf')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);document.querySelectorAll('#thread [data-c]').forEach(el=>el.style.display=on.includes(el.dataset.c)?'':'none');}
+
+/* navigation vers un projet (Working) — pas d'état global affiché en header */
+function setActive(id){
+  ACTIVE=id;const p=PROJECTS.find(x=>x.id===id);if(p)p.unread=0;
+  document.getElementById('setprojname').textContent=id;
+  document.getElementById('chav').textContent=id.charAt(0).toUpperCase();document.getElementById('chtitle').textContent=id;
+  document.getElementById('chstatus').textContent=p&&p.working?((CONVS[id]||[]).some(m=>m.wait)?"Working · un agent demande un avis":"Working · en cours"):"Au repos";
+  document.getElementById('composefield').placeholder="Message à "+id+"… (sans cibler personne → l'Assistant répond)";
+  renderTiles();renderConvs();renderThread();
+}
+
+/* ===================== PREVIEW CONTEXTUEL ===================== */
+function openPreview(proj){
+  document.getElementById('pvo-proj').textContent=proj;
+  document.getElementById('pvo-appname').textContent=proj+" (preview)";
+  document.getElementById('pvo-url').textContent="http://localhost:1420 · "+proj;
+  document.getElementById('pvo-tg').textContent=PVTG;document.getElementById('pvo-tg2').textContent=PVTG;
+  document.getElementById('pvoverlay').style.display='flex';
+}
+
+/* ===================== SETTINGS : thèmes + custom ===================== */
+function renderThemeGrid(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  document.getElementById('themegrid').innerHTML=THEMES.map(t=>`
+    <div class="tcard ${cur===t.t?'sel':''}" data-t="${t.t}"><div class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</div><div class="nm">${t.n}<small>${t.g}</small></div></div>`).join('');
+  document.getElementById('customwrap').classList.toggle('show',cur==='custom');
+  const cn=THEMES.find(t=>t.t===cur);document.getElementById('hctrl-name').textContent=cn?cn.n:cur;
+}
+function renderCustom(){
+  document.getElementById('customgrid').innerHTML=CUSTOM_TOKENS.map(c=>`
+    <div class="cpick"><input type="color" value="${c.v}" data-k="${c.k}"><div class="cl"><div class="t">${c.t}</div><div class="v">${c.k} · ${c.d}</div></div></div>`).join('');
+}
+function applyCustomVar(k,v){document.documentElement.style.setProperty(k,v);if(k==='--accent')document.documentElement.style.setProperty('--accent-2',v);}
+
+/* ===================== TEAM ===================== */
+function renderTeam(){
+  let html=AGENTS.map(a=>`<div class="tmember ${a.on?'on':'off'}" data-ag="${a.id}"><span class="portrait" data-ag="${a.id}"></span><div class="nm">${a.name}</div><div class="ro">${a.role}</div><div class="tog"></div></div>`).join('');
+  html+=`<div class="tmember new" data-new="1"><span class="plus">＋</span><div class="nm">Créer un agent</div><div class="ro">formulaire + prompt</div></div>`;
+  document.getElementById('teamgrid').innerHTML=html;refreshPortraits();
+}
+
+/* ===================== AGENTS : fiche perso ===================== */
+function renderAgPicker(){document.getElementById('agpicker').innerHTML=AGENTS.map(a=>`<div class="agchip ${a.id==='loki'?'sel':''}" data-ag="${a.id}"><span class="portrait" data-ag="${a.id}"></span>${a.name}</div>`).join('');refreshPortraits();}
+function selectAgent(id){
+  const a=AGENTS.find(x=>x.id===id);
+  document.querySelectorAll('.agchip').forEach(x=>x.classList.toggle('sel',x.dataset.ag===id));
+  document.getElementById('perso-portrait').dataset.ag=id;
+  document.getElementById('perso-name').textContent=a.name;
+  document.getElementById('perso-role').textContent=a.role+" · IAKACOCKPIT";
+  document.getElementById('perso-dot').style.background=a.color;
+  document.getElementById('perso-pin').textContent=a.pin+" pastille";
+  document.getElementById('perso-skills').innerHTML=a.skills.map(s=>`<span class="skillchip">${s}</span>`).join('');
+  document.getElementById('ad-md').value=md(id);
+  document.getElementById('ad-diff').classList.remove('show');
+  refreshPortraits();
+}
+
+/* ===================== SKILLS ===================== */
+function renderSkills(){document.getElementById('skilllist').innerHTML=SKILLS.map((s,i)=>`<div class="skillrow ${s.on?'on':''}" data-i="${i}"><span class="ic">${s.ic}</span><div class="mid"><div class="nm">${s.nm}</div><div class="d">${s.d}</div></div><div class="tog"></div></div>`).join('');}
+function fillProjSelects(){const opt=PROJECTS.map(p=>`<option>${p.id}</option>`).join('');['assistproj','teamproj','agentproj','skillproj','targetproj'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opt;});}
+
+/* ===================== MÉTHODE ===================== */
+function renderHooks(){document.getElementById('hooklist').innerHTML=HOOKS.map((h,i)=>`<div class="hookrow ${h.on?'on':''}" data-i="${i}"><span class="ic">🪝</span><div class="mid"><div class="nm">${h.nm}</div><div class="d">${h.d}</div></div><span class="ev2">${h.ev}</span><div class="tog"></div></div>`).join('');}
+function renderDeny(){document.getElementById('denylist').innerHTML=DENY.map(d=>`<div class="denyrow"><span class="cmd">⊘ ${d}</span><span class="x">✕</span></div>`).join('');}
+function renderJalons(){document.getElementById('jalonlist').innerHTML=JALONS.map(j=>`<div class="jalon"><span class="ph" style="background:${j.c}">${j.n}</span><div class="mid"><div class="nm">${j.nm}</div><div class="d">${j.d}</div></div><span class="gate">${j.gate}</span></div>`).join('');}
+const GRAPH_NODES=[
+  {id:"odin",x:50,y:16},{id:"aragorn",x:50,y:42},
+  {id:"gandalf",x:24,y:64},{id:"gimli",x:42,y:84},{id:"legolas",x:60,y:84},{id:"helm",x:78,y:64},{id:"loki",x:84,y:40},
+];
+const GRAPH_EDGES=[["odin","aragorn","d"],["aragorn","gandalf","d"],["gandalf","gimli","d"],["gandalf","legolas","d"],["aragorn","helm","d"],["aragorn","loki","d"],["loki","odin","r"],["legolas","gandalf","r"]];
+function renderGraph(){
+  const wrap=document.getElementById('graphwrap');
+  wrap.querySelectorAll('.gnode').forEach(n=>n.remove());
+  GRAPH_NODES.forEach(n=>{
+    const a=AGENTS.find(x=>x.id===n.id);
+    const el=document.createElement('div');el.className='gnode';el.dataset.id=n.id;el.style.left=n.x+'%';el.style.top=n.y+'%';
+    el.innerHTML=`<span class="portrait" data-ag="${n.id}"></span><span class="gl" style="color:${a.color}">${a.name}</span>`;
+    wrap.appendChild(el);
+  });
+  refreshPortraits();drawEdges();enableDrag();
+}
+function drawEdges(){
+  const wrap=document.getElementById('graphwrap'),svg=document.getElementById('graphsvg');
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  const pos={};GRAPH_NODES.forEach(n=>pos[n.id]=[n.x/100*W,n.y/100*H]);
+  let defs='<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--accent)"/></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--purple)"/></marker></defs>';
+  let lines=GRAPH_EDGES.map(([a,b,t])=>{const[x1,y1]=pos[a],[x2,y2]=pos[b];const col=t==='d'?'var(--accent)':'var(--purple)';const mk=t==='d'?'url(#arr)':'url(#arrR)';
+    const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len;const sx=x1+ux*28,sy=y1+uy*28,ex=x2-ux*30,ey=y2-uy*30;
+    return `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="2" marker-end="${mk}" opacity=".8"/>`;}).join('');
+  svg.innerHTML=defs+lines;
+}
+function enableDrag(){
+  document.querySelectorAll('#graphwrap .gnode').forEach(node=>{
+    node.addEventListener('mousedown',e=>{
+      e.preventDefault();const wrap=document.getElementById('graphwrap');const r=wrap.getBoundingClientRect();
+      const mv=ev=>{const x=Math.max(6,Math.min(94,(ev.clientX-r.left)/r.width*100));const y=Math.max(8,Math.min(92,(ev.clientY-r.top)/r.height*100));
+        node.style.left=x+'%';node.style.top=y+'%';const gn=GRAPH_NODES.find(n=>n.id===node.dataset.id);gn.x=x;gn.y=y;drawEdges();};
+      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+  });
+}
+
+/* ===================== COMPOSEUR : destinataire (assistant par défaut) ===================== */
+function renderAgentMenu(){
+  const assistName=agName(ASSISTANT_AGENT);
+  let html=`<div class="ai def" data-ag="__default__"><span class="portrait pa" data-ag="${ASSISTANT_AGENT}"></span><div><div style="font-weight:600">Assistant (${assistName})</div><div style="font-size:10.5px;color:var(--text-3)">défaut · répond si rien n'est ciblé</div></div><span class="deftag">défaut</span></div>`;
+  html+=`<div class="sep">cibler un agent précis</div>`;
+  html+=AGENTS.map(a=>`<div class="ai" data-ag="${a.id}"><span class="portrait pa" data-ag="${a.id}"></span><div><div style="font-weight:600">${a.name}</div><div style="font-size:10.5px;color:var(--text-3)">${a.role}</div></div></div>`).join('');
+  document.getElementById('agentmenu').innerHTML=html;refreshPortraits();
+}
+function setDest(id){
+  DEST=id;const pick=document.getElementById('agentpick');
+  if(id==="__default__"){
+    document.getElementById('ap-portrait').dataset.ag=ASSISTANT_AGENT;
+    document.getElementById('ap-name').textContent="Assistant ("+agName(ASSISTANT_AGENT)+")";
+    document.getElementById('ap-ch').textContent="destinataire par défaut";
+    document.getElementById('sendbtn').textContent="Envoyer à l'Assistant";
+    pick.classList.add('isdefault');
+  }else{
+    document.getElementById('ap-portrait').dataset.ag=id;
+    document.getElementById('ap-name').textContent=agName(id);
+    document.getElementById('ap-ch').textContent="destinataire ciblé";
+    document.getElementById('sendbtn').textContent="Envoyer à "+agName(id);
+    pick.classList.remove('isdefault');
+  }
+  refreshPortraits();
+}
+
+/* ===================== NAV ===================== */
+function go(v){document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x.dataset.v===v));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');}
+
+/* ===================== WIRING ===================== */
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(b)go(b.dataset.v);});
+document.getElementById('tiles').addEventListener('click',e=>{
+  const pv=e.target.closest('.tact-pv');if(pv){e.stopPropagation();openPreview(pv.dataset.proj);return;}
+  const op=e.target.closest('.tact-open');if(op){setActive(op.dataset.proj);go('working');return;}
+  const t=e.target.closest('.tile');if(t){setActive(t.dataset.proj);go('working');}
+});
+document.getElementById('chanfilters').addEventListener('click',e=>{const f=e.target.closest('.cf');if(f){f.dataset.on=f.dataset.on==='1'?'0':'1';applyChan();}});
+document.getElementById('chanagf').addEventListener('click',e=>{const p=e.target.closest('.agpill');if(p){p.classList.toggle('off');applyChan();}});
+document.querySelector('#v-working .convscroll').addEventListener('click',e=>{const c=e.target.closest('.conv');if(c)setActive(c.dataset.proj);});
+document.querySelector('#v-working .chatfilters').addEventListener('click',e=>{const f=e.target.closest('.cf');if(f){f.dataset.on=f.dataset.on==='1'?'0':'1';applyChat();}});
+document.getElementById('styletoggle').addEventListener('click',e=>{const s=e.target.closest('.so');if(!s)return;document.querySelectorAll('#styletoggle .so').forEach(x=>x.classList.remove('active'));s.classList.add('active');document.getElementById('thread').classList.toggle('tty',s.dataset.s==='tty');applyChat();});
+document.getElementById('workpreview').addEventListener('click',()=>openPreview(ACTIVE));
+document.getElementById('agentpick').addEventListener('click',e=>{if(e.target.closest('.agentmenu'))return;document.getElementById('agentmenu').classList.toggle('open');});
+document.getElementById('agentmenu').addEventListener('click',e=>{const a=e.target.closest('.ai');if(!a)return;setDest(a.dataset.ag);document.getElementById('agentmenu').classList.remove('open');});
+document.addEventListener('click',e=>{if(!e.target.closest('.agentpick'))document.getElementById('agentmenu').classList.remove('open');});
+document.getElementById('pvo-close').addEventListener('click',()=>document.getElementById('pvoverlay').style.display='none');
+document.getElementById('pvoverlay').addEventListener('click',e=>{if(e.target.id==='pvoverlay')document.getElementById('pvoverlay').style.display='none';});
+document.querySelector('.setnav').addEventListener('click',e=>{const s=e.target.closest('.seti');if(!s)return;document.querySelectorAll('.seti').forEach(x=>x.classList.remove('active'));s.classList.add('active');document.querySelectorAll('.setpanel').forEach(x=>x.classList.remove('active'));document.getElementById('set-'+s.dataset.set).classList.add('active');if(s.dataset.set==='method')setTimeout(drawEdges,30);});
+document.getElementById('themegrid').addEventListener('click',e=>{const c=e.target.closest('.tcard');if(!c)return;document.documentElement.setAttribute('data-theme',c.dataset.t);
+  if(c.dataset.t!=='custom')CUSTOM_TOKENS.forEach(t=>{document.documentElement.style.removeProperty(t.k);});document.documentElement.style.removeProperty('--accent-2');
+  renderThemeGrid();refreshPortraits();});
+document.getElementById('customgrid').addEventListener('input',e=>{const i=e.target.closest('input[type=color]');if(i)applyCustomVar(i.dataset.k,i.value);});
+// header charte raccourci → ouvre Réglages › généraux
+document.getElementById('hctrl').addEventListener('click',()=>{go('settings');document.querySelectorAll('.seti').forEach(x=>x.classList.toggle('active',x.dataset.set==='general'));document.querySelectorAll('.setpanel').forEach(x=>x.classList.remove('active'));document.getElementById('set-general').classList.add('active');});
+// assistant model select
+document.getElementById('assistmodel').addEventListener('click',e=>{const m=e.target.closest('.ms');if(!m)return;document.querySelectorAll('#assistmodel .ms').forEach(x=>x.classList.remove('sel'));m.classList.add('sel');});
+document.getElementById('teamgrid').addEventListener('click',e=>{const n=e.target.closest('.tmember.new');if(n){alert('Mock : formulaire de création d\'agent (nom, royaume, rôle) + admin-par-prompt qui génère l\'agent.md.');return;}
+  const m=e.target.closest('.tmember');if(!m)return;const a=AGENTS.find(x=>x.id===m.dataset.ag);a.on=!a.on;m.classList.toggle('on',a.on);m.classList.toggle('off',!a.on);});
+document.getElementById('skillfilter').addEventListener('click',e=>{const s=e.target.closest('.skf');if(s)s.classList.toggle('on');});
+document.getElementById('agpicker').addEventListener('click',e=>{const c=e.target.closest('.agchip');if(c)selectAgent(c.dataset.ag);});
+document.getElementById('ad-go').addEventListener('click',()=>document.getElementById('ad-diff').classList.add('show'));
+document.getElementById('ad-cancel').addEventListener('click',()=>document.getElementById('ad-diff').classList.remove('show'));
+document.getElementById('skilllist').addEventListener('click',e=>{const r=e.target.closest('.skillrow');if(r)r.classList.toggle('on');});
+document.getElementById('targetcards').addEventListener('click',e=>{const c=e.target.closest('.tgcard');if(!c)return;document.querySelectorAll('.tgcard').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');PVTG=c.querySelector('b').textContent;});
+document.getElementById('methtabs').addEventListener('click',e=>{const m=e.target.closest('.mt');if(!m)return;document.querySelectorAll('.mt').forEach(x=>x.classList.remove('active'));m.classList.add('active');document.querySelectorAll('.methpanel').forEach(x=>x.classList.remove('active'));document.getElementById('meth-'+m.dataset.m).classList.add('active');if(m.dataset.m==='graph')setTimeout(()=>{drawEdges();},30);});
+document.getElementById('hooklist').addEventListener('click',e=>{const r=e.target.closest('.hookrow');if(r)r.classList.toggle('on');});
+window.addEventListener('resize',()=>{if(document.getElementById('meth-graph').classList.contains('active'))drawEdges();});
+
+/* ===================== INIT ===================== */
+renderTiles();renderFeed();renderConvs();renderThread();renderThemeGrid();renderCustom();renderTeam();renderAgPicker();renderSkills();fillProjSelects();renderHooks();renderDeny();renderJalons();renderGraph();renderAgentMenu();
+selectAgent('loki');setActive('iakacockpit');setDest('__default__');refreshPortraits();
+</script>
+</body>
+</html>

@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="fake-jetable" data-theme="naonedge-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IakaCockpit · CONVERGENCE — maquette de référence (MAQUETTE FAKE JETABLE)</title>
+<style>
+/* =========================================================================
+   MAQUETTE FAKE JETABLE — ne pas porter en prod.
+   IakaCockpit · CONVERGENCE (MOVE 2). Par Loki.
+   Socle visuel = H1 « L'Atelier » (NaonEdge dark+or, grille+dock+onglets).
+   + mode 3-canaux plein-écran « timeline-first » de H3 « La Régie » (convocable).
+   + 7 chartes commutables EN LIVE (tokens RÉELS bakés depuis iakagraph/theme).
+   + portraits d'agents réels (réservoir, suivent la charte) + fallback initiale.
+   + dashboard projets · admin agent (agent.md + admin-par-prompt + matrice) · preview/test multi-target.
+   100% autonome : aucun CDN, aucune police externe. Portraits = vignettes réelles
+   embarquées en base64 (data URI, voir portraits.data.js) — offline-OK, tout
+   navigateur, aucune ref file:// — avec fallback stylisé si absent.
+   ========================================================================= */
+
+/* ===================== CHARTES — TOKENS RÉELS BAKÉS =====================
+   Chaque [data-theme] reprend exactement les valeurs de
+   iakagraph/theme/<famille>/<variante>/tokens.css. Le clic change data-theme
+   sur <html> → tout l'habillage bascule (mécanique « embarquer les iakachartes »). */
+html[data-theme="naonedge-dark"]{
+  --bg-primary:#0a0a0a;--bg-card:#161616;--bg-deep:#101010;--line:#262626;--line-soft:#1c1c1c;
+  --text-primary:#f0f0f0;--text-secondary:#8a8a8a;--text-muted:#555;
+  --accent:#c8a44e;--accent-light:#e8c960;--accent-rgb:200,164,78;
+  --grad:linear-gradient(135deg,#c8a44e,#e8c960);--on-accent:#0a0a0a;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --radius-md:14px;--radius-lg:22px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --vdir:naonedge/dark;
+}
+html[data-theme="naonedge-light"]{
+  --bg-primary:#f7f6f2;--bg-card:#ffffff;--bg-deep:#f0ede5;--line:#e3ddcf;--line-soft:#ece8dd;
+  --text-primary:#1a1815;--text-secondary:#5f5a4f;--text-muted:#9a9384;
+  --accent:#9a7521;--accent-light:#c8a44e;--accent-rgb:154,117,33;
+  --grad:linear-gradient(135deg,#9a7521,#c8a44e);--on-accent:#1a1510;
+  --red:#e74c3c;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--cyan:#1abc9c;--purple:#9b59b6;
+  --radius-md:14px;--radius-lg:22px;
+  --font-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --vdir:naonedge/light;
+}
+html[data-theme="grimoire-dark-fantasy"]{
+  --bg-primary:#e7dcc0;--bg-card:#efe6cf;--bg-deep:#d9c9a3;--line:#c2b08a;--line-soft:#d8c9a8;
+  --text-primary:#1b2b34;--text-secondary:#4a4031;--text-muted:#857a63;
+  --accent:#a84b2a;--accent-light:#c56a3f;--accent-rgb:168,75,42;
+  --grad:linear-gradient(135deg,#a84b2a,#7f8c3a);--on-accent:#f3ead2;
+  --red:#9c2f23;--green:#5b6e2a;--blue:#34495e;--orange:#b5651d;--cyan:#3f7d7a;--purple:#6b4a6b;
+  --radius-md:4px;--radius-lg:8px;
+  --font-sans:"EB Garamond",Georgia,"Times New Roman",serif;
+  --font-serif:"Cinzel","EB Garamond",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --vdir:grimoire/dark-fantasy;
+}
+html[data-theme="cartoon-std"]{
+  --bg-primary:#fff7e6;--bg-card:#ffffff;--bg-deep:#fff0c2;--line:#ffd98a;--line-soft:#fff1cf;
+  --text-primary:#2b2b2b;--text-secondary:#5a5a5a;--text-muted:#9a9384;
+  --accent:#ff5a5f;--accent-light:#ffc400;--accent-rgb:255,90,95;
+  --grad:linear-gradient(135deg,#ff5a5f,#ffc400);--on-accent:#ffffff;
+  --red:#ff4d4f;--green:#2ecc71;--blue:#4dabf7;--orange:#ff922b;--cyan:#22d3ee;--purple:#9775fa;
+  --radius-md:18px;--radius-lg:28px;
+  --font-sans:"Fredoka","Baloo 2",system-ui,sans-serif;
+  --font-serif:"Fredoka","Baloo 2",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --vdir:cartoon/std;
+}
+html[data-theme="os-macos"]{
+  --bg-primary:#ececec;--bg-card:#ffffff;--bg-deep:#e3e3e3;--line:#d6d6d6;--line-soft:#e6e6e6;
+  --text-primary:#1d1d1f;--text-secondary:#6e6e73;--text-muted:#a1a1a6;
+  --accent:#007aff;--accent-light:#3897ff;--accent-rgb:0,122,255;
+  --grad:linear-gradient(135deg,#007aff,#3897ff);--on-accent:#ffffff;
+  --red:#ff3b30;--green:#34c759;--blue:#007aff;--orange:#ff9500;--cyan:#32ade6;--purple:#af52de;
+  --radius-md:10px;--radius-lg:16px;
+  --font-sans:"Inter","SF Pro Text",-apple-system,system-ui,sans-serif;
+  --font-serif:"New York","Georgia",serif;
+  --mono:"SF Mono","Menlo",ui-monospace,monospace;
+  --vdir:os/macos;
+}
+html[data-theme="os-ubuntu"]{
+  --bg-primary:#fafafa;--bg-card:#ffffff;--bg-deep:#f2f2f2;--line:#e0e0e0;--line-soft:#ededed;
+  --text-primary:#1d1d1d;--text-secondary:#5e5e5e;--text-muted:#a0a0a0;
+  --accent:#e95420;--accent-light:#f47e54;--accent-rgb:233,84,32;
+  --grad:linear-gradient(135deg,#e95420,#77216f);--on-accent:#ffffff;
+  --red:#c7162b;--green:#0e8420;--blue:#0073e6;--orange:#e95420;--cyan:#007aa6;--purple:#77216f;
+  --radius-md:6px;--radius-lg:10px;
+  --font-sans:"Ubuntu",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif:"Ubuntu",Georgia,serif;
+  --mono:"Ubuntu Mono",ui-monospace,Consolas,monospace;
+  --vdir:os/ubuntu;
+}
+html[data-theme="os-android"]{
+  --bg-primary:#fef7ff;--bg-card:#ffffff;--bg-deep:#f3edf7;--line:#e7e0ec;--line-soft:#f0eaf4;
+  --text-primary:#1d1b20;--text-secondary:#49454f;--text-muted:#79747e;
+  --accent:#6750a4;--accent-light:#7f67be;--accent-rgb:103,80,164;
+  --grad:linear-gradient(135deg,#6750a4,#7f67be);--on-accent:#ffffff;
+  --red:#b3261e;--green:#146c2e;--blue:#0b57d0;--orange:#e8710a;--cyan:#00696e;--purple:#6750a4;
+  --radius-md:16px;--radius-lg:24px;
+  --font-sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif:"Roboto Serif",Georgia,serif;
+  --mono:"Roboto Mono",ui-monospace,Consolas,monospace;
+  --vdir:os/android;
+}
+
+/* couleurs d'agent (constantes, indépendantes de la charte) */
+:root{
+  --ag-odin:#c8a44e;--ag-aragorn:#3498db;--ag-gandalf:#9b59b6;--ag-gimli:#e67e22;
+  --ag-legolas:#2ecc71;--ag-helm:#e74c3c;--ag-loki:#1abc9c;--ag-nathalie:#e8c960;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(var(--accent-rgb),.07), transparent 60%),
+    var(--bg-primary);
+  color:var(--text-primary);font-family:var(--font-sans);font-size:14.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  transition:background .3s,color .3s;
+}
+.mock-flag{position:fixed;bottom:8px;right:10px;z-index:999;font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:#000;
+  background:repeating-linear-gradient(45deg,#e8c960,#e8c960 8px,#c8a44e 8px,#c8a44e 16px);padding:3px 9px;border-radius:6px;opacity:.85;pointer-events:none}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+
+/* ---------- TOP BAR ---------- */
+.topbar{height:54px;flex:0 0 54px;display:flex;align-items:center;gap:16px;padding:0 18px;
+  background:var(--bg-card);border-bottom:1px solid var(--line);position:relative;z-index:60}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-serif);font-weight:600;font-size:16px}
+.grue{width:24px;height:24px}
+.proj-pick{display:flex;align-items:center;gap:8px;background:var(--bg-deep);border:1px solid var(--line);
+  border-radius:10px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--text-secondary)}
+.proj-pick b{color:var(--text-primary)} .proj-pick .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.tabs{display:flex;gap:2px;margin-left:4px}
+.tab{padding:7px 14px;border-radius:9px;font-size:13.5px;color:var(--text-secondary);cursor:pointer;border:1px solid transparent;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--text-primary);background:var(--bg-deep)}
+.tab.active{color:var(--on-accent);background:var(--grad);border-color:transparent;font-weight:600}
+.spacer{flex:1}
+/* theme picker */
+.themewrap{position:relative}
+.themebtn{display:flex;align-items:center;gap:9px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:12.5px;color:var(--text-secondary)}
+.themebtn .sw{width:15px;height:15px;border-radius:5px;background:var(--grad);border:1px solid var(--line)}
+.themebtn b{color:var(--text-primary)}
+.thememenu{position:absolute;right:0;top:44px;width:264px;background:var(--bg-card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.4);padding:8px;display:none;z-index:200}
+.thememenu.open{display:block}
+.thememenu .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:9px 9px 5px}
+.tio{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:9px;cursor:pointer;font-size:13px}
+.tio:hover{background:var(--bg-deep)}
+.tio.active{background:var(--bg-deep);outline:1px solid var(--accent)}
+.tio .pill{width:34px;height:18px;border-radius:5px;flex:0 0 34px;border:1px solid rgba(0,0,0,.15)}
+.tio small{color:var(--text-muted);font-size:11px;margin-left:auto;font-family:var(--mono)}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-secondary);cursor:pointer;font-size:15px;display:grid;place-items:center}
+
+/* ---------- VIEW HOST ---------- */
+.host{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;overflow:hidden;display:none}
+.view.active{display:flex}
+
+/* shared bits */
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:18px}
+.sectlabel{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin:10px 0 13px;display:flex;align-items:center;gap:9px}
+.sectlabel::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.btn{font-family:var(--font-sans);font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;border:1px solid var(--line);background:var(--bg-deep);color:var(--text-primary);transition:.15s}
+.btn:hover{border-color:var(--accent)}
+.btn.gold{background:var(--grad);color:var(--on-accent);border:none}
+
+/* portrait helper */
+.portrait{border-radius:50%;background:var(--bg-deep);display:grid;place-items:center;overflow:hidden;position:relative;flex:0 0 auto;border:2px solid var(--line)}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait .fb{font-family:var(--font-serif);font-weight:700;color:var(--on-accent);background:var(--grad);width:100%;height:100%;display:grid;place-items:center}
+
+/* ===================== DASHBOARD ===================== */
+#v-dash{flex-direction:column}
+.dashscroll{flex:1;overflow-y:auto;padding:24px 30px 40px}
+.statbar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:4px 0 22px}
+.stat{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:14px 16px}
+.stat .n{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.filters-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.fbtn2{font-size:12.5px;padding:6px 13px;border-radius:9px;border:1px solid var(--line);background:var(--bg-card);color:var(--text-secondary);cursor:pointer}
+.fbtn2.active{background:var(--grad);color:var(--on-accent);border-color:transparent;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.pcard{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:17px 18px;cursor:pointer;transition:.18s}
+.pcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.25)}
+.pcard .ph{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.pcard .ph b{font-size:15px;font-weight:600;font-family:var(--font-serif)}
+.pcard .ph .st{margin-left:auto;width:8px;height:8px;border-radius:50%}
+.pcard .desc{color:var(--text-secondary);font-size:12.5px;min-height:34px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0 13px}
+.chip{font-family:var(--mono);font-size:10.5px;color:var(--text-secondary);background:var(--bg-deep);border:1px solid var(--line-soft);padding:2px 8px;border-radius:6px}
+.pfoot{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--text-muted);padding-top:11px;border-top:1px solid var(--line-soft)}
+.gbadge.ok{color:var(--green)} .gbadge.warn{color:var(--orange)}
+.git{display:flex;gap:8px;margin-left:auto;align-items:center}
+.git .clean{color:var(--green)} .git .dirty{color:var(--orange)} .git .ahead{color:var(--accent)}
+
+/* ===================== WORK (grille + dock + PTY) ===================== */
+#v-work{flex-direction:column}
+.worktop{padding:20px 30px 0;flex:0 0 auto}
+.hero{position:relative;background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:22px 24px;overflow:hidden;margin-bottom:18px}
+.hero .lab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}
+.hero h2{font-family:var(--font-serif);font-size:20px;font-weight:600;margin:9px 0 6px}
+.hero p{color:var(--text-secondary);font-size:13.5px;max-width:64ch}
+.hero .by{margin-top:12px;font-size:12px;color:var(--text-muted);font-family:var(--mono)}
+.hero .actions{margin-top:16px;display:flex;gap:9px}
+.gridwrap{flex:1;overflow-y:auto;padding:0 30px 90px}
+.wgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;grid-auto-rows:minmax(120px,auto)}
+.widget{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:15px 16px;overflow:hidden;position:relative}
+.widget:hover{border-color:var(--accent)}
+.widget .wh{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:11px;color:var(--text-primary)}
+.widget .wh .e{color:var(--accent)}
+.widget.span2{grid-column:span 2} .widget.row2{grid-row:span 2}
+.kv{font-family:var(--mono);font-size:12px;line-height:2;color:var(--text-secondary)}
+.kv .ok{color:var(--green)} .kv .warn{color:var(--orange)}
+.miniterm{font-family:var(--mono);font-size:11.5px;line-height:1.7;background:var(--bg-deep);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;color:var(--text-secondary);white-space:pre-wrap}
+.miniterm .pr{color:var(--accent)} .miniterm .ok{color:var(--green)}
+.mcmini .l{display:flex;gap:8px;font-size:12px;padding:3px 0;align-items:baseline}
+.mcmini .l .d{width:7px;height:7px;border-radius:50%;flex:0 0 7px;margin-top:5px}
+.mcmini .l .t{font-family:var(--mono);font-size:10px;color:var(--text-muted)}
+.mcmini .l.geste .bd{font-family:var(--mono);color:var(--accent);font-size:11px}
+.mcmini .l.pensee .bd{font-style:italic;color:var(--text-muted)}
+.teamrow{display:flex;gap:6px;flex-wrap:wrap}
+/* dock */
+.dockbar{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px;
+  background:var(--bg-card);border:1px solid var(--line);border-radius:16px;padding:7px 9px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:50}
+.dockbtn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);padding:7px 13px;border-radius:11px;cursor:pointer}
+.dockbtn:hover{color:var(--text-primary);background:var(--bg-deep)}
+.dockbtn.active{color:var(--accent);background:var(--bg-deep)}
+
+/* ===================== MODE 3-CANAUX (Régie plein écran) ===================== */
+#v-regie{flex-direction:row}
+.ctrl{width:240px;flex:0 0 240px;border-right:1px solid var(--line);background:var(--bg-card);padding:16px 14px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.ctrl h3{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-bottom:9px}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid var(--line-soft);background:var(--bg-deep);cursor:pointer;transition:.13s;user-select:none}
+.crow .gl{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;flex:0 0 24px;background:var(--bg-card)}
+.crow .nm{font-size:13px;font-weight:600;flex:1}
+.crow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--text-muted)}
+.crow .sw{width:30px;height:17px;border-radius:9px;background:var(--line);position:relative;flex:0 0 30px;transition:.15s}
+.crow .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--text-muted);transition:.15s}
+.crow[data-on="1"] .sw{background:var(--accent)} .crow[data-on="1"] .sw::after{left:15px;background:var(--on-accent)}
+.agf{display:flex;flex-wrap:wrap;gap:6px}
+.agpill{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
+.agpill .d{width:7px;height:7px;border-radius:50%}
+.agpill.off{opacity:.32}
+.spine{flex:1;overflow-y:auto;padding:18px 28px 40px}
+.spinehead{position:sticky;top:-18px;background:var(--bg-primary);padding:14px 0 12px;margin-top:-18px;display:flex;align-items:center;gap:12px;z-index:5}
+.spinehead h2{font-family:var(--font-serif);font-size:18px;font-weight:600}
+.spinehead .sub{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.spinehead .lv{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:2px 8px;display:flex;align-items:center;gap:5px}
+.spinehead .lv::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);animation:pl 1.6s infinite}
+@keyframes pl{50%{opacity:.3}}
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:4px;bottom:0;width:2px;background:linear-gradient(180deg,var(--line),transparent)}
+.ev{position:relative;padding:9px 0 9px 4px}
+.ev::before{content:"";position:absolute;left:-25px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--bg-primary);border:2px solid var(--text-muted);z-index:1}
+.ev .top{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--text-muted)}
+.ev .top .who{font-weight:600} .ev .top .who .pj{color:var(--text-muted);font-weight:400}
+.ev .top .ch{margin-left:auto;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border-radius:5px}
+.ev .bd{font-size:13.5px;color:var(--text-primary);padding:3px 0 0 1px}
+.ev.addr::before{border-color:var(--text-primary);background:var(--text-primary)} .ev.addr .ch{background:var(--bg-deep);color:var(--text-secondary)}
+.ev.geste::before{border-color:var(--accent);background:var(--accent)} .ev.geste .ch{background:var(--bg-deep);color:var(--accent)} .ev.geste .bd{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.ev.pensee::before{border-color:var(--text-muted);background:transparent} .ev.pensee .ch{background:var(--bg-deep);color:var(--text-muted)} .ev.pensee .bd{font-style:italic;color:var(--text-muted);font-size:12.5px}
+.ev.agent::before{border-color:var(--purple);background:var(--purple)} .ev.agent .ch{background:var(--bg-deep);color:var(--purple)} .ev.agent .bd{font-family:var(--mono);font-size:12px;color:var(--text-secondary)}
+.regaside{width:300px;flex:0 0 300px;border-left:1px solid var(--line);background:var(--bg-card);padding:16px;overflow-y:auto}
+
+/* ===================== ADMIN AGENT ===================== */
+#v-admin{flex-direction:row}
+.aglist{width:230px;flex:0 0 230px;border-right:1px solid var(--line);background:var(--bg-card);padding:14px 12px;overflow-y:auto}
+.aglist h3{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin:6px 6px 10px}
+.agitem{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer}
+.agitem:hover{background:var(--bg-deep)} .agitem.active{background:var(--bg-deep);outline:1px solid var(--accent)}
+.agitem .portrait{width:34px;height:34px;font-size:13px;border-width:1px}
+.agitem .n{font-size:13.5px;font-weight:600} .agitem .r{font-size:11px;color:var(--text-muted)}
+.agitem .pin{margin-left:auto;width:8px;height:8px;border-radius:50%}
+.adminmain{flex:1;overflow-y:auto;padding:22px 26px 40px}
+.adminhead{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+.adminhead .portrait{width:84px;height:84px;font-size:30px;border-width:2px}
+.adminhead h2{font-family:var(--font-serif);font-size:24px;font-weight:600}
+.adminhead .sub{color:var(--text-secondary);font-size:13px}
+.adminhead .pmenu{display:flex;gap:7px;margin-top:8px}
+.adminhead .pmenu .mini{font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);color:var(--text-secondary);cursor:pointer}
+.adcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.adblock{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px}
+.adblock .bh{font-family:var(--mono);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+textarea.md{width:100%;min-height:200px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;color:var(--text-primary);
+  font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;resize:vertical}
+.prompt-in{display:flex;gap:8px;margin-top:6px}
+.prompt-in input{flex:1;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;color:var(--text-primary);padding:10px 13px;font-size:13px;font-family:var(--font-sans)}
+.diff{margin-top:14px;background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:none}
+.diff.show{display:block}
+.diff .dh{font-family:var(--mono);font-size:10.5px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:8px}
+.diff pre{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:10px 12px;white-space:pre-wrap}
+.diff .add{color:var(--green);background:rgba(46,204,113,.08);display:block}
+.diff .del{color:var(--red);background:rgba(231,76,60,.08);display:block;text-decoration:none}
+.diff .dactions{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line-soft)}
+.matrix{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.matrix th,.matrix td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line-soft)}
+.matrix th{font-family:var(--mono);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted)}
+.matrix td.t{font-weight:600}
+.selout{font-family:var(--mono);font-size:11.5px;background:var(--bg-deep);border:1px solid var(--line);border-radius:8px;padding:5px 10px;color:var(--text-secondary);cursor:pointer}
+
+/* ===================== PREVIEW / TEST ===================== */
+#v-preview{flex-direction:column}
+.pvtop{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pvtop h2{font-family:var(--font-serif);font-size:19px;font-weight:600}
+.targetsel{display:flex;gap:6px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:4px}
+.tgt{font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tgt .d{width:7px;height:7px;border-radius:50%}
+.tgt.active{background:var(--grad);color:var(--on-accent);font-weight:600}
+.pvbody{flex:1;display:grid;grid-template-columns:1fr 320px;overflow:hidden}
+.webview{margin:18px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg-card);display:flex;flex-direction:column}
+.wvbar{height:38px;flex:0 0 38px;background:var(--bg-deep);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;padding:0 12px}
+.wvbar .dots{display:flex;gap:6px} .wvbar .dots i{width:10px;height:10px;border-radius:50%}
+.wvbar .url{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--text-secondary);padding:4px 10px}
+.wvcontent{flex:1;display:grid;place-items:center;background:repeating-linear-gradient(45deg,transparent,transparent 18px,var(--bg-deep) 18px,var(--bg-deep) 19px);position:relative}
+.fakeapp{text-align:center;padding:30px}
+.fakeapp .lg{width:64px;height:64px;border-radius:18px;background:var(--grad);display:grid;place-items:center;margin:0 auto 14px;font-size:30px;color:var(--on-accent)}
+.fakeapp h3{font-family:var(--font-serif);font-size:22px;margin-bottom:6px}
+.fakeapp p{color:var(--text-secondary);font-size:13px}
+.pvside{border-left:1px solid var(--line);background:var(--bg-card);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.tcard{background:var(--bg-deep);border:1px solid var(--line);border-radius:12px;padding:14px}
+.tcard .th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
+.tcard .kv{line-height:1.9}
+.horizon-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--orange);border:1px solid var(--orange);border-radius:6px;padding:2px 7px;display:inline-flex;align-items:center;gap:5px}
+
+.explo{font-size:11.5px;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--accent);border-radius:11px;padding:10px 13px;margin-bottom:16px;display:flex;gap:9px;align-items:flex-start}
+.explo b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<div class="topbar">
+  <div class="brand">
+    <svg class="grue" viewBox="0 0 24 24" fill="none"><path d="M4 20 L4 4 L15 4" stroke="var(--accent)" stroke-width="1.6"/><path d="M4 4 L19 13" stroke="var(--accent)" stroke-width="1.6"/><path d="M19 13 L19 17" stroke="var(--accent-light)" stroke-width="1.6"/><circle cx="19" cy="18.5" r="1.4" fill="var(--accent-light)"/></svg>
+    IakaCockpit
+  </div>
+  <div class="proj-pick"><span class="dot"></span><b>iakacockpit</b> · 29 projets ▾</div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-v="dash">Portefeuille</div>
+    <div class="tab" data-v="work">Work</div>
+    <div class="tab" data-v="regie">3-canaux</div>
+    <div class="tab" data-v="admin">Agents</div>
+    <div class="tab" data-v="preview">Preview / Test</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="themewrap">
+    <div class="themebtn" id="themebtn"><span class="sw"></span>Charte : <b id="themename">NaonEdge dark</b> ▾</div>
+    <div class="thememenu" id="thememenu">
+      <div class="grp">NaonEdge — marque du cabinet</div>
+      <div class="tio active" data-t="naonedge-dark" data-n="NaonEdge dark"><span class="pill" style="background:linear-gradient(135deg,#0a0a0a 60%,#c8a44e)"></span>NaonEdge dark<small>défaut</small></div>
+      <div class="tio" data-t="naonedge-light" data-n="NaonEdge light"><span class="pill" style="background:linear-gradient(135deg,#f7f6f2 60%,#9a7521)"></span>NaonEdge light<small>clair</small></div>
+      <div class="grp">Immersifs</div>
+      <div class="tio" data-t="grimoire-dark-fantasy" data-n="Grimoire"><span class="pill" style="background:linear-gradient(135deg,#e7dcc0 55%,#a84b2a)"></span>Grimoire<small>fantasy</small></div>
+      <div class="tio" data-t="cartoon-std" data-n="Cartoon"><span class="pill" style="background:linear-gradient(135deg,#fff7e6 50%,#ff5a5f)"></span>Cartoon<small>pop</small></div>
+      <div class="grp">OS — mimétisme natif</div>
+      <div class="tio" data-t="os-macos" data-n="macOS"><span class="pill" style="background:linear-gradient(135deg,#ececec 55%,#007aff)"></span>macOS<small>aqua</small></div>
+      <div class="tio" data-t="os-ubuntu" data-n="Ubuntu"><span class="pill" style="background:linear-gradient(135deg,#fafafa 55%,#e95420)"></span>Ubuntu<small>yaru</small></div>
+      <div class="tio" data-t="os-android" data-n="Android"><span class="pill" style="background:linear-gradient(135deg,#fef7ff 55%,#6750a4)"></span>Android<small>material</small></div>
+    </div>
+  </div>
+  <div class="iconbtn" title="réglages">⚙</div>
+</div>
+
+<!-- ===================== VIEW HOST ===================== -->
+<div class="host">
+
+  <!-- =============== DASHBOARD =============== -->
+  <div class="view active" id="v-dash">
+    <div class="dashscroll">
+      <span class="kicker">Portefeuille · ~/work · scan il y a 2 min</span>
+      <div class="statbar">
+        <div class="stat"><div class="n">29</div><div class="l">projets</div></div>
+        <div class="stat"><div class="n">4</div><div class="l">actifs</div></div>
+        <div class="stat"><div class="n">1</div><div class="l">sale</div></div>
+        <div class="stat"><div class="n">2</div><div class="l">working</div></div>
+        <div class="stat"><div class="n">1</div><div class="l">alerte</div></div>
+      </div>
+      <div class="filters-row">
+        <div class="fbtn2 active">tous</div><div class="fbtn2">actifs</div><div class="fbtn2">sales</div><div class="fbtn2">stack ▾</div>
+        <div class="spacer" style="flex:1"></div>
+        <div class="selout">🔍 rechercher…</div>
+      </div>
+      <div class="sectlabel">Projets</div>
+      <div class="cards" id="dashcards"></div>
+    </div>
+  </div>
+
+  <!-- =============== WORK (grille + dock + PTY) =============== -->
+  <div class="view" id="v-work">
+    <div style="display:flex;flex-direction:column;width:100%;overflow:hidden">
+      <div class="worktop">
+        <span class="kicker" style="margin-bottom:14px">Work · iakacockpit · branch main</span>
+        <div class="hero">
+          <div class="lab">✦ Prochaine étape · suggérée par l'IA</div>
+          <h2>Câbler le client LiteLLM derrière l'abstraction backend.</h2>
+          <p>S1 est en place, le dashboard scanne le chapeau. L'étape la plus rentable : exposer un provider unique « LiteLLM » dans <code>src/api/backend.ts</code>, mocké en dev, pour débloquer le moteur « prochaine étape » sans attendre le backend Rust.</p>
+          <div class="by">↳ 6 specs + git log · contexte ~4,2k car. · via LiteLLM (mock dev)</div>
+          <div class="actions"><button class="btn gold">Ouvrir l'instruction</button><button class="btn">Lancer un terminal ici</button><button class="btn">Régénérer</button></div>
+        </div>
+      </div>
+      <div class="gridwrap">
+        <div class="wgrid">
+          <div class="widget"><div class="wh"><span class="e">◎</span>Gate qualité</div>
+            <div class="kv">build <span class="ok">✓</span><br>typecheck <span class="ok">✓</span><br>lint <span class="ok">✓</span><br>tests <span class="ok">✓ 12</span><br>couverture <span class="warn">~38% (honnête)</span></div></div>
+          <div class="widget span2 row2"><div class="wh"><span class="e">💬</span>Main courante · live <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--green)">● live</span></div>
+            <div class="mcmini" id="workfeed"></div></div>
+          <div class="widget"><div class="wh"><span class="e">⬡</span>PTY · [IAKACOCKPIT][Gimli]</div>
+            <div class="miniterm"><span class="pr">$</span> npm run dev
+▸ vite ready on :3010
+<span class="pr">$</span> cargo test
+<span class="ok">ok. 12 passed</span></div></div>
+          <div class="widget"><div class="wh"><span class="e">👥</span>Team · 8 agents</div>
+            <div class="teamrow" id="workteam"></div>
+            <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-muted);margin-top:9px">2 working · 6 idle</div></div>
+          <div class="widget span2"><div class="wh"><span class="e">▦</span>Jalons à valider</div>
+            <div class="kv">S1 scaffolding <span class="ok">✓ livré</span> · S2 backend salvage <span class="warn">en cours</span> · S5 next-step <span style="color:var(--text-muted)">bloqué → LiteLLM</span></div></div>
+        </div>
+      </div>
+      <div class="dockbar">
+        <div class="dockbtn active"><span>✦</span>Étape</div><div class="dockbtn"><span>⬡</span>Terminal</div>
+        <div class="dockbtn"><span>💬</span>Journal</div><div class="dockbtn"><span>👥</span>Team</div><div class="dockbtn"><span>＋</span>Widget</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== MODE 3-CANAUX (Régie plein écran) =============== -->
+  <div class="view" id="v-regie">
+    <div class="ctrl">
+      <div>
+        <h3>Mode 3-canaux · plein écran</h3>
+        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.5">Le rail discret du Work devient ici la <b style="color:var(--accent)">colonne vertébrale</b> : le flux de toute la méthode, sur tout le portefeuille.</div>
+      </div>
+      <div>
+        <h3>Canaux</h3>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="crow" data-on="1" data-c="addr"><div class="gl">💬</div><div class="nm">adresse<small>parole à l'humain</small></div><div class="sw"></div></div>
+          <div class="crow" data-on="1" data-c="geste"><div class="gl">⚙</div><div class="nm">geste<small>actes, outils, délégations</small></div><div class="sw"></div></div>
+          <div class="crow" data-on="1" data-c="pensee"><div class="gl">…</div><div class="nm">pensée<small>délibération privée</small></div><div class="sw"></div></div>
+          <div class="crow" data-on="1" data-c="agent"><div class="gl">@</div><div class="nm">agent<small>dispatch / relais</small></div><div class="sw"></div></div>
+        </div>
+      </div>
+      <div>
+        <h3>Filtrer par agent</h3>
+        <div class="agf" id="regagf"></div>
+      </div>
+    </div>
+    <div class="spine">
+      <div class="spinehead">
+        <div><h2>Flux de la méthode</h2><div class="sub">tous projets · aujourd'hui · 11 événements</div></div>
+        <span class="lv">live</span>
+      </div>
+      <div class="tl" id="regtl"></div>
+    </div>
+    <div class="regaside">
+      <div class="adblock" style="margin-bottom:14px">
+        <div class="bh">✦ prochaine étape · iakacockpit</div>
+        <div style="font-family:var(--font-serif);font-size:15px;font-weight:600;line-height:1.32;margin-bottom:7px">Câbler le client LiteLLM derrière l'abstraction backend.</div>
+        <div style="font-size:12.5px;color:var(--text-secondary)">Provider unique « LiteLLM » mocké en dev, pour débloquer le moteur « prochaine étape ».</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px"><button class="btn gold">Ouvrir l'instruction</button><button class="btn">Lancer un terminal</button></div>
+      </div>
+      <div class="miniterm"><span class="pr">$</span> tail -f mains-courantes
+<span style="color:var(--text-muted)">[iakaboxlogs] MQTT → CouchDB</span>
+<span class="pr">▸</span> 11 événements aujourd'hui</div>
+    </div>
+  </div>
+
+  <!-- =============== ADMIN AGENT =============== -->
+  <div class="view" id="v-admin">
+    <div class="aglist" id="aglist"><h3>Équipe · royaumes</h3></div>
+    <div class="adminmain">
+      <div class="explo"><span>🧭</span><div><b>Exploration (HORIZON pour le build v0.1).</b> L'admin-par-prompt et la matrice target/modèle sont montrés pour valider la VISION UX ; ils ne font pas partie du socle v0.1. La maquette = vision complète, le périmètre de build reste séparé.</div></div>
+      <div class="adminhead">
+        <div class="portrait" id="ad-portrait"></div>
+        <div>
+          <h2 id="ad-name">Loki</h2>
+          <div class="sub" id="ad-sub">IAKACOCKPIT · design / supports · pastille cyan</div>
+          <div class="pmenu"><span class="mini">⬆ upload portrait</span><span class="mini">✦ générer (ComfyUI)</span><span class="mini">⟲ réf charte active</span></div>
+        </div>
+      </div>
+      <div class="adcols">
+        <div class="adblock">
+          <div class="bh">📝 agent.md · éditable (source de vérité)</div>
+          <textarea class="md" id="ad-md"></textarea>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:7px">Édition manuelle directe — ou via le prompt ci-dessous (diff proposé avant écriture).</div>
+        </div>
+        <div class="adblock">
+          <div class="bh">🪄 admin par prompt <span class="horizon-tag">horizon</span></div>
+          <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px">Décris une modif de comportement en langage naturel ; le Cockpit propose un <b>diff</b> sur l'agent.md (jamais d'écriture aveugle).</div>
+          <div class="prompt-in"><input id="ad-prompt" placeholder='ex : "ajoute une règle de contraste AA obligatoire"'><button class="btn gold" id="ad-go">▶</button></div>
+          <div class="diff" id="ad-diff">
+            <div class="dh">↳ diff proposé sur <b>agent.md</b> · IAKACOCKPIT/loki/agent.md</div>
+            <pre><span style="color:var(--text-muted)">  ## Périmètre</span>
+<span style="color:var(--text-muted)">  - Fait : docs HTML, slides, flyers, logos…</span>
+<span class="add">+ ## Contrainte d'accessibilité (ajoutée par prompt)</span>
+<span class="add">+ - Tout texte doit respecter un contraste AA (ratio ≥ 4.5:1).</span>
+<span class="add">+ - Vérifier la lisibilité de l'accent sur chaque charte avant livraison.</span></pre>
+            <div class="dactions"><button class="btn gold">Appliquer le diff</button><button class="btn" id="ad-cancel">Annuler</button></div>
+          </div>
+          <div style="margin-top:18px">
+            <div class="bh">🎯 matrice target / modèle <span class="horizon-tag">horizon</span></div>
+            <table class="matrix">
+              <tr><th>Tâche</th><th>Runner</th><th>Modèle (via LiteLLM)</th><th>Cible</th></tr>
+              <tr><td class="t">design / supports</td><td>Claude Code</td><td><span class="selout">claude-opus ▾</span></td><td><span class="selout">local ▾</span></td></tr>
+              <tr><td class="t">itération rapide</td><td>Claude Code</td><td><span class="selout">ollama/qwen ▾</span></td><td><span class="selout">local ▾</span></td></tr>
+              <tr><td class="t">preview livrable</td><td>—</td><td>—</td><td><span class="selout">Docker LAN ▾</span></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== PREVIEW / TEST =============== -->
+  <div class="view" id="v-preview">
+    <div style="display:flex;flex-direction:column;width:100%;overflow:hidden">
+      <div class="pvtop">
+        <h2>Preview / Test · iakacockpit</h2>
+        <span class="horizon-tag">horizon · multi-target</span>
+        <div class="spacer" style="flex:1"></div>
+        <div class="targetsel" id="targetsel">
+          <div class="tgt active" data-tg="sandbox"><span class="d" style="background:var(--green)"></span>Sandbox</div>
+          <div class="tgt" data-tg="local"><span class="d" style="background:var(--blue)"></span>Docker local</div>
+          <div class="tgt" data-tg="lan"><span class="d" style="background:var(--orange)"></span>Docker LAN</div>
+          <div class="tgt" data-tg="wan"><span class="d" style="background:var(--purple)"></span>Docker WAN</div>
+        </div>
+      </div>
+      <div class="pvbody">
+        <div class="webview">
+          <div class="wvbar"><div class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+            <div class="url" id="pv-url">http://localhost:1420 · sandbox</div></div>
+          <div class="wvcontent">
+            <div class="fakeapp">
+              <div class="lg">◆</div>
+              <h3>IakaCockpit (preview)</h3>
+              <p>rendu live du livrable sur la cible <b id="pv-tgname">Sandbox</b></p>
+            </div>
+          </div>
+        </div>
+        <div class="pvside">
+          <div class="tcard"><div class="th" id="pv-th">Cible · sandbox</div>
+            <div class="kv" id="pv-info"></div></div>
+          <div class="tcard"><div class="th">Actions</div>
+            <div style="display:flex;flex-direction:column;gap:7px"><button class="btn gold">▸ Démarrer / déployer</button><button class="btn">↻ Recharger la preview</button><button class="btn">⊘ Arrêter la cible</button></div></div>
+          <div class="explo" style="margin:0"><span>🧭</span><div><b>Vision UX seulement.</b> Le multi-target (sandbox / Docker local / LAN / WAN) est <b>hors scope v0.1</b> ; Stéphane précisera sa solution. Montré ici pour valider le geste UX.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="mock-flag">MAQUETTE FAKE JETABLE — ne pas porter en prod</div>
+
+<!-- portraits réels embarqués en base64 (data URI) → 100% autonome, offline,
+     tout navigateur, aucune ref file:// ni réseau. Fichier généré (vignettes 256px). -->
+<script src="portraits.data.js"></script>
+<script>
+/* ===================== DONNÉES MOCKÉES COHÉRENTES ===================== */
+// mapping data-theme → clé du réservoir PORTRAITS (voir portraits.data.js)
+const VDIR={"naonedge-dark":"naonedge-dark","naonedge-light":"naonedge-light","grimoire-dark-fantasy":"grimoire-dark-fantasy","cartoon-std":"cartoon-std","os-macos":"os-macos","os-ubuntu":"os-ubuntu","os-android":"os-android"};
+const AGENTS=[
+  {id:"odin",role:"portefeuille / orchestrateur",color:"var(--ag-odin)",pin:"🟠"},
+  {id:"aragorn",role:"coordination projet",color:"var(--ag-aragorn)",pin:"🔵"},
+  {id:"gandalf",role:"architecture / specs",color:"var(--ag-gandalf)",pin:"🟣"},
+  {id:"gimli",role:"implémentation / forge",color:"var(--ag-gimli)",pin:"🟠"},
+  {id:"legolas",role:"tests / qualité",color:"var(--ag-legolas)",pin:"🟢"},
+  {id:"helm",role:"garde / sécurité / CI",color:"var(--ag-helm)",pin:"🔴"},
+  {id:"loki",role:"design / supports",color:"var(--ag-loki)",pin:"🟦"},
+  {id:"nathalie",role:"doc / relation",color:"var(--ag-nathalie)",pin:"🟡"},
+];
+const PROJECTS=[
+  {id:"iakacockpit",desc:"Cœur de l'écosystème · orchestrateur chapeau",stack:["Tauri","React","TS","SQLite"],st:"green",v:"v0.1.0",git:"ahead",ahead:2,qg:"ok"},
+  {id:"iakaide",desc:"IDE Tauri d'origine · salvage backend Rust",stack:["Tauri","React"],st:"orange",v:"v3.1.2",git:"dirty",qg:"warn"},
+  {id:"iakagraph",desc:"Réservoir des iakachartes · tokens & vignettes",stack:["CSS","thèmes"],st:"green",v:"v0.4.0",git:"clean",qg:"ok"},
+  {id:"iakaboxlogs",desc:"Mains courantes MQTT → CouchDB · VM2",stack:["MQTT","CouchDB"],st:"green",v:"v1.0.0",git:"clean",qg:"ok"},
+  {id:"naonedge-dashboard",desc:"Dashboard portefeuille · scan + cartes",stack:["HTML","JS"],st:"muted",v:"v0.2.0",git:"clean",qg:"ok"},
+  {id:"iakafreevision",desc:"Catalogue génératif · ComfyUI .12",stack:["ComfyUI","Python"],st:"muted",v:"v0.25.0",git:"behind",behind:3,qg:"ok"},
+];
+const FEED=[
+  {ag:"odin",c:"addr",t:"12:04:02",pin:"🟠",pj:"iakacockpit",bd:"Je lance le cadrage design du Cockpit et je délègue à Loki."},
+  {ag:"loki",c:"agent",t:"12:04:03",who:"odin → loki",pj:"iakacockpit",bd:"⮌ task(loki, « direction design »)"},
+  {ag:"loki",c:"pensee",t:"12:04:05",pj:"iakacockpit",bd:"je lis le réservoir iakagraph, je récupère les tokens NaonEdge…"},
+  {ag:"loki",c:"geste",t:"12:04:09",pj:"iakacockpit",bd:"→ read tokens.css (naonedge/dark) ·· ok"},
+  {ag:"loki",c:"addr",t:"12:04:31",pin:"🟦",pj:"iakacockpit",bd:"Convergence : H1 socle + 3-canaux plein écran, 7 chartes commutables."},
+  {ag:"gimli",c:"geste",t:"12:09:14",pj:"iakaboxlogs",bd:"→ npm run build ·· ✓ 2.1s"},
+  {ag:"gandalf",c:"pensee",t:"12:09:40",pj:"iakacockpit",bd:"le scaffolding tient, reste à brancher LiteLLM derrière l'abstraction…"},
+  {ag:"gandalf",c:"addr",t:"12:10:02",pin:"🟣",pj:"iakacockpit",bd:"Prochaine étape proposée : câbler le client LiteLLM (mock en dev d'abord)."},
+  {ag:"legolas",c:"agent",t:"12:10:05",who:"gandalf → legolas",pj:"iakacockpit",bd:"⮌ task(legolas, « tests garde-fous chemins »)"},
+  {ag:"legolas",c:"geste",t:"12:10:31",pj:"iakacockpit",bd:"→ cargo test safe_path ·· ✓ 12 passed"},
+  {ag:"legolas",c:"addr",t:"12:10:44",pin:"🟢",pj:"iakacockpit",bd:"Garde-fous chemins couverts (path-traversal testé). Gate qualité ✓."},
+];
+const AGENTMD={
+  loki:"# Loki — design / supports\n\n## Mission\nProduire des livrables visuels on-brand, cohérents,\nen appliquant la bonne charte du catalogue.\n\n## Périmètre\n- Fait : docs HTML, slides, flyers, logos, pages.\n- Ne fait pas : inventer une palette hors charte.\n\n## Charte par défaut\nNaonEdge dark (dark premium · or).",
+  odin:"# Odin — portefeuille / orchestrateur\n\n## Mission\nPiloter le portefeuille au niveau chapeau ;\narbitrer, valider les gates.\n\n## Périmètre\n- Fait : actes portefeuille, coordination haute.\n- Ne fait pas : coder dans un projet (délègue).",
+  gandalf:"# Gandalf — architecture / specs\n\n## Mission\nCadrer, spécifier, rédiger les instructions\navant tout code (jamais ne modifie le code).\n\n## Périmètre\n- Fait : specs, PROJET.md, instructions.\n- Ne fait pas : implémenter.",
+};
+function md(id){return AGENTMD[id]||("# "+id+"\n\n## Mission\n(fiche mockée pour la maquette)\n\n## Périmètre\n- …");}
+
+/* ===================== PORTRAIT (réel + fallback) ===================== */
+function portraitHTML(agId,size){
+  const theme=document.documentElement.getAttribute("data-theme");
+  const key=VDIR[theme];
+  // portrait réel inline (data URI base64) : suit la charte active, offline-OK.
+  const src=(window.PORTRAITS&&PORTRAITS[key])?PORTRAITS[key][agId]:null;
+  const init=agId.charAt(0).toUpperCase();
+  // si la combinaison charte×agent n'a pas de vignette → fallback initiale stylisée
+  if(!src) return '<span class="fb">'+init+'</span>';
+  return '<img src="'+src+'" alt="'+agId+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+
+         '<span class="fb" style="display:none">'+init+'</span>';
+}
+function refreshPortraits(){
+  document.querySelectorAll('.portrait[data-ag]').forEach(p=>{p.innerHTML=portraitHTML(p.dataset.ag,p.dataset.sz);});
+}
+
+/* ===================== RENDER ===================== */
+// dashboard
+function gitBadge(p){
+  if(p.git==="clean")return '<span class="clean">● propre</span>';
+  if(p.git==="dirty")return '<span class="dirty">◑ arbre sale</span>';
+  if(p.git==="ahead")return '<span class="ahead">↑'+p.ahead+' à pousser</span>';
+  if(p.git==="behind")return '<span style="color:var(--text-muted)">↓'+p.behind+' en retard</span>';
+  return "";
+}
+document.getElementById('dashcards').innerHTML=PROJECTS.map(p=>`
+  <div class="pcard">
+    <div class="ph"><b>${p.id}</b><span class="st" style="background:var(--${p.st==='muted'?'text-muted':p.st})"></span></div>
+    <div class="desc">${p.desc}</div>
+    <div class="chips">${p.stack.map(s=>`<span class="chip">${s}</span>`).join('')}</div>
+    <div class="pfoot"><span class="gbadge ${p.qg}">${p.qg==='ok'?'✓':'⚠'} qgate</span><span>${p.v}</span><span class="git">${gitBadge(p)}</span></div>
+  </div>`).join('');
+
+// work feed + team
+document.getElementById('workfeed').innerHTML=FEED.slice(0,7).map(f=>`
+  <div class="l ${f.c}"><span class="d" style="background:${f.color||agColor(f.ag)}"></span>
+    <div><span class="t">${f.pin||''} ${f.who||f.ag} · ${f.t}</span><div class="bd">${f.bd}</div></div></div>`).join('');
+function agColor(id){const a=AGENTS.find(x=>x.id===id);return a?a.color:'var(--text-muted)';}
+document.getElementById('workteam').innerHTML=AGENTS.map(a=>`<span class="portrait" data-ag="${a.id}" data-sz="28" style="width:28px;height:28px;font-size:11px;border-width:1px"></span>`).join('');
+
+// regie timeline + agent filter
+document.getElementById('regtl').innerHTML=FEED.map(f=>`
+  <div class="ev ${f.c}" data-c="${f.c}" data-ag="${f.ag}">
+    <div class="top"><span class="who" style="color:${agColor(f.ag)}">${f.who||f.ag} <span class="pj">· ${f.pj}</span></span>
+      <span style="margin-left:6px">${f.pin||''} ${f.t}</span><span class="ch">${f.c}</span></div>
+    <div class="bd">${f.bd}</div></div>`).join('');
+document.getElementById('regagf').innerHTML=AGENTS.slice(0,6).map(a=>`<span class="agpill" data-ag="${a.id}"><span class="d" style="background:${a.color}"></span>${a.id}</span>`).join('');
+
+// admin list
+document.getElementById('aglist').insertAdjacentHTML('beforeend',AGENTS.map((a,i)=>`
+  <div class="agitem ${i===6?'active':''}" data-ag="${a.id}">
+    <span class="portrait" data-ag="${a.id}" data-sz="34"></span>
+    <div><div class="n">${a.id.charAt(0).toUpperCase()+a.id.slice(1)}</div><div class="r">${a.role}</div></div>
+    <span class="pin">${a.pin}</span>
+  </div>`).join(''));
+
+function selectAgent(id){
+  const a=AGENTS.find(x=>x.id===id);
+  document.querySelectorAll('.agitem').forEach(x=>x.classList.toggle('active',x.dataset.ag===id));
+  const p=document.getElementById('ad-portrait');p.dataset.ag=id;p.dataset.sz=84;p.innerHTML=portraitHTML(id,84);
+  document.getElementById('ad-name').textContent=id.charAt(0).toUpperCase()+id.slice(1);
+  document.getElementById('ad-sub').textContent="IAKACOCKPIT · "+a.role+" · "+a.pin;
+  document.getElementById('ad-md').value=md(id);
+  document.getElementById('ad-diff').classList.remove('show');
+}
+
+/* ===================== INTERACTIONS ===================== */
+// tabs
+document.getElementById('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab');if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('v-'+t.dataset.v).classList.add('active');
+});
+// dock (cosmétique → certains boutons évoquent le mode 3-canaux)
+document.querySelectorAll('.dockbtn').forEach(d=>d.addEventListener('click',()=>{
+  document.querySelectorAll('.dockbtn').forEach(x=>x.classList.remove('active'));d.classList.add('active');
+  if(d.textContent.includes('Journal')){ // ouvrir le mode 3-canaux plein écran
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.v==='regie'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('v-regie').classList.add('active');
+  }
+}));
+// theme picker
+const tbtn=document.getElementById('themebtn'),tmenu=document.getElementById('thememenu');
+tbtn.addEventListener('click',()=>tmenu.classList.toggle('open'));
+document.addEventListener('click',e=>{if(!e.target.closest('.themewrap'))tmenu.classList.remove('open');});
+tmenu.addEventListener('click',e=>{
+  const o=e.target.closest('.tio');if(!o)return;
+  document.documentElement.setAttribute('data-theme',o.dataset.t);
+  document.getElementById('themename').textContent=o.dataset.n;
+  tmenu.querySelectorAll('.tio').forEach(x=>x.classList.toggle('active',x===o));
+  tmenu.classList.remove('open');
+  refreshPortraits(); // les portraits suivent la charte
+});
+// regie filters
+function applyReg(){
+  const chans=[...document.querySelectorAll('#v-regie .crow[data-c]')].filter(c=>c.dataset.on==='1').map(c=>c.dataset.c);
+  const off=[...document.querySelectorAll('#regagf .agpill.off')].map(p=>p.dataset.ag);
+  document.querySelectorAll('#regtl .ev').forEach(ev=>{
+    ev.style.display=(chans.includes(ev.dataset.c)&&!off.includes(ev.dataset.ag))?'':'none';});
+}
+document.querySelectorAll('#v-regie .crow[data-c]').forEach(c=>c.addEventListener('click',()=>{
+  c.dataset.on=c.dataset.on==='1'?'0':'1';applyReg();}));
+document.getElementById('regagf').addEventListener('click',e=>{
+  const p=e.target.closest('.agpill');if(!p)return;p.classList.toggle('off');applyReg();});
+// admin
+document.getElementById('aglist').addEventListener('click',e=>{
+  const it=e.target.closest('.agitem');if(it)selectAgent(it.dataset.ag);});
+document.getElementById('ad-go').addEventListener('click',()=>document.getElementById('ad-diff').classList.add('show'));
+document.getElementById('ad-cancel').addEventListener('click',()=>document.getElementById('ad-diff').classList.remove('show'));
+// preview targets
+const TG={
+  sandbox:{name:"Sandbox",url:"http://localhost:1420 · sandbox",info:`hôte <span style="color:var(--text-primary)">local éphémère</span><br>réseau <span style="color:var(--text-muted)">isolé</span><br>secrets <span style="color:var(--text-muted)">mockés</span><br>statut <span style="color:var(--green)">prêt</span>`},
+  local:{name:"Docker local",url:"http://localhost:8080 · docker local",info:`hôte <span style="color:var(--text-primary)">docker desktop</span><br>stack <span style="color:var(--text-muted)">iakacockpit-dev-*</span><br>ports <span style="color:var(--text-muted)">8080→1420</span><br>statut <span style="color:var(--orange)">à démarrer</span>`},
+  lan:{name:"Docker LAN",url:"http://192.168.2.11:3xxx · iakabox VM2",info:`hôte <span style="color:var(--text-primary)">iakabox .11</span><br>réseau <span style="color:var(--text-muted)">LAN 192.168.2.0/24</span><br>accès <span style="color:var(--text-muted)">double rebond SSH</span><br>statut <span style="color:var(--green)">joignable</span>`},
+  wan:{name:"Docker WAN",url:"https://preview.iakaproject.net · WAN",info:`hôte <span style="color:var(--text-primary)">VPS public</span><br>réseau <span style="color:var(--text-muted)">WAN / TLS</span><br>accès <span style="color:var(--text-muted)">token + HTTPS</span><br>statut <span style="color:var(--text-muted)">non provisionné</span>`},
+};
+document.getElementById('targetsel').addEventListener('click',e=>{
+  const t=e.target.closest('.tgt');if(!t)return;
+  document.querySelectorAll('.tgt').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  const d=TG[t.dataset.tg];
+  document.getElementById('pv-url').textContent=d.url;
+  document.getElementById('pv-tgname').textContent=d.name;
+  document.getElementById('pv-th').textContent="Cible · "+t.dataset.tg;
+  document.getElementById('pv-info').innerHTML=d.info;
+});
+
+/* ===================== INIT ===================== */
+selectAgent('loki');
+refreshPortraits();
+document.getElementById('pv-info').innerHTML=TG.sandbox.info;
+</script>
+</body>
+</html>
