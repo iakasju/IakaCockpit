@@ -1,0 +1,12 @@
+[
+  {
+    "date": "2026-06-24 20:36",
+    "reason": "version",
+    "version": "v0.1.0",
+    "branch": "main",
+    "commit": "49e5271 chore: init iakaframe (structure + methode de travail)",
+    "dirty": false,
+    "files": 13,
+    "note": "onboarding initial"
+  }
+]
