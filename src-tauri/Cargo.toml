@@ -1,0 +1,27 @@
+[package]
+name = "iakacockpit"
+version = "0.1.0"
+description = "IakaCockpit - cockpit chapeau-rooted de l'ecosysteme iakaProject"
+authors = ["Stephane / iakateam"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+# Le suffixe `_lib` evite un conflit de nom lib/bin sur Windows
+# (cf. https://github.com/rust-lang/cargo/issues/8519).
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+# Lignees alignees sur l'eprouve iakaIDE (deja builde sur les 3 OS).
+tauri = { version = "2.11.2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+portable-pty = "0.8"
+# Socle securite L0
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+dirs = "5"

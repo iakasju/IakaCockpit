@@ -19,23 +19,41 @@
 
 <!-- 2-4 lignes : à quoi sert le projet, pour qui, le résultat produit. -->
 
-Stack : <!-- ex: React + TypeScript + Tauri/Rust + SQLite -->
+IakaCockpit — cockpit chapeau-rooted de l'écosystème iakaProject (cf. `specs/PROJET.md`).
+
+Stack : **React 18.3 + TypeScript 5.5 + Vite 6** (front, `src/`) · **Tauri 2 / Rust**
+(backend, `src-tauri/`) · **SQLite** (`rusqlite` bundled, config non sensible) ·
+secrets au **keychain natif** (`keyring`). App id `com.iakateam.iakacockpit`.
+
+Architecture front (D7) : `src/api/backend.ts` = **unique point d'`invoke`** vers Rust ;
+état dans des hooks séparés (`useGridState`, `usePortfolio`) ; `App.tsx` = shell. Jamais
+de god-component, jamais d'`invoke` éparpillé dans les composants.
+
+Socle sécurité Rust (L0) : `pathguard` (anti-traversal testé), `paths` (chapeau cross-OS
+via `IAKAFRAME_ROOT`, zéro constante Windows), `shell` (résolution shell par OS), `secrets`
+(SecretStore/keyring), `config` (SQLite non sensible). CSP **stricte** (jamais `null`).
 
 ---
 
 ## Commandes à utiliser
 
 ```bash
-# ex:
-# npm run dev          # démarrer en dev
-# npm run build        # build de prod
-# npm run test:all     # tous les tests
-# npm run lint:all     # typecheck + lint
-# bash scripts/quality-report.sh   # rapport qualité consolidé
-```
+npm install                  # installer les deps front
+npm run dev                  # front Vite (port 3020)
+npm run tauri dev            # app desktop Tauri en dev (GUI)
+npm run build                # build front (tsc + vite)
+npm run tauri build          # bundle desktop
+npm run typecheck            # tsc --noEmit
+npm run lint                 # ESLint
+npm run test                 # vitest
+npm run test:coverage        # vitest + couverture v8
+bash scripts/quality.sh      # chaîne qualité complète (front + Rust)
 
-<!-- Si un Makefile/scripts existent, exiger de passer par eux plutôt que les
-     commandes brutes (docker compose, cargo, etc.). -->
+# Côté Rust (depuis src-tauri/) :
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
 
 ---
 
@@ -92,6 +110,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 ## Backlog
 
-<!-- Liste des features priorisées. Chaque entrée pointe vers son instruction. -->
+<!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
-- [ ] <!-- feature → specs/instructions/feature-xxx.md -->
+- [x] **L0** — Bootstrap cross-OS + socle sécurité → `specs/instructions/L0-bootstrap-securite.md`
+      *(implémenté, en attente de gate Legolas).*
+- [ ] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config).
+- [ ] **L2** — Vues Portfolio / Working / Réglages + grille/dock/onglets (maquette v7).
+- [ ] **L3** — Client LiteLLM / moteur « prochaine étape ».
+- [ ] **L4** — Mains courantes 3-canaux / iakaboxlogs.

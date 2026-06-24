@@ -4,3 +4,11 @@ node_modules/
 dist/
 build/
 target/
+coverage/
+
+# Tauri generated artefacts
+src-tauri/target/
+src-tauri/gen/
+
+# OS
+.DS_Store
