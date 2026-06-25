@@ -1,10 +1,10 @@
 /**
- * PortfolioView — vue Portfolio (D2). Présentationnel : main courante (mock)
- * gauche + grille de tuiles RÉELLE droite. Reçoit l'état des hooks en props,
- * aucun I/O ici.
+ * PortfolioView — vue Portfolio (D2). Présentationnel : main courante (branchée
+ * iakaboxlogs, L4) gauche + grille de tuiles RÉELLE droite. Reçoit l'état des hooks
+ * en props, aucun I/O ici (la main courante porte son propre hook `useMainCourante`).
  */
 import type { Project } from "../api/backend";
-import { MainCouranteMock } from "../components/MainCouranteMock";
+import { MainCourante } from "../components/MainCourante";
 import { Tile } from "../components/Tile";
 
 export interface PortfolioViewProps {
@@ -30,7 +30,7 @@ export function PortfolioView({
 }: PortfolioViewProps): JSX.Element {
   return (
     <section className="view pf" aria-label="Portfolio">
-      <MainCouranteMock />
+      <MainCourante />
       <div className="pfright">
         <div className="rh">
           <h1>Portfolio</h1>
