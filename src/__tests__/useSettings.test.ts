@@ -37,6 +37,8 @@ function makeApi(initial: Record<string, string> = {}) {
   const store: Record<string, string> = { ...initial };
   // Présence d'une clé IA simulée (jamais la valeur réelle — D4).
   let keyPresent = false;
+  // Présence d'un token webhook n8n simulée (jamais la valeur — L6/D3).
+  let n8nTokenPresent = false;
   const api = {
     configAll: vi.fn(async () => ({ ...store })),
     getRoot: vi.fn(async () => "/root"),
@@ -50,6 +52,11 @@ function makeApi(initial: Record<string, string> = {}) {
     aiHasKey: vi.fn(async () => keyPresent),
     aiSetKey: vi.fn(async (value: string) => {
       keyPresent = value.trim().length > 0;
+    }),
+    couchHasCredentials: vi.fn(async () => false),
+    n8nHasToken: vi.fn(async () => n8nTokenPresent),
+    n8nSetToken: vi.fn(async (value: string) => {
+      n8nTokenPresent = value.trim().length > 0;
     }),
   } as unknown as Backend;
   return { api, store };
@@ -194,6 +201,76 @@ describe("useSettings — persistance (PO-2 / D4-bis)", () => {
       await result.current.setAiKey("");
     });
     expect(result.current.aiKeySet).toBe(false);
+  });
+
+  // --- L6 : canal adresse externe (n8n) ---
+
+  it("setN8nWebhookUrl persiste l'URL (clé non sensible)", async () => {
+    const { api, store } = makeApi();
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => {
+      await result.current.setN8nWebhookUrl("http://localhost:5678/webhook/x");
+    });
+    expect(api.configSet).toHaveBeenCalledWith(
+      "n8n_webhook_url",
+      "http://localhost:5678/webhook/x",
+    );
+    expect(store["n8n_webhook_url"]).toBe("http://localhost:5678/webhook/x");
+    expect(result.current.n8nWebhookUrl).toBe(
+      "http://localhost:5678/webhook/x",
+    );
+  });
+
+  it("support actif : défaut slack, persisté, relu au montage, valide", async () => {
+    const { api, store } = makeApi();
+    const first = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(first.result.current.loaded).toBe(true));
+    expect(first.result.current.n8nActiveSupport).toBe("slack");
+    await act(async () => {
+      await first.result.current.setN8nActiveSupport("discord");
+    });
+    expect(api.configSet).toHaveBeenCalledWith("n8n_active_support", "discord");
+    expect(store["n8n_active_support"]).toBe("discord");
+    // Remontage : la valeur est retrouvée.
+    const second = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(second.result.current.loaded).toBe(true));
+    expect(second.result.current.n8nActiveSupport).toBe("discord");
+  });
+
+  it("support invalide en config retombe sur le défaut (slack)", async () => {
+    const { api } = makeApi({ n8n_active_support: "carrier-pigeon" });
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.n8nActiveSupport).toBe("slack");
+  });
+
+  it("n8nTokenSet reflète la présence du token sans jamais lire sa valeur", async () => {
+    const { api } = makeApi();
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.n8nTokenSet).toBe(false);
+    await act(async () => {
+      await result.current.setN8nToken("tok-secret");
+    });
+    expect(api.n8nSetToken).toHaveBeenCalledWith("tok-secret");
+    expect(result.current.n8nTokenSet).toBe(true);
+    // Aucune commande de LECTURE du token n'existe sur la façade.
+    expect(
+      (api as unknown as Record<string, unknown>)["n8nGetToken"],
+    ).toBeUndefined();
+    await act(async () => {
+      await result.current.setN8nToken("");
+    });
+    expect(result.current.n8nTokenSet).toBe(false);
+  });
+
+  it("les clés n8n ne matchent PAS le filtre secret (configAll)", () => {
+    const isSecret = (k: string): boolean =>
+      /token|key|secret|password/i.test(k);
+    for (const k of [CONFIG_KEYS.n8nWebhookUrl, CONFIG_KEYS.n8nActiveSupport]) {
+      expect(isSecret(k), `${k} ne doit pas être filtré`).toBe(false);
+    }
   });
 });
 

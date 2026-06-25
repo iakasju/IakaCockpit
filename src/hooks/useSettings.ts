@@ -16,7 +16,7 @@
  * `document.documentElement`). Le rendu réel est piloté par CSS (`tokens.css`).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { backend, type Backend } from "../api/backend";
+import { backend, type Backend, type NotifySupport } from "../api/backend";
 
 export type NavPos = "left" | "right" | "split";
 export type Density = "comfort" | "standard" | "compact";
@@ -44,7 +44,12 @@ export const CONFIG_KEYS = {
   litellmModel: "litellm_model",
   couchdbUrl: "couchdb_url",
   couchdbDb: "couchdb_db",
+  n8nWebhookUrl: "n8n_webhook_url",
+  n8nActiveSupport: "n8n_active_support",
 } as const;
+
+/** Support de diffusion par défaut (L6, D2) si non configuré. */
+export const DEFAULT_SUPPORT: NotifySupport = "slack";
 
 /** Défauts documentés (appliqués si la clé est absente). */
 export const DEFAULT_UI: UiPrefs = {
@@ -70,6 +75,12 @@ export interface UseSettings {
   couchdbDb: string;
   /** Des identifiants CouchDB sont-ils enregistrés au keychain ? (présence seule, L4). */
   couchCredsSet: boolean;
+  /** URL du webhook n8n (canal adresse sortant, L6, non sensible). */
+  n8nWebhookUrl: string;
+  /** Support actif choisi côté Cockpit (L6, D2 — slack/discord/mqtt). */
+  n8nActiveSupport: NotifySupport;
+  /** Un token de webhook n8n est-il enregistré au keychain ? (présence seule, L6). */
+  n8nTokenSet: boolean;
   theme: string;
   ui: UiPrefs;
   loaded: boolean;
@@ -84,6 +95,12 @@ export interface UseSettings {
   setCouchdbDb: (db: string) => Promise<void>;
   /** Écrit (password vide = retire) les identifiants CouchDB au keychain ; met à jour `couchCredsSet` (L4). */
   setCouchCredentials: (user: string, password: string) => Promise<void>;
+  /** Persiste l'URL du webhook n8n (config non sensible, L6). */
+  setN8nWebhookUrl: (url: string) => Promise<void>;
+  /** Persiste le support actif (config non sensible, L6, D2). */
+  setN8nActiveSupport: (support: NotifySupport) => Promise<void>;
+  /** Écrit (vide = retire) le token du webhook n8n au keychain ; met à jour `n8nTokenSet` (L6). */
+  setN8nToken: (value: string) => Promise<void>;
   setTheme: (id: string) => Promise<void>;
   setUiPref: <K extends keyof UiPrefs>(
     key: K,
@@ -122,6 +139,13 @@ export function parsePrefsExport(cfg: Record<string, string>): UiPrefs {
   return parsePrefs(cfg);
 }
 
+/** Valide une valeur de support (L6) ; retombe sur le défaut si invalide/absente. */
+export function parseSupport(value: string | undefined): NotifySupport {
+  return value === "slack" || value === "discord" || value === "mqtt"
+    ? value
+    : DEFAULT_SUPPORT;
+}
+
 function parsePrefs(cfg: Record<string, string>): UiPrefs {
   const ui: UiPrefs = { ...DEFAULT_UI };
   const nav = cfg[CONFIG_KEYS.navPos];
@@ -158,6 +182,10 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
   const [couchdbUrl, setCouchdbUrlState] = useState<string>("");
   const [couchdbDb, setCouchdbDbState] = useState<string>("");
   const [couchCredsSet, setCouchCredsSet] = useState<boolean>(false);
+  const [n8nWebhookUrl, setN8nWebhookUrlState] = useState<string>("");
+  const [n8nActiveSupport, setN8nActiveSupportState] =
+    useState<NotifySupport>(DEFAULT_SUPPORT);
+  const [n8nTokenSet, setN8nTokenSet] = useState<boolean>(false);
   const [ui, setUi] = useState<UiPrefs>(DEFAULT_UI);
   const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -191,6 +219,13 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       } catch {
         couchSet = false;
       }
+      // Présence d'un token webhook n8n (keychain) : best-effort, jamais la valeur (L6/D3).
+      let n8nTokenPresent = false;
+      try {
+        n8nTokenPresent = await api.n8nHasToken();
+      } catch {
+        n8nTokenPresent = false;
+      }
       if (cancelled) return;
       const nextUi = parsePrefs(cfg);
       const nextTheme = cfg[CONFIG_KEYS.theme] || DEFAULT_THEME;
@@ -202,6 +237,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setCouchdbUrlState(cfg[CONFIG_KEYS.couchdbUrl] ?? "");
       setCouchdbDbState(cfg[CONFIG_KEYS.couchdbDb] ?? "");
       setCouchCredsSet(couchSet);
+      setN8nWebhookUrlState(cfg[CONFIG_KEYS.n8nWebhookUrl] ?? "");
+      setN8nActiveSupportState(parseSupport(cfg[CONFIG_KEYS.n8nActiveSupport]));
+      setN8nTokenSet(n8nTokenPresent);
       setRootState(r);
       applyToDom(domRef.current, nextTheme, nextUi);
       setLoaded(true);
@@ -269,6 +307,31 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     [api],
   );
 
+  const setN8nWebhookUrl = useCallback(
+    async (url: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.n8nWebhookUrl, url);
+      setN8nWebhookUrlState(url);
+    },
+    [api],
+  );
+
+  const setN8nActiveSupport = useCallback(
+    async (support: NotifySupport): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.n8nActiveSupport, support);
+      setN8nActiveSupportState(support);
+    },
+    [api],
+  );
+
+  const setN8nToken = useCallback(
+    async (value: string): Promise<void> => {
+      // Write-only (L6/D3) : présence seule, jamais la valeur. Vide = retire.
+      await api.n8nSetToken(value);
+      setN8nTokenSet(value.trim().length > 0);
+    },
+    [api],
+  );
+
   const setTheme = useCallback(
     async (id: string): Promise<void> => {
       await api.configSet(CONFIG_KEYS.theme, id);
@@ -310,6 +373,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       couchdbUrl,
       couchdbDb,
       couchCredsSet,
+      n8nWebhookUrl,
+      n8nActiveSupport,
+      n8nTokenSet,
       theme,
       ui,
       loaded,
@@ -320,6 +386,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setCouchdbUrl,
       setCouchdbDb,
       setCouchCredentials,
+      setN8nWebhookUrl,
+      setN8nActiveSupport,
+      setN8nToken,
       setTheme,
       setUiPref,
     }),
@@ -331,6 +400,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       couchdbUrl,
       couchdbDb,
       couchCredsSet,
+      n8nWebhookUrl,
+      n8nActiveSupport,
+      n8nTokenSet,
       theme,
       ui,
       loaded,
@@ -341,6 +413,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setCouchdbUrl,
       setCouchdbDb,
       setCouchCredentials,
+      setN8nWebhookUrl,
+      setN8nActiveSupport,
+      setN8nToken,
       setTheme,
       setUiPref,
     ],

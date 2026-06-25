@@ -99,6 +99,26 @@ export interface MainCouranteFilter {
   royaume?: string;
 }
 
+/**
+ * Support de diffusion du canal « adresse » (L6). Le Cockpit choisit le support
+ * actif (D2) et le passe dans le payload ; n8n route bêtement dessus. AUCUN secret
+ * de support ne vit dans le Cockpit — ils restent dans n8n.
+ */
+export type NotifySupport = "slack" | "discord" | "mqtt";
+
+/**
+ * Miroir de `notify::NotifyAck` (Rust, L6) — accusé de PRISE EN CHARGE par la
+ * passerelle n8n. `ok:true` = n8n a reçu et va router (HTTP 2xx réel) OU mock ;
+ * `provider` vaut `"n8n"` (POST réel) ou `"mock"` (URL vide / flag dev, sans réseau).
+ * L'ack NE signifie PAS que le message est arrivé sur Discord/Slack/MQTT (diffusion
+ * asynchrone côté n8n, hors visibilité du Cockpit en phase 1).
+ */
+export interface NotifyAck {
+  ok: boolean;
+  provider: string;
+  http_status: number | null;
+}
+
 /** Miroir de `services::ServiceStatus` (Rust). */
 export interface ServiceStatus {
   name: string;
@@ -210,6 +230,45 @@ export function couchSetCredentials(
 /** Indique si des identifiants CouchDB sont enregistrés (présence seule, jamais la valeur). */
 export function couchHasCredentials(): Promise<boolean> {
   return call<boolean>("couch_has_credentials");
+}
+
+// --- Canal adresse externe SORTANT via passerelle n8n (L6) ---
+//
+// UN POST {n8n_webhook_url} canal-agnostique côté Rust. L'appel HTTP + l'auth
+// (header X-API-Key) + le token vivent UNIQUEMENT côté Rust (D6) : aucun `fetch`/
+// client HTTP n8n dans le front (CSP stricte), aucun token ne transite par le front.
+// Le front ne fait qu'`invoke` via cette façade. AUCUN secret de support côté app.
+
+/**
+ * Émet un message sur le canal « adresse » via la passerelle n8n (L6). Renvoie un
+ * ack de PRISE EN CHARGE (`provider:"n8n"` en POST réel, `"mock"` si URL vide / flag
+ * dev). Rejette avec un message lisible si n8n est injoignable, refuse l'envoi
+ * (HTTP non-2xx) ou si le message est vide (dégradation propre côté Rust, zéro crash).
+ *
+ * `support` (slack/discord/mqtt) et `cible` (canal/salon/topic, chaîne opaque) sont
+ * optionnels : `support` absent → la config `n8n_active_support` (puis défaut) côté
+ * Rust. `meta` = contexte d'émission (émetteur, projet, ts…) — AUCUN secret.
+ */
+export function notifyUser(
+  message: string,
+  support?: NotifySupport,
+  cible?: string,
+  meta?: Record<string, unknown>,
+): Promise<NotifyAck> {
+  return call<NotifyAck>("notify_user", { message, support, cible, meta });
+}
+
+/**
+ * Écrit le token (optionnel) du webhook n8n au keychain (WRITE-ONLY : jamais relu
+ * vers le front). Une valeur vide retire le token. Header d'auth `X-API-Key`. Cf. D3.
+ */
+export function n8nSetToken(value: string): Promise<void> {
+  return call<void>("n8n_set_token", { value });
+}
+
+/** Indique si un token de webhook n8n est enregistré (présence seule, jamais la valeur). */
+export function n8nHasToken(): Promise<boolean> {
+  return call<boolean>("n8n_has_token");
 }
 
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
@@ -325,6 +384,9 @@ export const backend = {
   fetchMainCourante,
   couchSetCredentials,
   couchHasCredentials,
+  notifyUser,
+  n8nSetToken,
+  n8nHasToken,
   ptyOpen,
   ptyWrite,
   ptyResize,

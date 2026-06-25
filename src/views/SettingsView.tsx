@@ -8,7 +8,8 @@
  * DOM). Aucun I/O direct dans la vue.
  */
 import { useState } from "react";
-import type { ServiceStatus } from "../api/backend";
+import { notifyUser } from "../api/backend";
+import type { NotifySupport, ServiceStatus } from "../api/backend";
 import type {
   Density,
   FontFamily,
@@ -42,10 +43,23 @@ const FONT: { id: FontFamily; label: string }[] = [
   { id: "mono-ui", label: "mono" },
 ];
 
+/** Supports de diffusion du canal adresse (L6, D2) — choisis côté Cockpit. */
+const SUPPORTS: { id: NotifySupport; label: string }[] = [
+  { id: "slack", label: "Slack" },
+  { id: "discord", label: "Discord" },
+  { id: "mqtt", label: "MQTT" },
+];
+
 export interface SettingsViewProps {
   settings: UseSettings;
   services: ServiceStatus[];
   onRescan: () => void;
+  /**
+   * Déclencheur d'envoi du canal adresse (L6). Par défaut la façade `notifyUser`
+   * (seul point `invoke`, D6) ; injectable pour les tests. Le bouton « Tester
+   * l'envoi » l'appelle et affiche l'ack ou l'erreur lisible.
+   */
+  onNotify?: typeof notifyUser;
 }
 
 function Seg<T extends string>(props: {
@@ -74,6 +88,7 @@ export function SettingsView({
   settings,
   services,
   onRescan,
+  onNotify = notifyUser,
 }: SettingsViewProps): JSX.Element {
   const [rootDraft, setRootDraft] = useState<string>("");
   const [endpointDraft, setEndpointDraft] = useState<string>("");
@@ -83,6 +98,12 @@ export function SettingsView({
   const [couchDbDraft, setCouchDbDraft] = useState<string>("");
   const [couchUserDraft, setCouchUserDraft] = useState<string>("");
   const [couchPassDraft, setCouchPassDraft] = useState<string>("");
+  const [n8nUrlDraft, setN8nUrlDraft] = useState<string>("");
+  const [n8nTokenDraft, setN8nTokenDraft] = useState<string>("");
+  const [n8nCibleDraft, setN8nCibleDraft] = useState<string>("");
+  const [n8nMsgDraft, setN8nMsgDraft] = useState<string>("");
+  const [n8nTestResult, setN8nTestResult] = useState<string>("");
+  const [n8nTesting, setN8nTesting] = useState<boolean>(false);
 
   // Pré-remplit les brouillons à la première valeur chargée.
   const rootValue = rootDraft || settings.root || "";
@@ -91,6 +112,37 @@ export function SettingsView({
   const modelValue = modelDraft || settings.litellmModel || "";
   const couchUrlValue = couchUrlDraft || settings.couchdbUrl || "";
   const couchDbValue = couchDbDraft || settings.couchdbDb || "";
+  const n8nUrlValue = n8nUrlDraft || settings.n8nWebhookUrl || "";
+
+  // Déclencheur « Tester l'envoi » (L6) : émet via la façade, affiche ack/erreur.
+  // Aucun `invoke` ici — c'est `onNotify` (façade) qui parle à Rust (D6).
+  const runNotifyTest = async (): Promise<void> => {
+    setN8nTesting(true);
+    setN8nTestResult("");
+    try {
+      const ack = await onNotify(
+        n8nMsgDraft,
+        settings.n8nActiveSupport,
+        n8nCibleDraft || undefined,
+        {
+          royaume: "IAKACOCKPIT",
+          agent: "Cockpit",
+          project: "iakacockpit",
+          ts: new Date().toISOString(),
+          source: "iakacockpit",
+        },
+      );
+      setN8nTestResult(
+        ack.provider === "mock"
+          ? "Mock : payload construit, aucun POST réel (URL webhook vide ou flag dev)."
+          : `Pris en charge par n8n (provider ${ack.provider}, HTTP ${ack.http_status ?? "?"}).`,
+      );
+    } catch (e) {
+      setN8nTestResult(`Échec : ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setN8nTesting(false);
+    }
+  };
 
   return (
     <section className="view st" aria-label="Réglages">
@@ -449,6 +501,136 @@ export function SettingsView({
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="block">
+            <div className="bt">
+              <span className="e">📣</span>
+              <h2>Canal adresse externe (n8n)</h2>
+            </div>
+            <p className="lead">
+              Émet les messages du canal « adresse » vers UN webhook n8n, qui route
+              vers le support actif. Aucun secret de support (Discord/Slack/MQTT) ne
+              vit dans le Cockpit : ils restent dans n8n.
+            </p>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">URL du webhook n8n</div>
+                <div className="d">
+                  Production URL du workflow n8n (Active). Non sensible. Vide → mode
+                  mock (aucun POST réel).
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="url"
+                  placeholder="http://localhost:5678/webhook/iakacockpit-adresse"
+                  value={n8nUrlValue}
+                  onChange={(e) => setN8nUrlDraft(e.target.value)}
+                  aria-label="URL du webhook n8n"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => void settings.setN8nWebhookUrl(n8nUrlValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Support actif</div>
+                <div className="d">
+                  Choisi côté Cockpit (passé dans le payload) ; n8n route dessus.
+                </div>
+              </div>
+              <div className="ctl">
+                <Seg
+                  options={SUPPORTS}
+                  value={settings.n8nActiveSupport}
+                  onChange={(v) => void settings.setN8nActiveSupport(v)}
+                />
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Token du webhook (facultatif)</div>
+                <div className="d">
+                  En-tête <code>X-API-Key</code> si le webhook n8n est protégé (Header
+                  Auth). Stocké au keychain (jamais affiché). Vide → retire.{" "}
+                  <strong>
+                    {settings.n8nTokenSet ? "Token enregistré ✓" : "Aucun token"}
+                  </strong>
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="password"
+                  placeholder="token (laisser vide pour retirer)"
+                  value={n8nTokenDraft}
+                  onChange={(e) => setN8nTokenDraft(e.target.value)}
+                  aria-label="Token du webhook n8n"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => {
+                    void settings
+                      .setN8nToken(n8nTokenDraft)
+                      .then(() => setN8nTokenDraft(""));
+                  }}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Tester l'envoi</div>
+                <div className="d">
+                  Émet un message sur le canal adresse via n8n (cible optionnelle :
+                  canal/salon/topic). Affiche l'ack ou l'erreur.
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder="cible (optionnelle : #iakaframe, topic…)"
+                  value={n8nCibleDraft}
+                  onChange={(e) => setN8nCibleDraft(e.target.value)}
+                  aria-label="Cible du message"
+                />
+                <input
+                  className="field"
+                  type="text"
+                  placeholder="message de test"
+                  value={n8nMsgDraft}
+                  onChange={(e) => setN8nMsgDraft(e.target.value)}
+                  aria-label="Message de test"
+                />
+                <button
+                  type="button"
+                  className="btn accent sm"
+                  disabled={n8nTesting}
+                  onClick={() => void runNotifyTest()}
+                >
+                  {n8nTesting ? "Envoi…" : "Tester l'envoi"}
+                </button>
+              </div>
+            </div>
+            {n8nTestResult && (
+              <div className="svcrow" role="status" aria-live="polite">
+                {n8nTestResult}
+              </div>
+            )}
           </div>
 
           <div className="block">

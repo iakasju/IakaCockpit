@@ -43,6 +43,9 @@ import {
   fetchMainCourante,
   couchSetCredentials,
   couchHasCredentials,
+  notifyUser,
+  n8nSetToken,
+  n8nHasToken,
   ptyOpen,
   ptyWrite,
   ptyResize,
@@ -305,6 +308,70 @@ describe("backend.ts (main courante 3-canaux — L4)", () => {
     const facade = backend as unknown as Record<string, unknown>;
     expect(facade["couchGetCredentials"]).toBeUndefined();
     expect(facade["getCouchPassword"]).toBeUndefined();
+  });
+});
+
+describe("backend.ts (canal adresse externe n8n — L6)", () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  it("notifyUser invoque notify_user avec message/support/cible/meta", async () => {
+    invokeMock.mockResolvedValue({
+      ok: true,
+      provider: "n8n",
+      http_status: 200,
+    });
+    const meta = { royaume: "IAKACOCKPIT", agent: "Gandalf" };
+    const ack = await notifyUser("coucou", "discord", "#iakaframe", meta);
+    expect(invokeMock).toHaveBeenCalledWith("notify_user", {
+      message: "coucou",
+      support: "discord",
+      cible: "#iakaframe",
+      meta,
+    });
+    expect(ack.provider).toBe("n8n");
+    expect(ack.http_status).toBe(200);
+  });
+
+  it("notifyUser tolère les optionnels absents", async () => {
+    invokeMock.mockResolvedValue({
+      ok: true,
+      provider: "mock",
+      http_status: null,
+    });
+    const ack = await notifyUser("hello");
+    expect(invokeMock).toHaveBeenCalledWith("notify_user", {
+      message: "hello",
+      support: undefined,
+      cible: undefined,
+      meta: undefined,
+    });
+    expect(ack.provider).toBe("mock");
+  });
+
+  it("n8nSetToken invoque n8n_set_token avec value (write-only)", async () => {
+    await n8nSetToken("tok-secret");
+    expect(invokeMock).toHaveBeenCalledWith("n8n_set_token", {
+      value: "tok-secret",
+    });
+  });
+
+  it("n8nHasToken invoque n8n_has_token sans args et renvoie un booléen", async () => {
+    invokeMock.mockResolvedValue(true);
+    const has = await n8nHasToken();
+    expect(invokeMock).toHaveBeenCalledWith("n8n_has_token", undefined);
+    expect(has).toBe(true);
+  });
+
+  it("la façade n'expose AUCUNE commande de lecture du token n8n (cloisonnement D3)", () => {
+    for (const fn of ["notifyUser", "n8nSetToken", "n8nHasToken"] as const) {
+      expect(typeof backend[fn]).toBe("function");
+    }
+    const facade = backend as unknown as Record<string, unknown>;
+    expect(facade["n8nGetToken"]).toBeUndefined();
+    expect(facade["getN8nToken"]).toBeUndefined();
   });
 });
 
