@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-25 21:43 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-06-25 22:47 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.3.0-rc</div>
+  <div class="k">Version</div><div>v0.4.0-rc</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>adf03f9 chore(L3): stack docker de test ollama+litellm (cibles #2/#4, ports 11435/4020)</code></div>
+  <div class="k">Dernier commit</div><div><code>1918fb9 chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</code></div>
   <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>15189 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM-&gt;Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet.</div>
+  <div class="k">Fichiers</div><div>17302 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>adf03f9</code></td><td>2026-06-25</td><td>chore(L3): stack docker de test ollama+litellm (cibles #2/#4, ports 11435/4020)</td></tr>
-<tr><td><code>6a9210b</code></td><td>2026-06-25</td><td>docs(L3): instruction cadrage moteur prochaine etape (endpoint OpenAI-compat, gate valide)</td></tr>
-<tr><td><code>f481e8e</code></td><td>2026-06-25</td><td>feat(L3): panneau prochaine etape (Working) + reglages modele/cle + facade</td></tr>
-<tr><td><code>3d374b1</code></td><td>2026-06-25</td><td>feat(L3): moteur prochaine etape Rust (UN endpoint OpenAI-compat, mock, cle keychain)</td></tr>
-<tr><td><code>4fcbdac</code></td><td>2026-06-25</td><td>feat(L2): bouton + import projet (dossier existant) dans Working</td></tr>
-<tr><td><code>d02eb85</code></td><td>2026-06-25</td><td>docs(L2): checkpoint gate Legolas PASS — backlog L2 + etat des lieux (candidate v0.2.0-rc)</td></tr>
-<tr><td><code>abf9900</code></td><td>2026-06-25</td><td>feat(L2): App shell de navigation (3 vues) + montage theme par defaut</td></tr>
-<tr><td><code>a1cca59</code></td><td>2026-06-25</td><td>feat(L2): composants + vues Portfolio / Working / Reglages (presentationnels)</td></tr>
-<tr><td><code>ef4f5ca</code></td><td>2026-06-25</td><td>feat(L2): feed main courante MOCKE (3 canaux) + filtres (DEP-1)</td></tr>
-<tr><td><code>0e79d2a</code></td><td>2026-06-25</td><td>feat(L2): useServices — etat iakabox avec degradation hors box (R-L2-7)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>1918fb9</code></td><td>2026-06-25</td><td>chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</td></tr>
+<tr><td><code>5c6c80d</code></td><td>2026-06-25</td><td>fix(L4): tri Mango sur cle d'index complete (no_usable_index contre idx-maincourante)</td></tr>
+<tr><td><code>3361c00</code></td><td>2026-06-25</td><td>docs(L4): instruction validee mains-courantes (cadrage Gandalf)</td></tr>
+<tr><td><code>672e7f8</code></td><td>2026-06-25</td><td>style(L4): rustfmt sur le test de parsing fixture disque</td></tr>
+<tr><td><code>765f076</code></td><td>2026-06-25</td><td>test(L4): useMainCourante (loading/success/degrade) + facade backend L4</td></tr>
+<tr><td><code>0d94ded</code></td><td>2026-06-25</td><td>feat(L4): reglages CouchDB (URL/base config + identifiants write-only + etat)</td></tr>
+<tr><td><code>4967ac6</code></td><td>2026-06-25</td><td>feat(L4): hook useMainCourante + composant MainCourante branche (Portfolio)</td></tr>
+<tr><td><code>11caaea</code></td><td>2026-06-25</td><td>feat(L4): facade backend fetchMainCourante + credentials CouchDB ; type FeedEvent unique</td></tr>
+<tr><td><code>598e7fb</code></td><td>2026-06-25</td><td>test(L4): fixtures CouchDB _find (specs/mock) + test de parsing sur disque</td></tr>
+<tr><td><code>11af23b</code></td><td>2026-06-25</td><td>feat(L4): module Rust maincourante (lecture seule _find iakaboxlogs) + mapping 3-canaux</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-06-25 22:47</td><td><span class='r r-version'>version</span></td><td>v0.4.0-rc</td><td>main</td><td>L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet.</td></tr>
 <tr><td>2026-06-25 21:43</td><td><span class='r r-version'>version</span></td><td>v0.3.0-rc</td><td>main</td><td>L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM-&gt;Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet.</td></tr>
 <tr><td>2026-06-24 20:36</td><td><span class='r r-version'>version</span></td><td>v0.1.0</td><td>main</td><td>onboarding initial</td></tr>
 </table>

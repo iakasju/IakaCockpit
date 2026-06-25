@@ -1,54 +1,58 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-06-25 21:43 (motif: version).
+> Genere par iakaframe (CLI) le 2026-06-25 22:47 (motif: version).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.3.0-rc |
+| Version | v0.4.0-rc |
 | Branche | main |
-| Dernier commit | adf03f9 chore(L3): stack docker de test ollama+litellm (cibles #2/#4, ports 11435/4020) |
+| Dernier commit | 1918fb9 chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed) |
 | Arbre | MODIFICATIONS NON COMMITEES |
-| Fichiers (hors .git/node_modules) | 15189 |
-| Note | L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM->Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet. |
+| Fichiers (hors .git/node_modules) | 17302 |
+| Note | L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `adf03f9` | 2026-06-25 | chore(L3): stack docker de test ollama+litellm (cibles #2/#4, ports 11435/4020) |
-| `6a9210b` | 2026-06-25 | docs(L3): instruction cadrage moteur prochaine etape (endpoint OpenAI-compat, gate valide) |
-| `f481e8e` | 2026-06-25 | feat(L3): panneau prochaine etape (Working) + reglages modele/cle + facade |
-| `3d374b1` | 2026-06-25 | feat(L3): moteur prochaine etape Rust (UN endpoint OpenAI-compat, mock, cle keychain) |
-| `4fcbdac` | 2026-06-25 | feat(L2): bouton + import projet (dossier existant) dans Working |
-| `d02eb85` | 2026-06-25 | docs(L2): checkpoint gate Legolas PASS — backlog L2 + etat des lieux (candidate v0.2.0-rc) |
-| `abf9900` | 2026-06-25 | feat(L2): App shell de navigation (3 vues) + montage theme par defaut |
-| `a1cca59` | 2026-06-25 | feat(L2): composants + vues Portfolio / Working / Reglages (presentationnels) |
-| `ef4f5ca` | 2026-06-25 | feat(L2): feed main courante MOCKE (3 canaux) + filtres (DEP-1) |
-| `0e79d2a` | 2026-06-25 | feat(L2): useServices — etat iakabox avec degradation hors box (R-L2-7) |
+| `1918fb9` | 2026-06-25 | chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed) |
+| `5c6c80d` | 2026-06-25 | fix(L4): tri Mango sur cle d'index complete (no_usable_index contre idx-maincourante) |
+| `3361c00` | 2026-06-25 | docs(L4): instruction validee mains-courantes (cadrage Gandalf) |
+| `672e7f8` | 2026-06-25 | style(L4): rustfmt sur le test de parsing fixture disque |
+| `765f076` | 2026-06-25 | test(L4): useMainCourante (loading/success/degrade) + facade backend L4 |
+| `0d94ded` | 2026-06-25 | feat(L4): reglages CouchDB (URL/base config + identifiants write-only + etat) |
+| `4967ac6` | 2026-06-25 | feat(L4): hook useMainCourante + composant MainCourante branche (Portfolio) |
+| `11caaea` | 2026-06-25 | feat(L4): facade backend fetchMainCourante + credentials CouchDB ; type FeedEvent unique |
+| `598e7fb` | 2026-06-25 | test(L4): fixtures CouchDB _find (specs/mock) + test de parsing sur disque |
+| `11af23b` | 2026-06-25 | feat(L4): module Rust maincourante (lecture seule _find iakaboxlogs) + mapping 3-canaux |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : Lot **L3 — moteur « prochaine etape »** boucle de bout en bout
-  (cadrage Gandalf -> dev Gimli -> gate Legolas **PASS** : 70/70 front + 67/67 Rust). UN endpoint
-  OpenAI-compat configurable (LiteLLM / Ollama local-LAN / cloud), « on cable, on ne route pas » ;
-  cle optionnelle au keychain (write-only), mock dev implicite. **Teste en reel** : Ollama localhost
-  (8B) + LiteLLM->Ollama Docker (1B). Stack Docker de test isolee livree (`docker/`, conteneurs
-  `iakacockpit-dev-*`, ports 11435/4020). **MVP v0.1 (L0+L1+L2+L3) techniquement complet.**
-- **En cours / a reprendre** : rien en suspens cote dev. Candidate `v0.3.0-rc` commitee **en local**
-  (aucun remote configure -> push differe). Stack Docker laissee **up** (pilotable `docker compose up -d`/`down`).
-- **Prochaine etape concrete** : (1) confirmer le modele par defaut `ai.rs::DEFAULT_MODEL` + le texte du
-  prompt A4 ; (2) test in-app `npm run tauri dev` -> Reglages -> bouton « prochaine etape » ; puis cabler
-  le remote Forgejo et pousser, ou enchainer sur **L4** (mains courantes 3-canaux / iakaboxlogs).
-- **Pieges connus** : hote 8 Go / VM Docker ~3.8 Go -> un modele 8B est OOM-killed **dans le conteneur**
-  (d'ou `llama3.2:1b` cote Docker) ; le 8B ne tourne que sur l'Ollama localhost (RAM hote). Cle de test
-  LiteLLM `sk-iaka-test` = locale jetable, pas un vrai secret.
+- **Ce qui vient d'etre fait** : Lot **L4 — Mains courantes 3-canaux** boucle (cadrage Gandalf ->
+  dev Gimli -> gate Legolas **PASS** -> recette reelle -> **fix** Mango -> **re-gate PASS** : 79/79 front +
+  92/92 Rust). Lecture seule `POST /_find` cote Rust via facade unique, mapping 3-canaux **sans faux geste**
+  (geste uniquement via `meta.canal` reel), identifiants CouchDB au keychain (write-only), mode degrade +
+  fallback mock. **Recette reelle** menee sur un **CouchDB local Docker** (`docker/`, conteneur
+  `iakacockpit-dev-couchdb` port 5984, base `conversations` + index `idx-maincourante` + seed) : elle a
+  **revele ET corrige** un bug Mango `no_usable_index` (tri a faire sur la **cle d'index complete**
+  descendante, pas `ts` seul) — verrouille par test mutant. **Socle v0.1 (L0..L4) techniquement complet.**
+- **En cours / a reprendre** : rien en suspens cote dev. Candidate `v0.4.0-rc` commitee **en local** (pas de
+  remote -> push differe). Stack Docker `iakacockpit` laissee **up** (ollama+litellm L3, couchdb L4).
+- **Prochaine etape concrete** : (1) test **in-app** `npm run tauri dev` -> Reglages (CouchDB `http://localhost:5984`,
+  base `conversations`, admin/iaka-test) -> verifier la main courante ; (2) cabler le remote Forgejo + pousser
+  quand la box est en ligne, et reconfirmer la recette contre la vraie box `.11:5984` ; (3) sortir un differe du
+  backlog (volet machine « tracer les delegations », ou la cible web parallele).
+- **Pieges connus** : requete Mango = **tri sur la cle d'index complete** desc (NE PAS revenir a `ts` seul ->
+  `no_usable_index`, main courante vide en prod). Hote 8 Go / VM Docker ~3.8 Go (8B OOM dans le conteneur, d'ou
+  `llama3.2:1b` cote Docker pour L3). Identifiants de test (`sk-iaka-test`, `admin/iaka-test`) = locaux jetables.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-06-25 22:47 | version | v0.4.0-rc | main | L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet. |
 | 2026-06-25 21:43 | version | v0.3.0-rc | main | L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM->Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet. |
 | 2026-06-24 20:36 | version | v0.1.0 | main | onboarding initial |
