@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-25 22:47 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-06-26 00:01 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.4.0-rc</div>
+  <div class="k">Version</div><div>v0.5.0-rc</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>1918fb9 chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</code></div>
+  <div class="k">Dernier commit</div><div><code>338f48e docs(L5): instruction tracage machine des delegations (BROUILLON, a valider)</code></div>
   <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>17302 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet.</div>
+  <div class="k">Fichiers</div><div>17734 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>1918fb9</code></td><td>2026-06-25</td><td>chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>338f48e</code></td><td>2026-06-26</td><td>docs(L5): instruction tracage machine des delegations (BROUILLON, a valider)</td></tr>
+<tr><td><code>21daabe</code></td><td>2026-06-26</td><td>docs(L6): instruction canal adresse externe via n8n-passerelle (validee Stephane)</td></tr>
+<tr><td><code>2e10620</code></td><td>2026-06-26</td><td>chore(L6): service n8n local dans la stack docker (recette canal adresse)</td></tr>
+<tr><td><code>ad73377</code></td><td>2026-06-25</td><td>docs(L6): workflow n8n de reference (JSON sans credentials) + README import + fixtures mock</td></tr>
+<tr><td><code>a56dde3</code></td><td>2026-06-25</td><td>feat(L6): facade notifyUser/n8nSetToken/n8nHasToken + Reglages canal adresse n8n</td></tr>
+<tr><td><code>7275f1e</code></td><td>2026-06-25</td><td>feat(L6): module notify Rust — canal adresse sortant via webhook n8n</td></tr>
+<tr><td><code>6cf7a5b</code></td><td>2026-06-25</td><td>docs(L4): checkpoint gate Legolas PASS (+re-gate) — backlog + etat des lieux (candidate v0.4.0-rc)</td></tr>
+<tr><td><code>1918fb9</code></td><td>2026-06-25</td><td>chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</td></tr>
 <tr><td><code>5c6c80d</code></td><td>2026-06-25</td><td>fix(L4): tri Mango sur cle d'index complete (no_usable_index contre idx-maincourante)</td></tr>
 <tr><td><code>3361c00</code></td><td>2026-06-25</td><td>docs(L4): instruction validee mains-courantes (cadrage Gandalf)</td></tr>
-<tr><td><code>672e7f8</code></td><td>2026-06-25</td><td>style(L4): rustfmt sur le test de parsing fixture disque</td></tr>
-<tr><td><code>765f076</code></td><td>2026-06-25</td><td>test(L4): useMainCourante (loading/success/degrade) + facade backend L4</td></tr>
-<tr><td><code>0d94ded</code></td><td>2026-06-25</td><td>feat(L4): reglages CouchDB (URL/base config + identifiants write-only + etat)</td></tr>
-<tr><td><code>4967ac6</code></td><td>2026-06-25</td><td>feat(L4): hook useMainCourante + composant MainCourante branche (Portfolio)</td></tr>
-<tr><td><code>11caaea</code></td><td>2026-06-25</td><td>feat(L4): facade backend fetchMainCourante + credentials CouchDB ; type FeedEvent unique</td></tr>
-<tr><td><code>598e7fb</code></td><td>2026-06-25</td><td>test(L4): fixtures CouchDB _find (specs/mock) + test de parsing sur disque</td></tr>
-<tr><td><code>11af23b</code></td><td>2026-06-25</td><td>feat(L4): module Rust maincourante (lecture seule _find iakaboxlogs) + mapping 3-canaux</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-06-26 00:01</td><td><span class='r r-version'>version</span></td><td>v0.5.0-rc</td><td>main</td><td>L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider.</td></tr>
 <tr><td>2026-06-25 22:47</td><td><span class='r r-version'>version</span></td><td>v0.4.0-rc</td><td>main</td><td>L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet.</td></tr>
 <tr><td>2026-06-25 21:43</td><td><span class='r r-version'>version</span></td><td>v0.3.0-rc</td><td>main</td><td>L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM-&gt;Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet.</td></tr>
 <tr><td>2026-06-24 20:36</td><td><span class='r r-version'>version</span></td><td>v0.1.0</td><td>main</td><td>onboarding initial</td></tr>

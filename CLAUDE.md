@@ -134,9 +134,31 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **recette réelle** sur CouchDB local Docker (harnais `docker/`) — a révélé+corrigé un bug Mango `no_usable_index`
       (tri sur clé d'index complète) ; candidate `v0.4.0-rc`. Différé tracé : volet machine « tracer les délégations »,
       filtre event/fiche jalon, temps réel `_changes`, corrélation projet.)*
+- [ ] **L5** — Traçage MACHINE des délégations (canal geste → iakaboxlogs)
+      → `specs/instructions/L5-tracage-machine-delegations.md`
+      *(**cadré (BROUILLON), À VALIDER par Stéphane — NON démarré**. Volet machine de la piste « tracer les
+      délégations » rattachée à L4 ; trace HUMAINE = chaîne de badges (déjà en place), trace MACHINE = iakaboxlogs.)*
+- [x] **L6** — Canal adresse externe (**SORTANT**) via n8n-passerelle unique
+      → `specs/instructions/L6-canal-adresse-externe-n8n.md`
+      *(implémenté, **gate Legolas PASS** — 93/93 front + 104/104 Rust (dont 12 `notify`), candidate `v0.5.0-rc` ;
+      cadré par 🧙 Gandalf. Le Cockpit POSTe **UN** webhook n8n
+      (`notify_user` via façade unique) → **n8n route** vers Discord/Slack/MQTT — « on câble, on ne
+      route pas », calque L3/L4 (`ureq` + keychain + mock + dégradation). Payload **canal-agnostique**
+      `{canal:"adresse",support,cible,message,meta}` ; `n8n_webhook_url` en config non sensible,
+      **token webhook au keychain** (write-only), **AUCUN secret de support** (Discord/Slack/MQTT)
+      côté app — ils restent dans n8n. Déclencheur testable = bouton « Tester l'envoi » (Réglages).
+      Lien vision : PROJET **§4 admin général** + **§5 canal adresse**. **Phase 1 = sortant seul** ;
+      **bidirectionnel = Lot 2 différé**. À arbitrer : qui choisit le support actif (reco Cockpit),
+      versionner le flow n8n de référence (reco oui). Est. ~2 j-homme.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
       maintenus en parallèle**, desktop premier. Points durs à cadrer le jour venu : auth, CSP, FS
       sur HTTP local, ports. → `specs/PROJET.md §10.1` *(révision 2026-06-25 ; pas d'instruction
       tant que le lot n'est pas pris).*
+- [ ] **(Horizon, non planifié)** **Daemon iaka — com / sandbox / admin de la iakasuite** *(idée Stéphane
+      2026-06-25)*. Un service iaka unique offrant : **com** (passerelle des canaux adresse/geste/pensée —
+      notifications & dialogue user↔agents, rôle type n8n-passerelle), **sandbox** (exécution isolée des
+      runners/agents), **admin** (administration transversale de toute la iakasuite). **Converge probablement
+      avec le « daemon local » de la cible web ci-dessus** — même brique backend réexposée. Horizon : à
+      explorer/cadrer le moment venu, pas d'instruction tant que le lot n'est pas pris.
