@@ -1,16 +1,23 @@
-//! IakaCockpit — backend Tauri 2 (socle L0).
+//! IakaCockpit — backend Tauri 2 (socle L0 + métier L1).
 //!
-//! L0 pose la fondation : modules de sécurité (`pathguard`, `secrets`), résolution
-//! cross-OS (`paths`, `shell`) et config SQLite non sensible (`config`). AUCUNE
-//! commande métier n'est salvagée ici — le salvage du backend iakaIDE est L1.
-//! L'`invoke_handler` est volontairement minimal (une commande `ping` de santé)
-//! pour rester prêt à accueillir L1 sans god-file.
+//! L0 a posé la fondation : modules de sécurité (`pathguard`, `secrets`),
+//! résolution cross-OS (`paths`, `shell`) et config SQLite non sensible (`config`).
+//! L1 salvage le backend métier d'iakaIDE, **dé-Windows-isé** et branché sur L0 :
+//! `git` + `portfolio` (scan), `services` (check), `config` (commandes sur le
+//! module L0), `terminal` (PTY, shell par OS, cwd validé sous le chapeau). Le
+//! helper `db` ouvre `iakacockpit.sqlite` ; le module `config` reste l'unique
+//! propriétaire du schéma SQLite.
 
 pub mod config;
+pub mod db;
+pub mod git;
 pub mod pathguard;
 pub mod paths;
+pub mod portfolio;
 pub mod secrets;
+pub mod services;
 pub mod shell;
+pub mod terminal;
 
 /// Commande de santé minimale — prouve le pont front↔back sans logique métier.
 #[tauri::command]
@@ -21,7 +28,30 @@ fn ping() -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![ping])
+        .manage(terminal::TermState::default())
+        .setup(|app| {
+            // Garantit une racine de chapeau persistée dès le premier boot
+            // (défaut calculé par OS via `paths`). Best-effort : un échec d'I/O
+            // ne doit pas empêcher l'app de démarrer.
+            if let Ok(conn) = db::open(app.handle()) {
+                let _ = config::ensure_root(&conn);
+            }
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            ping,
+            portfolio::scan_portfolio,
+            services::check_services,
+            config::get_root,
+            config::set_root,
+            config::config_get,
+            config::config_set,
+            config::config_all,
+            terminal::pty_open,
+            terminal::pty_write,
+            terminal::pty_resize,
+            terminal::pty_close,
+        ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");
 }
