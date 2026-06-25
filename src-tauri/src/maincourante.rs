@@ -232,8 +232,19 @@ fn parse_find_response(body: &str) -> Result<Vec<FeedEvent>, String> {
     Ok(docs.iter().map(map_doc).collect())
 }
 
-/// Construit le corps Mango `_find` (D1) : `selector` (+ filtres serveur), `sort`
-/// `ts` desc (s'appuie sur l'index `idx-maincourante`), `limit` bornée.
+/// Construit le corps Mango `_find` (D1) : `selector` (+ filtres serveur), `sort`,
+/// `limit` bornée.
+///
+/// IMPORTANT — conformité CouchDB (no_usable_index) : CouchDB n'utilise un index JSON
+/// pour le tri **que si le `sort` porte sur la CLÉ COMPLÈTE de l'index, dans une
+/// direction homogène**. L'index réel `idx-maincourante` couvre
+/// `["ts","royaume","agent","conv_id"]` (ascendant). Trier sur un simple préfixe
+/// (`ts` seul) ou en sens non aligné fait répondre CouchDB 3.5.x
+/// `{"error":"no_usable_index"}` → la main courante tomberait en mode dégradé même
+/// CouchDB up. On ne crée PAS d'index (D1, lecture seule) : on lit l'index existant
+/// **à l'envers** en triant sur la clé complète en `desc`. Le résultat est trié par
+/// `ts` décroissant (récent d'abord) ; les autres champs ne départagent que les `ts`
+/// égaux. NE PAS régresser vers `sort: [{"ts":"desc"}]` (préfixe → no_usable_index).
 fn build_find_body(filter: &MainCouranteFilter) -> serde_json::Value {
     let mut selector = serde_json::Map::new();
     // `ts > null` = tous les docs ayant un `ts` (selector non vide requis par Mango).
@@ -249,7 +260,14 @@ fn build_find_body(filter: &MainCouranteFilter) -> serde_json::Value {
     }
     serde_json::json!({
         "selector": serde_json::Value::Object(selector),
-        "sort": [ { "ts": "desc" } ],
+        // Clé d'index complète, descendante (lecture inverse de `idx-maincourante`).
+        // Cf. docstring : un préfixe (`ts` seul) déclenche `no_usable_index`.
+        "sort": [
+            { "ts": "desc" },
+            { "royaume": "desc" },
+            { "agent": "desc" },
+            { "conv_id": "desc" },
+        ],
         "limit": FIND_LIMIT,
     })
 }
@@ -598,7 +616,21 @@ mod tests {
     #[test]
     fn build_find_body_tri_desc_et_limite() {
         let body = build_find_body(&MainCouranteFilter::default());
-        assert_eq!(body["sort"][0]["ts"], "desc");
+        // Le `sort` DOIT porter sur la CLÉ D'INDEX COMPLÈTE de `idx-maincourante`
+        // (`["ts","royaume","agent","conv_id"]`), en `desc` homogène, pour lire
+        // l'index existant à l'envers (récent d'abord). Sinon CouchDB 3.5.x répond
+        // `no_usable_index` (validé en réel contre le banc CouchDB local) et la main
+        // courante tombe en mode dégradé même CouchDB up. NE PAS revenir à `ts` seul :
+        // un préfixe de clé n'est pas servi par l'index JSON.
+        assert_eq!(
+            body["sort"],
+            serde_json::json!([
+                { "ts": "desc" },
+                { "royaume": "desc" },
+                { "agent": "desc" },
+                { "conv_id": "desc" },
+            ])
+        );
         assert_eq!(body["limit"], FIND_LIMIT);
         // selector non vide (ts > null), pas de filtre agent/royaume.
         assert!(body["selector"]["ts"]["$gt"].is_null());
