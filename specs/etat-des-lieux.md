@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Regenere manuellement (pwsh indisponible sur macOS) le 2026-06-25 (motif: pause / checkpoint L0).
+> Regenere manuellement (pwsh indisponible sur macOS) le 2026-06-25 (motif: pause / checkpoint L1).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,29 +9,37 @@
 |---|---|
 | Version | v0.1.0 (candidate staging : v0.1.0-rc) |
 | Branche | main |
-| Dernier commit | f57e23d feat(L0): bootstrap cross-OS Tauri/React/TS + socle securite |
+| Dernier commit | 41d2bba docs(roadmap): jalons + onglets qualite (debat) en L2, tracage delegations en L4 |
 | Arbre | propre |
-| Fichiers (hors .git/node_modules) | 66 |
-| Remote | AUCUN (Forgejo LAN non configure sur ce poste) |
-| Note | L0 implemente + gate qualite Legolas PASS ; cadrage L1 ecrit |
+| Fichiers (hors .git/node_modules) | 72 |
+| Remote | AUCUN — Forgejo LAN indisponible plusieurs jours (box offline) ; push differe |
+| Note | L0 + L1 implementes, gate Legolas PASS sur les deux ; commits 100% locaux |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `f57e23d` | 2026-06-25 | feat(L0): bootstrap cross-OS Tauri/React/TS + socle securite (CSP, keychain, path-guard teste) |
-| `90c81bc` | 2026-06-25 | docs(specs): instruction L0 bootstrap + socle securite (cadrage Gandalf) |
-| `1a430ae` | 2026-06-25 | docs(maquettes): convergence UX v2-v7 (reference v7) + portraits inline |
-| `858fb60` | 2026-06-24 | docs(specs): cadrage IakaCockpit v0.1 — dayone + roadmap + direction design + 4 maquettes UX |
-| `a52272d` | 2026-06-24 | docs: etat des lieux initial (iakaframe snapshot) |
-| `49e5271` | 2026-06-24 | chore: init iakaframe (structure + methode de travail) |
+| `41d2bba` | 2026-06-25 | docs(roadmap): jalons projet + onglets qualite (debat) en L2, tracage delegations en L4 |
+| `ed74c8b` | 2026-06-25 | feat(L1): facade backend.ts typee (10 commandes) + tests vitest |
+| `a6ebddb` | 2026-06-25 | feat(L1): PTY de-Windows-ise (shell L0 + cwd valide) + cablage lib.rs |
+| `5d1b230` | 2026-06-25 | feat(L1): salvage check_services (MVP, degrade proprement hors box) |
+| `ed75902` | 2026-06-25 | feat(L1): commandes config sur le module L0 (fin de "C:\work") |
+| `dcdc317` | 2026-06-25 | feat(L1): salvage git + portfolio (scan cross-OS) branche sur paths L0 |
+| `2f48181` | 2026-06-25 | docs(L1): instruction salvage backend Rust iakaIDE (cadrage Gandalf) |
+| `b5081a6` | 2026-06-25 | docs(L0): checkpoint gate Legolas PASS — etat des lieux + backlog |
 
 ## Reprise du travail
 
-- **Ce qui vient d'etre fait** : L0 (bootstrap cross-OS + socle securite) implemente et **valide par le gate qualite Legolas — verdict PASS** sur 7 verifications (typecheck, lint, 8/8 tests front, build, cargo fmt, clippy `-D warnings`, **27/27 tests Rust** : pathguard, paths, shell, secrets, config). Cadrage **L1** ecrit par Gandalf dans `specs/instructions/L1-salvage-backend-rust.md`.
-- **En cours / a reprendre** : instruction L1 **en attente de validation Odin/Stephane** (3 decisions a arbitrer : perimetre 10 commandes, serialisation snake_case, endpoints `check_services` codes en dur). Une fois validee -> dispatch Gimli.
-- **Prochaine etape concrete** : arbitrer le cadrage L1, puis lancer l'implementation (Gimli) du salvage backend Rust iakaIDE (scan git, portfolio, PTY, services, config), branche sur le socle L0.
-- **Pieges connus** : (1) **aucun remote git** configure ici -> le push Forgejo (`http://192.168.2.11:3001/sjupin/IakaCockpit.git`) reste a brancher avant tout `update`/push ; (2) **pwsh absent** sur macOS -> les scripts `iakaframe-*.ps1` (snapshot/update) ne tournent pas, etat des lieux regenere a la main ; (3) le code iakaIDE a salvager est sous `/Users/sjupin/work/iakaIDE` (Windows-ise : `C:\\work` en dur, `powershell.exe`) -> a de-Windows-iser via le socle L0.
+- **Ce qui vient d'etre fait** :
+  - **L0** (socle securite cross-OS) implemente + **gate Legolas PASS** (27 tests).
+  - **L1** (salvage backend Rust iakaIDE) implemente par Gimli en 5 commits atomiques + **gate Legolas PASS** : 10 commandes Tauri salvagees (scan_portfolio, check_services, 5x config, 4x PTY), de-Windows-isees sur le socle L0 (`paths::resolve_hat_root`, `shell::default_shell`), cwd PTY valide anti-traversal, DB `iakacockpit.sqlite` schema unique L0, facade `invoke` unique `src/api/backend.ts`. Chaine qualite verte : 44/44 tests Rust, 21/21 front, clippy `-D warnings` a zero, couverture front 89,65%.
+  - **Roadmap** enrichie : vue « liste des jalons » + onglets qualite (DEBAT OUVERT) en L2 ; tracage machine des delegations en L4.
+- **En cours / a reprendre** : rien d'ouvert cote dev. Decisions produit en attente : trancher « onglets qualite » (avec Loki) avant de cadrer L2.
+- **Prochaine etape concrete** : cadrer **L2** (vues Portfolio / Working / Reglages + grille/dock/onglets, maquette v7) via Gandalf — apres arbitrage onglets qualite.
+- **Pieges connus** :
+  1. **Forgejo LAN indisponible plusieurs jours** (box offline) -> aucun remote, **push differe** ; tout est en commits locaux (filet intact), a pousser au retour de la box (`http://192.168.2.11:3001/sjupin/IakaCockpit.git`).
+  2. **pwsh absent** sur macOS -> scripts `iakaframe-*.ps1` (snapshot/update) non executables ; etat des lieux regenere a la main.
+  3. **Bundle `.dmg` non generable** en environnement headless (imagerie disque pilotee par Finder/AppleScript -> permission Automatisation macOS requise) ; le `.app` et le binaire release se construisent bien. A valider sur poste reel seulement si le DMG est requis pour le staging.
 
 ## Journal (versions & pauses)
 
@@ -39,3 +47,4 @@
 |---|---|---|---|---|
 | 2026-06-24 20:36 | version | v0.1.0 | main | onboarding initial |
 | 2026-06-25 | pause | v0.1.0-rc | main | gate L0 PASS (Legolas) + cadrage L1 ecrit |
+| 2026-06-25 | pause | v0.1.0-rc | main | L1 implemente + gate L1 PASS (Legolas) ; roadmap enrichie |
