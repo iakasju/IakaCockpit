@@ -42,6 +42,8 @@ export const CONFIG_KEYS = {
   theme: "theme",
   litellmEndpoint: "litellm_endpoint",
   litellmModel: "litellm_model",
+  couchdbUrl: "couchdb_url",
+  couchdbDb: "couchdb_db",
 } as const;
 
 /** Défauts documentés (appliqués si la clé est absente). */
@@ -62,6 +64,12 @@ export interface UseSettings {
   litellmModel: string;
   /** Une clé IA est-elle enregistrée au keychain ? (présence seule, jamais la valeur). */
   aiKeySet: boolean;
+  /** URL CouchDB iakaboxlogs (L4, non sensible). */
+  couchdbUrl: string;
+  /** Base CouchDB iakaboxlogs (L4, non sensible). */
+  couchdbDb: string;
+  /** Des identifiants CouchDB sont-ils enregistrés au keychain ? (présence seule, L4). */
+  couchCredsSet: boolean;
   theme: string;
   ui: UiPrefs;
   loaded: boolean;
@@ -70,6 +78,12 @@ export interface UseSettings {
   setLitellmModel: (model: string) => Promise<void>;
   /** Écrit (vide = retire) la clé IA au keychain ; met à jour `aiKeySet`. */
   setAiKey: (value: string) => Promise<void>;
+  /** Persiste l'URL CouchDB (config non sensible, L4). */
+  setCouchdbUrl: (url: string) => Promise<void>;
+  /** Persiste la base CouchDB (config non sensible, L4). */
+  setCouchdbDb: (db: string) => Promise<void>;
+  /** Écrit (password vide = retire) les identifiants CouchDB au keychain ; met à jour `couchCredsSet` (L4). */
+  setCouchCredentials: (user: string, password: string) => Promise<void>;
   setTheme: (id: string) => Promise<void>;
   setUiPref: <K extends keyof UiPrefs>(
     key: K,
@@ -141,6 +155,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
   const [litellmEndpoint, setLitellmState] = useState<string>("");
   const [litellmModel, setLitellmModelState] = useState<string>("");
   const [aiKeySet, setAiKeySet] = useState<boolean>(false);
+  const [couchdbUrl, setCouchdbUrlState] = useState<string>("");
+  const [couchdbDb, setCouchdbDbState] = useState<string>("");
+  const [couchCredsSet, setCouchCredsSet] = useState<boolean>(false);
   const [ui, setUi] = useState<UiPrefs>(DEFAULT_UI);
   const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -167,6 +184,13 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       } catch {
         keySet = false;
       }
+      // Présence d'identifiants CouchDB (keychain) : best-effort, jamais la valeur (L4/D4).
+      let couchSet = false;
+      try {
+        couchSet = await api.couchHasCredentials();
+      } catch {
+        couchSet = false;
+      }
       if (cancelled) return;
       const nextUi = parsePrefs(cfg);
       const nextTheme = cfg[CONFIG_KEYS.theme] || DEFAULT_THEME;
@@ -175,6 +199,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setLitellmState(cfg[CONFIG_KEYS.litellmEndpoint] ?? "");
       setLitellmModelState(cfg[CONFIG_KEYS.litellmModel] ?? "");
       setAiKeySet(keySet);
+      setCouchdbUrlState(cfg[CONFIG_KEYS.couchdbUrl] ?? "");
+      setCouchdbDbState(cfg[CONFIG_KEYS.couchdbDb] ?? "");
+      setCouchCredsSet(couchSet);
       setRootState(r);
       applyToDom(domRef.current, nextTheme, nextUi);
       setLoaded(true);
@@ -217,6 +244,31 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     [api],
   );
 
+  const setCouchdbUrl = useCallback(
+    async (url: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.couchdbUrl, url);
+      setCouchdbUrlState(url);
+    },
+    [api],
+  );
+
+  const setCouchdbDb = useCallback(
+    async (db: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.couchdbDb, db);
+      setCouchdbDbState(db);
+    },
+    [api],
+  );
+
+  const setCouchCredentials = useCallback(
+    async (user: string, password: string): Promise<void> => {
+      // Write-only (L4/D4) : présence seule, jamais la valeur. Password vide = retire.
+      await api.couchSetCredentials(user, password);
+      setCouchCredsSet(password.trim().length > 0);
+    },
+    [api],
+  );
+
   const setTheme = useCallback(
     async (id: string): Promise<void> => {
       await api.configSet(CONFIG_KEYS.theme, id);
@@ -255,6 +307,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       litellmEndpoint,
       litellmModel,
       aiKeySet,
+      couchdbUrl,
+      couchdbDb,
+      couchCredsSet,
       theme,
       ui,
       loaded,
@@ -262,6 +317,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setLitellmEndpoint,
       setLitellmModel,
       setAiKey,
+      setCouchdbUrl,
+      setCouchdbDb,
+      setCouchCredentials,
       setTheme,
       setUiPref,
     }),
@@ -270,6 +328,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       litellmEndpoint,
       litellmModel,
       aiKeySet,
+      couchdbUrl,
+      couchdbDb,
+      couchCredsSet,
       theme,
       ui,
       loaded,
@@ -277,6 +338,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setLitellmEndpoint,
       setLitellmModel,
       setAiKey,
+      setCouchdbUrl,
+      setCouchdbDb,
+      setCouchCredentials,
       setTheme,
       setUiPref,
     ],

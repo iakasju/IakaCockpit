@@ -79,12 +79,18 @@ export function SettingsView({
   const [endpointDraft, setEndpointDraft] = useState<string>("");
   const [modelDraft, setModelDraft] = useState<string>("");
   const [keyDraft, setKeyDraft] = useState<string>("");
+  const [couchUrlDraft, setCouchUrlDraft] = useState<string>("");
+  const [couchDbDraft, setCouchDbDraft] = useState<string>("");
+  const [couchUserDraft, setCouchUserDraft] = useState<string>("");
+  const [couchPassDraft, setCouchPassDraft] = useState<string>("");
 
   // Pré-remplit les brouillons à la première valeur chargée.
   const rootValue = rootDraft || settings.root || "";
   const endpointValue =
     endpointDraft || settings.litellmEndpoint || "";
   const modelValue = modelDraft || settings.litellmModel || "";
+  const couchUrlValue = couchUrlDraft || settings.couchdbUrl || "";
+  const couchDbValue = couchDbDraft || settings.couchdbDb || "";
 
   return (
     <section className="view st" aria-label="Réglages">
@@ -332,6 +338,111 @@ export function SettingsView({
                   className="btn sm"
                   onClick={() => {
                     void settings.setAiKey(keyDraft).then(() => setKeyDraft(""));
+                  }}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="block">
+            <div className="bt">
+              <span className="e">📓</span>
+              <h2>Main courante (iakaboxlogs)</h2>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">URL CouchDB</div>
+                <div className="d">
+                  Base de la main courante 3-canaux (lecture seule). Non sensible.
+                  Vide → mode dégradé (données simulées).
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="url"
+                  placeholder="http://192.168.2.11:5984"
+                  value={couchUrlValue}
+                  onChange={(e) => setCouchUrlDraft(e.target.value)}
+                  aria-label="URL CouchDB"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => void settings.setCouchdbUrl(couchUrlValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Base CouchDB</div>
+                <div className="d">Nom de la base (défaut : conversations).</div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder="conversations"
+                  value={couchDbValue}
+                  onChange={(e) => setCouchDbDraft(e.target.value)}
+                  aria-label="Base CouchDB"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => void settings.setCouchdbDb(couchDbValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Identifiants CouchDB</div>
+                <div className="d">
+                  Stockés au keychain (jamais affichés). Mot de passe vide → retire
+                  les identifiants.{" "}
+                  <strong>
+                    {settings.couchCredsSet
+                      ? "Identifiants enregistrés ✓"
+                      : "Aucun identifiant"}
+                  </strong>
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder="utilisateur (admin)"
+                  value={couchUserDraft}
+                  onChange={(e) => setCouchUserDraft(e.target.value)}
+                  aria-label="Utilisateur CouchDB"
+                />
+                <input
+                  className="field"
+                  type="password"
+                  placeholder="mot de passe (vide pour retirer)"
+                  value={couchPassDraft}
+                  onChange={(e) => setCouchPassDraft(e.target.value)}
+                  aria-label="Mot de passe CouchDB"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => {
+                    void settings
+                      .setCouchCredentials(couchUserDraft, couchPassDraft)
+                      .then(() => {
+                        setCouchUserDraft("");
+                        setCouchPassDraft("");
+                      });
                   }}
                 >
                   Enregistrer
