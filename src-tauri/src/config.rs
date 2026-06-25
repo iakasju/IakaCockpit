@@ -19,6 +19,8 @@ use crate::paths::resolve_hat_root;
 pub const KEY_ROOT: &str = "root";
 pub const KEY_THEME: &str = "theme";
 pub const KEY_LITELLM_ENDPOINT: &str = "litellm_endpoint";
+/// Projets importés hors racine (bouton + de Working) : tableau JSON de chemins.
+pub const KEY_EXTRA_PROJECTS: &str = "extra_projects";
 
 /// Crée la table `config` si absente.
 pub fn init_schema(conn: &Connection) -> rusqlite::Result<()> {

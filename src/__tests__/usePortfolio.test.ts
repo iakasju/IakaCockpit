@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { usePortfolio } from "../hooks/usePortfolio";
 import type { Backend, Project } from "../api/backend";
 
@@ -21,6 +21,9 @@ function mockApi(over: Partial<Backend> = {}): Backend {
   return {
     getRoot: vi.fn().mockResolvedValue("/root"),
     scanPortfolio: vi.fn().mockResolvedValue([proj]),
+    listExtraProjects: vi.fn().mockResolvedValue([]),
+    addProject: vi.fn(),
+    pickDirectory: vi.fn(),
     ...over,
   } as unknown as Backend;
 }
@@ -53,5 +56,50 @@ describe("usePortfolio", () => {
     await result.current.refresh();
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(api.getRoot).toHaveBeenCalledTimes(2);
+  });
+
+  it("fusionne les projets importés (hors racine, dédupliqués par chemin)", async () => {
+    const extra: Project = { ...proj, id: "ext", path: "/ailleurs/ext" };
+    const api = mockApi({
+      listExtraProjects: vi.fn().mockResolvedValue([extra, proj]), // proj = doublon de chemin
+    });
+    const { result } = renderHook(() => usePortfolio(api));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    // base [proj] + extra unique (proj filtré car même chemin que la base)
+    expect(result.current.projects).toEqual([proj, extra]);
+  });
+
+  it("importProject : sélection → addProject → refresh, renvoie le projet", async () => {
+    const imported: Project = { ...proj, id: "ext", path: "/ailleurs/ext" };
+    const api = mockApi({
+      pickDirectory: vi.fn().mockResolvedValue("/ailleurs/ext"),
+      addProject: vi.fn().mockResolvedValue(imported),
+      listExtraProjects: vi.fn().mockResolvedValue([imported]),
+    });
+    const { result } = renderHook(() => usePortfolio(api));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let returned: Project | null = null;
+    await act(async () => {
+      returned = await result.current.importProject();
+    });
+    expect(api.addProject).toHaveBeenCalledWith("/ailleurs/ext");
+    expect(returned).toEqual(imported);
+    expect(result.current.projects).toContainEqual(imported);
+  });
+
+  it("importProject : annulation utilisateur → null, pas d'ajout", async () => {
+    const api = mockApi({
+      pickDirectory: vi.fn().mockResolvedValue(null),
+    });
+    const { result } = renderHook(() => usePortfolio(api));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let returned: Project | null = proj;
+    await act(async () => {
+      returned = await result.current.importProject();
+    });
+    expect(returned).toBeNull();
+    expect(api.addProject).not.toHaveBeenCalled();
   });
 });

@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Capabilities minimales de la fenetre principale (L0).",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:allow-open"]
 }

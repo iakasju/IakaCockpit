@@ -39,6 +39,12 @@ export default function App(): JSX.Element {
     grid.setActiveView("working");
   };
 
+  // Bouton + de Working : import d'un dossier existant → portfolio + set de Work.
+  const addProject = async (): Promise<void> => {
+    const project = await portfolio.importProject();
+    if (project) workset.add(project.id);
+  };
+
   return (
     <main className="app-shell" data-navpos={settings.ui.navPos}>
       <header className="topbar">
@@ -95,6 +101,7 @@ export default function App(): JSX.Element {
             activeTabId={grid.activeTabId}
             pty={pty}
             onOpenProject={openProject}
+            onAddProject={() => void addProject()}
             onSelectTab={grid.setActiveTab}
             onCloseTab={grid.closeTab}
           />

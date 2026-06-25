@@ -16,6 +16,7 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 /** Wrapper typé minimal autour de `invoke`. Seul endroit autorisé à l'appeler. */
 export async function call<T>(
@@ -68,6 +69,30 @@ export interface ServiceStatus {
 /** Énumère les projets sous `root` (trié work pending → stable → hors git). */
 export function scanPortfolio(root: string): Promise<Project[]> {
   return call<Project[]>("scan_portfolio", { root });
+}
+
+/**
+ * Importe un dossier existant comme projet (bouton + de Working). Persiste son
+ * chemin côté Rust et renvoie son état git scanné. Le dossier peut vivre hors du
+ * chapeau (import externe choisi par geste utilisateur).
+ */
+export function addProject(path: string): Promise<Project> {
+  return call<Project>("add_project", { path });
+}
+
+/** Projets importés hors racine, encore présents sur disque. */
+export function listExtraProjects(): Promise<Project[]> {
+  return call<Project[]>("list_extra_projects");
+}
+
+/**
+ * Ouvre le sélecteur de dossier natif (plugin dialog). Renvoie le chemin choisi,
+ * ou `null` si l'utilisateur annule. SEUL endroit autorisé à toucher au plugin
+ * dialog (même règle de cloisonnement que `invoke`/`listen`, D7).
+ */
+export async function pickDirectory(): Promise<string | null> {
+  const selection = await openDialog({ directory: true, multiple: false });
+  return typeof selection === "string" ? selection : null;
 }
 
 // --- Services ---
@@ -175,6 +200,9 @@ export const backend = {
   call,
   isTauri,
   scanPortfolio,
+  addProject,
+  listExtraProjects,
+  pickDirectory,
   checkServices,
   getRoot,
   setRoot,

@@ -28,6 +28,7 @@ fn ping() -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(terminal::TermState::default())
         .setup(|app| {
             // Garantit une racine de chapeau persistée dès le premier boot
@@ -41,6 +42,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ping,
             portfolio::scan_portfolio,
+            portfolio::add_project,
+            portfolio::list_extra_projects,
             services::check_services,
             config::get_root,
             config::set_root,

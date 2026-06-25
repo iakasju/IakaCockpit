@@ -10,6 +10,8 @@ import { useCallback, useState } from "react";
 export interface UseWorkset {
   ids: ReadonlySet<string>;
   toggle: (projectId: string) => void;
+  /** Ajoute un projet au set (idempotent — no-op s'il y est déjà). */
+  add: (projectId: string) => void;
   has: (projectId: string) => boolean;
 }
 
@@ -28,10 +30,19 @@ export function useWorkset(): UseWorkset {
     });
   }, []);
 
+  const add = useCallback((projectId: string): void => {
+    setIds((prev) => {
+      if (prev.has(projectId)) return prev;
+      const next = new Set(prev);
+      next.add(projectId);
+      return next;
+    });
+  }, []);
+
   const has = useCallback(
     (projectId: string): boolean => ids.has(projectId),
     [ids],
   );
 
-  return { ids, toggle, has };
+  return { ids, toggle, add, has };
 }

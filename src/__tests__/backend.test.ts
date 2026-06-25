@@ -16,11 +16,21 @@ vi.mock("@tauri-apps/api/event", () => ({
     listenMock(event, cb),
 }));
 
+// `backend.ts` est aussi le seul point qui importe le plugin dialog (sélecteur de
+// dossier natif du bouton +). On le mocke ici pour la même raison de cloisonnement.
+const openDialogMock = vi.fn();
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  open: (opts?: unknown) => openDialogMock(opts),
+}));
+
 import {
   call,
   isTauri,
   backend,
   scanPortfolio,
+  addProject,
+  listExtraProjects,
+  pickDirectory,
   checkServices,
   getRoot,
   setRoot,
@@ -75,6 +85,20 @@ describe("backend.ts (commandes métier L1)", () => {
     expect(invokeMock).toHaveBeenCalledWith("scan_portfolio", {
       root: "/home/u/work",
     });
+  });
+
+  it("addProject invoque add_project avec path", async () => {
+    invokeMock.mockResolvedValue({});
+    await addProject("/home/u/work/proj");
+    expect(invokeMock).toHaveBeenCalledWith("add_project", {
+      path: "/home/u/work/proj",
+    });
+  });
+
+  it("listExtraProjects invoque list_extra_projects sans args", async () => {
+    invokeMock.mockResolvedValue([]);
+    await listExtraProjects();
+    expect(invokeMock).toHaveBeenCalledWith("list_extra_projects", undefined);
   });
 
   it("checkServices invoque check_services sans args", async () => {
@@ -160,6 +184,9 @@ describe("backend.ts (commandes métier L1)", () => {
   it("la façade expose toutes les fonctions métier L1", () => {
     for (const fn of [
       "scanPortfolio",
+      "addProject",
+      "listExtraProjects",
+      "pickDirectory",
       "checkServices",
       "getRoot",
       "setRoot",
@@ -175,6 +202,27 @@ describe("backend.ts (commandes métier L1)", () => {
     ] as const) {
       expect(typeof backend[fn]).toBe("function");
     }
+  });
+});
+
+describe("backend.ts (sélecteur de dossier natif — seul point dialog)", () => {
+  beforeEach(() => {
+    openDialogMock.mockReset();
+  });
+
+  it("pickDirectory ouvre le dialog en mode dossier et renvoie le chemin", async () => {
+    openDialogMock.mockResolvedValue("/home/u/work/proj");
+    const path = await pickDirectory();
+    expect(openDialogMock).toHaveBeenCalledWith({
+      directory: true,
+      multiple: false,
+    });
+    expect(path).toBe("/home/u/work/proj");
+  });
+
+  it("pickDirectory renvoie null si l'utilisateur annule", async () => {
+    openDialogMock.mockResolvedValue(null);
+    expect(await pickDirectory()).toBeNull();
   });
 });
 

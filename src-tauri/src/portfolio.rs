@@ -7,9 +7,11 @@
 //! `root` est fourni par l'appelant, qui l'obtient via `config::get_root`
 //! (défaut calculé par `paths::resolve_hat_root`).
 
-use crate::git;
+use crate::{config, db, git};
+use rusqlite::Connection;
 use serde::Serialize;
 use std::path::Path;
+use tauri::AppHandle;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Project {
@@ -165,6 +167,63 @@ pub fn scan_portfolio(root: String) -> Result<Vec<Project>, String> {
     Ok(projects)
 }
 
+// --- Projets importés hors racine (bouton + de Working) ---
+//
+// Un dossier choisi par l'utilisateur (geste natif, sélecteur de fichiers) peut
+// vivre N'IMPORTE OÙ — y compris hors du chapeau. On persiste la liste de ses
+// chemins en config (clé `extra_projects`, tableau JSON) pour qu'ils survivent au
+// refresh / redémarrage. La logique pure (lecture/écriture dédupliquée) est isolée
+// ici et testée sans `AppHandle`.
+
+/// Lit la liste persistée des chemins de projets importés (`[]` si absente ou
+/// JSON corrompu — tolérant, ne casse jamais le listing).
+fn read_extra_paths(conn: &Connection) -> rusqlite::Result<Vec<String>> {
+    match config::get(conn, config::KEY_EXTRA_PROJECTS)? {
+        Some(json) => Ok(serde_json::from_str::<Vec<String>>(&json).unwrap_or_default()),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// Ajoute un chemin à la liste persistée (dédupliqué ; no-op s'il y est déjà).
+fn add_extra_path(conn: &Connection, path: &str) -> rusqlite::Result<()> {
+    let mut paths = read_extra_paths(conn)?;
+    if !paths.iter().any(|p| p == path) {
+        paths.push(path.to_string());
+        let json = serde_json::to_string(&paths).unwrap_or_else(|_| "[]".to_string());
+        config::set(conn, config::KEY_EXTRA_PROJECTS, &json)?;
+    }
+    Ok(())
+}
+
+/// Importe un dossier existant comme projet : valide que c'est un dossier,
+/// persiste son chemin, et renvoie son état git scanné (même lecture que le
+/// portfolio). Le dossier est choisi par geste utilisateur (sélecteur natif) :
+/// pas de contrainte « sous le chapeau » — c'est précisément un import externe.
+#[tauri::command]
+pub fn add_project(app: AppHandle, path: String) -> Result<Project, String> {
+    let p = Path::new(&path);
+    if !p.is_dir() {
+        return Err(format!("Dossier introuvable ou inaccessible : {path}"));
+    }
+    let conn = db::open(&app)?;
+    add_extra_path(&conn, &path).map_err(|e| e.to_string())?;
+    Ok(read_project(p))
+}
+
+/// Renvoie l'état des projets importés encore présents sur disque (les chemins
+/// disparus sont silencieusement ignorés).
+#[tauri::command]
+pub fn list_extra_projects(app: AppHandle) -> Result<Vec<Project>, String> {
+    let conn = db::open(&app)?;
+    let paths = read_extra_paths(&conn).map_err(|e| e.to_string())?;
+    Ok(paths
+        .iter()
+        .map(Path::new)
+        .filter(|p| p.is_dir())
+        .map(read_project)
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,6 +288,37 @@ mod tests {
         });
         let order: Vec<&str> = v.iter().map(|p| p.id.as_str()).collect();
         assert_eq!(order, vec!["alpha", "beta", "gamma", "zeta"]);
+    }
+
+    fn mem() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        crate::config::init_schema(&conn).unwrap();
+        conn
+    }
+
+    #[test]
+    fn extra_paths_vide_par_defaut() {
+        let conn = mem();
+        assert_eq!(read_extra_paths(&conn).unwrap(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn extra_paths_ajout_persiste_et_dedupe() {
+        let conn = mem();
+        add_extra_path(&conn, "/a/proj1").unwrap();
+        add_extra_path(&conn, "/b/proj2").unwrap();
+        add_extra_path(&conn, "/a/proj1").unwrap(); // doublon → ignoré
+        assert_eq!(
+            read_extra_paths(&conn).unwrap(),
+            vec!["/a/proj1".to_string(), "/b/proj2".to_string()]
+        );
+    }
+
+    #[test]
+    fn extra_paths_json_corrompu_donne_liste_vide() {
+        let conn = mem();
+        crate::config::set(&conn, crate::config::KEY_EXTRA_PROJECTS, "pas du json").unwrap();
+        assert_eq!(read_extra_paths(&conn).unwrap(), Vec::<String>::new());
     }
 
     fn mk(id: &str, status: &str) -> Project {

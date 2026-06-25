@@ -19,6 +19,17 @@ describe("useWorkset", () => {
     expect(result.current.ids.size).toBe(0);
   });
 
+  it("add ajoute une fois (idempotent, ne retire jamais)", () => {
+    const { result } = renderHook(() => useWorkset());
+    act(() => result.current.add("p1"));
+    expect(result.current.has("p1")).toBe(true);
+    expect(result.current.ids.size).toBe(1);
+    // second add : no-op, reste présent (contraste avec toggle)
+    act(() => result.current.add("p1"));
+    expect(result.current.has("p1")).toBe(true);
+    expect(result.current.ids.size).toBe(1);
+  });
+
   it("gère plusieurs projets indépendamment", () => {
     const { result } = renderHook(() => useWorkset());
     act(() => result.current.toggle("p1"));

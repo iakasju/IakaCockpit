@@ -16,6 +16,7 @@ export interface WorkingViewProps {
   activeTabId: string | null;
   pty: UsePty;
   onOpenProject: (project: Project) => void;
+  onAddProject: () => void;
   onSelectTab: (id: string) => void;
   onCloseTab: (id: string) => void;
 }
@@ -26,6 +27,7 @@ export function WorkingView({
   activeTabId,
   pty,
   onOpenProject,
+  onAddProject,
   onSelectTab,
   onCloseTab,
 }: WorkingViewProps): JSX.Element {
@@ -35,14 +37,26 @@ export function WorkingView({
     <section className="view wk" aria-label="Working">
       <aside className="worklist">
         <div className="wlhead">
-          <div className="nm">Set de Work</div>
-          <div className="sub">{worksetProjects.length} projet(s)</div>
+          <div className="mid">
+            <div className="nm">Set de Work</div>
+            <div className="sub">{worksetProjects.length} projet(s)</div>
+          </div>
+          <button
+            type="button"
+            className="addbtn"
+            aria-label="Importer un projet (dossier existant)"
+            title="Importer un projet existant…"
+            onClick={onAddProject}
+          >
+            +
+          </button>
         </div>
         <div className="wlscroll">
           <div className="wlbl">Projets sélectionnés</div>
           {worksetProjects.length === 0 && (
             <div className="wlbl" style={{ color: "var(--text-3)" }}>
-              Ajoute des projets depuis Portfolio (bouton +).
+              Aucun projet. Importe un dossier existant via le bouton + ci-dessus,
+              ou ajoute des projets depuis Portfolio.
             </div>
           )}
           {worksetProjects.map((p) => (

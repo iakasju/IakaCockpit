@@ -20,6 +20,12 @@ export interface UsePortfolio {
   error: string | null;
   root: string | null;
   refresh: () => Promise<void>;
+  /**
+   * Ouvre le sélecteur de dossier natif, importe le dossier choisi comme projet
+   * et rafraîchit la liste. Renvoie le projet importé, ou `null` si l'utilisateur
+   * a annulé (ou en cas d'erreur, remontée via `error`).
+   */
+  importProject: () => Promise<Project | null>;
 }
 
 /** Injection de la façade pour les tests (défaut = vraie façade). */
@@ -29,40 +35,48 @@ export function usePortfolio(api: Backend = backend): UsePortfolio {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const scan = useCallback(
-    async (target: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const list = await api.scanPortfolio(target);
-        setProjects(list);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-        setProjects([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [api],
-  );
-
   const refresh = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
       const r = await api.getRoot();
       setRoot(r);
-      await scan(r);
+      const base = await api.scanPortfolio(r);
+      // Projets importés hors racine : best-effort (ne doit jamais casser le
+      // listing principal si la commande échoue / est absente).
+      let extra: Project[] = [];
+      try {
+        extra = (await api.listExtraProjects?.()) ?? [];
+      } catch {
+        extra = [];
+      }
+      const seen = new Set(base.map((p) => p.path));
+      setProjects([...base, ...extra.filter((p) => !seen.has(p.path))]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      setProjects([]);
+    } finally {
       setLoading(false);
     }
-  }, [api, scan]);
+  }, [api]);
+
+  const importProject = useCallback(async (): Promise<Project | null> => {
+    try {
+      const path = await api.pickDirectory();
+      if (!path) return null; // annulation utilisateur
+      const project = await api.addProject(path);
+      await refresh();
+      return project;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      return null;
+    }
+  }, [api, refresh]);
 
   useEffect(() => {
     // Premier chargement : ne crashe pas hors Tauri (façade peut rejeter).
     void refresh();
   }, [refresh]);
 
-  return { projects, loading, error, root, refresh };
+  return { projects, loading, error, root, refresh, importProject };
 }
