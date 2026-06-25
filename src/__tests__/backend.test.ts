@@ -40,6 +40,9 @@ import {
   nextStep,
   aiSetKey,
   aiHasKey,
+  fetchMainCourante,
+  couchSetCredentials,
+  couchHasCredentials,
   ptyOpen,
   ptyWrite,
   ptyResize,
@@ -251,6 +254,57 @@ describe("backend.ts (moteur prochaine étape — L3)", () => {
     const facade = backend as unknown as Record<string, unknown>;
     expect(facade["aiGetKey"]).toBeUndefined();
     expect(facade["getAiKey"]).toBeUndefined();
+  });
+});
+
+describe("backend.ts (main courante 3-canaux — L4)", () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  it("fetchMainCourante invoque fetch_main_courante avec un filtre vide par défaut", async () => {
+    invokeMock.mockResolvedValue([]);
+    await fetchMainCourante();
+    expect(invokeMock).toHaveBeenCalledWith("fetch_main_courante", {
+      filter: {},
+    });
+  });
+
+  it("fetchMainCourante transmet le filtre agent/royaume", async () => {
+    invokeMock.mockResolvedValue([]);
+    await fetchMainCourante({ agent: "Gimli", royaume: "iakacockpit" });
+    expect(invokeMock).toHaveBeenCalledWith("fetch_main_courante", {
+      filter: { agent: "Gimli", royaume: "iakacockpit" },
+    });
+  });
+
+  it("couchSetCredentials invoque couch_set_credentials avec user/password (write-only)", async () => {
+    await couchSetCredentials("admin", "secret");
+    expect(invokeMock).toHaveBeenCalledWith("couch_set_credentials", {
+      user: "admin",
+      password: "secret",
+    });
+  });
+
+  it("couchHasCredentials invoque couch_has_credentials sans args et renvoie un booléen", async () => {
+    invokeMock.mockResolvedValue(true);
+    const has = await couchHasCredentials();
+    expect(invokeMock).toHaveBeenCalledWith("couch_has_credentials", undefined);
+    expect(has).toBe(true);
+  });
+
+  it("la façade n'expose AUCUNE commande de lecture des identifiants CouchDB (cloisonnement D4)", () => {
+    for (const fn of [
+      "fetchMainCourante",
+      "couchSetCredentials",
+      "couchHasCredentials",
+    ] as const) {
+      expect(typeof backend[fn]).toBe("function");
+    }
+    const facade = backend as unknown as Record<string, unknown>;
+    expect(facade["couchGetCredentials"]).toBeUndefined();
+    expect(facade["getCouchPassword"]).toBeUndefined();
   });
 });
 
