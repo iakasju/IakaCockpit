@@ -117,7 +117,9 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 - [x] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config)
       → `specs/instructions/L1-salvage-backend-rust.md`
       *(implémenté, **gate Legolas PASS** — 44/44 tests Rust + 21/21 front, dé-Windows-isé sur socle L0 ; candidate `v0.1.0-rc`).*
-- [ ] **L2** — Vues Portfolio / Working / Réglages + grille/dock/onglets (maquette v7).
-      *Idées consignées en roadmap : vue « liste des jalons », onglets qualité (débat ouvert).*
+- [x] **L2** — Vues Portfolio / Working / Réglages + grille/dock/onglets (maquette v7)
+      → `specs/instructions/L2-vues-ui.md`
+      *(implémenté, **gate Legolas PASS** — 50/50 tests front, terminal PTY xterm réel, réglages persistés ; candidate `v0.2.0-rc`).*
+      *En réserve : onglets qualité (débat ouvert), vue « liste des jalons » + fiche jalon (dépend L4).*
 - [ ] **L3** — Client LiteLLM / moteur « prochaine étape ».
 - [ ] **L4** — Mains courantes 3-canaux / iakaboxlogs *(inclut le traçage machine des délégations).*

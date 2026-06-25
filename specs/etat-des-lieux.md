@@ -1,45 +1,48 @@
 # Etat des lieux - IakaCockpit
 
-> Regenere manuellement (pwsh indisponible sur macOS) le 2026-06-25 (motif: pause / checkpoint L1).
+> Regenere manuellement (pwsh indisponible sur macOS) le 2026-06-25 (motif: pause / checkpoint L2).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.1.0 (candidate staging : v0.1.0-rc) |
+| Version | v0.1.0 (candidate staging : v0.2.0-rc apres L2) |
 | Branche | main |
-| Dernier commit | 41d2bba docs(roadmap): jalons + onglets qualite (debat) en L2, tracage delegations en L4 |
+| Dernier commit | abf9900 feat(L2): App shell de navigation (3 vues) + montage theme par defaut |
 | Arbre | propre |
-| Fichiers (hors .git/node_modules) | 72 |
+| Fichiers (hors .git/node_modules) | 92 |
 | Remote | AUCUN — Forgejo LAN indisponible plusieurs jours (box offline) ; push differe |
-| Note | L0 + L1 implementes, gate Legolas PASS sur les deux ; commits 100% locaux |
+| Note | L0 + L1 + L2 implementes, gate Legolas PASS sur les trois ; commits 100% locaux |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `41d2bba` | 2026-06-25 | docs(roadmap): jalons projet + onglets qualite (debat) en L2, tracage delegations en L4 |
-| `ed74c8b` | 2026-06-25 | feat(L1): facade backend.ts typee (10 commandes) + tests vitest |
-| `a6ebddb` | 2026-06-25 | feat(L1): PTY de-Windows-ise (shell L0 + cwd valide) + cablage lib.rs |
-| `5d1b230` | 2026-06-25 | feat(L1): salvage check_services (MVP, degrade proprement hors box) |
-| `ed75902` | 2026-06-25 | feat(L1): commandes config sur le module L0 (fin de "C:\work") |
-| `dcdc317` | 2026-06-25 | feat(L1): salvage git + portfolio (scan cross-OS) branche sur paths L0 |
-| `2f48181` | 2026-06-25 | docs(L1): instruction salvage backend Rust iakaIDE (cadrage Gandalf) |
-| `b5081a6` | 2026-06-25 | docs(L0): checkpoint gate Legolas PASS — etat des lieux + backlog |
+| `abf9900` | 2026-06-25 | feat(L2): App shell de navigation (3 vues) + montage theme par defaut |
+| `a1cca59` | 2026-06-25 | feat(L2): composants + vues Portfolio / Working / Reglages (presentationnels) |
+| `ef4f5ca` | 2026-06-25 | feat(L2): feed main courante MOCKE (3 canaux) + filtres (DEP-1) |
+| `0e79d2a` | 2026-06-25 | feat(L2): useServices — etat iakabox avec degradation hors box (R-L2-7) |
+| `7883b26` | 2026-06-25 | feat(L2): useSettings — preferences UI PERSISTEES + cockpit minimal (PO-2) |
+| `64207ce` | 2026-06-25 | feat(L2): hook usePty — cycle de vie des sessions terminal reelles |
+| `d3e7598` | 2026-06-25 | feat(L2): hooks portfolio / navigation+onglets / workset (+ tests) |
+| `fd08eca` | 2026-06-25 | feat(L2): iakacharte NaonEdge (dark defaut + light) + layout cockpit |
+| `a210dc8` | 2026-06-25 | feat(L2): facade PTY event helpers + xterm deps |
+| `3165aad` | 2026-06-25 | docs(L2): verrouille PO-1/2/3 |
 
 ## Reprise du travail
 
 - **Ce qui vient d'etre fait** :
-  - **L0** (socle securite cross-OS) implemente + **gate Legolas PASS** (27 tests).
-  - **L1** (salvage backend Rust iakaIDE) implemente par Gimli en 5 commits atomiques + **gate Legolas PASS** : 10 commandes Tauri salvagees (scan_portfolio, check_services, 5x config, 4x PTY), de-Windows-isees sur le socle L0 (`paths::resolve_hat_root`, `shell::default_shell`), cwd PTY valide anti-traversal, DB `iakacockpit.sqlite` schema unique L0, facade `invoke` unique `src/api/backend.ts`. Chaine qualite verte : 44/44 tests Rust, 21/21 front, clippy `-D warnings` a zero, couverture front 89,65%.
-  - **Roadmap** enrichie : vue « liste des jalons » + onglets qualite (DEBAT OUVERT) en L2 ; tracage machine des delegations en L4.
-- **En cours / a reprendre** : rien d'ouvert cote dev. Decisions produit en attente : trancher « onglets qualite » (avec Loki) avant de cadrer L2.
-- **Prochaine etape concrete** : cadrer **L2** (vues Portfolio / Working / Reglages + grille/dock/onglets, maquette v7) via Gandalf — apres arbitrage onglets qualite.
+  - **L0** (socle securite cross-OS) + **L1** (salvage backend Rust, 10 commandes de-Windows-isees) : implementes, **gate Legolas PASS**.
+  - **L2** (vues UI) implemente par Gimli en 9 commits + **gate Legolas PASS** : 3 vues (Portfolio grille reelle via scanPortfolio/getRoot ; Working terminal PTY xterm REEL + conversation placeholder ; Reglages PERSISTES via configSet) ; structure grille/dock/onglets facon maquette v7 ; charte NaonEdge dark ; archi D7 tenue (hooks separes usePortfolio/useGridState/useWorkset/usePty/useSettings/useServices ; backend.ts seul point d'invoke ET de listen). Qualite verte : 50/50 tests front, 44/44 Rust (inchange), lint/typecheck/build OK, couverture honnete (hooks ~94%, presentationnel assume a 0%). Deps ajoutees : @xterm/xterm 6 + addon-fit.
+  - **Decisions de cadrage gravees** : MCP = composant de dev non trace ; git = source de verite des sorties projet (non re-tracees) ; engagement humain via agent (canal adresse) ; main courante filtrable par event (jalon/delegations/tools) + fiche jalon (roadmap L2).
+- **En cours / a reprendre** : rien d'ouvert cote dev. Reserve produit : trancher « onglets qualite » (avec Loki) ; vue « liste des jalons » + fiche jalon dependent d'une commande backend dediee et du tracage L4.
+- **Prochaine etape concrete** : **L3** — moteur « prochaine etape » IA via UN provider derriere LiteLLM (abstraction provider, une impl cablee, passerelle LiteLLM, mock dev). Cadrage Gandalf avant code.
 - **Pieges connus** :
-  1. **Forgejo LAN indisponible plusieurs jours** (box offline) -> aucun remote, **push differe** ; tout est en commits locaux (filet intact), a pousser au retour de la box (`http://192.168.2.11:3001/sjupin/IakaCockpit.git`).
-  2. **pwsh absent** sur macOS -> scripts `iakaframe-*.ps1` (snapshot/update) non executables ; etat des lieux regenere a la main.
-  3. **Bundle `.dmg` non generable** en environnement headless (imagerie disque pilotee par Finder/AppleScript -> permission Automatisation macOS requise) ; le `.app` et le binaire release se construisent bien. A valider sur poste reel seulement si le DMG est requis pour le staging.
+  1. **Forgejo LAN indisponible plusieurs jours** (box offline) -> aucun remote, **push differe** ; tout en commits locaux, a pousser au retour (`http://192.168.2.11:3001/sjupin/IakaCockpit.git`).
+  2. **pwsh absent** sur macOS -> scripts `iakaframe-*.ps1` non executables ; etat des lieux regenere a la main.
+  3. **Build .dmg de demo** : non generable en headless (Finder/AppleScript) ; **autorisation Finder accordee par Stephane** pour le faire sur poste reel ; **build de demo reporte a quand L2/UI est mure** (decide : pas de DMG maintenant). Le `.app`/binaire release se construisent sans Finder.
+  4. Bundle JS ~498 kB (xterm) : code-splitting eventuel = lot d'optimisation ulterieur, hors L2.
 
 ## Journal (versions & pauses)
 
@@ -47,4 +50,5 @@
 |---|---|---|---|---|
 | 2026-06-24 20:36 | version | v0.1.0 | main | onboarding initial |
 | 2026-06-25 | pause | v0.1.0-rc | main | gate L0 PASS (Legolas) + cadrage L1 ecrit |
-| 2026-06-25 | pause | v0.1.0-rc | main | L1 implemente + gate L1 PASS (Legolas) ; roadmap enrichie |
+| 2026-06-25 | pause | v0.1.0-rc | main | L1 implemente + gate L1 PASS ; roadmap enrichie |
+| 2026-06-25 | pause | v0.2.0-rc | main | L2 implemente + gate L2 PASS (Legolas) ; vues UI + terminal PTY reel |
