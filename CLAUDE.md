@@ -113,8 +113,9 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
 - [x] **L0** — Bootstrap cross-OS + socle sécurité → `specs/instructions/L0-bootstrap-securite.md`
-      *(implémenté, en attente de gate Legolas).*
-- [ ] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config).
+      *(implémenté, **gate Legolas PASS** — 27/27 tests Rust, front vert ; candidate `v0.1.0-rc`).*
+- [ ] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config)
+      → `specs/instructions/L1-salvage-backend-rust.md` *(cadré, en attente de validation).*
 - [ ] **L2** — Vues Portfolio / Working / Réglages + grille/dock/onglets (maquette v7).
 - [ ] **L3** — Client LiteLLM / moteur « prochaine étape ».
 - [ ] **L4** — Mains courantes 3-canaux / iakaboxlogs.
