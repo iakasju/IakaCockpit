@@ -14,6 +14,8 @@ volumes:
     name: iakacockpit-dev-ollama-data
   iakacockpit-dev-couchdb-data:
     name: iakacockpit-dev-couchdb-data
+  iakacockpit-dev-n8n-data:
+    name: iakacockpit-dev-n8n-data
 
 services:
   ollama:
@@ -53,4 +55,25 @@ services:
       - "127.0.0.1:5984:5984"
     volumes:
       - iakacockpit-dev-couchdb-data:/opt/couchdb/data
+    restart: unless-stopped
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: iakacockpit-dev-n8n
+    networks: [iakacockpit-dev-net]
+    # Passerelle « canal adresse externe » (Cockpit -> n8n -> Discord/Slack/MQTT).
+    # Expose en local, port hote 5678. Compte proprietaire a creer au 1er lancement (UI).
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - GENERIC_TIMEZONE=Europe/Paris
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - iakacockpit-dev-n8n-data:/home/node/.n8n
     restart: unless-stopped
