@@ -26,3 +26,7 @@ portable-pty = "0.8"
 # Socle securite L0
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 dirs = "5"
+# Moteur IA L3 : UN appel HTTP bloquant POST JSON vers l'endpoint OpenAI-compat
+# (LiteLLM/Ollama/cloud). Client synchrone leger, sans TLS en MVP (A3 : http LAN).
+# Pas de tokio/reqwest (sur-dimensionne pour un unique POST). Aligne sur iakaIDE.
+ureq = { version = "2", default-features = false, features = ["json"] }
