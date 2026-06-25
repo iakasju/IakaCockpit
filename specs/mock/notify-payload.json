@@ -1,0 +1,13 @@
+{
+  "canal": "adresse",
+  "support": "slack",
+  "cible": "#iakaframe",
+  "message": "Gandalf demande une validation du jalon L6.",
+  "meta": {
+    "royaume": "IAKACOCKPIT",
+    "agent": "Gandalf",
+    "project": "iakacockpit",
+    "ts": "2026-06-25T14:30:00Z",
+    "source": "iakacockpit"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "name": "iakacockpit - canal adresse (sortant)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "iakacockpit-adresse",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook (X-API-Key)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "webhookId": "iakacockpit-adresse",
+      "notes": "Header Auth = X-API-Key. Cree le credential Header Auth en UI (name=X-API-Key, value=<token>) ; le meme token est saisi cote Cockpit (Reglages -> Token du webhook). Respond Immediately (onReceived) => ack 200 instantane = PRISE EN CHARGE. Production URL = /webhook/iakacockpit-adresse (workflow Active)."
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.support }}",
+        "rules": {
+          "rules": [
+            { "value2": "slack", "output": 0 },
+            { "value2": "discord", "output": 1 },
+            { "value2": "mqtt", "output": 2 }
+          ]
+        },
+        "fallbackOutput": 0
+      },
+      "id": "switch-support",
+      "name": "Switch sur support",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [520, 320],
+      "notes": "Route sur body.support choisi cote Cockpit (D2). Fallback -> Slack. Le Cockpit envoie {canal:'adresse', support, cible, message, meta} ; n8n route betement."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "text": "={{ $json.body.message }}",
+        "otherOptions": {}
+      },
+      "id": "send-slack",
+      "name": "Slack (a completer)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [820, 180],
+      "notes": "PLACEHOLDER. Cree le credential Slack en UI (OAuth ou token bot) et choisis le canal (ou map body.cible). AUCUN secret ici : credentials exclus de l'export JSON.",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.body.message }}",
+        "options": {}
+      },
+      "id": "send-discord",
+      "name": "Discord (a completer)",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [820, 320],
+      "notes": "PLACEHOLDER. Cree le credential Discord (webhook ou bot) en UI et la cible (salon, ou map body.cible). AUCUN secret ici.",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "topic": "={{ $json.body.cible || 'iakaframe/adresse' }}",
+        "message": "={{ $json.body.message }}",
+        "options": {}
+      },
+      "id": "send-mqtt",
+      "name": "MQTT (a completer)",
+      "type": "n8n-nodes-base.mqtt",
+      "typeVersion": 1,
+      "position": [820, 460],
+      "notes": "PLACEHOLDER. Cree le credential MQTT (broker iakabox) en UI ; topic par defaut depuis body.cible. AUCUN secret ici.",
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Webhook (X-API-Key)": {
+      "main": [[{ "node": "Switch sur support", "type": "main", "index": 0 }]]
+    },
+    "Switch sur support": {
+      "main": [
+        [{ "node": "Slack (a completer)", "type": "main", "index": 0 }],
+        [{ "node": "Discord (a completer)", "type": "main", "index": 0 }],
+        [{ "node": "MQTT (a completer)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "iakacockpit" }]
+}
