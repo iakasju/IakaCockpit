@@ -8,6 +8,14 @@ vi.mock("@tauri-apps/api/core", () => ({
     invokeMock(cmd, args),
 }));
 
+// L2 : `backend.ts` est aussi le seul point qui importe `@tauri-apps/api/event`
+// (helpers d'abonnement PTY). On le mocke ici pour la même raison (D6/D7).
+const listenMock = vi.fn();
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: (event: string, cb: (e: { payload: unknown }) => void) =>
+    listenMock(event, cb),
+}));
+
 import {
   call,
   isTauri,
@@ -23,6 +31,8 @@ import {
   ptyWrite,
   ptyResize,
   ptyClose,
+  onPtyOutput,
+  onPtyClosed,
 } from "../api/backend";
 
 describe("backend.ts (couche d'abstraction unique)", () => {
@@ -160,8 +170,46 @@ describe("backend.ts (commandes métier L1)", () => {
       "ptyWrite",
       "ptyResize",
       "ptyClose",
+      "onPtyOutput",
+      "onPtyClosed",
     ] as const) {
       expect(typeof backend[fn]).toBe("function");
     }
+  });
+});
+
+describe("backend.ts (abonnement PTY — DEP-5, seul point qui écoute)", () => {
+  beforeEach(() => {
+    listenMock.mockReset();
+    listenMock.mockResolvedValue(() => undefined);
+  });
+
+  it("onPtyOutput écoute pty://output/{id} et mappe le payload", async () => {
+    const cb = vi.fn();
+    await onPtyOutput("t1", cb);
+    expect(listenMock).toHaveBeenCalledWith(
+      "pty://output/t1",
+      expect.any(Function),
+    );
+    // Simule un événement émis par Rust : le payload doit ressortir.
+    const handler = listenMock.mock.calls[0][1] as (e: {
+      payload: string;
+    }) => void;
+    handler({ payload: "chunk" });
+    expect(cb).toHaveBeenCalledWith("chunk");
+  });
+
+  it("onPtyClosed écoute pty://closed/{id}", async () => {
+    const cb = vi.fn();
+    await onPtyClosed("t1", cb);
+    expect(listenMock).toHaveBeenCalledWith(
+      "pty://closed/t1",
+      expect.any(Function),
+    );
+    const handler = listenMock.mock.calls[0][1] as (e: {
+      payload: void;
+    }) => void;
+    handler({ payload: undefined });
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 });

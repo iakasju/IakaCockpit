@@ -15,6 +15,7 @@
  * passés à `call` reprennent les noms des paramètres Rust (snake_case).
  */
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 /** Wrapper typé minimal autour de `invoke`. Seul endroit autorisé à l'appeler. */
 export async function call<T>(
@@ -134,6 +135,38 @@ export function ptyClose(id: string): Promise<void> {
   return call<void>("pty_close", { id });
 }
 
+// --- Abonnement aux événements PTY (DEP-5) ---
+//
+// Helpers d'abonnement aux événements émis par Rust. C'est le SEUL endroit
+// autorisé à importer `@tauri-apps/api/event` : aucun hook/composant ne doit
+// `listen` directement (règle D6/D7, miroir de la règle `invoke`). Si un nouvel
+// événement doit être consommé, il est ajouté ici comme helper typé.
+
+/** Réexport du type de désabonnement de Tauri (sans exposer l'import event). */
+export type { UnlistenFn };
+
+/**
+ * S'abonne au flux de sortie d'une session PTY (`pty://output/{id}`).
+ * Renvoie une fonction de désabonnement à appeler au nettoyage.
+ */
+export function onPtyOutput(
+  id: string,
+  cb: (data: string) => void,
+): Promise<UnlistenFn> {
+  return listen<string>(`pty://output/${id}`, (e) => cb(e.payload));
+}
+
+/**
+ * S'abonne à la fermeture d'une session PTY (`pty://closed/{id}`).
+ * Renvoie une fonction de désabonnement à appeler au nettoyage.
+ */
+export function onPtyClosed(
+  id: string,
+  cb: () => void,
+): Promise<UnlistenFn> {
+  return listen<void>(`pty://closed/${id}`, () => cb());
+}
+
 /**
  * Façade backend. Exposée en objet pour faciliter le mock dans les tests, en plus
  * des exports nommés (utilisés directement par les hooks/composants en L2).
@@ -152,6 +185,8 @@ export const backend = {
   ptyWrite,
   ptyResize,
   ptyClose,
+  onPtyOutput,
+  onPtyClosed,
 };
 
 export type Backend = typeof backend;
