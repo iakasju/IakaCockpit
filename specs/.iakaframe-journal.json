@@ -8,5 +8,15 @@
     "dirty": false,
     "files": 13,
     "note": "onboarding initial"
+  },
+  {
+    "date": "2026-06-25 21:43",
+    "reason": "version",
+    "version": "v0.3.0-rc",
+    "branch": "main",
+    "commit": "adf03f9 chore(L3): stack docker de test ollama+litellm (cibles #2/#4, ports 11435/4020)",
+    "dirty": true,
+    "files": 15189,
+    "note": "L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM->Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet."
   }
 ]

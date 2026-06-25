@@ -121,5 +121,10 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       → `specs/instructions/L2-vues-ui.md`
       *(implémenté, **gate Legolas PASS** — 50/50 tests front, terminal PTY xterm réel, réglages persistés ; candidate `v0.2.0-rc`).*
       *En réserve : onglets qualité (débat ouvert), vue « liste des jalons » + fiche jalon (dépend L4).*
-- [ ] **L3** — Client LiteLLM / moteur « prochaine étape ».
+- [x] **L3** — Client LiteLLM / moteur « prochaine étape » via UN endpoint OpenAI-compat configurable
+      → `specs/instructions/L3-moteur-prochaine-etape.md`
+      *(implémenté, **gate Legolas PASS** — 70/70 tests front + 67/67 Rust (dont 20 `ai.rs`) ; UN endpoint OpenAI-compat
+      configurable (LiteLLM / Ollama local-LAN / cloud), « on câble, on ne route pas » ; clé optionnelle au keychain
+      (write-only), mock dev implicite ; **testé en réel** : Ollama localhost + LiteLLM→Ollama Docker (stack `docker/`) ;
+      candidate `v0.3.0-rc`).*
 - [ ] **L4** — Mains courantes 3-canaux / iakaboxlogs *(inclut le traçage machine des délégations).*
