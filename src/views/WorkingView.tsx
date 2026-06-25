@@ -5,20 +5,27 @@
  * Présentationnel : reçoit la liste des projets du set de Work, l'état des
  * onglets (useGridState) et le hook PTY (passé au PtyTerminal). Aucun I/O direct.
  */
-import type { Project } from "../api/backend";
+import type { NextStep, Project } from "../api/backend";
 import type { PtyTab } from "../hooks/useGridState";
 import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
+import { NextStepPanel } from "../components/NextStepPanel";
 
 export interface WorkingViewProps {
   worksetProjects: Project[];
   tabs: PtyTab[];
   activeTabId: string | null;
   pty: UsePty;
+  /** État du moteur « prochaine étape » (L3). */
+  nextStepResult: NextStep | null;
+  nextStepLoading: boolean;
+  nextStepError: string | null;
   onOpenProject: (project: Project) => void;
   onAddProject: () => void;
   onSelectTab: (id: string) => void;
   onCloseTab: (id: string) => void;
+  /** Déclenche une demande de suggestion sur le projet de l'onglet `cwd`. */
+  onRequestNextStep: (path: string) => void;
 }
 
 export function WorkingView({
@@ -26,10 +33,14 @@ export function WorkingView({
   tabs,
   activeTabId,
   pty,
+  nextStepResult,
+  nextStepLoading,
+  nextStepError,
   onOpenProject,
   onAddProject,
   onSelectTab,
   onCloseTab,
+  onRequestNextStep,
 }: WorkingViewProps): JSX.Element {
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
@@ -105,11 +116,13 @@ export function WorkingView({
         <div className="workbody">
           {activeTab ? (
             <>
-              <div className="convph">
-                <span className="mockflag">placeholder</span>
-                Conversation / thread agents — branchée en L3 (moteur IA) et L4
-                (mains courantes). Le terminal ci-dessous est réel.
-              </div>
+              <NextStepPanel
+                projectId={activeTab.projectId}
+                result={nextStepResult}
+                loading={nextStepLoading}
+                error={nextStepError}
+                onRequest={() => onRequestNextStep(activeTab.cwd)}
+              />
               <div className="termwrap">
                 {/* clé = id de session : remonter le composant à chaque onglet */}
                 <PtyTerminal

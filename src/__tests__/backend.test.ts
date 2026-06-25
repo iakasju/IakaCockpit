@@ -37,6 +37,9 @@ import {
   configGet,
   configSet,
   configAll,
+  nextStep,
+  aiSetKey,
+  aiHasKey,
   ptyOpen,
   ptyWrite,
   ptyResize,
@@ -202,6 +205,52 @@ describe("backend.ts (commandes métier L1)", () => {
     ] as const) {
       expect(typeof backend[fn]).toBe("function");
     }
+  });
+});
+
+describe("backend.ts (moteur prochaine étape — L3)", () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  it("nextStep invoque next_step avec path et renvoie la suggestion", async () => {
+    invokeMock.mockResolvedValue({
+      suggestion: "Fais X.",
+      provider: "mock",
+      model: "llama3.1:8b",
+      tokens_in: null,
+      tokens_out: null,
+    });
+    const ns = await nextStep("/home/u/work/proj");
+    expect(invokeMock).toHaveBeenCalledWith("next_step", {
+      path: "/home/u/work/proj",
+    });
+    expect(ns.provider).toBe("mock");
+    expect(ns.suggestion).toBe("Fais X.");
+  });
+
+  it("aiSetKey invoque ai_set_key avec value (write-only)", async () => {
+    await aiSetKey("sk-secret");
+    expect(invokeMock).toHaveBeenCalledWith("ai_set_key", { value: "sk-secret" });
+  });
+
+  it("aiHasKey invoque ai_has_key sans args et renvoie un booléen", async () => {
+    invokeMock.mockResolvedValue(true);
+    const has = await aiHasKey();
+    expect(invokeMock).toHaveBeenCalledWith("ai_has_key", undefined);
+    expect(has).toBe(true);
+  });
+
+  it("la façade n'expose AUCUNE commande de lecture de la clé (cloisonnement D4)", () => {
+    // Présence des commandes attendues…
+    for (const fn of ["nextStep", "aiSetKey", "aiHasKey"] as const) {
+      expect(typeof backend[fn]).toBe("function");
+    }
+    // …et absence de toute commande qui lirait la valeur de la clé vers le front.
+    const facade = backend as unknown as Record<string, unknown>;
+    expect(facade["aiGetKey"]).toBeUndefined();
+    expect(facade["getAiKey"]).toBeUndefined();
   });
 });
 

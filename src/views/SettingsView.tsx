@@ -77,11 +77,14 @@ export function SettingsView({
 }: SettingsViewProps): JSX.Element {
   const [rootDraft, setRootDraft] = useState<string>("");
   const [endpointDraft, setEndpointDraft] = useState<string>("");
+  const [modelDraft, setModelDraft] = useState<string>("");
+  const [keyDraft, setKeyDraft] = useState<string>("");
 
   // Pré-remplit les brouillons à la première valeur chargée.
   const rootValue = rootDraft || settings.root || "";
   const endpointValue =
     endpointDraft || settings.litellmEndpoint || "";
+  const modelValue = modelDraft || settings.litellmModel || "";
 
   return (
     <section className="view st" aria-label="Réglages">
@@ -251,8 +254,12 @@ export function SettingsView({
 
             <div className="fieldrow">
               <div className="lab">
-                <div className="t">Endpoint LiteLLM</div>
-                <div className="d">URL non sensible (la clé va au keychain, L3)</div>
+                <div className="t">Endpoint IA (OpenAI-compat — LiteLLM recommandé)</div>
+                <div className="d">
+                  URL non sensible. Cible au choix : LiteLLM LAN, Ollama
+                  localhost/LAN (http://localhost:11434/v1), ou cloud OpenAI-compat.
+                  Vide → mode mock (suggestions simulées).
+                </div>
               </div>
               <div className="ctl">
                 <input
@@ -261,12 +268,71 @@ export function SettingsView({
                   placeholder="http://192.168.2.11:4000"
                   value={endpointValue}
                   onChange={(e) => setEndpointDraft(e.target.value)}
-                  aria-label="Endpoint LiteLLM"
+                  aria-label="Endpoint IA"
                 />
                 <button
                   type="button"
                   className="btn sm"
                   onClick={() => void settings.setLitellmEndpoint(endpointValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Modèle</div>
+                <div className="d">
+                  Nom/alias transmis tel quel à l'endpoint (alias LiteLLM, modèle
+                  Ollama, ou modèle cloud).
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder="llama3.1:8b"
+                  value={modelValue}
+                  onChange={(e) => setModelDraft(e.target.value)}
+                  aria-label="Modèle IA"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => void settings.setLitellmModel(modelValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Clé IA (facultative)</div>
+                <div className="d">
+                  Stockée au keychain (jamais affichée). Facultative — inutile pour
+                  un Ollama local.{" "}
+                  <strong>
+                    {settings.aiKeySet ? "Clé enregistrée ✓" : "Aucune clé"}
+                  </strong>
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="password"
+                  placeholder="sk-… (laisser vide pour retirer)"
+                  value={keyDraft}
+                  onChange={(e) => setKeyDraft(e.target.value)}
+                  aria-label="Clé IA"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => {
+                    void settings.setAiKey(keyDraft).then(() => setKeyDraft(""));
+                  }}
                 >
                   Enregistrer
                 </button>

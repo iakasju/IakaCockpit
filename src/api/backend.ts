@@ -54,6 +54,19 @@ export interface Project {
   work_status: WorkStatus;
 }
 
+/**
+ * Miroir de `ai::NextStep` (Rust) — moteur « prochaine étape » L3.
+ * `provider` vaut `"litellm"` (endpoint OpenAI-compat configuré : LiteLLM / Ollama
+ * / cloud) ou `"mock"` (suggestion simulée, sans réseau).
+ */
+export interface NextStep {
+  suggestion: string;
+  provider: string;
+  model: string | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+}
+
 /** Miroir de `services::ServiceStatus` (Rust). */
 export interface ServiceStatus {
   name: string;
@@ -100,6 +113,35 @@ export async function pickDirectory(): Promise<string | null> {
 /** État des services iakabox (ne rejette jamais : injoignable → reachable:false). */
 export function checkServices(): Promise<ServiceStatus[]> {
   return call<ServiceStatus[]>("check_services");
+}
+
+// --- Moteur « prochaine étape » IA (L3) ---
+//
+// UN endpoint OpenAI-compat configurable, côté Rust. L'appel réseau IA vit
+// UNIQUEMENT côté Rust (D2) : aucun `fetch`/client HTTP IA dans le front (CSP
+// stricte). Le front ne fait qu'`invoke` via cette façade.
+
+/**
+ * Demande une suggestion de « prochaine étape » pour le projet `path`.
+ * Mode réel (endpoint configuré) ou mock (endpoint vide / flag dev) — transparent
+ * côté front : `provider` indique lequel. Rejette avec un message lisible si
+ * l'endpoint est injoignable (dégradation propre côté Rust).
+ */
+export function nextStep(path: string): Promise<NextStep> {
+  return call<NextStep>("next_step", { path });
+}
+
+/**
+ * Écrit la clé IA optionnelle au keychain (WRITE-ONLY : la clé n'est jamais relue
+ * vers le front). Une valeur vide retire la clé. Cf. cloisonnement D4.
+ */
+export function aiSetKey(value: string): Promise<void> {
+  return call<void>("ai_set_key", { value });
+}
+
+/** Indique si une clé IA est enregistrée (présence seule, jamais la valeur). */
+export function aiHasKey(): Promise<boolean> {
+  return call<boolean>("ai_has_key");
 }
 
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
@@ -209,6 +251,9 @@ export const backend = {
   configGet,
   configSet,
   configAll,
+  nextStep,
+  aiSetKey,
+  aiHasKey,
   ptyOpen,
   ptyWrite,
   ptyResize,

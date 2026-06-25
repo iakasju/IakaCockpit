@@ -1,0 +1,22 @@
+{
+  "_note": "Fixture de RÉFÉRENCE (L3) — forme de la réponse OpenAI-compat /chat/completions attendue par le parser Rust (ai::parse_chat_completion). LiteLLM ET Ollama (/v1) exposent ce format. Le moteur lit choices[0].message.content (suggestion) + usage.prompt_tokens / usage.completion_tokens (optionnels). Les tests unitaires Rust utilisent des fixtures inline équivalentes ; ce fichier documente le contrat. AUCUN appel réseau réel n'est fait en test.",
+  "id": "chatcmpl-iaka-l3-demo",
+  "object": "chat.completion",
+  "created": 1750000000,
+  "model": "llama3.1:8b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Le lot L3 (moteur prochaine étape) est implémenté et l'arbre git est propre.\n1. Soumettre L3 au gate Legolas (tests/lint/typage + audit frontière un endpoint/un appel).\n2. Sur verdict PASS, marquer le jalon et régénérer l'état des lieux (candidate v0.3.0-rc).\n3. Cadrer ensuite l'instruction L4 (mains courantes 3-canaux) dans specs/instructions/."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1234,
+    "completion_tokens": 87,
+    "total_tokens": 1321
+  }
+}

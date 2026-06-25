@@ -35,6 +35,8 @@ function makeDom(): DomTarget & {
 /** Façade config mockée, avec store en mémoire (persistance simulée). */
 function makeApi(initial: Record<string, string> = {}) {
   const store: Record<string, string> = { ...initial };
+  // Présence d'une clé IA simulée (jamais la valeur réelle — D4).
+  let keyPresent = false;
   const api = {
     configAll: vi.fn(async () => ({ ...store })),
     getRoot: vi.fn(async () => "/root"),
@@ -45,6 +47,10 @@ function makeApi(initial: Record<string, string> = {}) {
       store[k] = v;
     }),
     configGet: vi.fn(async (k: string) => store[k] ?? null),
+    aiHasKey: vi.fn(async () => keyPresent),
+    aiSetKey: vi.fn(async (value: string) => {
+      keyPresent = value.trim().length > 0;
+    }),
   } as unknown as Backend;
   return { api, store };
 }
@@ -139,10 +145,55 @@ describe("useSettings — persistance (PO-2 / D4-bis)", () => {
       CONFIG_KEYS.fontScale,
       CONFIG_KEYS.theme,
       CONFIG_KEYS.litellmEndpoint,
+      CONFIG_KEYS.litellmModel,
     ];
     for (const k of keys) {
       expect(isSecret(k), `${k} ne doit pas être filtré`).toBe(false);
     }
+  });
+
+  // --- L3 : modèle (config non sensible) + clé IA (keychain, write-only) ---
+
+  it("setLitellmModel persiste le modèle (clé non sensible)", async () => {
+    const { api, store } = makeApi();
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => {
+      await result.current.setLitellmModel("llama3.1:8b");
+    });
+    expect(api.configSet).toHaveBeenCalledWith("litellm_model", "llama3.1:8b");
+    expect(store["litellm_model"]).toBe("llama3.1:8b");
+    expect(result.current.litellmModel).toBe("llama3.1:8b");
+  });
+
+  it("relit litellm_model persisté au montage", async () => {
+    const { api } = makeApi({ [CONFIG_KEYS.litellmModel]: "qwen2.5" });
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.litellmModel).toBe("qwen2.5");
+  });
+
+  it("aiKeySet reflète la présence d'une clé sans jamais lire sa valeur", async () => {
+    const { api } = makeApi();
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    // Au montage : aucune clé.
+    expect(result.current.aiKeySet).toBe(false);
+    // setAiKey écrit via aiSetKey (write-only) PUIS reflète la présence.
+    await act(async () => {
+      await result.current.setAiKey("sk-secret");
+    });
+    expect(api.aiSetKey).toHaveBeenCalledWith("sk-secret");
+    expect(result.current.aiKeySet).toBe(true);
+    // Aucune commande de LECTURE de la clé n'existe sur la façade.
+    expect(
+      (api as unknown as Record<string, unknown>)["aiGetKey"],
+    ).toBeUndefined();
+    // Valeur vide → retrait de la clé.
+    await act(async () => {
+      await result.current.setAiKey("");
+    });
+    expect(result.current.aiKeySet).toBe(false);
   });
 });
 

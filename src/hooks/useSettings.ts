@@ -41,6 +41,7 @@ export const CONFIG_KEYS = {
   fontScale: "ui_font_scale",
   theme: "theme",
   litellmEndpoint: "litellm_endpoint",
+  litellmModel: "litellm_model",
 } as const;
 
 /** Défauts documentés (appliqués si la clé est absente). */
@@ -57,11 +58,18 @@ export const DEFAULT_THEME = "naonedge-dark";
 export interface UseSettings {
   root: string | null;
   litellmEndpoint: string;
+  /** Modèle/alias transmis tel quel à l'endpoint IA (L3, non sensible). */
+  litellmModel: string;
+  /** Une clé IA est-elle enregistrée au keychain ? (présence seule, jamais la valeur). */
+  aiKeySet: boolean;
   theme: string;
   ui: UiPrefs;
   loaded: boolean;
   setRoot: (root: string) => Promise<void>;
   setLitellmEndpoint: (url: string) => Promise<void>;
+  setLitellmModel: (model: string) => Promise<void>;
+  /** Écrit (vide = retire) la clé IA au keychain ; met à jour `aiKeySet`. */
+  setAiKey: (value: string) => Promise<void>;
   setTheme: (id: string) => Promise<void>;
   setUiPref: <K extends keyof UiPrefs>(
     key: K,
@@ -131,6 +139,8 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
   const [root, setRootState] = useState<string | null>(null);
   const [theme, setThemeState] = useState<string>(DEFAULT_THEME);
   const [litellmEndpoint, setLitellmState] = useState<string>("");
+  const [litellmModel, setLitellmModelState] = useState<string>("");
+  const [aiKeySet, setAiKeySet] = useState<boolean>(false);
   const [ui, setUi] = useState<UiPrefs>(DEFAULT_UI);
   const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -150,12 +160,21 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       } catch {
         r = null;
       }
+      // Présence d'une clé IA (keychain) : best-effort, jamais la valeur (D4).
+      let keySet = false;
+      try {
+        keySet = await api.aiHasKey();
+      } catch {
+        keySet = false;
+      }
       if (cancelled) return;
       const nextUi = parsePrefs(cfg);
       const nextTheme = cfg[CONFIG_KEYS.theme] || DEFAULT_THEME;
       setUi(nextUi);
       setThemeState(nextTheme);
       setLitellmState(cfg[CONFIG_KEYS.litellmEndpoint] ?? "");
+      setLitellmModelState(cfg[CONFIG_KEYS.litellmModel] ?? "");
+      setAiKeySet(keySet);
       setRootState(r);
       applyToDom(domRef.current, nextTheme, nextUi);
       setLoaded(true);
@@ -177,6 +196,23 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     async (url: string): Promise<void> => {
       await api.configSet(CONFIG_KEYS.litellmEndpoint, url);
       setLitellmState(url);
+    },
+    [api],
+  );
+
+  const setLitellmModel = useCallback(
+    async (model: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.litellmModel, model);
+      setLitellmModelState(model);
+    },
+    [api],
+  );
+
+  const setAiKey = useCallback(
+    async (value: string): Promise<void> => {
+      // Write-only : on n'apprend jamais la valeur, seulement la présence (D4).
+      await api.aiSetKey(value);
+      setAiKeySet(value.trim().length > 0);
     },
     [api],
   );
@@ -217,22 +253,30 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     () => ({
       root,
       litellmEndpoint,
+      litellmModel,
+      aiKeySet,
       theme,
       ui,
       loaded,
       setRoot,
       setLitellmEndpoint,
+      setLitellmModel,
+      setAiKey,
       setTheme,
       setUiPref,
     }),
     [
       root,
       litellmEndpoint,
+      litellmModel,
+      aiKeySet,
       theme,
       ui,
       loaded,
       setRoot,
       setLitellmEndpoint,
+      setLitellmModel,
+      setAiKey,
       setTheme,
       setUiPref,
     ],

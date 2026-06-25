@@ -13,6 +13,7 @@ import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
+import { useNextStep } from "./hooks/useNextStep";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView } from "./views/WorkingView";
 import { SettingsView } from "./views/SettingsView";
@@ -27,6 +28,7 @@ export default function App(): JSX.Element {
   const pty = usePty();
   const settings = useSettings();
   const services = useServices();
+  const nextStep = useNextStep();
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
   const worksetProjects = useMemo<Project[]>(
@@ -100,10 +102,14 @@ export default function App(): JSX.Element {
             tabs={grid.tabs}
             activeTabId={grid.activeTabId}
             pty={pty}
+            nextStepResult={nextStep.result}
+            nextStepLoading={nextStep.loading}
+            nextStepError={nextStep.error}
             onOpenProject={openProject}
             onAddProject={() => void addProject()}
             onSelectTab={grid.setActiveTab}
             onCloseTab={grid.closeTab}
+            onRequestNextStep={(path) => void nextStep.request(path)}
           />
         )}
         {grid.activeView === "settings" && (

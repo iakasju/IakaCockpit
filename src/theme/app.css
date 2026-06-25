@@ -671,6 +671,76 @@ button {
   gap: 10px;
 }
 
+/* ===== Moteur « prochaine étape » IA (L3) ===== */
+.nextstep {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--surf-3);
+  border-bottom: 1px solid var(--surf-2);
+  max-height: 45%;
+  overflow: auto;
+}
+.nshead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nstitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.nssub {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.nshead .btn {
+  margin-left: auto;
+}
+.nsbody {
+  font-size: 12px;
+}
+.nsempty {
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.nserror {
+  color: #e06c5a;
+  background: rgba(224, 108, 90, 0.1);
+  border: 1px solid rgba(224, 108, 90, 0.35);
+  border-radius: 6px;
+  padding: 8px 10px;
+  line-height: 1.5;
+}
+.nstext {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-1);
+}
+.nsmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.nsmeta > span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surf-2);
+}
+.nsprov.mock {
+  color: var(--accent, #c8a44e);
+}
+
 .termwrap {
   flex: 1;
   min-height: 0;
