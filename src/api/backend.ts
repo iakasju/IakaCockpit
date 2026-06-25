@@ -67,6 +67,38 @@ export interface NextStep {
   tokens_out: number | null;
 }
 
+/**
+ * Les 3 canaux de la main courante + le canal "agent" (relais inter-agents).
+ * Contrat UX partagé (L2/L4) : `mock/feed.ts` réutilise ce type, pas de duplication.
+ */
+export type Canal = "adresse" | "geste" | "pensee" | "agent";
+
+/**
+ * Miroir de `maincourante::FeedEvent` (Rust, L4) — un événement de main courante.
+ * Le mapping doc CouchDB → FeedEvent (canal dérivé + `[ROYAUME][Agent]`) se fait
+ * CÔTÉ RUST (D6) ; le front reçoit des FeedEvent prêts à afficher.
+ */
+export interface FeedEvent {
+  /** `_id` CouchDB. */
+  id: string;
+  /** Canal dérivé (D3). */
+  canal: Canal;
+  /** Émetteur affiché `[ROYAUME][Agent]`. */
+  who: string;
+  /** Provenance = conv_id (ou royaume) — pas un lien fort projet. */
+  project: string;
+  /** Corps du message (`content`). */
+  body: string;
+  /** Horodatage ISO-8601 (mise en forme = UX front). */
+  ts: string;
+}
+
+/** Filtre serveur de la main courante (miroir de `maincourante::MainCouranteFilter`). */
+export interface MainCouranteFilter {
+  agent?: string;
+  royaume?: string;
+}
+
 /** Miroir de `services::ServiceStatus` (Rust). */
 export interface ServiceStatus {
   name: string;
@@ -142,6 +174,42 @@ export function aiSetKey(value: string): Promise<void> {
 /** Indique si une clé IA est enregistrée (présence seule, jamais la valeur). */
 export function aiHasKey(): Promise<boolean> {
   return call<boolean>("ai_has_key");
+}
+
+// --- Main courante 3-canaux (L4) ---
+//
+// Lecture seule de la base CouchDB iakaboxlogs (`conversations`). L'appel HTTP +
+// l'auth Basic + le mapping doc→FeedEvent vivent UNIQUEMENT côté Rust (D2) : aucun
+// `fetch`/client HTTP CouchDB dans le front (CSP stricte), aucun identifiant ne
+// transite par le front. Le front ne fait qu'`invoke` via cette façade.
+
+/**
+ * Lit la main courante iakaboxlogs (lecture seule, UN `_find` côté Rust). Renvoie
+ * les événements récents (tri ts desc, limite bornée). Rejette avec un message
+ * lisible si URL/identifiants CouchDB absents ou box injoignable (mode dégradé,
+ * consommé par `useMainCourante` pour retomber sur le mock). Filtres serveur
+ * optionnels (agent/royaume — champs indexés).
+ */
+export function fetchMainCourante(
+  filter?: MainCouranteFilter,
+): Promise<FeedEvent[]> {
+  return call<FeedEvent[]>("fetch_main_courante", { filter: filter ?? {} });
+}
+
+/**
+ * Écrit l'identifiant CouchDB (user + password) au keychain (WRITE-ONLY : jamais
+ * relu vers le front). Un mot de passe vide retire les identifiants. Cf. D4.
+ */
+export function couchSetCredentials(
+  user: string,
+  password: string,
+): Promise<void> {
+  return call<void>("couch_set_credentials", { user, password });
+}
+
+/** Indique si des identifiants CouchDB sont enregistrés (présence seule, jamais la valeur). */
+export function couchHasCredentials(): Promise<boolean> {
+  return call<boolean>("couch_has_credentials");
 }
 
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
@@ -254,6 +322,9 @@ export const backend = {
   nextStep,
   aiSetKey,
   aiHasKey,
+  fetchMainCourante,
+  couchSetCredentials,
+  couchHasCredentials,
   ptyOpen,
   ptyWrite,
   ptyResize,

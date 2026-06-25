@@ -1,27 +1,18 @@
 /**
- * feed.ts — main courante 3-canaux MOCKÉE (DEP-1).
+ * feed.ts — main courante 3-canaux : MOCK de FALLBACK + filtres UX (DEP-1 → L4).
  *
- * ⚠️ DONNÉES SIMULÉES — branchées en L4 (iakaboxlogs MQTT/CouchDB + mapping
- * `meta.canal`). Aucune commande backend n'est appelée pour ce feed (R-L2-2) :
- * c'est un mock explicite, statique, marqué comme tel dans l'UI. Le FILTRAGE par
- * canal (adresse/geste/pensée/agent) est de l'UX et reste testable sans backend.
+ * En L4, ce mock DEVIENT le fallback du mode dégradé (D5) : quand iakaboxlogs est
+ * injoignable / non configuré, `useMainCourante` substitue ce `MOCK_FEED` aux
+ * événements réels et affiche un bandeau « mode dégradé ». Le FILTRAGE par canal
+ * (adresse/geste/pensée/agent) reste de l'UX, testable sans backend.
+ *
+ * Le type `FeedEvent`/`Canal` est désormais DÉFINI dans `backend.ts` (miroir de la
+ * struct Rust `maincourante::FeedEvent`) et RÉUTILISÉ ici — un seul type partagé,
+ * pas de duplication (D6).
  */
+import type { Canal, FeedEvent } from "../api/backend";
 
-/** Les 3 canaux de la main courante + le canal "agent" (relais inter-agents). */
-export type Canal = "adresse" | "geste" | "pensee" | "agent";
-
-export interface FeedEvent {
-  id: string;
-  canal: Canal;
-  /** Émetteur affiché (agent ou utilisateur). */
-  who: string;
-  /** Projet concerné (nom court). */
-  project: string;
-  /** Corps de l'événement. */
-  body: string;
-  /** Horodatage simulé (mono). */
-  ts: string;
-}
+export type { Canal, FeedEvent };
 
 /** Feed simulé — fixe, sans réseau. Représentatif des 4 canaux. */
 export const MOCK_FEED: FeedEvent[] = [
