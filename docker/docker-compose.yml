@@ -1,7 +1,7 @@
-# Stack Docker de projet IakaCockpit — backend IA local (cibles L3 #2/#4).
-# LiteLLM (passerelle OpenAI-compat) -> Ollama (conteneur), réseau dédié.
+# Stack Docker de projet IakaCockpit — backends locaux (cibles L3 #2/#4 + L4).
+# LiteLLM (passerelle OpenAI-compat) -> Ollama (L3) ; CouchDB iakaboxlogs local (L4).
 # Isolation iakaframe : nom de stack `iakacockpit`, réseau/volume/conteneurs
-# préfixés `iakacockpit-dev-*`, ports hôte distincts (11435 / 4020) qui n'entrent
+# préfixés `iakacockpit-dev-*`, ports hôte distincts (11435 / 4020 / 5984) qui n'entrent
 # PAS en collision avec l'Ollama localhost (11434) ni les autres projets de la famille.
 name: iakacockpit
 
@@ -12,6 +12,8 @@ networks:
 volumes:
   iakacockpit-dev-ollama-data:
     name: iakacockpit-dev-ollama-data
+  iakacockpit-dev-couchdb-data:
+    name: iakacockpit-dev-couchdb-data
 
 services:
   ollama:
@@ -36,4 +38,19 @@ services:
     volumes:
       - ./litellm-config.yaml:/app/config.yaml:ro
     command: ["--config", "/app/config.yaml", "--port", "4000"]
+    restart: unless-stopped
+
+  couchdb:
+    image: couchdb:3
+    container_name: iakacockpit-dev-couchdb
+    networks: [iakacockpit-dev-net]
+    # CouchDB iakaboxlogs local (recette L4), expose en local, port hote 5984.
+    # Identifiants de TEST local uniquement (jamais un vrai secret).
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=iaka-test
+    ports:
+      - "127.0.0.1:5984:5984"
+    volumes:
+      - iakacockpit-dev-couchdb-data:/opt/couchdb/data
     restart: unless-stopped
