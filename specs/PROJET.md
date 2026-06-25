@@ -249,6 +249,13 @@ Vision (trois voies) : **upload** d'image · **génération par prompt** (ComfyU
   Cockpit **lit cette main courante** (CouchDB HTTP/JSON) plutôt que de réimplémenter le
   stockage. Le mapping `role`→canal (adresse/geste/pensée) est à **affiner** côté schéma
   (réserve § 10.4) ; au socle, on lit ce qui existe et on enrichit `meta.canal` au besoin.
+- **Portée du traçage — on ne trace PAS les composants de dev.** Le canal « Geste » trace
+  les actes **métier** des agents (parole adressée, délégations entre agents, appels d'outils
+  côté produit, résultats). Les **composants de dev** — au premier chef **MCP** (rattaché à
+  **Obot**, cf. § 1.1 / § 4) — sont des **rouages d'outillage de développement, pas des actes
+  métier à journaliser dans le cockpit**. Règle : *MCP est un composant de dev → il n'apparaît
+  pas dans la main courante du cockpit.* (Le traçage **machine des délégations** reste prévu en
+  L4 ; il porte sur la chaîne d'agents, pas sur la plomberie MCP.)
 
 ---
 
