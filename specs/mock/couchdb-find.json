@@ -1,0 +1,60 @@
+{
+  "_note": "Fixture de RÉFÉRENCE (L4) — forme de la réponse CouchDB Mango POST /{db}/_find attendue par le parser Rust (maincourante::parse_find_response). La base iakaboxlogs `conversations` contient UN document par message (cf. bridge/index.js d'iakaboxlogs). Le moteur lit docs[] -> Vec<FeedEvent> via map_doc (D6) + derive_canal (D3). `meta` est aujourd'hui {} chez les pushers ; le doc `geste` ci-dessous (meta.canal: 'geste') illustre le forward-compatible (volet machine différé) — le Cockpit l'honore sans changement de code. Les tests Rust utilisent des fixtures inline équivalentes ; ce fichier documente le contrat. AUCUN appel réseau réel n'est fait en test.",
+  "docs": [
+    {
+      "_id": "d4a1f0c2e3b54a6d8f1c2b3a4d5e6f70",
+      "ts": "2026-06-25T17:30:12Z",
+      "royaume": "iakacockpit",
+      "agent": "Gimli",
+      "conv_id": "conv-2026-06-25-001",
+      "role": "assistant",
+      "content": "Lot L4 implémenté : module maincourante branché sur iakaboxlogs (lecture seule).",
+      "tokens": 0,
+      "meta": {}
+    },
+    {
+      "_id": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "ts": "2026-06-25T17:28:45Z",
+      "royaume": "iakacockpit",
+      "agent": "Stéphane",
+      "conv_id": "conv-2026-06-25-001",
+      "role": "user",
+      "content": "Implémente le lot L4 — mains courantes 3-canaux sur iakaboxlogs.",
+      "tokens": 0,
+      "meta": {}
+    },
+    {
+      "_id": "f0e9d8c7b6a5948372615243f1e0d9c8",
+      "ts": "2026-06-25T17:20:03Z",
+      "royaume": "iakaframe",
+      "agent": "Gandalf",
+      "conv_id": "conv-2026-06-25-002",
+      "role": "system",
+      "content": "Le périmètre L4 reste lecture seule : on ne remonte ni le bus MQTT ni le pont.",
+      "tokens": 0,
+      "meta": {}
+    },
+    {
+      "_id": "112233445566778899aabbccddeeff00",
+      "ts": "2026-06-25T17:15:30Z",
+      "royaume": "iakacockpit",
+      "agent": "Aragorn",
+      "conv_id": "conv-2026-06-25-003",
+      "role": "system",
+      "content": "Délégation L4 (instruction validée) → Gimli.",
+      "tokens": 0,
+      "meta": { "canal": "geste" }
+    },
+    {
+      "_id": "99887766554433221100ffeeddccbbaa",
+      "ts": "2026-06-25T17:02:11Z",
+      "royaume": "iakaide",
+      "agent": "Legolas",
+      "conv_id": "conv-2026-06-24-009",
+      "role": "assistant",
+      "content": "PASS — gate L3 (moteur prochaine étape) : tests/lint/typage verts.",
+      "tokens": 0,
+      "meta": {}
+    }
+  ]
+}

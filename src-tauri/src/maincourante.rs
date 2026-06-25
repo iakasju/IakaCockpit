@@ -544,6 +544,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_find_sur_fixture_disque_specs_mock() {
+        // Fixture de référence partagée avec le front (specs/mock/couchdb-find.json).
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../specs/mock/couchdb-find.json");
+        let body = std::fs::read_to_string(path).expect("fixture couchdb-find.json présente");
+        let evs = parse_find_response(&body).expect("fixture parsable");
+        assert_eq!(evs.len(), 5);
+        // Le doc avec meta.canal: "geste" (Aragorn) est honoré (forward-compatible).
+        let geste = evs.iter().find(|e| e.canal == "geste").expect("un geste réel");
+        assert_eq!(geste.who, "[IAKACOCKPIT][Aragorn]");
+        // assistant → adresse ; system sans meta → pensee.
+        assert!(evs.iter().any(|e| e.canal == "adresse"));
+        assert!(evs.iter().any(|e| e.canal == "pensee"));
+    }
+
+    #[test]
     fn parse_find_reponse_vide_donne_vec_vide_pas_erreur() {
         let evs = parse_find_response(r#"{ "docs": [] }"#).unwrap();
         assert!(evs.is_empty());
