@@ -6,8 +6,13 @@
  * Ce découplage rend le backend mockable (tests, futur L2) et empêche le retour
  * d'un god-component qui mélangerait I/O et rendu.
  *
- * En L0, aucune commande Rust n'est encore exposée côté métier : on pose seulement
- * la couche. Les vraies commandes salvagées arrivent en L1.
+ * L1 ajoute les commandes métier salvagées d'iakaIDE (portfolio, services, config,
+ * PTY). Chaque commande est exposée par une fonction typée au-dessus de `call` —
+ * jamais d'`invoke` ailleurs.
+ *
+ * Sérialisation : les types TS sont le miroir EXACT des structs `Serialize` Rust
+ * (snake_case par défaut, cf. D7 — aucun `rename` côté Rust). Les noms d'arguments
+ * passés à `call` reprennent les noms des paramètres Rust (snake_case).
  */
 import { invoke } from "@tauri-apps/api/core";
 
@@ -27,13 +32,126 @@ export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
+// --- Types miroir des structs Rust (snake_case, D7) ---
+
+/** Statut de travail d'un projet (miroir de `Project.work_status`, Rust). */
+export type WorkStatus = "work pending" | "stable" | "hors git";
+
+/** Miroir de `portfolio::Project` (Rust). */
+export interface Project {
+  id: string;
+  path: string;
+  is_git: boolean;
+  branch: string | null;
+  dirty: boolean;
+  ahead: number;
+  behind: number;
+  last_commit_date: string | null;
+  last_commit_subject: string | null;
+  version: string | null;
+  work_status: WorkStatus;
+}
+
+/** Miroir de `services::ServiceStatus` (Rust). */
+export interface ServiceStatus {
+  name: string;
+  host: string;
+  port: number;
+  url: string;
+  reachable: boolean;
+  latency_ms: number | null;
+}
+
+// --- Portfolio / git ---
+
+/** Énumère les projets sous `root` (trié work pending → stable → hors git). */
+export function scanPortfolio(root: string): Promise<Project[]> {
+  return call<Project[]>("scan_portfolio", { root });
+}
+
+// --- Services ---
+
+/** État des services iakabox (ne rejette jamais : injoignable → reachable:false). */
+export function checkServices(): Promise<ServiceStatus[]> {
+  return call<ServiceStatus[]>("check_services");
+}
+
+// --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
+
+/** Racine du chapeau (défaut calculé par OS si non persistée). */
+export function getRoot(): Promise<string> {
+  return call<string>("get_root");
+}
+
+/** Persiste la racine du chapeau. */
+export function setRoot(root: string): Promise<void> {
+  return call<void>("set_root", { root });
+}
+
+/** Lit une valeur de config (`null` si absente). */
+export function configGet(key: string): Promise<string | null> {
+  return call<string | null>("config_get", { key });
+}
+
+/** Écrit/maj une valeur de config. */
+export function configSet(key: string, value: string): Promise<void> {
+  return call<void>("config_set", { key, value });
+}
+
+/** Config NON sensible (secrets exclus). */
+export function configAll(): Promise<Record<string, string>> {
+  return call<Record<string, string>>("config_all");
+}
+
+// --- PTY (sessions terminal cross-OS) ---
+//
+// L'abonnement aux événements `pty://output/{id}` et `pty://closed/{id}` (via
+// `@tauri-apps/api/event`) est PRÉPARÉ ici (noms documentés) mais consommé en L2
+// avec xterm.js. L1 n'expose que les commandes.
+
+/** Ouvre une session PTY (shell par OS ; `cwd` validé sous le chapeau côté Rust). */
+export function ptyOpen(
+  id: string,
+  cwd?: string,
+  cols?: number,
+  rows?: number,
+): Promise<void> {
+  return call<void>("pty_open", { id, cwd, cols, rows });
+}
+
+/** Écrit dans la session PTY `id`. */
+export function ptyWrite(id: string, data: string): Promise<void> {
+  return call<void>("pty_write", { id, data });
+}
+
+/** Redimensionne la session PTY `id`. */
+export function ptyResize(id: string, cols: number, rows: number): Promise<void> {
+  return call<void>("pty_resize", { id, cols, rows });
+}
+
+/** Ferme la session PTY `id`. */
+export function ptyClose(id: string): Promise<void> {
+  return call<void>("pty_close", { id });
+}
+
 /**
- * Façade backend. Les méthodes métier (scan, portfolio, config…) seront ajoutées
- * en L1/L2 au-dessus de `call`. Exposé en objet pour faciliter le mock dans les tests.
+ * Façade backend. Exposée en objet pour faciliter le mock dans les tests, en plus
+ * des exports nommés (utilisés directement par les hooks/composants en L2).
  */
 export const backend = {
   call,
   isTauri,
+  scanPortfolio,
+  checkServices,
+  getRoot,
+  setRoot,
+  configGet,
+  configSet,
+  configAll,
+  ptyOpen,
+  ptyWrite,
+  ptyResize,
+  ptyClose,
 };
 
 export type Backend = typeof backend;
