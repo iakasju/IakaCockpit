@@ -13,6 +13,7 @@ pub mod config;
 pub mod db;
 pub mod git;
 pub mod maincourante;
+pub mod notify;
 pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
@@ -62,6 +63,9 @@ pub fn run() {
             maincourante::fetch_main_courante,
             maincourante::couch_set_credentials,
             maincourante::couch_has_credentials,
+            notify::notify_user,
+            notify::n8n_set_token,
+            notify::n8n_has_token,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");
