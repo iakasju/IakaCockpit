@@ -243,6 +243,11 @@ Vision (trois voies) : **upload** d'image · **génération par prompt** (ComfyU
 - **Filtres applicables au PTY** : les mêmes filtres (adresse/geste/pensée/agent)
   s'appliquent au terminal **pour alléger les conversations** (ne voir que l'adresse, ou
   isoler les gestes d'un agent).
+- **Extension envisagée — filtre par *event*** (piste de roadmap, non figée) : une dimension de
+  filtre supplémentaire (en plus de canal/agent), **vue transversale sur le canal « geste »** —
+  types d'event **ouverts/extensibles** : jalon, **délégations**, **utilisation de tools** (outils
+  **métier**, pas la plomberie de dev), *etc.* L'event **jalon** ouvre une **fiche jalon** (auteur,
+  input, rapport, verdict PASS/FAIL). Détail et rattachement en `specs/roadmap.md` (L2).
 - **Lien iakaboxlogs (réutilisation).** iakaboxlogs est **déjà déployé et validé** (VM2
   `.11`) : agents → **MQTT (Mosquitto)** → pont → **CouchDB** (consultable Fauxton), topics
   `iakaboxlogs/<royaume>/<agent>/<conv_id>`, documents `{role, content, meta, ts, …}`. Le

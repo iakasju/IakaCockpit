@@ -103,6 +103,21 @@ cross-OS par projet** (xterm + portable-pty). UI **grille + dock + onglets** ré
   arrêtée** : le verdict **Legolas** le plus récent par projet/jalon (PASS/FAIL par étape —
   typecheck, lint, tests, clippy, couverture). **À ne pas figer** : périmètre ouvert tant que le
   débat n'est pas clos.
+- **Main courante filtrable par *event* + fiche jalon** : étendre les filtres de la main courante
+  (§ 5 PROJET.md, aujourd'hui canal + agent) d'une **dimension *event*** — une **vue transversale**
+  sur le **canal « geste »** (actes : appels d'outils, délégations, résultats), alimentée par le
+  **traçage machine** (L4). Types d'event filtrables (**liste ouverte/extensible**) : **jalon**,
+  **délégations** (un agent passe la main à un autre), **utilisation de tools** (appels d'outils
+  **métier/produit** des agents), *etc.* *Frontière à tenir* (déjà gravée § 5) : on **ne trace pas
+  les composants de dev** (MCP/Obot) ni ce que **git** trace déjà — « utilisation de tools » = outils
+  métier, pas la plomberie de dev. Un type d'event particulier, le **jalon**, ouvre une **fiche
+  jalon** : cliquer sur un jalon (ex. « jalon X ») présente l'**auteur** (agent émetteur), l'**input**
+  (demande/instruction déclenchante), le **rapport** de l'agent, et le **verdict PASS / FAIL**.
+  *Lien conceptuel* : la fiche jalon rend lisible la **chaîne de délégation d'un jalon** (cadrage
+  Gandalf → implémentation Gimli → verdict Legolas) ; elle **relie** la **vue « liste des jalons »**
+  (ci-dessus, L2) et la **main courante** (§ 5), en s'appuyant sur le **traçage machine des
+  délégations** (volet prévu en L4). *Entrée de roadmap, à cadrer le moment venu — pas du périmètre
+  figé ; suppose la fiche et les events alimentés par L4.*
 
 ### L3 — Moteur « prochaine étape » IA via UN provider derrière LiteLLM
 Abstraction provider, **UNE impl câblée**, **passerelle LiteLLM** pour le multi-modèle (on ne code
