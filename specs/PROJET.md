@@ -256,6 +256,15 @@ Vision (trois voies) : **upload** d'image · **génération par prompt** (ComfyU
   métier à journaliser dans le cockpit**. Règle : *MCP est un composant de dev → il n'apparaît
   pas dans la main courante du cockpit.* (Le traçage **machine des délégations** reste prévu en
   L4 ; il porte sur la chaîne d'agents, pas sur la plomberie MCP.)
+- **On ne re-trace pas ce que git trace déjà.** Les **sorties de projet** (commits, diffs,
+  tags, historique) sont **la source de vérité dans git** ; le cockpit **lit/affiche** cet état
+  (vues portfolio/jalons) mais ne le **re-journalise pas** dans la main courante. Le journal du
+  cockpit porte sur la **conversation et les actes d'agents**, pas sur le versionnage du code.
+- **L'engagement de l'humain passe par un agent qui vient demander, pas par la surveillance d'un
+  journal.** Si une **action réelle de Stéphane** est attendue (validation, arbitrage, feu vert),
+  c'est **le rôle d'un agent de venir la solliciter explicitement** sur le **canal « adresse »**
+  (le seul engageant). La main courante reste un journal **consultable**, jamais un dispositif
+  où l'humain devrait *guetter* qu'on attend quelque chose de lui.
 
 ---
 
