@@ -1,29 +1,112 @@
 /**
- * App.tsx — shell minimal vide (D7).
+ * App.tsx — SHELL DE NAVIGATION (D1/D6). Pas de god-component : l'état métier
+ * vit dans des hooks séparés (usePortfolio, useGridState, useWorkset, usePty,
+ * useSettings, useServices) ; App ne fait que câbler et router les 3 vues.
  *
- * L0 ne porte AUCUNE vue de la maquette v7 (Portfolio / Working / Réglages arrivent
- * en L2). App.tsx ne détient pas l'état global : les états vivent dans des hooks
- * séparés (`useGridState`, `usePortfolio`), ici simplement câblés pour prouver le
- * découplage. Pas de god-component.
+ * Aucun `invoke`/`listen` ici (ni nulle part hors `backend.ts`). Les vues sont
+ * présentationnelles ; les seuls effets I/O passent par les hooks/façade.
  */
-import { useGridState } from "./hooks/useGridState";
+import { useMemo } from "react";
 import { usePortfolio } from "./hooks/usePortfolio";
+import { useGridState } from "./hooks/useGridState";
+import { useWorkset } from "./hooks/useWorkset";
+import { usePty } from "./hooks/usePty";
+import { useSettings } from "./hooks/useSettings";
+import { useServices } from "./hooks/useServices";
+import { PortfolioView } from "./views/PortfolioView";
+import { WorkingView } from "./views/WorkingView";
+import { SettingsView } from "./views/SettingsView";
+import type { Project } from "./api/backend";
+import "./theme/tokens.css";
+import "./theme/app.css";
 
 export default function App(): JSX.Element {
-  const grid = useGridState();
   const portfolio = usePortfolio();
+  const grid = useGridState();
+  const workset = useWorkset();
+  const pty = usePty();
+  const settings = useSettings();
+  const services = useServices();
+
+  // Projets du set de Work (intersection ids ⨯ projets réels).
+  const worksetProjects = useMemo<Project[]>(
+    () => portfolio.projects.filter((p) => workset.ids.has(p.id)),
+    [portfolio.projects, workset.ids],
+  );
+
+  const openProject = (project: Project): void => {
+    grid.openTab(project.id, project.id, project.path);
+    grid.setActiveView("working");
+  };
 
   return (
-    <main className="app-shell">
-      <header>
-        <h1>IakaCockpit</h1>
+    <main className="app-shell" data-navpos={settings.ui.navPos}>
+      <header className="topbar">
+        <div className="brand">
+          <span className="grue" aria-hidden>
+            🏗
+          </span>
+          IakaCockpit
+        </div>
+        <nav className="nav" aria-label="Navigation principale">
+          <button
+            type="button"
+            className={`navbtn${grid.activeView === "portfolio" ? " active" : ""}`}
+            onClick={() => grid.setActiveView("portfolio")}
+          >
+            Portfolio
+          </button>
+          <button
+            type="button"
+            className={`navbtn${grid.activeView === "working" ? " active" : ""}`}
+            onClick={() => grid.setActiveView("working")}
+          >
+            Working
+            {grid.tabs.length > 0 && <span className="nu">{grid.tabs.length}</span>}
+          </button>
+          <button
+            type="button"
+            className={`navbtn${grid.activeView === "settings" ? " active" : ""}`}
+            onClick={() => grid.setActiveView("settings")}
+          >
+            Réglages
+          </button>
+        </nav>
+        <div className="spc" />
       </header>
-      <section aria-label="zone d'accueil">
-        <p>Socle L0 en place. Les vues arrivent dans les lots suivants.</p>
-        <p>
-          Onglets : {grid.tabs.length} · Projets : {portfolio.projects.length}
-        </p>
-      </section>
+
+      <div className="host">
+        {grid.activeView === "portfolio" && (
+          <PortfolioView
+            projects={portfolio.projects}
+            loading={portfolio.loading}
+            error={portfolio.error}
+            root={portfolio.root}
+            worksetIds={workset.ids}
+            worksetCount={workset.ids.size}
+            onToggleWork={workset.toggle}
+            onGotoWork={() => grid.setActiveView("working")}
+          />
+        )}
+        {grid.activeView === "working" && (
+          <WorkingView
+            worksetProjects={worksetProjects}
+            tabs={grid.tabs}
+            activeTabId={grid.activeTabId}
+            pty={pty}
+            onOpenProject={openProject}
+            onSelectTab={grid.setActiveTab}
+            onCloseTab={grid.closeTab}
+          />
+        )}
+        {grid.activeView === "settings" && (
+          <SettingsView
+            settings={settings}
+            services={services.services}
+            onRescan={() => void portfolio.refresh()}
+          />
+        )}
+      </div>
     </main>
   );
 }
