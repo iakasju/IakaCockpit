@@ -7,8 +7,12 @@
 //!
 //! Schéma minimal clé/valeur : table `config(key TEXT PRIMARY KEY, value TEXT)`.
 
-use rusqlite::Connection;
+use std::collections::HashMap;
 
+use rusqlite::Connection;
+use tauri::AppHandle;
+
+use crate::db;
 use crate::paths::resolve_hat_root;
 
 /// Clés de config réservées (non sensibles).
@@ -59,6 +63,68 @@ pub fn ensure_root(conn: &Connection) -> rusqlite::Result<String> {
     Ok(default_root)
 }
 
+/// Une clé est-elle un secret ? (jamais renvoyée en bloc par `config_all`).
+///
+/// Repris de l'audit iakaIDE : les clés contenant `token|key|secret|password`
+/// restent accessibles une par une via `config_get`, jamais listées en bloc. En
+/// pratique aucun secret ne transite par la config (les secrets vont au keychain,
+/// L3) — ce filtre est une garde de cloisonnement.
+fn is_secret(key: &str) -> bool {
+    let k = key.to_lowercase();
+    k.contains("token") || k.contains("key") || k.contains("secret") || k.contains("password")
+}
+
+// --- Commandes Tauri (salvage iakaIDE, branchées sur le module L0 ci-dessus) ---
+
+/// Racine du chapeau. Défaut **calculé** par OS (`paths`/`ensure_root`) si absent.
+#[tauri::command]
+pub fn get_root(app: AppHandle) -> Result<String, String> {
+    let conn = db::open(&app)?;
+    ensure_root(&conn).map_err(|e| e.to_string())
+}
+
+/// Persiste la racine du chapeau.
+#[tauri::command]
+pub fn set_root(app: AppHandle, root: String) -> Result<(), String> {
+    let conn = db::open(&app)?;
+    set(&conn, KEY_ROOT, &root).map_err(|e| e.to_string())
+}
+
+/// Lit une valeur de config (`None` si absente).
+#[tauri::command]
+pub fn config_get(app: AppHandle, key: String) -> Result<Option<String>, String> {
+    let conn = db::open(&app)?;
+    get(&conn, &key).map_err(|e| e.to_string())
+}
+
+/// Écrit/maj une valeur de config.
+#[tauri::command]
+pub fn config_set(app: AppHandle, key: String, value: String) -> Result<(), String> {
+    let conn = db::open(&app)?;
+    set(&conn, &key, &value).map_err(|e| e.to_string())
+}
+
+/// Renvoie la config NON sensible (clé → valeur). Les secrets sont **exclus**
+/// (cf. `is_secret`) ; ils restent lisibles un par un via `config_get`.
+#[tauri::command]
+pub fn config_all(app: AppHandle) -> Result<HashMap<String, String>, String> {
+    let conn = db::open(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT key, value FROM config")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        .map_err(|e| e.to_string())?;
+    let mut map = HashMap::new();
+    for row in rows {
+        let (k, v) = row.map_err(|e| e.to_string())?;
+        if !is_secret(&k) {
+            map.insert(k, v);
+        }
+    }
+    Ok(map)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,5 +168,50 @@ mod tests {
         let again = ensure_root(&conn).unwrap();
         assert_eq!(root, again);
         assert_eq!(get(&conn, KEY_ROOT).unwrap(), Some(root));
+    }
+
+    #[test]
+    fn is_secret_detecte_les_cles_sensibles() {
+        for k in [
+            "token",
+            "litellm_token",
+            "api_key",
+            "KEY",
+            "my_secret",
+            "db_password",
+        ] {
+            assert!(is_secret(k), "{k} devrait être secret");
+        }
+    }
+
+    #[test]
+    fn is_secret_laisse_passer_la_config_non_sensible() {
+        for k in [KEY_ROOT, KEY_THEME, KEY_LITELLM_ENDPOINT, "widget_layout"] {
+            assert!(!is_secret(k), "{k} ne devrait pas être secret");
+        }
+    }
+
+    #[test]
+    fn config_all_filtre_exclut_uniquement_les_secrets() {
+        // Reproduit le filtre de `config_all` sur une base mémoire (sans AppHandle).
+        let conn = mem();
+        set(&conn, KEY_THEME, "dark").unwrap();
+        set(&conn, KEY_LITELLM_ENDPOINT, "http://localhost:4000").unwrap();
+        set(&conn, "litellm_api_key", "sk-secret").unwrap();
+
+        let mut stmt = conn.prepare("SELECT key, value FROM config").unwrap();
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .unwrap();
+        let mut map = std::collections::HashMap::new();
+        for row in rows {
+            let (k, v) = row.unwrap();
+            if !is_secret(&k) {
+                map.insert(k, v);
+            }
+        }
+        assert!(map.contains_key(KEY_THEME));
+        assert!(map.contains_key(KEY_LITELLM_ENDPOINT));
+        assert!(!map.contains_key("litellm_api_key"));
     }
 }
