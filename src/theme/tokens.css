@@ -1,0 +1,109 @@
+/**
+ * tokens.css — iakachartes (D5).
+ *
+ * Mode de présentation B (charté) seul. Le thème est un jeu de variables CSS
+ * appliqué via `data-theme` sur <html> ; il ne touche JAMAIS la logique
+ * (PROJET.md § 4). En L2 on livre au moins la charte NaonEdge dark (défaut) ;
+ * NaonEdge light est un plus non bloquant. Tokens repris de la maquette v7
+ * (référence de structure), réécrits propre (pas de portage du HTML fake).
+ *
+ * Les préférences UI persistées (D4-bis) pilotent d'autres attributs sur <html> :
+ *   data-shape  (round|square) · data-font (system|serif|mono-ui) ·
+ *   data-navpos (left|right|split) · data-density (comfort|standard|compact)
+ * et la variable --fscale (échelle de police).
+ */
+
+/* --- Charte NaonEdge dark (DÉFAUT) --- */
+html[data-theme="naonedge-dark"] {
+  --bg: #0a0a0a;
+  --surf: #161616;
+  --surf-2: #202020;
+  --surf-3: #0f0f0f;
+  --field: #101010;
+  --text: #f0f0f0;
+  --text-2: #9a9a9a;
+  --text-3: #5a5a5a;
+  --accent: #c8a44e;
+  --accent-2: #e8c960;
+  --accent-rgb: 200, 164, 78;
+  --on-accent: #0a0a0a;
+  --red: #e74c3c;
+  --green: #2ecc71;
+  --blue: #3498db;
+  --orange: #e67e22;
+  --cyan: #1abc9c;
+  --purple: #9b59b6;
+  --r: 14px;
+  --r-lg: 20px;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* --- Charte NaonEdge light (plus, non bloquant) --- */
+html[data-theme="naonedge-light"] {
+  --bg: #f4f2ec;
+  --surf: #ffffff;
+  --surf-2: #e9e4d8;
+  --surf-3: #faf8f3;
+  --field: #efece3;
+  --text: #1a1815;
+  --text-2: #5f5a4f;
+  --text-3: #9a9384;
+  --accent: #9a7521;
+  --accent-2: #c8a44e;
+  --accent-rgb: 154, 117, 33;
+  --on-accent: #ffffff;
+  --red: #e74c3c;
+  --green: #27ae60;
+  --blue: #2c80c4;
+  --orange: #d3771a;
+  --cyan: #159c84;
+  --purple: #8e4fa6;
+  --r: 14px;
+  --r-lg: 20px;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  --font-serif: "Iowan Old Style", Palatino, Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* --- Réglages dérivés (police, forme, échelle) — pilotés par useSettings --- */
+:root {
+  --fscale: 1;
+  --font-display: var(--font-sans);
+}
+html[data-font="system"] {
+  --font-display: var(--font-sans);
+}
+html[data-font="serif"] {
+  --font-display: var(--font-serif);
+}
+html[data-font="mono-ui"] {
+  --font-sans: var(--mono);
+  --font-display: var(--mono);
+}
+
+/* Forme carrée : tous les contrôles à coins droits (D5 / v7 mode carré). */
+html[data-shape="square"] {
+  --r: 0;
+  --r-lg: 0;
+}
+html[data-shape="square"] * {
+  border-radius: 0 !important;
+}
+
+/* Densité : échelle d'espacement appliquée par les vues. */
+html[data-density="comfort"] {
+  --pad-scale: 1.15;
+}
+html[data-density="standard"] {
+  --pad-scale: 1;
+}
+html[data-density="compact"] {
+  --pad-scale: 0.82;
+}
+:root {
+  --pad-scale: 1;
+}
