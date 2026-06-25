@@ -1,0 +1,21 @@
+# Config LiteLLM (proxy) pour la stack de TEST IakaCockpit.
+# Route le modèle exposé `llama3.1:8b` vers l'Ollama du même réseau Docker.
+# Le nom de modèle exposé est IDENTIQUE au défaut L3 (`llama3.1:8b`) : la même
+# valeur « Modèle » fonctionne donc que le Cockpit pointe sur Ollama direct OU LiteLLM.
+model_list:
+  # Modèle de test dans la stack Docker : petit modèle (1B) qui tient dans la VM
+  # Docker (~3.8 Go sur cet hôte 8 Go). Un 8B y serait OOM-killed — le 8B reste
+  # pour l'Ollama localhost (cible #2), qui utilise la RAM hôte directement.
+  - model_name: llama3.2:1b
+    litellm_params:
+      model: ollama_chat/llama3.2:1b
+      # `ollama` = nom de service sur le réseau Docker interne (port conteneur 11434).
+      api_base: http://ollama:11434
+
+general_settings:
+  # Clé maître de la passerelle — à saisir comme « clé » dans les Réglages du Cockpit
+  # (valide le chemin keychain + en-tête Authorization de L3). Test local uniquement.
+  master_key: sk-iaka-test
+
+litellm_settings:
+  drop_params: true

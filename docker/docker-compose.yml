@@ -1,0 +1,39 @@
+# Stack Docker de projet IakaCockpit — backend IA local (cibles L3 #2/#4).
+# LiteLLM (passerelle OpenAI-compat) -> Ollama (conteneur), réseau dédié.
+# Isolation iakaframe : nom de stack `iakacockpit`, réseau/volume/conteneurs
+# préfixés `iakacockpit-dev-*`, ports hôte distincts (11435 / 4020) qui n'entrent
+# PAS en collision avec l'Ollama localhost (11434) ni les autres projets de la famille.
+name: iakacockpit
+
+networks:
+  iakacockpit-dev-net:
+    name: iakacockpit-dev-net
+
+volumes:
+  iakacockpit-dev-ollama-data:
+    name: iakacockpit-dev-ollama-data
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: iakacockpit-dev-ollama
+    networks: [iakacockpit-dev-net]
+    # Exposé uniquement en local (127.0.0.1), port hôte 11435 -> 11434 conteneur.
+    ports:
+      - "127.0.0.1:11435:11434"
+    volumes:
+      - iakacockpit-dev-ollama-data:/root/.ollama
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: iakacockpit-dev-litellm
+    depends_on: [ollama]
+    networks: [iakacockpit-dev-net]
+    # Passerelle OpenAI-compat exposée en local, port hôte 4020 -> 4000 conteneur.
+    ports:
+      - "127.0.0.1:4020:4000"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    restart: unless-stopped
