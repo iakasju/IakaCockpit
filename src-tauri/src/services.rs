@@ -32,6 +32,13 @@ const SERVICES: &[(&str, &str, u16, &str)] = &[
     ("ComfyUI", "192.168.2.12", 8188, "http://192.168.2.12:8188"),
     ("Obot", "192.168.2.12", 3009, "http://192.168.2.12:3009"),
     ("AppFlowy", "192.168.2.14", 3008, "http://192.168.2.14:3008"),
+    // iakaboxlogs (main courante 3-canaux, L4) : CouchDB single-node.
+    (
+        "iakaboxlogs (CouchDB)",
+        "192.168.2.11",
+        5984,
+        "http://192.168.2.11:5984",
+    ),
 ];
 
 const TIMEOUT_MS: u64 = 1500;
