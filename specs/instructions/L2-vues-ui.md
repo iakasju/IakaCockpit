@@ -124,18 +124,21 @@ Le backlog dit « grille / dock / onglets ». **Interprétation cadrée, aligné
   = nom du projet. Le **titrage `[ROYAUME][Agent]` + état working/pending/stopped** (v7) **suppose le
   moteur d'agents (L3) et les mains courantes (L4)** → en L2, titre = **nom de projet** ; le titrage
   agent est **OUT** (DEP-2). **Ne pas inventer** d'état d'agent.
-- **La zone « conversation » (messages/thread, bulles, relais agents) de v7 = MOCKÉE / différée.** Elle
-  dépend du moteur IA (L3) et des mains courantes (L4). En L2 : soit un **placeholder explicite**
-  (« conversation — branchée en L3/L4 »), soit un **mock statique** non interactif. Le **toggle
-  `messages ⇄ terminal`** de v7 peut être posé, mais **seul le côté terminal est réel** ; le côté
-  messages est mock/placeholder. **Choix MVP recommandé** : livrer **le terminal réel** comme cœur de
-  Working et réduire la zone conversation à un placeholder propre (moins de mock à maintenir). (PO-3.)
+- **La zone « conversation » (messages/thread, bulles, relais agents) de v7 = PLACEHOLDER (PO-3
+  TRANCHÉ).** Elle dépend du moteur IA (L3) et des mains courantes (L4). En L2 : un **placeholder
+  propre explicite** (« conversation — branchée en L3/L4 »), **PAS** un mock statique reproduisant v7
+  (décision Stéphane : moins de mock à maintenir, le terminal réel est le cœur). Le **toggle
+  `messages ⇄ terminal`** de v7 **n'est pas requis** en L2 (un seul contenu réel : le terminal) ; s'il
+  est posé pour préfigurer L3/L4, le côté « messages » reste un **placeholder**, jamais interactif.
 
 ### D4 — Vue **Réglages** : **généraux + cockpit minimal SEULEMENT** (le reste de v7 est OUT)
-- **Réglages généraux (UX pure, front)** : disposition de la navigation (gauche/droite/éclatés),
-  densité, **forme** (arrondi/carré), **police** (famille + échelle), **charte/thème** (sélection d'une
-  iakacharte → repeint l'app en live ; **mode B charté seul**, cf. § D5). Ces réglages **n'ont pas
-  besoin du backend** (variables CSS / état UI) — option de persistance via `configSet` (**PO-2**).
+- **Réglages généraux (UX, front + persistance — PO-2 TRANCHÉ)** : disposition de la navigation
+  (gauche/droite/éclatés), densité, **forme** (arrondi/carré), **police** (famille + échelle),
+  **charte/thème** (sélection d'une iakacharte → repeint l'app en live ; **mode B charté seul**,
+  cf. § D5). Le **rendu** est piloté par variables CSS / état UI, mais **ces préférences sont
+  PERSISTÉES** (décision Stéphane : elles **survivent au redémarrage**), stockées en SQLite **non
+  sensible** via les commandes config L1 — `configGet`/`configAll` **au démarrage**, `configSet`
+  **à chaque changement**. Clés documentées en **D4-bis**.
 - **Réglages cockpit minimal (branché backend L1)** — conforme `PROJET.md` § 4 (« partiel v0.1 :
   chapeau, endpoint LiteLLM, thème ») :
   - **Chapeau (racine)** : afficher `getRoot()` ; modifier via `setRoot(root)`. (Un changement de racine
@@ -145,6 +148,22 @@ Le backlog dit « grille / dock / onglets ». **Interprétation cadrée, aligné
   - **Thème** : persister le choix via `configSet("theme", …)` (clé `KEY_THEME` existe côté L0/L1).
   - **Services** (optionnel, recommandé) : un bloc lisant `checkServices()` pour montrer l'état iakabox
     (dégrade proprement hors box).
+
+### D4-bis — Persistance des préférences UI (PO-2 tranché) : clés de config & contrat
+- **Stockage** : SQLite **non sensible** (module `config` L0/L1), via `configGet`/`configSet`/`configAll`.
+  **Aucun secret** parmi ces clés → elles **ne tombent pas** sous le filtre `is_secret` de `configAll`
+  (le filtre exclut `token|key|secret|password` ; les clés UI ci-dessous n'en contiennent pas — vérifier
+  qu'aucune clé UI ne matche ce filtre, sinon la renommer).
+- **Clés de préférences UI (snake_case, namespacées `ui_`)** — proposition fermée, à respecter :
+  `ui_nav_pos` (`left|right|split`), `ui_density` (`comfort|standard|compact`), `ui_shape`
+  (`round|square`), `ui_font_family` (`system|serif|mono-ui`), `ui_font_scale` (entier %, ex. `100`).
+  Plus les clés cockpit déjà existantes : `theme` (`KEY_THEME`), `litellm_endpoint`, racine via
+  `get_root/set_root`.
+- **Contrat de cycle** : `useSettings` **lit au montage** (`configAll` en un appel, ou `configGet`
+  ciblés) et **applique** les valeurs au DOM (variables CSS / `data-*`) ; **écrit** via `configSet` à
+  chaque changement utilisateur. **Défauts** : si une clé est absente (`configGet` → `null`), appliquer
+  la valeur par défaut documentée ci-dessus (et **ne pas** échouer). Un réglage modifié puis
+  l'app **rechargée** doit **retrouver** la valeur persistée (critère vérifiable, cf. § Critères).
 - **OUT de la vue Réglages L2** (tagués « horizon » dans v7, hors scope `PROJET.md` § 9) : **Méthode
   iakaframe** (hooks/deny/jalons/graphe), **Assistant du projet**, **Assemblage team**, **Fiche &
   settings agents** + **admin-par-prompt** + édition `agent.md`, **Settings skills**, **Settings target**
@@ -195,8 +214,10 @@ Le backlog dit « grille / dock / onglets ». **Interprétation cadrée, aligné
 - **Tests vitest sur la LOGIQUE** (pas le pixel) : réducteurs/états des hooks (`usePortfolio` :
   loading→success→error sur `scanPortfolio` mocké ; `useGridState` : commutation de vue, ajout/retrait
   d'onglet PTY ; `useWorkset` : ajout/retrait projet ; filtres de canaux du feed mocké : entrée→tuiles
-  visibles ; `useSettings` : lecture/écriture config mockée). **`backend.ts` reste mockable** (les tests
-  ne touchent ni Tauri ni réseau).
+  visibles ; `useSettings` : **persistance des préférences UI** — un réglage modifié est écrit via
+  `configSet` puis **relu** via `configGet`/`configAll` au remontage et **réappliqué** (PO-2, D4-bis) ;
+  défauts appliqués si clé absente). **`backend.ts` reste mockable** (les tests ne touchent ni Tauri ni
+  réseau).
 - **Le rendu xterm interactif n'est pas trivial à tester unitairement** → on **assume** (couverture
   honnête) : on teste la **logique du hook `usePty`** (mapping événement→write, resize→`ptyResize`,
   close→nettoyage) avec un `backend.ts` mocké ; le rendu visuel réel est validé **à la main / au gate**.
@@ -212,10 +233,11 @@ Le backlog dit « grille / dock / onglets ». **Interprétation cadrée, aligné
   fonctionnels) ; « set de Work » (sélection front) ; navigation vers Working.
 - **Vue Working** : **terminal PTY réel** (xterm câblé sur les commandes + événements PTY L1),
   **onglets de sessions** (un par projet du set de Work), titre = nom de projet ; zone conversation =
-  **placeholder/mock** (différée L3/L4).
-- **Vue Réglages** : **généraux** (navigation, densité, forme, police, charte/thème — mode B, live) +
-  **cockpit minimal** (chapeau via `getRoot`/`setRoot`, endpoint LiteLLM via `configGet`/`configSet`,
-  thème persisté ; bloc services optionnel via `checkServices`).
+  **placeholder propre** (PO-3 tranché, branchée L3/L4 ; pas de mock statique).
+- **Vue Réglages** : **généraux** (navigation, densité, forme, police, charte/thème — mode B, live) **et
+  PERSISTÉS** via config (PO-2 tranché, clés `ui_*`/`theme`, cf. D4-bis) + **cockpit minimal** (chapeau
+  via `getRoot`/`setRoot`, endpoint LiteLLM via `configGet`/`configSet`, thème persisté ; bloc services
+  optionnel via `checkServices`).
 - **Charte** : **NaonEdge dark** par défaut (variables CSS), thème = tokens, ne touche pas la logique.
 - **Archi** : hooks séparés (`usePortfolio`, `useGridState`, `usePty`, `useSettings`, +mock feed) ;
   `App.tsx` = shell de navigation ; **`backend.ts` seul point d'`invoke`/`listen`**.
@@ -230,7 +252,7 @@ Le backlog dit « grille / dock / onglets ». **Interprétation cadrée, aligné
 - **Titrage d'onglet PTY `[ROYAUME][Agent]` + état working/pending/stopped** → suppose agents (L3) +
   3-canaux (L4). L2 = titre **nom de projet**. (DEP-2.)
 - **Zone conversation/thread agents** (bulles, relais inter-agents, composeur destinataire) de v7 →
-  L3/L4. L2 = placeholder. (PO-3.)
+  L3/L4. L2 = **placeholder propre** (PO-3 tranché : pas de mock statique reproduisant v7).
 - **Réglages « horizon » de v7** (tous tagués hors v0.1 en `PROJET.md` § 9 / v7) : **Méthode iakaframe**
   (hooks/deny/jalons/graphe de délégation), **Assistant du projet**, **Assemblage team**, **Fiche &
   settings agents** + **admin-par-prompt** + édition `agent.md`, **Settings skills**, **Settings
@@ -319,17 +341,29 @@ interface UsePty {
 > Si ce helper s'avère manquant côté contrat L1, **le signaler** (DEP) plutôt que d'importer `listen`
 > dans un hook.
 
-### `useSettings` (nouveau) — cockpit minimal + UI
+### `useSettings` (nouveau) — cockpit minimal + UI **persistée** (PO-2 tranché)
 ```ts
+interface UiPrefs {                              // miroir des clés ui_* (D4-bis), persistées en config
+  navPos: "left" | "right" | "split";           // ui_nav_pos
+  density: "comfort" | "standard" | "compact";  // ui_density
+  shape: "round" | "square";                     // ui_shape
+  fontFamily: "system" | "serif" | "mono-ui";   // ui_font_family
+  fontScale: number;                            // ui_font_scale (%, ex. 100)
+}
 interface UseSettings {
   root: string | null;                          // getRoot / setRoot
   litellmEndpoint: string | null;               // configGet/Set("litellm_endpoint") — URL non sensible
   theme: string;                                // configGet/Set("theme")
+  ui: UiPrefs;                                  // préférences UI persistées (D4-bis)
+  loaded: boolean;                              // true après lecture initiale (configAll/configGet)
   setRoot: (root: string) => Promise<void>;
   setLitellmEndpoint: (url: string) => Promise<void>;
-  setTheme: (id: string) => void;               // applique le data-theme + persiste
-  // réglages UI purs (densité/forme/police/navpos) : état local + variables CSS, persist optionnelle
+  setTheme: (id: string) => Promise<void>;      // applique data-theme + PERSISTE (configSet "theme")
+  setUiPref: <K extends keyof UiPrefs>(key: K, value: UiPrefs[K]) => Promise<void>; // applique CSS/data-* + PERSISTE (configSet ui_*)
 }
+// Cycle (D4-bis) : au montage → configAll (ou configGet ciblés) → applique au DOM ; défauts si clé null.
+// À chaque changement → configSet(clé, valeur). AUCUN invoke direct ; tout via backend.ts.
+// Les clés ui_* ne contiennent PAS token|key|secret|password → non filtrées par configAll (vérifier).
 ```
 
 ### Quelles commandes chaque vue consomme (récap)
@@ -337,7 +371,7 @@ interface UseSettings {
 |---|---|---|
 | **Portfolio** | `getRoot`, `scanPortfolio` | feed main courante = **mock** (L4) ; « en attente d'avis » = mock |
 | **Working** | `ptyOpen/Write/Resize/Close` + helper `onPtyOutput/onPtyClosed` | zone conversation/thread = **placeholder/mock** (L3/L4) ; titre agent = différé |
-| **Réglages** | `getRoot/setRoot`, `configGet/configSet` (litellm_endpoint, theme), `checkServices` (option) | réglages UI = front pur ; panneaux « horizon » = **OUT** |
+| **Réglages** | `getRoot/setRoot`, `configGet/configSet/configAll` (litellm_endpoint, theme, **`ui_*`** D4-bis), `checkServices` (option) | réglages UI = **persistés** via config (PO-2) ; panneaux « horizon » = **OUT** |
 
 ---
 
@@ -368,9 +402,11 @@ IakaCockpit/
 ```
 
 > **Dépendances npm à ajouter** (versions vérifiées 2026-06-25) : `@xterm/xterm@^6`, `@xterm/addon-fit@^0.x`
-> (aligné xterm 6), option `@xterm/addon-webgl`. **Si** PO-1 tranché « grille dockable » (hors L2 par
-> défaut) : `dockview-react@^7` (MIT, React ≥16.8) ou `react-grid-layout`. **Ne rien ajouter de réseau IA.**
-> Si un crate/commande backend manque, **le signaler avant** (pas d'ajout silencieux — règle L0/L1).
+> (aligné xterm 6), option `@xterm/addon-webgl`. **PAS de lib de layout dockable en L2** (PO-1 tranché
+> NON ; `dockview-react@^7` / `react-grid-layout` = lot séparé ultérieur). **Aucune dépendance config
+> nouvelle** : la persistance UI (PO-2) réutilise les commandes config L1 (`configGet/configSet/configAll`).
+> **Ne rien ajouter de réseau IA.** Si un crate/commande backend manque, **le signaler avant** (pas
+> d'ajout silencieux — règle L0/L1).
 
 ---
 
@@ -388,6 +424,13 @@ IakaCockpit/
 - [ ] **Réglages cockpit minimal branché** : la racine s'affiche (`getRoot`) et se modifie (`setRoot`,
       re-scan) ; l'endpoint LiteLLM se lit/écrit (`configGet/configSet("litellm_endpoint")`, **URL non
       sensible** — aucune clé manipulée) ; le thème se persiste (`configSet("theme")`).
+- [ ] **Préférences UI persistées (PO-2)** : modifier nav/densité/forme/police/échelle écrit en config
+      (`configSet ui_*`) ; **après redémarrage de l'app, les valeurs sont relues** (`configGet`/`configAll`)
+      et **réappliquées** au DOM (le réglage choisi est retrouvé, pas le défaut). Si une clé est absente,
+      le **défaut documenté** (D4-bis) s'applique sans échec.
+- [ ] **`configAll` ne fuit aucun secret** : les clés `ui_*` (et `theme`, `litellm_endpoint`) ne matchent
+      **pas** le filtre `is_secret` (`token|key|secret|password`) → elles **apparaissent** dans `configAll`
+      (preuve qu'elles sont bien non sensibles et persistées), tandis qu'aucune clé secrète ne transite.
 - [ ] **Mode B charté seul** : au moins la charte **NaonEdge dark** est livrée en variables CSS ;
       changer de thème repeint l'app **en live** sans toucher la logique ; **aucun** commutateur de
       présentation A/C ; **aucun** portrait d'agent.
@@ -402,8 +445,9 @@ IakaCockpit/
       les composants de vue sont **présentationnels** (pas d'I/O).
 - [ ] **Tests vitest (logique)** : réducteurs/états des hooks couverts (loading/success/error de
       `usePortfolio` ; commutation vue + open/close onglet de `useGridState` ; toggle de `useWorkset` ;
-      mapping output/resize/close de `usePty` avec `backend.ts` mocké ; filtres canaux du feed mocké) ;
-      `npm run test` **vert**.
+      mapping output/resize/close de `usePty` avec `backend.ts` mocké ; filtres canaux du feed mocké ;
+      **persistance `useSettings`** — écriture `configSet` puis relecture/réapplication au remontage, +
+      défaut si clé absente) ; `npm run test` **vert**.
 - [ ] **Build & qualité verts** : `npm run typecheck` 0 erreur, `npm run lint` 0 erreur, `npm run build`
       OK, `npm run tauri build` OK ; `cargo fmt --check`/`clippy`/`test` **inchangés et verts** (L2 est
       front-only) ; `bash scripts/quality.sh` se termine **en succès**.
@@ -451,16 +495,19 @@ IakaCockpit/
 
 ## Points ouverts & dépendances (à signaler, pas à improviser)
 
-### Points ouverts (décision Stéphane, ne bloquent pas L2 par défaut)
-- **PO-1 — Grille de widgets dockable au drag-and-drop ?** v7 ne le propose pas ; **par défaut OUT de
-  L2**. Si souhaité un jour : lib **dockview-react 7** (MIT, React ≥16.8, zéro-dép côté core) ou
-  **react-grid-layout** — **lot séparé**, à maquetter avec Loki d'abord.
-- **PO-2 — Persistance des réglages UI** (densité/forme/police/navpos/thème/workset) via `configSet` ?
-  **Recommandé** mais **non bloquant** en L2 (l'état UI peut rester en mémoire de session). Le **thème**,
-  lui, est persisté (D4).
-- **PO-3 — Zone conversation de Working en L2** : **placeholder propre** (recommandé MVP) **ou** mock
-  statique non interactif reproduisant v7 ? Par défaut : **placeholder** (le terminal réel est le cœur ;
-  le thread agents arrive avec L3/L4).
+### Points ouverts — **TRANCHÉS par Stéphane (2026-06-25)**
+- **PO-1 — Grille de widgets dockable au drag-and-drop ?** → **TRANCHÉ : NON en L2** (on suit v7).
+  Le **dock dynamique** (lib **dockview-react 7** — MIT, React ≥16.8, zéro-dép côté core ; ou
+  **react-grid-layout**) reste un **lot séparé ultérieur** (réserve/horizon), à maquetter avec Loki
+  d'abord. Aucune lib de layout dockable n'est ajoutée en L2.
+- **PO-2 — Persistance des réglages UI** (nav/densité/forme/police/échelle + thème) → **TRANCHÉ :
+  PERSISTER via `configSet`** (les préférences **survivent au redémarrage**). Implémenté dans
+  `useSettings` (lecture `configGet`/`configAll` au démarrage, écriture `configSet` à chaque
+  changement), clés `ui_*` documentées en **D4-bis**, critères vérifiables en § Critères. **Non
+  sensible** → cohérent avec le filtre `is_secret` de `configAll`. *(Le **workset** reste, lui, un état
+  front ; sa persistance est un plus non bloquant.)*
+- **PO-3 — Zone conversation de Working en L2** → **TRANCHÉ : placeholder propre** (pas de mock statique
+  reproduisant v7). Le terminal réel est le cœur ; le thread agents est branché plus tard sur **L3/L4**.
 
 ### Réserve (débat ouvert non clos — NE PAS cadrer)
 - **RES-1 — « Onglets qualité »** : *que doit afficher un onglet qualité ?* **Débat ouvert**, à trancher
