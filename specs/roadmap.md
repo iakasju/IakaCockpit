@@ -92,6 +92,18 @@ propre/sale, ahead/behind, version, activité ; **réutilise naonedge-dashboard/
 cross-OS par projet** (xterm + portable-pty). UI **grille + dock + onglets** réécrite proprement.
 → *Premier écran à valeur immédiate + identité cockpit ; dogfoodable sur les ~29 dépôts.*
 
+**Pistes rattachées à L2 (entrées de roadmap, à cadrer le moment venu — pas du périmètre figé) :**
+- **Vue « liste des jalons d'un projet »** : panneau qui lit le backlog d'un projet (cases
+  L0/L1/L2… + instructions `specs/instructions/`) et l'affiche en **frise de jalons** avec leur
+  état (cadré / en cours / gate PASS / livré). *Dépendance* : nécessite une **commande backend L2
+  dédiée** pour lire les jalons d'un projet (`scan_portfolio` de L1 donne déjà la liste des projets,
+  pas le détail des jalons).
+- **Onglets qualité — ⚠️ DÉBAT OUVERT (non décidé)** : *que doit afficher un onglet qualité ?* À
+  trancher avec **Stéphane + Loki** (maquette UX) avant tout cadrage. **Piste évoquée, non
+  arrêtée** : le verdict **Legolas** le plus récent par projet/jalon (PASS/FAIL par étape —
+  typecheck, lint, tests, clippy, couverture). **À ne pas figer** : périmètre ouvert tant que le
+  débat n'est pas clos.
+
 ### L3 — Moteur « prochaine étape » IA via UN provider derrière LiteLLM
 Abstraction provider, **UNE impl câblée**, **passerelle LiteLLM** pour le multi-modèle (on ne code
 PAS le routage). « Prochaine étape par projet » (lecture specs/état des lieux → suggestion).
@@ -101,6 +113,12 @@ PAS le routage). « Prochaine étape par projet » (lecture specs/état des lieu
 Vues mains courantes (adresse / geste / pensée / agent) **branchées sur iakaboxlogs existant**
 (Mosquitto MQTT → CouchDB, pont n8n), filtres. **Réutilisation pure** — ne PAS réimplémenter le bus.
 → *Décidé IN par Stéphane : fait partie du socle v0.1, plus une option tardive.*
+
+**Piste rattachée à L4 (entrée de roadmap — volet MACHINE de la traçabilité) :**
+- **Tracer les délégations** : logger chaque **délégation entre agents** (qui délègue à qui, quoi,
+  verdict) sur **MQTT/CouchDB** via la brique **iakaframe-log-conversation**. *Distinction à tenir* :
+  trace **HUMAINE** = la chaîne de badges (déjà en place dans la méthode) ; trace **MACHINE** =
+  iakaboxlogs (ce lot L4). **Cette entrée = le volet machine** (la chaîne de badges reste l'humain).
 
 **⇒ FIN DU MVP v0.1 : L0+L1+L2+L3 = cockpit chapeau-rooted, projets détectés/pilotés en grille,
 PTY cross-OS par projet, « prochaine étape » IA via LiteLLM. L4 complète le socle dès que mûr.**
