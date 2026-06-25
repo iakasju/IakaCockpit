@@ -128,3 +128,9 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (write-only), mock dev implicite ; **testé en réel** : Ollama localhost + LiteLLM→Ollama Docker (stack `docker/`) ;
       candidate `v0.3.0-rc`).*
 - [ ] **L4** — Mains courantes 3-canaux / iakaboxlogs *(inclut le traçage machine des délégations).*
+- [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
+      **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
+      couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
+      maintenus en parallèle**, desktop premier. Points durs à cadrer le jour venu : auth, CSP, FS
+      sur HTTP local, ports. → `specs/PROJET.md §10.1` *(révision 2026-06-25 ; pas d'instruction
+      tant que le lot n'est pas pris).*

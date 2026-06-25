@@ -343,6 +343,10 @@ prochaine étape, lance un runner par projet, journalise en 3-canaux**, avec un 
 - **MCP = lien Obot** : **différé** (pas de manager maison ; quand on l'ouvre, on lie Obot).
 - **Bureau-OS / window-manager** (macOS-Ubuntu, idée iakastart/iakapages) : **différé → à
   explorer avec 🎭 Loki** (hors v0.1 pour ne pas dérouter les users).
+- **Cible web parallèle** (rouverte 2026-06-25) : **différé/horizon** — UI navigateur servie par
+  un **daemon local** réexposant les commandes via la couture `src/api/backend.ts`, **desktop +
+  web maintenus en parallèle**. Points durs à cadrer : auth, CSP, FS sur HTTP local, ports
+  (cf. § 10.1). **Non planifié** — pas en v0.1.
 - **Suite admin complète** : admin projets/team/agents/agent/skills, **admin-par-prompt** +
   édition `agent.md`.
 - **Portraits générés** d'agents (upload / génération ComfyUI / référence charte).
@@ -359,19 +363,45 @@ prochaine étape, lance un runner par projet, journalise en 3-canaux**, avec un 
   précisera*.
 
 ### ANNULÉ — retiré du projet
-- **Web / PWA** : **annulé** (plus une cible ; cf. § 10.1).
 - **RAG docs projets** : **annulé** (le moteur F2 marche sur contexte assemblé ; cf. § 10.3).
+
+> **Révisé 2026-06-25** : **Web / PWA** n'est **plus annulé** → **rouvert en DIFFÉRÉ/horizon**
+> (double cible desktop+web maintenue en parallèle via daemon local + couture `backend.ts` ;
+> cf. § 10.1). Voir « HORIZON — OUT » ci-dessus.
 
 ---
 
 ## 10. RÉSERVES DE FAISABILITÉ (vérifiées sur le web, 2026-06-24)
 
-### 10.1 Cible web/PWA — *ANNULÉE (pour mémoire de la raison)*
-La décision est **d'annuler** la cible web/PWA. Le fait qui la justifiait techniquement : Tauri
-2 partage un seul front desktop/mobile mais **n'émet pas nativement de bundle web/PWA** (feature
-demandée non livrée) ; une cible web aurait supposé un **serveur-agent** réexposant FS/git/PTY/
-SQLite en HTTP — surcoût non désiré. **L'abstraction `src/api/backend.ts` reste** (§ 3.2), mais
-**uniquement pour la propreté du front et le test/mock**, **pas** pour viser un navigateur.
+### 10.1 Cible web/PWA — *RÉOUVERTE en DIFFÉRÉ/BACKLOG (révision 2026-06-25)*
+
+> **Note de révision — 2026-06-25 (décision Stéphane).** La cible web, jusqu'ici **annulée**,
+> est **rouverte** par Stéphane et repasse en **différé / backlog (horizon)** — *« on inscrit au
+> backlog pour plus tard, kit à avoir deux versions maintenues en parallèle »*. L'objectif n'est
+> **pas** de remplacer le desktop, mais de **maintenir DEUX cibles en parallèle** :
+> - **Desktop** (Tauri 2) — cible actuelle, **inchangée**, reste **première**.
+> - **Web** — UI navigateur servie par un **daemon local** (« serveur-agent ») qui réexpose les
+>   mêmes commandes (FS / git / PTY / SQLite / keychain) en **HTTP local**, à la place des
+>   `invoke()` Tauri.
+>
+> **La couture qui rend ça tractable existe déjà : la façade unique `src/api/backend.ts`** (D7 /
+> § 3.2). On y brancherait un transport `fetch()` vers le daemon **en alternative** à `invoke()`.
+> ⚠️ **Évolution assumée du § 3.2** : la façade y était décrite comme servant « la propreté et le
+> test, **pas** un build navigateur » — cette décision fait **précisément évoluer ce point**.
+>
+> **Points durs à cadrer le jour où le lot sera pris** (mémoire du « pourquoi c'était annulé » —
+> ne pas les perdre) : **surcoût du serveur-agent** (un daemon à écrire/maintenir) et **surface
+> de sécurité** ouverte par l'exposition HTTP locale — **auth** du daemon, **CSP** côté UI web,
+> **exposer le FS sur HTTP local**, **gestion des ports**. **Rien n'est figé** côté technique
+> (pas de choix de daemon arrêté) : ceci n'est qu'une **inscription au backlog + traçage de
+> changement de scope**, pas un cadrage du lot (instruction dédiée le moment venu).
+
+**Rappel du fait historique (raison de l'annulation initiale, conservé).** Tauri 2 partage un seul
+front desktop/mobile mais **n'émet pas nativement de bundle web/PWA** (feature demandée non
+livrée) ; une cible web suppose donc un **serveur-agent** réexposant FS/git/PTY/SQLite en HTTP —
+surcoût qui avait motivé l'annulation. **L'abstraction `src/api/backend.ts` reste** (§ 3.2) ; avec
+la révision ci-dessus, elle redevient **aussi** la couture de la double cible, et non plus
+seulement un outil de propreté/test.
 
 ### 10.2 CarPlay / Android Auto — *hors scope ; contraintes consignées pour info*
 - **Apple CarPlay** : depuis iOS 26.4, Apple ouvre les **apps conversationnelles voix-seules**
@@ -484,6 +514,12 @@ Chaque feature reçoit son fichier dans `specs/instructions/` AVANT implémentat
   **PAS** pour viser le web.
 - **2026-06-24** — **ANNULÉS** : **web/PWA** (Tauri n'émet pas de PWA ; surcoût serveur-agent
   non désiré) et **RAG** (le moteur marche sur contexte assemblé).
+- **2026-06-25** — **Web/PWA RÉOUVERT en DIFFÉRÉ/backlog** (révision de la décision du 24).
+  Stéphane : *« on inscrit au backlog pour plus tard, kit à avoir deux versions maintenues en
+  parallèle »*. Objectif = **double cible desktop (Tauri) + web (daemon local HTTP)** maintenues
+  en parallèle, **desktop reste premier** ; couture = façade **`src/api/backend.ts`** (transport
+  `fetch()` alternatif à `invoke()`). Points durs à cadrer le jour venu : auth, CSP, FS sur HTTP
+  local, ports. Non planifié (cf. § 10.1). **RAG reste annulé.**
 - **2026-06-24** — **HORS SCOPE v0.1, Stéphane précisera SES solutions** : mobile / vocal /
   CarPlay / Android Auto, multi-target test-staging (sandbox / Docker local / LAN / WAN),
   canaux externes de chat. (CarPlay/Android Auto : app mobile native distincte requise ;

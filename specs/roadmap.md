@@ -28,8 +28,8 @@ CarPlay/multi-target) : Stéphane apportera SES solutions plus tard — on ne le
 | Statut | Éléments |
 |---|---|
 | **IN (MVP v0.1)** | cockpit chapeau-rooted ; **backend Rust salvagé d'iakaIDE** dé-Windows-isé (scan git, portfolio, PTY, services, config) ; **front réécrit propre** (pas de god-component, hooks séparés) ; **socle sécurité L0** (CSP, keychain, tests path, couverture honnête) ; Dashboard projets (réutilise naonedge-dashboard) ; **PTY cross-OS par projet** ; moteur « prochaine étape » IA via **UN provider derrière LiteLLM** ; **mains courantes 3-canaux sur iakaboxlogs (remontées en socle v0.1)** ; UI **grille + dock + onglets** (concept gardé, réécrit). |
-| **DIFFÉRÉ** | **bureau-OS / window-manager** (exploration iakastart/iakapages plus tard avec Loki) ; lien **Obot/MCP** (positionné, branché plus tard) ; admin-par-prompt + suite admin + portraits générés (horizon). |
-| **ANNULÉ** | **web/PWA**, **RAG Docs**. |
+| **DIFFÉRÉ** | **bureau-OS / window-manager** (exploration iakastart/iakapages plus tard avec Loki) ; lien **Obot/MCP** (positionné, branché plus tard) ; admin-par-prompt + suite admin + portraits générés (horizon) ; **cible web** (rouverte 2026-06-25 — *double cible desktop+web maintenue en parallèle via daemon local, couture `backend.ts` ; à cadrer le moment venu*, cf. PROJET.md § 10.1). |
+| **ANNULÉ** | **RAG Docs**. *(web/PWA n'est plus annulé → passé en DIFFÉRÉ, révision 2026-06-25.)* |
 | **HORS SCOPE (Stéphane phasera SES solutions)** | mobile, vocal, CarPlay/Android Auto ; multi-target test/staging (sandbox/Docker local/LAN/WAN). **Ne pas phaser.** |
 
 ### Positionnement assumé
@@ -159,7 +159,7 @@ PTY cross-OS par projet, « prochaine étape » IA via LiteLLM. L4 complète le 
 | R7 | **Couplage infra box** (Forgejo/iakaboxlogs/n8n indispo) | Moyenne | Tout fonctionne offline (commits locaux). L4 mains courantes en mode dégradé si MQTT down. Voir section 5. |
 | R8 | **Obot/MCP** (surface mouvante) | Faible (différé) | DIFFÉRÉ hors v0.1. Positionné « lien Obot » (pas de rebuild). Spike isolé avant toute intégration. |
 | R9 | **Maquette HTML jetable « adoptée »** (le jetable devient le produit) | Moyenne | Statut JETABLE assumé : artefact de décision UX, **interdit de portage** en MOVE 3. Le front v0.1 est réécrit propre, pas extrait du HTML fake. |
-| R10 | **Re-cadrage permanent** | Moyenne | Gate MOVE 1 fige le périmètre (fait). Maquette MOVE 2 absorbe l'exploration UX avant le code. Changement de scope = arbitrage tracé. |
+| R10 | **Re-cadrage permanent** | Moyenne | Gate MOVE 1 fige le périmètre (fait). Maquette MOVE 2 absorbe l'exploration UX avant le code. Changement de scope = arbitrage tracé. **Arbitrage tracé 2026-06-25** : Stéphane rouvre la **cible web** (ANNULÉ → DIFFÉRÉ) en backlog/horizon — double cible desktop+web via daemon local (couture `backend.ts`) ; **n'entre pas en v0.1**, à cadrer le moment venu (cf. PROJET.md § 10.1). |
 
 ---
 
