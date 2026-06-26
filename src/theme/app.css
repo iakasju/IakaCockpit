@@ -179,6 +179,11 @@ button {
   padding: 6px 11px;
   border-radius: 8px;
 }
+.btn.xs {
+  font-size: calc(10px * var(--fscale));
+  padding: 3px 8px;
+  border-radius: 7px;
+}
 
 /* ===================== PORTFOLIO ===================== */
 .pf {
@@ -755,6 +760,14 @@ button {
   flex-direction: column;
   background: var(--bg);
 }
+/* Barre d'outils du chat (L10b) : esc + masquage pensée. */
+.chatbar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px 0;
+}
 .chatlog {
   flex: 1;
   min-height: 0;
@@ -763,6 +776,44 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+/* Lignes d'événement (vues dérivées du transcript L10b) : geste/délégation/
+   activité/pensée — discrètes, alignées à gauche, non bulles. */
+.evline {
+  align-self: flex-start;
+  max-width: 86%;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-3);
+  padding: 2px 4px;
+  word-break: break-word;
+}
+.evline .evtag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.evline.ev-delegation .evtag {
+  color: var(--accent);
+}
+.evline .evagent {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.evline.ev-pensee {
+  font-style: italic;
+  opacity: 0.8;
+}
+.evline .evtext {
+  white-space: pre-wrap;
 }
 .chatempty {
   color: var(--text-3);

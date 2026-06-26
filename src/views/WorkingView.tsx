@@ -237,6 +237,11 @@ export function WorkingView({
                   onDraftChange={(v) => setDraft(active.projectId, v)}
                   onSend={sendActive}
                   resolveAvatar={resolveAvatar}
+                  // Affordance esc côté chat (L10b/#4) : envoie `esc` au PTY du
+                  // chef-runner (EN PLUS de l'esc natif de la TUI).
+                  onInterrupt={() =>
+                    void pty.write(active.ptySessionId, "\x1b")
+                  }
                 />
               )}
             </div>

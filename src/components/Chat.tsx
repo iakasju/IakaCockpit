@@ -9,9 +9,17 @@
  *
  * Aucun I/O ici (D8) : l'appel `chat` vit dans `useConversations`/la façade.
  */
-import { useEffect, useRef, useState } from "react";
-import type { ChatTurn } from "../hooks/useConversations";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChatTurn, ChatTurnKind } from "../hooks/useConversations";
 import type { AvatarResolver } from "../theme/teamAvatar";
+
+/** Étiquette courte d'une vue dérivée (geste/délégation/activité/pensée), L10b. */
+const EV_LABEL: Record<Exclude<ChatTurnKind, "parole">, string> = {
+  geste: "⚙ geste",
+  delegation: "➜ délègue",
+  activite: "✓ activité",
+  pensee: "🜂 pensée",
+};
 
 export interface ChatProps {
   /** Historique multi-tours (mémoire MVP). */
@@ -32,6 +40,12 @@ export interface ChatProps {
    * L8 : juste `bwho`). JAMAIS d'image cassée (`onError` masque l'image).
    */
   resolveAvatar?: AvatarResolver;
+  /**
+   * Affordance esc côté chat (L10b, arbitrage #4) : envoie `esc` au PTY du chef-runner
+   * (interruption — l'esc natif de la TUI marche aussi). Absent → bouton masqué. Le
+   * terminal reste le point de contrôle ; le chat offre l'ergonomie.
+   */
+  onInterrupt?: () => void;
 }
 
 /** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
@@ -57,8 +71,17 @@ export function Chat({
   onDraftChange,
   onSend,
   resolveAvatar,
+  onInterrupt,
 }: ChatProps): JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  // Pensée masquable (canal § 5 PROJET) — masquée par défaut (réduit le bruit).
+  const [hidePensee, setHidePensee] = useState(true);
+
+  // Présence d'au moins une pensée → afficher le bouton de masquage.
+  const hasPensee = useMemo(
+    () => history.some((t) => t.kind === "pensee"),
+    [history],
+  );
 
   // Auto-scroll en bas à chaque nouveau tour / pending.
   useEffect(() => {
@@ -74,6 +97,30 @@ export function Chat({
 
   return (
     <div className="chat" aria-label="Conversation">
+      {(onInterrupt || hasPensee) && (
+        <div className="chatbar">
+          {hasPensee && (
+            <button
+              type="button"
+              className={`btn xs${hidePensee ? "" : " accent"}`}
+              aria-pressed={!hidePensee}
+              onClick={() => setHidePensee((v) => !v)}
+            >
+              {hidePensee ? "Afficher la pensée" : "Masquer la pensée"}
+            </button>
+          )}
+          {onInterrupt && (
+            <button
+              type="button"
+              className="btn xs"
+              title="Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)"
+              onClick={onInterrupt}
+            >
+              Interrompre (esc)
+            </button>
+          )}
+        </div>
+      )}
       <div className="chatlog" ref={scrollRef}>
         {history.length === 0 && !pending && (
           <div className="chatempty">
@@ -84,6 +131,24 @@ export function Chat({
           </div>
         )}
         {history.map((turn, i) => {
+          const kind = turn.kind ?? "parole";
+
+          // Vues dérivées du transcript (L10b) : geste/délégation/activité/pensée
+          // rendues en LIGNES d'événement (pas des bulles). La pensée est masquable.
+          if (kind !== "parole") {
+            if (kind === "pensee" && hidePensee) return null;
+            const evAgent = turn.agent ?? null;
+            return (
+              <div key={i} className={`evline ev-${kind}`}>
+                <span className="evtag" aria-hidden>
+                  {EV_LABEL[kind]}
+                </span>
+                {evAgent && <span className="evagent">{evAgent}</span>}
+                <span className="evtext">{turn.content}</span>
+              </div>
+            );
+          }
+
           // L9 fix avatar par-tour : l'émetteur est FIGÉ sur le tour (`turn.agent`).
           // Fallback rétro-compat L8 : si absent, on retombe sur la persona courante.
           // Changer l'interlocuteur ne re-rend donc PAS les avatars des tours passés.

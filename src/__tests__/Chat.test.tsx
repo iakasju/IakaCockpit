@@ -277,3 +277,65 @@ describe("Chat — bulles + saisie (L8/D2)", () => {
     expect(screen.getByText("Aragorn")).toBeTruthy();
   });
 });
+
+describe("Chat — vues filtrées du transcript (L10b)", () => {
+  const baseProps = {
+    agent: "Aragorn",
+    pending: false,
+    error: null,
+    draft: "",
+    onDraftChange: () => {},
+    onSend: () => {},
+  };
+
+  it("rend un geste en ligne d'événement (pas une bulle)", () => {
+    const history: ChatTurn[] = [
+      { role: "assistant", content: "Bash — ls -1", kind: "geste" },
+    ];
+    const { container } = render(<Chat {...baseProps} history={history} />);
+    expect(container.querySelector(".evline.ev-geste")).toBeTruthy();
+    expect(container.querySelectorAll(".bubble")).toHaveLength(0);
+    expect(screen.getByText("Bash — ls -1")).toBeTruthy();
+  });
+
+  it("rend une délégation attribuée au sous-agent", () => {
+    const history: ChatTurn[] = [
+      {
+        role: "assistant",
+        content: "Délègue à gandalf : Cadrer L11",
+        kind: "delegation",
+        agent: "gandalf",
+      },
+    ];
+    const { container } = render(<Chat {...baseProps} history={history} />);
+    expect(container.querySelector(".evline.ev-delegation")).toBeTruthy();
+    expect(screen.getByText("gandalf")).toBeTruthy();
+  });
+
+  it("la pensée est MASQUÉE par défaut et révélable via le bouton", () => {
+    const history: ChatTurn[] = [
+      { role: "assistant", content: "je réfléchis", kind: "pensee" },
+    ];
+    render(<Chat {...baseProps} history={history} />);
+    // Masquée par défaut.
+    expect(screen.queryByText("je réfléchis")).toBeNull();
+    // Bouton de révélation présent.
+    const toggle = screen.getByRole("button", { name: "Afficher la pensée" });
+    fireEvent.click(toggle);
+    expect(screen.getByText("je réfléchis")).toBeTruthy();
+  });
+
+  it("affordance esc (L10b/#4) : le bouton Interrompre déclenche onInterrupt", () => {
+    const onInterrupt = vi.fn();
+    render(<Chat {...baseProps} history={[]} onInterrupt={onInterrupt} />);
+    fireEvent.click(screen.getByRole("button", { name: /Interrompre/ }));
+    expect(onInterrupt).toHaveBeenCalledTimes(1);
+  });
+
+  it("sans onInterrupt ni pensée → pas de barre d'outils", () => {
+    const { container } = render(
+      <Chat {...baseProps} history={[{ role: "user", content: "x" }]} />,
+    );
+    expect(container.querySelector(".chatbar")).toBeNull();
+  });
+});

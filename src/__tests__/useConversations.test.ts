@@ -1,35 +1,16 @@
-import { describe, it, expect, vi } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { renderHook, act } from "@testing-library/react";
 import {
   useConversations,
   DEFAULT_RESPONSIBLE,
   mentionPrefix,
   parseMention,
+  type ChatTurn,
 } from "../hooks/useConversations";
-import type { Backend, ChatReply } from "../api/backend";
 
-function makeApi(
-  chatImpl?: (
-    path: string,
-    agent: string,
-    messages: { role: string; content: string }[],
-  ) => Promise<ChatReply>,
-): Backend {
-  const impl =
-    chatImpl ??
-    (async () => ({
-      content: "réponse",
-      provider: "mock" as const,
-      model: null,
-      tokens_in: null,
-      tokens_out: null,
-    }));
-  return { chat: vi.fn(impl) } as unknown as Backend;
-}
-
-describe("useConversations — 1 conversation/projet (L8/D1)", () => {
+describe("useConversations — 1 conversation/projet (L8, migré L10b)", () => {
   it("ouvre une conversation et la rend active (agent = responsable par défaut)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+    const { result } = renderHook(() => useConversations());
     act(() => {
       result.current.openConversation("p1", "p1", "/root/p1");
     });
@@ -41,7 +22,7 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
   });
 
   it("dédoublonne par projectId (ré-active sans créer de doublon)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+    const { result } = renderHook(() => useConversations());
     let id1 = "";
     act(() => {
       id1 = result.current.openConversation("p1", "p1", "/root/p1");
@@ -57,8 +38,8 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
     expect(result.current.active?.projectId).toBe("p1");
   });
 
-  it("toggle de mode NE TOUCHE PAS au ptySessionId (le shell survit, D4)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+  it("toggle de mode NE TOUCHE PAS au ptySessionId (le runner survit, D4/L10a)", () => {
+    const { result } = renderHook(() => useConversations());
     let sid = "";
     act(() => {
       sid = result.current.openConversation("p1", "p1", "/root/p1");
@@ -73,16 +54,16 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
   });
 
   it("L9-C2 : sans initialHistory → history vide (rétro-compat L8 stricte)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
     expect(result.current.active?.history).toEqual([]);
   });
 
   it("L9-C1 : avec initialHistory → la conversation est préchargée (copie défensive)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
-    const seed = [
-      { role: "user" as const, content: "salut" },
-      { role: "assistant" as const, content: "bonjour" },
+    const { result } = renderHook(() => useConversations());
+    const seed: ChatTurn[] = [
+      { role: "user", content: "salut" },
+      { role: "assistant", content: "bonjour" },
     ];
     act(() =>
       result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", seed),
@@ -94,7 +75,7 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
   });
 
   it("L9-C1 : initialHistory ignoré si la conversation existe déjà (création seulement)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
     act(() =>
       result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", [
@@ -105,184 +86,105 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
   });
 
   it("setAgent change l'interlocuteur courant (persona)", () => {
-    const { result } = renderHook(() => useConversations(makeApi()));
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
     act(() => result.current.setAgent("p1", "Gandalf"));
     expect(result.current.active?.agent).toBe("Gandalf");
   });
 
-  it("send ajoute le tour user, appelle backend.chat, ajoute le tour assistant", async () => {
-    const api = makeApi(async () => ({
-      content: "Voici la réponse.",
-      provider: "litellm",
-      model: "m",
-      tokens_in: 1,
-      tokens_out: 2,
-    }));
-    const { result } = renderHook(() => useConversations(api));
-    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+  // --- Entrée partagée L10b : echoUser ---
 
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "Bonjour");
-    });
+  it("echoUser ajoute le tour user, fixe la persona courante et lève pending", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() => result.current.echoUser("p1", "Aragorn", "Bonjour"));
 
     const conv = result.current.conversations[0];
-    // L9 fix : le tour assistant porte désormais son émetteur figé (`agent`).
-    expect(conv.history).toEqual([
-      { role: "user", content: "Bonjour" },
-      { role: "assistant", content: "Voici la réponse.", agent: "Aragorn" },
-    ]);
-    expect(conv.pending).toBe(false);
-    // L'historique (tour user) est bien passé à la commande.
-    expect(api.chat).toHaveBeenCalledWith("/root/p1", "Aragorn", [
-      { role: "user", content: "Bonjour" },
-    ]);
-  });
-
-  it("L9 fix : le tour assistant FIGE son émetteur (turn.agent), le tour user reste sans agent", async () => {
-    const api = makeApi(async () => ({
-      content: "réponse de Gandalf",
-      provider: "mock",
-      model: null,
-      tokens_in: null,
-      tokens_out: null,
-    }));
-    const { result } = renderHook(() => useConversations(api));
-    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-
-    await act(async () => {
-      await result.current.send("p1", "Gandalf", "@Gandalf : cadre");
-    });
-
-    const conv = result.current.conversations[0];
-    expect(conv.history[0]).toMatchObject({ role: "user" });
+    // Le tour user reste SANS agent (L9 : pas d'avatar côté utilisateur).
+    expect(conv.history).toEqual([{ role: "user", content: "Bonjour" }]);
     expect(conv.history[0].agent).toBeUndefined();
-    expect(conv.history[1]).toMatchObject({
-      role: "assistant",
-      agent: "Gandalf",
-    });
+    expect(conv.agent).toBe("Aragorn");
+    expect(conv.pending).toBe(true);
   });
 
-  it("L9 fix (CŒUR DU BUG) : changer l'agent courant NE MODIFIE PAS l'émetteur des tours déjà présents", async () => {
-    const api = makeApi();
-    const { result } = renderHook(() => useConversations(api));
+  it("echoUser avec @agent fixe la persona mentionnée comme courante", () => {
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-
-    // Un tour produit PAR Aragorn.
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "salut");
-    });
-    // Puis l'utilisateur change d'interlocuteur (clic roster / @agent).
-    act(() => result.current.setAgent("p1", "Legolas"));
-
-    const conv = result.current.conversations[0];
-    // L'émetteur du tour assistant déjà présent reste Aragorn (trace intacte).
-    expect(conv.history[1].agent).toBe("Aragorn");
-    // La persona COURANTE a bien changé (comportement L8 conservé).
-    expect(conv.agent).toBe("Legolas");
-  });
-
-  it("send est multi-tours : le 2e message inclut l'historique précédent", async () => {
-    const api = makeApi(async () => ({
-      content: "ok",
-      provider: "mock",
-      model: null,
-      tokens_in: null,
-      tokens_out: null,
-    }));
-    const { result } = renderHook(() => useConversations(api));
-    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "premier");
-    });
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "second");
-    });
-
-    // 2e appel : l'historique contient les tours précédents (multi-tours réel).
-    const secondCall = (api.chat as ReturnType<typeof vi.fn>).mock.calls[1];
-    expect(secondCall[2]).toEqual([
-      { role: "user", content: "premier" },
-      { role: "assistant", content: "ok" },
-      { role: "user", content: "second" },
-    ]);
-  });
-
-  it("send avec @agent passe la persona mentionnée et la fixe comme courante", async () => {
-    const api = makeApi();
-    const { result } = renderHook(() => useConversations(api));
-    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-
-    await act(async () => {
-      await result.current.send("p1", "Legolas", "@Legolas : valide ça");
-    });
-
-    expect(api.chat).toHaveBeenCalledWith(
-      "/root/p1",
-      "Legolas",
-      expect.anything(),
-    );
+    act(() => result.current.echoUser("p1", "Legolas", "@Legolas : valide ça"));
     expect(result.current.active?.agent).toBe("Legolas");
+    // Le contenu est échoé VERBATIM (préfixe @agent conservé, arbitrage #5).
+    expect(result.current.active?.history[0].content).toBe(
+      "@Legolas : valide ça",
+    );
   });
 
-  it("send : une erreur backend peuple `error` sans crash et lève pending", async () => {
-    const api = makeApi(async () => {
-      throw new Error("endpoint IA injoignable");
-    });
-    const { result } = renderHook(() => useConversations(api));
+  it("echoUser ignore un message vide", () => {
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "coucou");
-    });
-
-    const conv = result.current.conversations[0];
-    expect(conv.error).toContain("injoignable");
-    expect(conv.pending).toBe(false);
-    // Le tour user reste, pas de tour assistant fantôme.
-    expect(conv.history).toEqual([{ role: "user", content: "coucou" }]);
-  });
-
-  it("send ignore un message vide", async () => {
-    const api = makeApi();
-    const { result } = renderHook(() => useConversations(api));
-    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
-    await act(async () => {
-      await result.current.send("p1", "Aragorn", "   ");
-    });
-    expect(api.chat).not.toHaveBeenCalled();
+    act(() => result.current.echoUser("p1", "Aragorn", "   "));
     expect(result.current.conversations[0].history).toEqual([]);
   });
 
-  it("pending est vrai pendant l'appel (statut roster « travaille »)", async () => {
-    let resolveChat: (r: ChatReply) => void = () => {};
-    const api = makeApi(
-      () =>
-        new Promise<ChatReply>((res) => {
-          resolveChat = res;
-        }),
-    );
-    const { result } = renderHook(() => useConversations(api));
+  // --- Vue filtrée L10b : appendTurn ---
+
+  it("appendTurn (parole assistant) ajoute le tour et RETOMBE le pending", () => {
+    const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() => result.current.echoUser("p1", "Aragorn", "salut"));
+    expect(result.current.conversations[0].pending).toBe(true);
 
-    let sendPromise: Promise<void> = Promise.resolve();
-    act(() => {
-      sendPromise = result.current.send("p1", "Aragorn", "hello");
+    act(() =>
+      result.current.appendTurn("p1", {
+        role: "assistant",
+        content: "Bonjour, voici l'état.",
+        kind: "parole",
+        agent: "Aragorn",
+      }),
+    );
+    const conv = result.current.conversations[0];
+    expect(conv.history[1]).toEqual({
+      role: "assistant",
+      content: "Bonjour, voici l'état.",
+      kind: "parole",
+      agent: "Aragorn",
     });
-    await waitFor(() => expect(result.current.active?.pending).toBe(true));
+    expect(conv.pending).toBe(false);
+  });
 
-    await act(async () => {
-      resolveChat({
-        content: "fin",
-        provider: "mock",
-        model: null,
-        tokens_in: null,
-        tokens_out: null,
-      });
-      await sendPromise;
-    });
-    expect(result.current.active?.pending).toBe(false);
+  it("appendTurn (geste/délégation/pensée) NE retombe PAS le pending (le chef travaille)", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() => result.current.echoUser("p1", "Aragorn", "liste les fichiers"));
+
+    act(() =>
+      result.current.appendTurn("p1", {
+        role: "assistant",
+        content: "Bash — ls -1",
+        kind: "geste",
+      }),
+    );
+    expect(result.current.conversations[0].pending).toBe(true);
+    expect(result.current.conversations[0].history).toHaveLength(2);
+  });
+
+  it("appendTurn FIGE l'émetteur par-tour : changer l'agent courant ne le modifie pas (L9)", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() =>
+      result.current.appendTurn("p1", {
+        role: "assistant",
+        content: "tour d'Aragorn",
+        kind: "parole",
+        agent: "Aragorn",
+      }),
+    );
+    act(() => result.current.setAgent("p1", "Legolas"));
+
+    const conv = result.current.conversations[0];
+    // L'émetteur du tour déjà présent reste Aragorn (trace intacte).
+    expect(conv.history[0].agent).toBe("Aragorn");
+    // La persona COURANTE a bien changé.
+    expect(conv.agent).toBe("Legolas");
   });
 });
 

@@ -268,9 +268,9 @@ describe("backend.ts (commandes métier L1)", () => {
       expect.any(Function),
     );
     // Simule un event émis par Rust → la payload est délivrée telle quelle au cb.
-    const cb = listenMock.mock.calls.at(-1)?.[1] as (e: {
-      payload: RunnerEvent;
-    }) => void;
+    const lastCall =
+      listenMock.mock.calls[listenMock.mock.calls.length - 1];
+    const cb = lastCall?.[1] as (e: { payload: RunnerEvent }) => void;
     const sample: RunnerEvent = {
       kind: "delegation",
       role: "assistant",

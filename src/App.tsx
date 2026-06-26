@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
+import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -33,6 +34,16 @@ export default function App(): JSX.Element {
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
+
+  // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
+  // conversations (runner://event → ChatTurn). Démarré dès qu'un runnerSessionId
+  // apparaît dans une session PTY. Le parse vit côté Rust (CSP) ; ici on ne route que
+  // des events typés vers l'état conversation.
+  useRunnerViews({
+    conversations: conversations.conversations,
+    ptySessions: pty.sessions,
+    appendTurn: conversations.appendTurn,
+  });
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
   // (inerte en prod) puis ouvre UNE conversation pour le projet démo (plus 5
@@ -61,6 +72,19 @@ export default function App(): JSX.Element {
   const openProject = (project: Project): void => {
     conversations.openConversation(project.id, project.id, project.path);
     grid.setActiveView("working");
+  };
+
+  // Entrée partagée (L10b/§5.1) : la saisie chat ÉCHOTE (tour user) ET PILOTE le chef
+  // (stdin du PTY : la frappe + `\r` pour soumettre la TUI native). Le `@agent` est un
+  // préfixe VERBATIM (arbitrage #5) : `content` est écrit tel quel au PTY, aucune
+  // traduction. La réponse du chef remonte par le tailer (`useRunnerViews`).
+  const handleSend = (projectId: string, agent: string, content: string): void => {
+    const conv = conversations.conversations.find(
+      (c) => c.projectId === projectId,
+    );
+    if (!conv) return;
+    conversations.echoUser(projectId, agent, content);
+    void pty.write(conv.ptySessionId, `${content}\r`);
   };
 
   // Bouton + de Working : import d'un dossier existant → portfolio + set de Work.
@@ -133,9 +157,7 @@ export default function App(): JSX.Element {
             onAddProject={() => void addProject()}
             onSetMode={conversations.setMode}
             onSetAgent={conversations.setAgent}
-            onSend={(projectId, agent, content) =>
-              void conversations.send(projectId, agent, content)
-            }
+            onSend={handleSend}
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
           />
