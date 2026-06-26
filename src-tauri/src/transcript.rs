@@ -309,9 +309,6 @@ pub struct TranscriptState(Mutex<HashMap<String, Arc<AtomicBool>>>);
 
 /// Intervalle de poll (attente de création + tail incrémental).
 const POLL_INTERVAL: Duration = Duration::from_millis(150);
-/// Plafond d'attente de création du fichier (au-delà, le thread s'arrête seul pour ne
-/// pas rester orphelin si aucun transcript n'apparaît jamais — ex. kind `shell`).
-const CREATE_WAIT_MAX: Duration = Duration::from_secs(120);
 
 /// Cœur du tail, ISOLÉ du transport (AppHandle) pour être TESTABLE (R-L10b-2) : attend
 /// la création du fichier, puis lit incrémentalement les lignes COMPLÈTES (terminées
@@ -319,17 +316,38 @@ const CREATE_WAIT_MAX: Duration = Duration::from_secs(120);
 /// DÉBUT du fichier (reconstruction complète : un toggle chat↔terminal ne relance pas le
 /// tailer, l'historique reste cohérent). C'est la partie « live » (held fd qui voit les
 /// `append`) qui échappait aux tests `map_record` purs et au gate (façade mockée).
-fn tail_file(path: &str, stop: &Arc<AtomicBool>, mut emit: impl FnMut(&RunnerEvent)) {
+///
+/// **Attente de création — bug de recette L10b corrigé.** Claude Code ne crée le
+/// transcript `<session_id>.jsonl` qu'au moment où il TRAITE le **premier message** (après
+/// l'éventuel dialogue de confiance + le temps de lecture/saisie de l'humain). Ce délai
+/// spawn→fichier est PILOTÉ PAR L'UTILISATEUR : il dépasse couramment plusieurs minutes.
+/// L'ancien plafond fixe de 120 s faisait **abandonner le thread AVANT que le fichier
+/// n'apparaisse** ; quand Claude écrivait enfin la réponse, plus aucun tailer ne la voyait
+/// → chat MUET (cause racine, prouvée en live). L'attente est donc bornée **uniquement par
+/// le drapeau `stop`** (fermeture de conversation / arrêt d'app), via `create_wait` :
+///   - `None` (production) : attendre le fichier AUSSI LONGTEMPS que le runner vit ;
+///   - `Some(max)` (tests) : plafond explicite (reproduit l'ancien abandon prématuré).
+///
+/// Le thread reste peu coûteux (sommeil de `POLL_INTERVAL`) et est libéré par `stop`.
+fn tail_file(
+    path: &str,
+    stop: &Arc<AtomicBool>,
+    create_wait: Option<Duration>,
+    mut emit: impl FnMut(&RunnerEvent),
+) {
     let source = TranscriptSource;
     let p = Path::new(path);
 
-    // 1. Attente de création (heartbeat borné). (risque (b) : latence ~quelques s.)
+    // 1. Attente de création : bornée par `stop` (vie du runner), PAS par un plafond fixe
+    //    trop court (le délai spawn→fichier est piloté par l'utilisateur — cf. doc).
     let mut waited = Duration::ZERO;
     while !stop.load(Ordering::Relaxed) && !p.exists() {
         std::thread::sleep(POLL_INTERVAL);
-        waited += POLL_INTERVAL;
-        if waited >= CREATE_WAIT_MAX {
-            return; // jamais apparu : on n'orpheline pas le thread.
+        if let Some(max) = create_wait {
+            waited += POLL_INTERVAL;
+            if waited >= max {
+                return; // plafond explicite (tests) atteint.
+            }
         }
     }
     if stop.load(Ordering::Relaxed) {
@@ -375,8 +393,9 @@ fn tail_file(path: &str, stop: &Arc<AtomicBool>, mut emit: impl FnMut(&RunnerEve
 
 /// Wrapper de transport : branche [`tail_file`] sur l'`AppHandle` Tauri (émission de
 /// `runner://event/{session_id}`). La logique de tail vit dans `tail_file` (testable).
+/// `create_wait=None` : on attend le transcript tant que le runner vit (cf. doc `tail_file`).
 fn tail_loop(app: AppHandle, session_id: String, path: String, stop: Arc<AtomicBool>) {
-    tail_file(&path, &stop, |ev| {
+    tail_file(&path, &stop, None, |ev| {
         let _ = app.emit(&format!("runner://event/{session_id}"), ev);
     });
 }
@@ -732,18 +751,33 @@ mod tests {
     use std::io::Write as _;
     use std::sync::atomic::AtomicBool;
 
-    /// Lance `tail_file` dans un thread, écrit des lignes JSONL INCRÉMENTALEMENT dans le
-    /// fichier (comme Claude Code qui `append`), et renvoie les events collectés.
-    fn run_tail_collect(lines: &[&str]) -> Vec<RunnerEvent> {
+    /// Chemin de transcript temporaire UNIQUE (nanos + compteur) pour ne pas collisionner
+    /// entre tests parallèles.
+    fn unique_transcript_path() -> std::path::PathBuf {
+        use std::sync::atomic::AtomicU64;
+        static SEQ: AtomicU64 = AtomicU64::new(0);
         let dir = std::env::temp_dir().join(format!("iaka-tail-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&dir);
-        let path = dir.join(format!(
-            "t-{}.jsonl",
+        let n = SEQ.fetch_add(1, Ordering::Relaxed);
+        dir.join(format!(
+            "t-{}-{n}.jsonl",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
-        ));
+        ))
+    }
+
+    /// Lance `tail_file` dans un thread, écrit des lignes JSONL INCRÉMENTALEMENT dans le
+    /// fichier (comme Claude Code qui `append`), et renvoie les events collectés. Le
+    /// fichier est créé `create_delay` APRÈS le démarrage du tailer (simule le délai
+    /// spawn→transcript, piloté par l'utilisateur) ; `create_wait` borne l'attente.
+    fn run_tail_collect_ext(
+        lines: &[&str],
+        create_delay: Duration,
+        create_wait: Option<Duration>,
+    ) -> Vec<RunnerEvent> {
+        let path = unique_transcript_path();
         let path_str = path.to_string_lossy().to_string();
 
         let stop = Arc::new(AtomicBool::new(false));
@@ -753,10 +787,13 @@ mod tests {
         let collected_t = Arc::clone(&collected);
         let path_t = path_str.clone();
         let handle = std::thread::spawn(move || {
-            tail_file(&path_t, &stop_t, |ev| {
+            tail_file(&path_t, &stop_t, create_wait, |ev| {
                 collected_t.lock().unwrap().push(ev.clone());
             });
         });
+
+        // Le fichier n'apparaît qu'APRÈS `create_delay` (le tailer doit l'attendre).
+        std::thread::sleep(create_delay);
 
         // Crée puis fait GROSSIR le fichier par appends successifs (held fd côté tailer).
         let mut f = std::fs::File::create(&path).unwrap();
@@ -773,6 +810,11 @@ mod tests {
 
         let out = collected.lock().unwrap().clone();
         out
+    }
+
+    /// Cas nominal : fichier créé tout de suite, attente bornée par `stop` (`None`).
+    fn run_tail_collect(lines: &[&str]) -> Vec<RunnerEvent> {
+        run_tail_collect_ext(lines, Duration::ZERO, None)
     }
 
     #[test]
@@ -792,6 +834,53 @@ mod tests {
             "le tailer doit émettre la parole assistant depuis un fichier qui grossit en direct : {evs:?}"
         );
         assert!(evs.iter().any(|e| e.kind == EventKind::Geste));
+    }
+
+    // --- RÉGRESSION recette L10b « chat muet » : transcript qui apparaît TARD ---
+    //
+    // Cause racine prouvée en live : le tailer démarre au spawn du runner, AVANT que le
+    // fichier n'existe (Claude ne le crée qu'au 1ᵉʳ message traité — après dialogue de
+    // confiance + saisie humaine, soit un délai PILOTÉ PAR L'UTILISATEUR, couramment
+    // > l'ancien plafond fixe de 120 s). L'ancien `CREATE_WAIT_MAX` faisait abandonner le
+    // thread AVANT l'apparition du fichier → la réponse n'était jamais tailée → bulle
+    // jamais émise. Le fix : attente bornée par `stop` (vie du runner), pas par un plafond.
+
+    #[test]
+    fn tail_file_attend_un_transcript_qui_apparait_tard_et_l_emet() {
+        // Le fichier n'apparaît que 600 ms APRÈS le démarrage du tailer. Avec l'attente
+        // « jusqu'à stop » (production : `create_wait=None`), la réponse DOIT remonter.
+        let evs = run_tail_collect_ext(
+            &[
+                r#"{"type":"user","message":{"role":"user","content":"hello aragorn"}}"#,
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"🟡 [COORDINATION][Aragorn] prêt"}]}}"#,
+            ],
+            Duration::from_millis(600),
+            None,
+        );
+        assert!(
+            evs.iter().any(|e| e.kind == EventKind::Parole
+                && e.role == "assistant"
+                && e.text.as_deref() == Some("🟡 [COORDINATION][Aragorn] prêt")),
+            "un transcript apparu TARD doit quand même être tailé (fix recette muet) : {evs:?}"
+        );
+    }
+
+    #[test]
+    fn tail_file_avec_plafond_court_abandonne_avant_l_apparition_du_fichier() {
+        // Reproduit l'ANCIEN comportement fragile : un plafond d'attente PLUS COURT que le
+        // délai d'apparition fait abandonner le tailer → AUCUN event (le bug). Verrouille
+        // le fait que c'était bien le plafond, et que la production l'a retiré (`None`).
+        let evs = run_tail_collect_ext(
+            &[
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"trop tard"}]}}"#,
+            ],
+            Duration::from_millis(700),
+            Some(Duration::from_millis(200)),
+        );
+        assert!(
+            evs.is_empty(),
+            "avec un plafond plus court que le délai d'apparition, le tailer abandonne (ancien bug) : {evs:?}"
+        );
     }
 
     #[test]
