@@ -47,7 +47,7 @@ pub enum EventKind {
     Parole,
     /// `assistant.tool_use` (hors `Task`) → action outil du chef.
     Geste,
-    /// `tool_use name=="Task"` (+ fil `isSidechain`) → sous-agent délégué.
+    /// `tool_use name=="Agent"`/`"Task"` (+ fil `isSidechain`) → sous-agent délégué.
     Delegation,
     /// `tool_result` (record `user`) → fin de geste / agent au travail.
     Activite,
@@ -101,6 +101,19 @@ pub struct TranscriptSource;
 
 /// Longueur max d'un résumé d'entrée d'outil (borne défensive d'affichage).
 const TOOL_INPUT_MAX: usize = 200;
+
+/// Noms d'outils de **délégation à un sous-agent** (`subagent_type`). Le cadrage
+/// supposait `"Task"` ; le **run de confirmation LIVE (arbitrage #1)** a révélé que le
+/// dispatcher de sous-agent de Claude Code 2.1.193 s'appelle en fait **`"Agent"`**
+/// (même schéma d'entrée `{subagent_type, description, prompt}`). On reconnaît **les
+/// deux** (robustesse aux versions). `"TaskCreate"` (tâche asynchrone de fond) N'EST
+/// PAS une délégation de sous-agent → reste un geste ordinaire.
+const DELEGATION_TOOLS: &[&str] = &["Agent", "Task"];
+
+/// Un `tool_use` `name` désigne-t-il une délégation de sous-agent ?
+fn is_delegation_tool(name: &str) -> bool {
+    DELEGATION_TOOLS.contains(&name)
+}
 
 /// Résume une `Value` d'entrée d'outil en chaîne compacte tronquée (affichage).
 fn short_json(v: &Value) -> String {
@@ -170,7 +183,7 @@ fn map_block(
             let name = blk.get("name").and_then(Value::as_str).unwrap_or("?");
             let id = blk.get("id").and_then(Value::as_str).map(str::to_string);
             let input = blk.get("input");
-            if name == "Task" {
+            if is_delegation_tool(name) {
                 // Délégation : subagent_type + description (apparié au fil isSidechain).
                 let sub = input
                     .and_then(|i| i.get("subagent_type"))
@@ -586,6 +599,58 @@ mod tests {
         assert!(kinds.contains(&EventKind::Geste));
         assert!(kinds.contains(&EventKind::Activite));
         // Aucun event issu des records bruyants (mode/system/attachment/…).
+    }
+
+    #[test]
+    fn agent_tool_use_est_une_delegation_nom_reel_live() {
+        // Le dispatcher de sous-agent RÉEL (Claude Code 2.1.193) s'appelle `Agent`
+        // (révélé par le run de confirmation live, arbitrage #1) — même schéma que Task.
+        let evs = src().map_record(
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_agent_1","name":"Agent","input":{"subagent_type":"gandalf","description":"Cadrage du projet iaka-demo","prompt":"…"}}]}}"#,
+        );
+        assert_eq!(evs.len(), 1);
+        assert_eq!(evs[0].kind, EventKind::Delegation);
+        assert_eq!(evs[0].agent.as_deref(), Some("gandalf"));
+        assert_eq!(evs[0].text.as_deref(), Some("Cadrage du projet iaka-demo"));
+    }
+
+    #[test]
+    fn taskcreate_n_est_pas_une_delegation_de_sous_agent() {
+        // TaskCreate = tâche asynchrone de fond, PAS un sous-agent → geste ordinaire.
+        let evs = src().map_record(
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"tc1","name":"TaskCreate","input":{"subject":"x","description":"y"}}]}}"#,
+        );
+        assert_eq!(evs.len(), 1);
+        assert_eq!(evs[0].kind, EventKind::Geste);
+        assert_eq!(evs[0].tool_name.as_deref(), Some("TaskCreate"));
+    }
+
+    #[test]
+    fn fixture_delegation_live_reelle_agent_subagent_et_resultat_verbatim() {
+        // Fixture RÉELLE capturée par le run de confirmation live (cwd iaka-demo,
+        // claude 2.1.193 headless). Prouve : tool_use `Agent` subagent_type=gandalf
+        // + tool_result verbatim. (Le fil `isSidechain:true` n'apparaît PAS en mode
+        // headless `-p` — à reconfirmer en TUI interactive : cf. risque (a).)
+        let raw = include_str!("../tests/fixtures/transcript_delegation_live.jsonl");
+        let s = src();
+        let mut deleg = 0;
+        let mut activite = 0;
+        for line in raw.lines() {
+            for ev in s.map_record(line) {
+                if ev.kind == EventKind::Delegation {
+                    deleg += 1;
+                    assert_eq!(ev.agent.as_deref(), Some("gandalf"));
+                }
+                if ev.kind == EventKind::Activite {
+                    activite += 1;
+                }
+            }
+        }
+        assert_eq!(deleg, 1, "une délégation Agent réelle captée");
+        assert!(
+            activite >= 1,
+            "le résultat du sous-agent remonte en activité"
+        );
     }
 
     #[test]
