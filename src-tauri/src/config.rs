@@ -22,6 +22,55 @@ pub const KEY_LITELLM_ENDPOINT: &str = "litellm_endpoint";
 /// Projets importés hors racine (bouton + de Working) : tableau JSON de chemins.
 pub const KEY_EXTRA_PROJECTS: &str = "extra_projects";
 
+// --- Réglages GLOBAUX du chef-runner (L10b/P3) — config NON sensible -----------
+//
+// Set par défaut du cockpit (PER-PROJET = cible, hors L10). Aucune de ces clés ne
+// matche `token|key|secret|password` → toutes remontent par `config_all` (lues
+// côté front par `useSettings`) ET côté Rust par `read_chef_settings` (consommé par
+// `terminal::pty_runner_open`, avec fallback sur les constantes du module terminal
+// si absentes). AUCUN secret ici (le chef-runner n'a pas de clé par défaut).
+
+/// Runner par défaut du chef (`claude-code` ; champ prévu pour extension
+/// Ollama/Codex, mais seul `claude-code` est sélectionnable en L10).
+pub const KEY_CHEF_RUNNER_KIND: &str = "chef_runner_kind";
+/// Modèle du chef-runner (alias/nom transmis à `claude --model`).
+pub const KEY_CHEF_MODEL: &str = "chef_model";
+/// Allowlist d'outils du chef-runner (`claude --allowedTools`, liste CSV).
+pub const KEY_CHEF_ALLOWED_TOOLS: &str = "chef_allowed_tools";
+/// Mode de trust du cwd (`inherit` = héritage parent / dialogue natif ;
+/// `accept` = pré-acceptation idempotente). Cf. `terminal::TrustMode`.
+pub const KEY_CHEF_TRUST_MODE: &str = "chef_trust_mode";
+
+/// Réglages globaux du chef-runner lus depuis la config (tous optionnels). `None`
+/// = clé absente OU valeur vide/blanche → l'appelant (`terminal.rs`) retombe sur sa
+/// **constante par défaut** (vider un champ dans Réglages restaure donc le défaut).
+#[derive(Debug, Clone, Default)]
+pub struct ChefSettings {
+    pub runner_kind: Option<String>,
+    pub model: Option<String>,
+    pub allowed_tools: Option<String>,
+    pub trust_mode: Option<String>,
+}
+
+/// Lit les réglages globaux du chef-runner (best-effort : une erreur SQLite sur une
+/// clé → `None` pour cette clé, jamais d'échec). Les valeurs vides/blanches sont
+/// traitées comme **absentes** (= défaut côté appelant).
+pub fn read_chef_settings(conn: &Connection) -> ChefSettings {
+    let read = |key: &str| -> Option<String> {
+        get(conn, key)
+            .ok()
+            .flatten()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+    ChefSettings {
+        runner_kind: read(KEY_CHEF_RUNNER_KIND),
+        model: read(KEY_CHEF_MODEL),
+        allowed_tools: read(KEY_CHEF_ALLOWED_TOOLS),
+        trust_mode: read(KEY_CHEF_TRUST_MODE),
+    }
+}
+
 /// Crée la table `config` si absente.
 pub fn init_schema(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute(
@@ -191,6 +240,56 @@ mod tests {
         for k in [KEY_ROOT, KEY_THEME, KEY_LITELLM_ENDPOINT, "widget_layout"] {
             assert!(!is_secret(k), "{k} ne devrait pas être secret");
         }
+    }
+
+    // --- L10b/P3 : réglages globaux du chef-runner (non sensibles) ---
+
+    #[test]
+    fn cles_chef_runner_ne_sont_pas_secretes() {
+        // Toutes doivent remonter par config_all (UI Réglages + lecture Rust).
+        for k in [
+            KEY_CHEF_RUNNER_KIND,
+            KEY_CHEF_MODEL,
+            KEY_CHEF_ALLOWED_TOOLS,
+            KEY_CHEF_TRUST_MODE,
+        ] {
+            assert!(!is_secret(k), "{k} ne doit pas être filtré comme secret");
+        }
+    }
+
+    #[test]
+    fn read_chef_settings_absent_est_tout_none() {
+        let conn = mem();
+        let s = read_chef_settings(&conn);
+        assert!(s.runner_kind.is_none());
+        assert!(s.model.is_none());
+        assert!(s.allowed_tools.is_none());
+        assert!(s.trust_mode.is_none());
+    }
+
+    #[test]
+    fn read_chef_settings_relit_les_valeurs_persistees() {
+        let conn = mem();
+        set(&conn, KEY_CHEF_RUNNER_KIND, "claude-code").unwrap();
+        set(&conn, KEY_CHEF_MODEL, "claude-sonnet-4-5").unwrap();
+        set(&conn, KEY_CHEF_ALLOWED_TOOLS, "Read,Glob").unwrap();
+        set(&conn, KEY_CHEF_TRUST_MODE, "accept").unwrap();
+        let s = read_chef_settings(&conn);
+        assert_eq!(s.runner_kind.as_deref(), Some("claude-code"));
+        assert_eq!(s.model.as_deref(), Some("claude-sonnet-4-5"));
+        assert_eq!(s.allowed_tools.as_deref(), Some("Read,Glob"));
+        assert_eq!(s.trust_mode.as_deref(), Some("accept"));
+    }
+
+    #[test]
+    fn read_chef_settings_traite_le_vide_comme_absent() {
+        // Vider un champ dans Réglages doit restaurer le défaut (None côté appelant).
+        let conn = mem();
+        set(&conn, KEY_CHEF_MODEL, "   ").unwrap();
+        set(&conn, KEY_CHEF_ALLOWED_TOOLS, "").unwrap();
+        let s = read_chef_settings(&conn);
+        assert!(s.model.is_none());
+        assert!(s.allowed_tools.is_none());
     }
 
     #[test]
