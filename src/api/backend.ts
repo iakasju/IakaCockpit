@@ -430,6 +430,77 @@ export function onPtyClosed(
   return listen<void>(`pty://closed/${id}`, () => cb());
 }
 
+// --- Chef-runner conversationnel en PIPES (L10 P1) ---
+//
+// Le chef-runner (`claude` en mode flux structuré stream-json) tourne EN PIPES côté
+// Rust (PAS un PTY : `claude` refuse le NDJSON sur un stdin TTY — finding spike P0).
+// Le PARSE NDJSON vit côté Rust (D7/CSP : aucune logique de format/réseau dans le
+// front). En P1, le front ne reçoit que le FLUX BRUT (`runner://raw`) — surface de
+// rendu xterm ; le parse typé → vue filtrée (chat bulles) arrive en P2.
+
+/** Type de runner (P1 : seul `"claude-code"` est connu côté Rust). */
+export type RunnerKind = "claude-code";
+
+/**
+ * Ouvre une session chef-runner EN PIPES (spawn `claude` dans `cwd`, validé sous le
+ * chapeau côté Rust). `model` optionnel → défaut Rust. Émet `runner://raw|stderr|
+ * closed/{id}`.
+ */
+export function runnerOpen(
+  id: string,
+  kind: RunnerKind,
+  model?: string,
+  cwd?: string,
+): Promise<void> {
+  return call<void>("runner_open", { id, kind, model, cwd });
+}
+
+/**
+ * Envoie un TOUR utilisateur au runner `id` : Rust enveloppe `text` en message NDJSON
+ * `{"type":"user",…}` et l'écrit sur le MÊME stdin long-vécu (enchaînement des tours).
+ */
+export function runnerWrite(id: string, text: string): Promise<void> {
+  return call<void>("runner_write", { id, text });
+}
+
+/** Interrompt l'outil en cours du runner `id` (`{"type":"interrupt"}` = `esc` ; le process survit). */
+export function runnerInterrupt(id: string): Promise<void> {
+  return call<void>("runner_interrupt", { id });
+}
+
+/** Ferme la session runner `id` (ferme stdin + termine le process). */
+export function runnerClose(id: string): Promise<void> {
+  return call<void>("runner_close", { id });
+}
+
+/**
+ * S'abonne au FLUX BRUT du runner (`runner://raw/{id}`) — chaque ligne stdout du chef
+ * (NDJSON verbatim en P1) à écrire dans la surface xterm. Désabonnement à appeler au
+ * nettoyage. SEUL endroit autorisé à `listen` (miroir D6/D7).
+ */
+export function onRunnerRaw(
+  id: string,
+  cb: (line: string) => void,
+): Promise<UnlistenFn> {
+  return listen<string>(`runner://raw/${id}`, (e) => cb(e.payload));
+}
+
+/** S'abonne au flux stderr du runner (`runner://stderr/{id}`, diagnostics routés à part). */
+export function onRunnerStderr(
+  id: string,
+  cb: (line: string) => void,
+): Promise<UnlistenFn> {
+  return listen<string>(`runner://stderr/${id}`, (e) => cb(e.payload));
+}
+
+/** S'abonne à la fin du runner (`runner://closed/{id}`, EOF stdout / process terminé). */
+export function onRunnerClosed(
+  id: string,
+  cb: () => void,
+): Promise<UnlistenFn> {
+  return listen<void>(`runner://closed/${id}`, () => cb());
+}
+
 /**
  * Façade backend. Exposée en objet pour faciliter le mock dans les tests, en plus
  * des exports nommés (utilisés directement par les hooks/composants en L2).
@@ -464,6 +535,13 @@ export const backend = {
   ptyClose,
   onPtyOutput,
   onPtyClosed,
+  runnerOpen,
+  runnerWrite,
+  runnerInterrupt,
+  runnerClose,
+  onRunnerRaw,
+  onRunnerStderr,
+  onRunnerClosed,
 };
 
 export type Backend = typeof backend;

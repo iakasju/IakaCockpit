@@ -1,6 +1,6 @@
 /**
  * App.tsx — SHELL DE NAVIGATION (D1/D6). Pas de god-component : l'état métier
- * vit dans des hooks séparés (usePortfolio, useGridState, useWorkset, usePty,
+ * vit dans des hooks séparés (usePortfolio, useGridState, useWorkset, useRunner,
  * useSettings, useServices) ; App ne fait que câbler et router les 3 vues.
  *
  * Aucun `invoke`/`listen` ici (ni nulle part hors `backend.ts`). Les vues sont
@@ -11,7 +11,7 @@ import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
 import { useWorkset } from "./hooks/useWorkset";
-import { usePty } from "./hooks/usePty";
+import { useRunner } from "./hooks/useRunner";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
@@ -29,7 +29,7 @@ export default function App(): JSX.Element {
   const grid = useGridState();
   const conversations = useConversations();
   const workset = useWorkset();
-  const pty = usePty();
+  const runner = useRunner();
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
@@ -125,7 +125,7 @@ export default function App(): JSX.Element {
             worksetProjects={worksetProjects}
             conversations={conversations.conversations}
             active={conversations.active}
-            pty={pty}
+            runner={runner}
             nextStepResult={nextStep.result}
             nextStepLoading={nextStep.loading}
             nextStepError={nextStep.error}

@@ -20,8 +20,8 @@ import type {
   ConvMode,
 } from "../hooks/useConversations";
 import { mentionPrefix, parseMention } from "../hooks/useConversations";
-import type { UsePty } from "../hooks/usePty";
-import { PtyTerminal } from "../components/PtyTerminal";
+import type { UseRunner } from "../hooks/useRunner";
+import { RunnerTerminal } from "../components/RunnerTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
@@ -31,7 +31,12 @@ export interface WorkingViewProps {
   worksetProjects: Project[];
   conversations: Conversation[];
   active: Conversation | null;
-  pty: UsePty;
+  /**
+   * Hook chef-runner (L10) : le terminal-source (vue « Shell ») lance `claude` en
+   * pipes et rend son flux brut. Remplace l'ancien PTY shell pour le chef-runner ;
+   * `usePty`/`terminal.rs` restent disponibles pour le shell legacy (hors L10 P1).
+   */
+  runner: UseRunner;
   /** État du moteur « prochaine étape » (L3, conservé — D5). */
   nextStepResult: NextStep | null;
   nextStepLoading: boolean;
@@ -51,7 +56,7 @@ export function WorkingView({
   worksetProjects,
   conversations,
   active,
-  pty,
+  runner,
   nextStepResult,
   nextStepLoading,
   nextStepError,
@@ -161,6 +166,18 @@ export function WorkingView({
                   Shell
                 </button>
               </div>
+              {active.mode === "shell" && (
+                <button
+                  type="button"
+                  className="btn sm"
+                  title="Interrompre l'outil en cours du chef-runner (esc)"
+                  onClick={() =>
+                    void runner.interrupt(active.ptySessionId)
+                  }
+                >
+                  Interrompre (esc)
+                </button>
+              )}
               <button
                 type="button"
                 className={`btn sm${showNextStep ? " accent" : ""}`}
@@ -183,10 +200,12 @@ export function WorkingView({
 
             <div className="convbody">
               {/*
-                Le PTY est MONTÉ UNE FOIS par conversation et MASQUÉ en CSS quand
-                mode=chat (R-L8-1/D4) — JAMAIS démonté (sinon pty.close → shell mort).
-                On boucle sur toutes les conversations pour garder chaque shell vivant
-                en arrière-plan même quand on change de projet actif.
+                Le chef-runner (terminal-source L10) est MONTÉ UNE FOIS par
+                conversation et MASQUÉ en CSS quand mode=chat (R-L8-1/D4) — JAMAIS
+                démonté (sinon runner.close → process tué). On boucle sur toutes les
+                conversations pour garder chaque runner vivant en arrière-plan même
+                quand on change de projet actif. La surface (RunnerTerminal) rend le
+                FLUX BRUT et reste typeable (frappe → tour ; esc → interruption).
               */}
               {conversations.map((c) => {
                 const visible =
@@ -198,10 +217,10 @@ export function WorkingView({
                     style={{ display: visible ? "block" : "none" }}
                     aria-hidden={!visible}
                   >
-                    <PtyTerminal
+                    <RunnerTerminal
                       sessionId={c.ptySessionId}
                       cwd={c.cwd}
-                      pty={pty}
+                      runner={runner}
                     />
                   </div>
                 );
