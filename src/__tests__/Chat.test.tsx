@@ -158,6 +158,106 @@ describe("Chat — bulles + saisie (L8/D2)", () => {
     expect(screen.getByText("Aragorn")).toBeTruthy();
   });
 
+  it("L9 fix : l'avatar de chaque bulle vient de turn.agent (émetteur figé), pas de l'agent courant", () => {
+    // Trace réelle : un tour d'Aragorn puis un tour de Gandalf.
+    const traced: ChatTurn[] = [
+      { role: "user", content: "cadre le lot" },
+      { role: "assistant", content: "je délègue", agent: "Aragorn" },
+      { role: "assistant", content: "cadrage fait", agent: "Gandalf" },
+    ];
+    const resolveAvatar = (a: string) => `/assets/${a.toLowerCase()}.png`;
+    render(
+      <Chat
+        history={traced}
+        agent="Gimli" // agent COURANT volontairement différent des émetteurs.
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={resolveAvatar}
+      />,
+    );
+    // Chaque bulle porte l'avatar + le nom de SON émetteur, pas de l'agent courant.
+    expect(screen.getByAltText("Aragorn")).toBeTruthy();
+    expect(screen.getByAltText("Gandalf")).toBeTruthy();
+    expect(screen.queryByAltText("Gimli")).toBeNull();
+    // bwho par tour : on retrouve bien Aragorn ET Gandalf comme noms d'émetteur.
+    const bubbles = document.querySelectorAll(".bubble.them .bwho");
+    const names = Array.from(bubbles).map((n) => n.textContent);
+    expect(names).toEqual(["Aragorn", "Gandalf"]);
+  });
+
+  it("L9 fix (CŒUR DU BUG) : changer l'agent courant NE CHANGE PAS les avatars des tours déjà présents", () => {
+    const traced: ChatTurn[] = [
+      { role: "assistant", content: "tour 1", agent: "Aragorn" },
+      { role: "assistant", content: "tour 2", agent: "Gandalf" },
+    ];
+    const resolveAvatar = (a: string) => `/assets/${a.toLowerCase()}.png`;
+    const props = {
+      history: traced,
+      pending: false,
+      error: null,
+      draft: "",
+      onDraftChange: () => {},
+      onSend: () => {},
+      resolveAvatar,
+    };
+    const { rerender } = render(<Chat {...props} agent="Aragorn" />);
+
+    const srcsBefore = (
+      screen.getAllByRole("img") as HTMLImageElement[]
+    ).map((i) => i.getAttribute("src"));
+    expect(srcsBefore).toEqual([
+      "/assets/aragorn.png",
+      "/assets/gandalf.png",
+    ]);
+
+    // L'utilisateur clique un NOUVEL agent → l'agent courant de la conv change.
+    rerender(<Chat {...props} agent="Legolas" />);
+
+    const srcsAfter = (
+      screen.getAllByRole("img") as HTMLImageElement[]
+    ).map((i) => i.getAttribute("src"));
+    // Cœur du bug : les avatars des tours passés sont IDENTIQUES (trace intacte).
+    expect(srcsAfter).toEqual(srcsBefore);
+    // Aucun avatar n'a basculé sur le nouvel interlocuteur.
+    expect(screen.queryByAltText("Legolas")).toBeNull();
+  });
+
+  it("L9 fix : sans turn.agent (tour L8 legacy) → fallback sur la persona courante", () => {
+    const legacy: ChatTurn[] = [
+      { role: "assistant", content: "ancien tour sans émetteur" },
+    ];
+    const { rerender } = render(
+      <Chat
+        history={legacy}
+        agent="Aragorn"
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={(a) => `/assets/${a.toLowerCase()}.png`}
+      />,
+    );
+    expect(screen.getByAltText("Aragorn")).toBeTruthy();
+    // Rétro-compat assumée : un tour SANS émetteur suit la persona courante.
+    rerender(
+      <Chat
+        history={legacy}
+        agent="Gandalf"
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={(a) => `/assets/${a.toLowerCase()}.png`}
+      />,
+    );
+    expect(screen.getByAltText("Gandalf")).toBeTruthy();
+  });
+
   it("L9-A2 fallback : onError sur l'avatar → l'image disparaît, jamais cassée", () => {
     render(
       <Chat

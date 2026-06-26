@@ -52,6 +52,24 @@ describe("demoConversation — historique préchargé (L9-C.1)", () => {
     expect(occurrences.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("L9 fix : chaque tour assistant porte son ÉMETTEUR figé (Aragorn/Gandalf), les tours user n'en ont pas", () => {
+    for (const t of DEMO_HISTORY) {
+      if (t.role === "user") {
+        expect(t.agent).toBeUndefined();
+        continue;
+      }
+      // Cohérence émetteur ↔ badge dans le contenu : l'avatar par-tour sera correct.
+      const badge = t.agent === "Gandalf" ? "[CADRAGE][Gandalf]" : "[ACCUEIL][Aragorn]";
+      expect(["Aragorn", "Gandalf"]).toContain(t.agent);
+      expect(t.content).toContain(badge);
+    }
+    // La scène alterne bien les émetteurs (délégation → rapport → restitution).
+    const emitters = DEMO_HISTORY.filter((t) => t.role === "assistant").map(
+      (t) => t.agent,
+    );
+    expect(emitters).toEqual(["Aragorn", "Gandalf", "Aragorn"]);
+  });
+
   it("DEMO_HISTORY_AGENTS expose les paires (royaume,agent) de la scène", () => {
     expect(DEMO_HISTORY_AGENTS).toEqual(
       expect.arrayContaining([

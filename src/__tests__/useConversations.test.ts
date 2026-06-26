@@ -127,15 +127,59 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
     });
 
     const conv = result.current.conversations[0];
+    // L9 fix : le tour assistant porte désormais son émetteur figé (`agent`).
     expect(conv.history).toEqual([
       { role: "user", content: "Bonjour" },
-      { role: "assistant", content: "Voici la réponse." },
+      { role: "assistant", content: "Voici la réponse.", agent: "Aragorn" },
     ]);
     expect(conv.pending).toBe(false);
     // L'historique (tour user) est bien passé à la commande.
     expect(api.chat).toHaveBeenCalledWith("/root/p1", "Aragorn", [
       { role: "user", content: "Bonjour" },
     ]);
+  });
+
+  it("L9 fix : le tour assistant FIGE son émetteur (turn.agent), le tour user reste sans agent", async () => {
+    const api = makeApi(async () => ({
+      content: "réponse de Gandalf",
+      provider: "mock",
+      model: null,
+      tokens_in: null,
+      tokens_out: null,
+    }));
+    const { result } = renderHook(() => useConversations(api));
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+
+    await act(async () => {
+      await result.current.send("p1", "Gandalf", "@Gandalf : cadre");
+    });
+
+    const conv = result.current.conversations[0];
+    expect(conv.history[0]).toMatchObject({ role: "user" });
+    expect(conv.history[0].agent).toBeUndefined();
+    expect(conv.history[1]).toMatchObject({
+      role: "assistant",
+      agent: "Gandalf",
+    });
+  });
+
+  it("L9 fix (CŒUR DU BUG) : changer l'agent courant NE MODIFIE PAS l'émetteur des tours déjà présents", async () => {
+    const api = makeApi();
+    const { result } = renderHook(() => useConversations(api));
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+
+    // Un tour produit PAR Aragorn.
+    await act(async () => {
+      await result.current.send("p1", "Aragorn", "salut");
+    });
+    // Puis l'utilisateur change d'interlocuteur (clic roster / @agent).
+    act(() => result.current.setAgent("p1", "Legolas"));
+
+    const conv = result.current.conversations[0];
+    // L'émetteur du tour assistant déjà présent reste Aragorn (trace intacte).
+    expect(conv.history[1].agent).toBe("Aragorn");
+    // La persona COURANTE a bien changé (comportement L8 conservé).
+    expect(conv.agent).toBe("Legolas");
   });
 
   it("send est multi-tours : le 2e message inclut l'historique précédent", async () => {
