@@ -2,10 +2,11 @@
 
 > Rédigé par 🧙 Gandalf (P1 — cadrage). Consommé par 🪓 Gimli (exécution, P2), gate 🏹 Legolas (P3).
 > **Statut : RE-CADRÉ EN PROFONDEUR (2026-06-26) — VIRAGE D'ARCHITECTURE acté par Stéphane et PROUVÉ
-> par deux spikes.** L'approche `stream-json` en **pipes** (P0/P1, `runner.rs`) est **abandonnée comme
-> voie principale** ; la cible — désormais **prouvée end-to-end (spike L10b)** — est **le runner en TUI
-> NATIVE interactive dans un PTY**, et **les vues dérivent du TRANSCRIPT JSONL** que Claude Code écrit
-> en direct sur disque. Voir le **§ Journal de décision** (le virage, ses raisons, les commits).
+> par deux spikes ; les 6 ARBITRAGES sont TRANCHÉS (§ 12).** L'approche `stream-json` en **pipes** (P0/P1,
+> `runner.rs`) est **abandonnée comme voie principale** ; la cible — désormais **prouvée end-to-end (spike
+> L10b)** — est **le runner en TUI NATIVE interactive dans un PTY**, et **les vues dérivent du TRANSCRIPT
+> JSONL** que Claude Code écrit en direct sur disque. **Gate fin acté : L10a (P1) puis L10b (P2+P3).**
+> Voir le **§ Journal de décision** (le virage, ses raisons, les commits).
 > Doc en français, code/identifiants en anglais. **Lot structurant #10** de MOVE 3.
 >
 > **Source de vérité (à relire en premier) :** `specs/PROJET.md` **§ 0 — Modèle produit** (révision
@@ -138,7 +139,7 @@ déformation** : passer à N runners réels devra être une **extension** de la 
 - **Délégations** : un `tool_use` `name=="Task"` (+ records `isSidechain:true` pour le fil du sous-agent)
   matérialise une délégation. ⚠️ **NON prouvé live** : aucun sous-agent `Task` n'a été spawné pendant le
   spike (les tours testés = parole + `ls`). **À confirmer par un run dédié** avant de fermer le widget
-  délégations (cf. § 9 Risques + § 10 À arbitrer).
+  délégations (arbitrage #1 tranché : cf. § 6 L10b/P2 + § 11 risque (a) + § 12).
 - **Trust** : un cwd **sous un dossier trusté** hérite la confiance. Cas **non-trusté** : le spike
   auto-acceptait le dialogue (Enter) ; **en prod, la TUI étant interactive, le dialogue de confiance
   peut simplement s'afficher dans le PTY** et Stéphane répond nativement (cohérent « terminal = seul
@@ -158,7 +159,7 @@ déformation** : passer à N runners réels devra être une **extension** de la 
 | **Roster team** | `src/components/Roster.tsx`, `src/mock/demoTeam.ts` | **Réutilisé** : personas que le chef incarne ; clic → `@agent` ; **statut « travaille/attend » dérivable du transcript** (tool_use sans tool_result = en cours). |
 | **Vue Working** | `src/views/WorkingView.tsx` | **Remaniée** : toggle Chat/Shell = **deux vues d'une même session-runner**. |
 | **Façade** | `src/api/backend.ts` (D7, unique `invoke`/`listen`) | **Étendue** : commande d'ouverture runner-PTY + abonnement `runner://event` (vue filtrée). **Aucun `invoke`/`listen` hors façade.** |
-| **Client IA L3/L8** | `src-tauri/src/ai.rs` (`next_step`, `chat`) | **`next_step` (L3) CONSERVÉ** (moteur prochaine étape, orthogonal). **`chat` L8** : sort à clarifier (§ 5.4 + À arbitrer #3) — candidat à **devenir la « source de vues » du runner Ollama**, pas forcément à supprimer. |
+| **Client IA L3/L8** | `src-tauri/src/ai.rs` (`next_step`, `chat`) | **`next_step` (L3) CONSERVÉ** (moteur prochaine étape, orthogonal). **`chat` L8** : **reframé** (arbitrage #3 tranché, § 5.4) en **« source de vues » du cas Ollama** (`ConversationSource`) — ni supprimé, ni inerte. |
 
 ---
 
@@ -217,6 +218,19 @@ La couture runner est l'extension critique (PROJET § 2.3) : passer de 1 à N ru
 - **Pas de god-component** : un hook dédié (`useRunnerSession` ou évolution de `useConversations`).
 - **MVP d'abord** : historique en mémoire (persistance différée) ; un seul runner réel (le chef).
 
+### 4.5 Permissions du chef-runner — ALLOWLIST EXPLICITE (arbitrage #2 tranché) + PRÉ-REQUIS TRUST
+- **Politique = allowlist explicite** : le chef-runner est lancé avec **`--allowedTools <cadré>`**, défaut
+  **lecture/exploration `Read,Glob,Grep,Bash`** (cohérent avec `PermissionPolicy::AllowList` du `runner.rs`
+  parqué). **Pas** de `--dangerously-skip-permissions`, **pas** de prompt-dans-la-TUI. La liste devient
+  **éditable en config** (L10b/P3) ; en **L10a** elle est posée en **constante cadrée**.
+- **⚠️ PRÉ-REQUIS TRUST (effet de bord prouvé au spike).** Si le **cwd n'est pas trusté**, le CLI
+  **IGNORE l'allowlist** (`Ignoring N permissions.allow entries… not trusted`). Donc **l'allowlist
+  n'a d'effet que sur un workspace trusté** : L10a doit (a) **détecter/assurer le trust du cwd** avant de
+  s'appuyer sur l'allowlist, et (b) gérer le **dialogue de confiance** s'il s'affiche dans la TUI (le PTY
+  étant interactif, Stéphane peut répondre — mais l'auto-lancement ne doit pas **bloquer silencieusement**,
+  cf. risque (f)). Cadrer le mode de trust (héritage d'un dossier parent trusté / réglage cockpit) est
+  un point de **L10a**.
+
 ---
 
 ## 5. Migration depuis L8 (ce qu'on garde / remplace)
@@ -241,13 +255,14 @@ La couture runner est l'extension critique (PROJET § 2.3) : passer de 1 à N ru
   programmatique / futur runner sans TUI), **hors du chemin conversation principal**. **Ne pas le brancher**
   dans la vue ; **ne pas le jeter**. Une note dans son en-tête doit pointer vers ce virage (L10b).
 
-### 5.4 `ai.rs chat` (L8) — sort à clarifier (À arbitrer #3)
+### 5.4 `ai.rs chat` (L8) — REFRAMÉ source de vues Ollama (arbitrage #3 tranché)
 - Sous la cible **Claude Code**, le chat = projection du **transcript** : `ai.rs chat` n'est **plus** le
   moteur de la conversation Claude Code.
-- **MAIS** le cas **Ollama** garde des **appels API** : `ai.rs chat` est le **candidat naturel** pour être
-  la **« source de vues » du runner Ollama** (§ 4.2). → **Recommandation Gandalf : ne PAS supprimer `chat`
-  maintenant** ; le **reframer/parquer** comme adaptateur Ollama de `ConversationSource` (branché hors
-  L10). Décision à Stéphane.
+- **Décision Stéphane** : `ai.rs chat` est **reframé** comme **« source de vues » du cas Ollama**
+  (implémentation **Ollama de `ConversationSource`**, § 4.2) — c'est NOUS qui émettons les messages
+  (request/response), donc la source est le **log de nos appels**, sans fichier à tailer. **Ni supprimé,
+  ni inerte** : conservé et rangé sous l'interface, **branché hors L10** (Ollama = cible). En L10b on
+  **n'appelle pas** `chat` dans le chemin Claude Code, mais on **pose l'interface** qui l'accueillera.
 - **`next_step` (L3) — CONSERVÉ tel quel.** `NextStepPanel` reste disponible dans la vue session.
 
 ---
@@ -266,54 +281,70 @@ La couture runner est l'extension critique (PROJET § 2.3) : passer de 1 à N ru
 ### P0bis — SPIKE Codex/ChatGPT (PRÉALABLE au runner Codex — hors étape actuelle)
 - CLI **non installé** : installer/évaluer, vérifier l'existence et le schéma d'un **fichier de session**
   (p.ex. `~/.codex/sessions/...`), son écriture **live**, sa parsabilité. **Bloque uniquement** le
-  branchement du runner Codex (cible) — **ne bloque pas** P1/P2 (chef = Claude Code). À programmer quand
-  Stéphane prend le runner Codex.
+  branchement du runner Codex (cible) — **ne bloque pas** L10a/L10b (chef = Claude Code). À programmer
+  quand Stéphane prend le runner Codex.
 
-### P1 — Couture runner-PTY + AUTO-LANCEMENT hands-off (chef = Claude Code en TUI native)
+> **Gate FIN acté (arbitrage #6)** : **L10a (P1)** puis **L10b (P2+P3)**, **deux gates Legolas distincts**.
+
+### L10a (P1) — Couture runner-PTY + AUTO-LANCEMENT hands-off + scrub env + allowlist → **gate Legolas**
 - **Étendre `terminal.rs`** : `RunnerSpec` (kind `claude-code`/`shell`) ; `pty_open` (ou `runner_open`)
-  spawne `claude --session-id <uuid pré-généré> --model <m> [permissions]` avec **`current_dir =
-  validate_cwd(cwd)`** et **ENV SCRUBBÉ** (`CLAUDE_CODE_*`, `CLAUDECODE`, …). Résolution `claude` par OS
-  (modèle `shell.rs`). **PTY inchangé pour le reste** ; `default_shell()` reste le repli `shell`.
+  spawne `claude --session-id <uuid pré-généré> --model <m> --allowedTools Read,Glob,Grep,Bash` avec
+  **`current_dir = validate_cwd(cwd)`** et **ENV SCRUBBÉ** (`CLAUDE_CODE_*`, `CLAUDECODE`, …). Résolution
+  `claude` par OS (modèle `shell.rs`). **PTY inchangé pour le reste** ; `default_shell()` reste le repli `shell`.
+- **Allowlist explicite (arbitrage #2, § 4.5)** : `--allowedTools` cadré en **constante** (liste éditable
+  reportée en P3). **PRÉ-REQUIS TRUST** : assurer/détecter le **trust du cwd** (sinon le CLI ignore
+  l'allowlist) ; gérer le **dialogue de confiance** dans la TUI sans bloquer l'auto-lancement.
 - **Façade `backend.ts`** : commande d'ouverture runner (renvoie le `session_id`) + helpers existants PTY.
 - **`PtyTerminal`** : **inchangé sur le fond** — il rend la **TUI native** (`pty://output`), la frappe va
   au stdin. (C'est le **vrai** `claude` : `Shift+Tab`, `esc`, dialogues de permission/confiance marchent.)
-- **Critère P1 (observable) :** ouvrir un projet dans Working **lance `claude` en TUI native dans son cwd**,
+- **Critère L10a (observable) :** ouvrir un projet dans Working **lance `claude` en TUI native dans son cwd**,
   **sans aucune manip** (pas de `cd`, pas de taper `claude`) ; les **réflexes natifs** fonctionnent
-  (`Shift+Tab` automode, `esc`, la box) ; **un transcript apparaît** sous `~/.claude/projects/<escaped>/
-  <session_id>.jsonl` (preuve du scrub env). (Settings globaux + set par défaut.)
+  (`Shift+Tab` automode, `esc`, la box) ; l'**allowlist est effective** (workspace trusté) ; **un transcript
+  apparaît** sous `~/.claude/projects/<escaped>/<session_id>.jsonl` (preuve du scrub env). (Settings globaux
+  + set par défaut.) → **Gate Legolas L10a.**
 
-### P2 — Tailer transcript + vues filtrées (paroles / gestes / délégations / activité) + entrée partagée
+### L10b (P2) — Tailer transcript + vues filtrées (paroles / gestes / délégations / activité) + entrée partagée
 - **Tailer côté Rust** (§ 4.3) : escaping, attente création, tail live, parse défensif → events typés,
   émission `runner://event/{session_id}`. **Interface `ConversationSource`** posée (§ 4.2), implémentation
-  **Claude Code** branchée (Ollama/Codex = adaptateurs futurs, non branchés).
+  **Claude Code** branchée ; **adaptateur Ollama = `ai.rs chat` reframé** (interface posée, non branché ;
+  arbitrage #3) ; Codex = futur (après P0bis).
 - **Vue filtrée** : `runner://event` → `ChatTurn` (parole = `assistant.text` ; comptes-rendus **verbatim**
-  attribués par badge `[ROYAUME][Agent]`) ; **gestes** et **délégations** (`Task`/`isSidechain`) captés et
-  rendus (au minimum tracés ; widget délégation = MVP). **Pensée** masquable.
-- **Entrée partagée** : saisie unique → écho chat (`user`) + `pty_write` (frappe + `\r`) ; `@agent`
-  préfixe le texte injecté ; toggle **chat-vue ⇄ terminal-source** de la **même** session.
-- **Migration** `useConversations`/`Chat` (§ 5) ; `ai.rs chat` reframé/parqué (selon #3).
-- **Critère P2 (observable) :** taper dans le chat l'affiche ET pilote le chef (le transcript reflète la
-  saisie) ; les **réponses et comptes-rendus verbatim** du chef remontent en bulles **attribuées** ; les
-  **gestes** (et **délégations** si confirmées live, cf. risque) apparaissent ; basculer chat↔terminal
-  montre la **même** session.
+  attribués par badge `[ROYAUME][Agent]`) ; **gestes** captés et rendus. **Pensée** masquable.
+- **Délégations (arbitrage #1)** : capter `Task`/`isSidechain` ; **RUN DE CONFIRMATION LIVE dédié**
+  (faire réellement déléguer le chef) **AVANT** de fermer le **widget délégations** — le widget est dans
+  le périmètre L10b **mais conditionné** à cette preuve (cf. risque (a)). Si non confirmé à temps : capter/
+  tracer en MVP, widget finalisé sur preuve.
+- **Entrée partagée** : saisie unique → écho chat (`user`) + `pty_write` (frappe + `\r`) ; **`@agent` =
+  préfixe VERBATIM injecté** (arbitrage #5 — aucune traduction côté cockpit) ; toggle **chat-vue ⇄
+  terminal-source** de la **même** session.
+- **Bouton esc côté chat (arbitrage #4)** : affordance **discrète** dans la vue chat qui **envoie `esc`
+  au PTY** (`pty_write` `\x1b`), **EN PLUS** de l'`esc` natif de la TUI (le terminal reste le point de
+  contrôle).
+- **Migration** `useConversations`/`Chat` (§ 5) ; `ai.rs chat` reframé (selon #3, non branché en L10).
+- **Critère L10b/P2 (observable) :** taper dans le chat l'affiche ET pilote le chef (le transcript reflète
+  la saisie) ; les **réponses et comptes-rendus verbatim** du chef remontent en bulles **attribuées** ; les
+  **gestes** (et **délégations** une fois confirmées live) apparaissent ; le **bouton esc chat** interrompt ;
+  basculer chat↔terminal montre la **même** session.
 
-### P3 — Réglages globaux (set par défaut) + finitions
+### L10b (P3) — Réglages globaux (set par défaut) + finitions → **gate Legolas**
 - Réglage **global** : runner par défaut (Claude Code) + **modèle** (clé config non sensible, réutilise
-  `config_*` L0 ; keychain si une clé devient requise) + **politique de permissions** (cf. À arbitrer #2).
-- Statut roster vivant dérivé du transcript ; affordance `esc` (cf. #4) ; canal **pensée** masquable ;
-  doc état des lieux + backlog `CLAUDE.md`. **PER-PROJET = hors L10 (cible).**
+  `config_*` L0 ; keychain si une clé devient requise) + **allowlist éditable** (`--allowedTools`, défaut
+  `Read,Glob,Grep,Bash` — arbitrage #2) + mode de **trust** du cwd.
+- Statut roster vivant dérivé du transcript ; bouton esc chat (cf. #4) finalisé ; canal **pensée**
+  masquable ; doc état des lieux + backlog `CLAUDE.md`. **PER-PROJET = hors L10 (cible).** → **Gate Legolas L10b.**
 
-**Différé explicite (cible, NON régressée) :** runners réels par agent / multi-runner (Ollama branché,
-Codex après P0bis) ; settings per-projet ; skills→frames ; volet graph délégation/jalons. (Découpage
-P1→P3 → lots L10a/L10b possible si Stéphane préfère gater plus fin — **À arbitrer #5**.)
+**Différé explicite (cible, NON régressée) :** runners réels par agent / multi-runner (Ollama branché via
+`ConversationSource`, Codex après P0bis) ; settings per-projet ; skills→frames ; volet graph délégation/
+jalons (la **trace** `Task`/`isSidechain` est captée en L10b/P2, l'**éditeur** de graph reste hors L10).
 
 ---
 
 ## 7. Fichiers concernés (prévision — Gimli affine)
 
-- `src-tauri/src/terminal.rs` — **étendu** : `RunnerSpec` + spawn runner (`claude --session-id … --model …`)
-  au lieu de `default_shell()` quand `kind==claude-code` ; **`current_dir = validate_cwd(cwd)`** ; **ENV
-  SCRUBBÉ** (`CLAUDE_CODE_*`/`CLAUDECODE`). PTY/`validate_cwd`/events `pty://*` **conservés**. `session_id`
+- `src-tauri/src/terminal.rs` — **étendu** : `RunnerSpec` + spawn runner (`claude --session-id … --model …
+  --allowedTools Read,Glob,Grep,Bash`) au lieu de `default_shell()` quand `kind==claude-code` ;
+  **`current_dir = validate_cwd(cwd)`** ; **ENV SCRUBBÉ** (`CLAUDE_CODE_*`/`CLAUDECODE`) ; **trust du cwd**
+  assuré (sinon allowlist ignorée, § 4.5). PTY/`validate_cwd`/events `pty://*` **conservés**. `session_id`
   pré-généré renvoyé au front. *(Naming : tension possible avec `runner.rs` parqué — Gimli tranche
   `runner_open` dans `terminal.rs` vs réemploi `pty_open` étendu ; ne PAS toucher `runner.rs` parqué.)*
 - `src-tauri/src/transcript.rs` *(nouveau)* — tailer JSONL : escaping path, attente création, tail live,
@@ -329,7 +360,8 @@ P1→P3 → lots L10a/L10b possible si Stéphane préfère gater plus fin — **
 - `src/components/{PtyTerminal,Chat,Roster}.tsx` — réutilisés (PtyTerminal **inchangé sur le fond** : il
   rend la TUI native).
 - `src/views/WorkingView.tsx` — toggle chat-vue ⇄ terminal-source d'une même session ; affordance esc.
-- `src-tauri/src/ai.rs` + `src/api/backend.ts` — `chat` L8 reframé/parqué (selon #3) ; `next_step` conservé.
+- `src-tauri/src/ai.rs` + `src/api/backend.ts` — `chat` L8 **reframé** source de vues Ollama (#3 tranché,
+  non branché en L10) ; `next_step` conservé.
 - `CLAUDE.md` — entrée backlog L10 (à mettre à jour après gate).
 - `specs/PROJET.md` — modèle déjà gravé § 0 (rien à changer au modèle). **À FAIRE (hors périmètre code,
   note de Gandalf)** : ajouter au **journal de décision de PROJET.md** une ligne actant le **virage**
@@ -400,26 +432,30 @@ P1→P3 → lots L10a/L10b possible si Stéphane préfère gater plus fin — **
 - **(f) Cas non-trusté** : en prod la TUI **affiche** le dialogue de confiance (interactif) — vérifier que
   ça ne **bloque pas** silencieusement l'auto-lancement (l'utilisateur répond dans le PTY).
 
-## 12. À ARBITRER (revient à Stéphane — gate)
+## 12. ARBITRAGES — **TRANCHÉS par Stéphane (2026-06-26)**
 
-1. **Délégations** : fermer le **widget délégation** en P2 (sous réserve du run de confirmation, risque (a))
-   ou le **différer** (capter/tracer seulement en P2, widget plus tard) ? — **OUVERT.**
-2. **Politique de permissions du chef-runner** : trois options —
-   (i) **laisser le prompt de permission remonter DANS la TUI** (le plus cohérent avec « terminal = seul
-   point de contrôle », et possible car la TUI est interactive — **reco Gandalf**) ;
-   (ii) `--permission-mode`/allowlist explicite (`--allowedTools`) sans bypass ;
-   (iii) `--dangerously-skip-permissions` (hands-off total — utilisé par le spike, **risqué** par défaut).
-   Touche la sécurité. — **OUVERT.**
-3. **Sort de `ai.rs chat` (L8) + Ollama** : **reframer/parquer** `chat` comme **source de vues du runner
-   Ollama** (reco — pas de suppression, prépare le multi-runner) vs **supprimer** (MVP, pas de code mort)
-   vs garder inerte. Clarifie aussi si le **chat Ollama** survit comme runner alternatif. — **OUVERT.**
-4. **Affordance `esc`** : la TUI a **déjà** `esc` natif. Faut-il **aussi** exposer un bouton « Interrompre »
-   côté vue chat (qui enverrait `esc` au PTY) — reco **oui, discret**, pour l'ergonomie chat — ou s'en
-   tenir au natif ? — **OUVERT.**
-5. **Sémantique `@agent`** : préfixe **verbatim** injecté au chef (reco — le chef délègue/incarne) vs
-   directive traduite côté cockpit. — **OUVERT.**
-6. **Granularité du gate** : un seul lot L10 (P1→P3) ou découpage **L10a (P1)** / **L10b (P2+P3)** ?
-   *(spikes faits.)* — **OUVERT.**
+> Les 6 points sont **RÉSOLUS**. Répercutés dans le phasage (§ 6), la plomberie (§ 4/§ 5) et les critères.
+
+1. **Délégations** — **RÉSOLU.** On **confirme `Task`/`isSidechain` par un run dédié** (faire déléguer le
+   chef) **AVANT** de fermer le widget délégations en **L10b**. **Pas différé** : le widget est dans le
+   périmètre L10b, mais **conditionné à la confirmation live** (cf. § 6 L10b + risque (a)).
+2. **Politique de permissions** — **RÉSOLU : ALLOWLIST EXPLICITE.** Le chef-runner est lancé avec
+   **`--allowedTools <cadré>`** (défaut lecture/exploration, type **`Read,Glob,Grep,Bash`** — cohérent
+   avec l'acquis `PermissionPolicy::AllowList` du `runner.rs` parqué). **PAS** le prompt-dans-la-TUI (reco
+   Gandalf **écartée**), **PAS** `--dangerously-skip-permissions`. **⚠️ Effet de bord observé au spike** :
+   si le workspace n'est **pas trusted**, le CLI **ignore l'allowlist** (`Ignoring N permissions.allow
+   entries… not trusted`) → **le trust du cwd est un PRÉ-REQUIS** de l'allowlist (cf. § 4.5 + risque (f)).
+   Branchement config fin (liste éditable) = **L10b/P3**.
+3. **`ai.rs chat` (L8) + Ollama** — **RÉSOLU.** `chat` est **reframé** comme **source de vues du cas
+   Ollama** (implémentation Ollama de `ConversationSource`, § 4.2) — **ni supprimé, ni inerte**. Branché
+   hors L10 (Ollama = cible), mais l'interface l'accueille.
+4. **Affordance `esc`** — **RÉSOLU : bouton esc discret côté chat EN PLUS** de l'`esc` natif de la TUI
+   (le bouton envoie `esc` au PTY). Le terminal reste le point de contrôle ; le chat offre l'ergonomie.
+5. **Sémantique `@agent`** — **RÉSOLU : préfixe VERBATIM injecté** au chef (le chef délègue/incarne ;
+   aucune traduction côté cockpit).
+6. **Granularité du gate** — **RÉSOLU : gate FIN — L10a (P1) puis L10b (P2+P3).** L10a = couture
+   runner-PTY + auto-launch dans le cwd + scrub env + allowlist → **gate Legolas**. L10b = tailer
+   transcript + vues + entrée partagée + réglages → **gate Legolas**. (cf. § 6.)
 
 ---
 
