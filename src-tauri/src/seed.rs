@@ -50,7 +50,10 @@ fn demo_config_targets() -> Vec<(&'static str, &'static str)> {
         (KEY_LITELLM_ENDPOINT, "http://localhost:11434/v1"),
         (crate::ai::KEY_LITELLM_MODEL, crate::ai::DEFAULT_MODEL),
         // L4 — main courante (stack Docker locale).
-        (crate::maincourante::KEY_COUCHDB_URL, "http://localhost:5984"),
+        (
+            crate::maincourante::KEY_COUCHDB_URL,
+            "http://localhost:5984",
+        ),
         (crate::maincourante::KEY_COUCHDB_DB, "conversations"),
         // L6 — canal adresse n8n (stack Docker locale).
         (
@@ -89,7 +92,9 @@ pub fn demo_seed_enabled() -> bool {
 
 /// Lecture de la variable d'env d'autorisation (`=="1"`). Testable sans recompiler.
 fn env_flag() -> bool {
-    std::env::var(ENV_SEED_FLAG).map(|v| v == "1").unwrap_or(false)
+    std::env::var(ENV_SEED_FLAG)
+        .map(|v| v == "1")
+        .unwrap_or(false)
 }
 
 /// Une valeur de config est-elle « absente » au sens du seed (à poser) ?
