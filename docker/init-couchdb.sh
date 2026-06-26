@@ -44,5 +44,14 @@ seed_doc "{\"ts\":\"${now}\",\"royaume\":\"CADRAGE\",\"agent\":\"Gandalf\",\"con
 seed_doc "{\"ts\":\"${now}\",\"royaume\":\"IAKACOCKPIT\",\"agent\":\"Gimli\",\"conv_id\":\"demo-1\",\"role\":\"assistant\",\"content\":\"Delegation Gandalf -> Gimli (geste).\",\"tokens\":12,\"meta\":{\"canal\":\"geste\"}}"
 seed_doc "{\"ts\":\"${now}\",\"royaume\":\"IAKACOCKPIT\",\"agent\":\"Legolas\",\"conv_id\":\"demo-1\",\"role\":\"user\",\"content\":\"Gate qualite L4 : PASS.\",\"tokens\":9,\"meta\":{}}"
 
+echo "== Seed L9 : conversation 'iaka-demo' (chaine de badges iakaframe) =="
+# COHERENT avec le chat preeche (src/mock/demoConversation.ts) : meme scene,
+# memes agents. Illustre delegation (canal geste) / rapport / restitution verbatim.
+# Le texte du rapport est CITE a l'identique dans la restitution (verbatim).
+report="Cadrage L9 ferme : 3 teams embarquees (lotr, avengers, starfleet), vignettes servies en self (CSP intacte), conversation preeche coherente chat <-> main courante."
+seed_doc "{\"ts\":\"${now}\",\"royaume\":\"ACCUEIL\",\"agent\":\"Aragorn\",\"conv_id\":\"iaka-demo\",\"role\":\"assistant\",\"content\":\"Cadrage L9 : je delegue a Gandalf.\",\"tokens\":11,\"meta\":{\"canal\":\"geste\",\"from\":\"Aragorn\",\"to\":\"Gandalf\"}}"
+seed_doc "{\"ts\":\"${now}\",\"royaume\":\"CADRAGE\",\"agent\":\"Gandalf\",\"conv_id\":\"iaka-demo\",\"role\":\"assistant\",\"content\":\"${report}\",\"tokens\":48,\"meta\":{\"kind\":\"rapport\"}}"
+seed_doc "{\"ts\":\"${now}\",\"royaume\":\"ACCUEIL\",\"agent\":\"Aragorn\",\"conv_id\":\"iaka-demo\",\"role\":\"assistant\",\"content\":\"Restitution verbatim [CADRAGE][Gandalf] : ${report}\",\"tokens\":52,\"meta\":{\"kind\":\"verbatim\",\"cite\":\"Gandalf\"}}"
+
 echo
 echo "OK. Fauxton : ${BASE}/_utils  (base : conversations)"
