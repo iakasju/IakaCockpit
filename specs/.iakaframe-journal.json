@@ -48,5 +48,15 @@
     "dirty": true,
     "files": 18778,
     "note": "L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%."
+  },
+  {
+    "date": "2026-06-26 09:32",
+    "reason": "version",
+    "version": "v0.7.0-rc",
+    "branch": "main",
+    "commit": "eab1684 docs(L8): instruction conversation projet (chat/shell + roster, arbitrages tranches)",
+    "dirty": true,
+    "files": 19420,
+    "note": "L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation)."
   }
 ]
