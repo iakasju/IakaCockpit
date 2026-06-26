@@ -84,9 +84,14 @@ export function Chat({
           </div>
         )}
         {history.map((turn, i) => {
+          // L9 fix avatar par-tour : l'émetteur est FIGÉ sur le tour (`turn.agent`).
+          // Fallback rétro-compat L8 : si absent, on retombe sur la persona courante.
+          // Changer l'interlocuteur ne re-rend donc PAS les avatars des tours passés.
+          const turnAgent =
+            turn.role === "assistant" ? (turn.agent ?? agent) : agent;
           const avatarUrl =
             turn.role === "assistant"
-              ? (resolveAvatar?.(agent) ?? null)
+              ? (resolveAvatar?.(turnAgent) ?? null)
               : null;
           return (
             <div
@@ -95,8 +100,10 @@ export function Chat({
             >
               {turn.role === "assistant" && (
                 <span className="bhead">
-                  {avatarUrl && <BubbleAvatar url={avatarUrl} alt={agent} />}
-                  <span className="bwho">{agent}</span>
+                  {avatarUrl && (
+                    <BubbleAvatar url={avatarUrl} alt={turnAgent} />
+                  )}
+                  <span className="bwho">{turnAgent}</span>
                 </span>
               )}
               <span className="btext">{turn.content}</span>
