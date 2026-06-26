@@ -22,8 +22,12 @@ describe("demoTeam — mise en scène démo (L7, AR-1)", () => {
     }
   });
 
+  it("chaque membre porte un roleIndex (mapping teams.json, L9)", () => {
+    expect(DEMO_TEAM.map((m) => m.roleIndex)).toEqual([0, 1, 2, 3, 4]);
+  });
+
   it("teamTabTitle produit un titre [ROYAUME][Agent] bien formé", () => {
-    expect(teamTabTitle({ royaume: "DEV", agent: "Gimli" })).toBe(
+    expect(teamTabTitle({ royaume: "DEV", agent: "Gimli", roleIndex: 3 })).toBe(
       "[DEV][Gimli]",
     );
     // Format respecté pour toute la team.

@@ -117,4 +117,63 @@ describe("Chat — bulles + saisie (L8/D2)", () => {
     });
     expect(onDraftChange).toHaveBeenCalledWith("@Gandalf : ");
   });
+
+  it("L9-A5 : affiche l'avatar de l'agent dans la bulle assistant (pas dans la bulle user)", () => {
+    const resolveAvatar = (agent: string) =>
+      `/assets/${agent.toLowerCase()}.png`;
+    render(
+      <Chat
+        history={HISTORY}
+        agent="Aragorn"
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={resolveAvatar}
+      />,
+    );
+    // Une seule image (la bulle assistant), pas pour la bulle user.
+    const imgs = screen.getAllByRole("img");
+    expect(imgs).toHaveLength(1);
+    expect(screen.getByAltText("Aragorn")).toBeTruthy();
+    // Le nom (bwho) reste affiché.
+    expect(screen.getByText("Aragorn")).toBeTruthy();
+  });
+
+  it("L9-A2 fallback : resolveAvatar=null → pas d'avatar (rendu L8), bwho conservé", () => {
+    render(
+      <Chat
+        history={HISTORY}
+        agent="Aragorn"
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={() => null}
+      />,
+    );
+    expect(screen.queryAllByRole("img")).toHaveLength(0);
+    expect(screen.getByText("Aragorn")).toBeTruthy();
+  });
+
+  it("L9-A2 fallback : onError sur l'avatar → l'image disparaît, jamais cassée", () => {
+    render(
+      <Chat
+        history={HISTORY}
+        agent="Aragorn"
+        pending={false}
+        error={null}
+        draft=""
+        onDraftChange={() => {}}
+        onSend={() => {}}
+        resolveAvatar={() => "/broken.png"}
+      />,
+    );
+    const img = screen.getByRole("img");
+    fireEvent.error(img);
+    expect(screen.queryAllByRole("img")).toHaveLength(0);
+    expect(screen.getByText("Aragorn")).toBeTruthy();
+  });
 });

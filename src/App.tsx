@@ -19,6 +19,7 @@ import { useDemoSeed } from "./hooks/useDemoSeed";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView } from "./views/WorkingView";
 import { SettingsView } from "./views/SettingsView";
+import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { Project } from "./api/backend";
 import "./theme/tokens.css";
 import "./theme/app.css";
@@ -48,6 +49,13 @@ export default function App(): JSX.Element {
   const worksetProjects = useMemo<Project[]>(
     () => portfolio.projects.filter((p) => workset.ids.has(p.id)),
     [portfolio.projects, workset.ids],
+  );
+
+  // Résolveur d'avatar (L9) : charte = thème app courant, team = ui_team.
+  // Passé en prop aux vues/composants présentationnels (pas d'accès config en bas).
+  const resolveAvatar = useMemo(
+    () => makeAvatarResolver(settings.theme, settings.team),
+    [settings.theme, settings.team],
   );
 
   const openProject = (project: Project): void => {
@@ -129,6 +137,7 @@ export default function App(): JSX.Element {
               void conversations.send(projectId, agent, content)
             }
             onRequestNextStep={(path) => void nextStep.request(path)}
+            resolveAvatar={resolveAvatar}
           />
         )}
         {grid.activeView === "settings" && (

@@ -9,8 +9,9 @@
  *
  * Aucun I/O ici (D8) : l'appel `chat` vit dans `useConversations`/la façade.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatTurn } from "../hooks/useConversations";
+import type { AvatarResolver } from "../theme/teamAvatar";
 
 export interface ChatProps {
   /** Historique multi-tours (mémoire MVP). */
@@ -26,6 +27,25 @@ export interface ChatProps {
   onDraftChange: (value: string) => void;
   /** Envoie le contenu courant (le parent gère persona + appel). */
   onSend: (content: string) => void;
+  /**
+   * Résolveur d'avatar par nom d'agent (L9). `null`/absent → pas d'avatar (rendu
+   * L8 : juste `bwho`). JAMAIS d'image cassée (`onError` masque l'image).
+   */
+  resolveAvatar?: AvatarResolver;
+}
+
+/** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
+function BubbleAvatar({ url, alt }: { url: string; alt: string }): JSX.Element {
+  const [broken, setBroken] = useState(false);
+  if (broken) return <></>;
+  return (
+    <img
+      className="bavatar"
+      src={url}
+      alt={alt}
+      onError={() => setBroken(true)}
+    />
+  );
 }
 
 export function Chat({
@@ -36,6 +56,7 @@ export function Chat({
   draft,
   onDraftChange,
   onSend,
+  resolveAvatar,
 }: ChatProps): JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -62,20 +83,34 @@ export function Chat({
             renvoyée.
           </div>
         )}
-        {history.map((turn, i) => (
-          <div
-            key={i}
-            className={`bubble ${turn.role === "user" ? "me" : "them"}`}
-          >
-            {turn.role === "assistant" && (
-              <span className="bwho">{agent}</span>
-            )}
-            <span className="btext">{turn.content}</span>
-          </div>
-        ))}
+        {history.map((turn, i) => {
+          const avatarUrl =
+            turn.role === "assistant"
+              ? (resolveAvatar?.(agent) ?? null)
+              : null;
+          return (
+            <div
+              key={i}
+              className={`bubble ${turn.role === "user" ? "me" : "them"}`}
+            >
+              {turn.role === "assistant" && (
+                <span className="bhead">
+                  {avatarUrl && <BubbleAvatar url={avatarUrl} alt={agent} />}
+                  <span className="bwho">{agent}</span>
+                </span>
+              )}
+              <span className="btext">{turn.content}</span>
+            </div>
+          );
+        })}
         {pending && (
           <div className="bubble them pending" aria-live="polite">
-            <span className="bwho">{agent}</span>
+            <span className="bhead">
+              {resolveAvatar?.(agent) && (
+                <BubbleAvatar url={resolveAvatar(agent) as string} alt={agent} />
+              )}
+              <span className="bwho">{agent}</span>
+            </span>
             <span className="btext typing">…</span>
           </div>
         )}

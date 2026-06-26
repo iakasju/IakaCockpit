@@ -103,7 +103,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
           DEMO_PROJECT_ID,
           report.demo_path,
           undefined,
-          DEMO_HISTORY,
+          [...DEMO_HISTORY],
         );
       }
 

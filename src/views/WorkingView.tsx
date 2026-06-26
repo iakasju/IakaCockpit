@@ -25,6 +25,7 @@ import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
+import type { AvatarResolver } from "../theme/teamAvatar";
 
 export interface WorkingViewProps {
   worksetProjects: Project[];
@@ -42,6 +43,8 @@ export interface WorkingViewProps {
   /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
   onSend: (projectId: string, agent: string, content: string) => void;
   onRequestNextStep: (path: string) => void;
+  /** Résolveur d'avatar par nom d'agent (L9) — vignettes roster + chat. */
+  resolveAvatar?: AvatarResolver;
 }
 
 export function WorkingView({
@@ -58,6 +61,7 @@ export function WorkingView({
   onSetAgent,
   onSend,
   onRequestNextStep,
+  resolveAvatar,
 }: WorkingViewProps): JSX.Element {
   // Saisie par conversation (préfixe @agent au clic roster, D6).
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -212,6 +216,7 @@ export function WorkingView({
                   draft={draft}
                   onDraftChange={(v) => setDraft(active.projectId, v)}
                   onSend={sendActive}
+                  resolveAvatar={resolveAvatar}
                 />
               )}
             </div>
@@ -231,6 +236,7 @@ export function WorkingView({
           currentAgent={active.agent}
           pending={active.pending}
           onPick={pickAgent}
+          resolveAvatar={resolveAvatar}
         />
       )}
     </section>

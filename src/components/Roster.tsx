@@ -10,7 +10,9 @@
  * Statut = état LOCAL MVP (dérivé de `pending` + `currentAgent`), PAS un flux temps
  * réel (DEP-1). Aucun I/O ici (D8).
  */
+import { useState } from "react";
 import { DEMO_TEAM, teamBadge, type DemoTeamMember } from "../mock/demoTeam";
+import type { AvatarResolver } from "../theme/teamAvatar";
 
 export interface RosterProps {
   /** Agents affichés (défaut = DEMO_TEAM, AR-3). */
@@ -21,6 +23,25 @@ export interface RosterProps {
   pending: boolean;
   /** Clic sur un agent → adresser directement (`@agent:`). */
   onPick: (agent: string) => void;
+  /**
+   * Résolveur de vignette par nom d'agent (L9). `null`/absent → pastille seule
+   * (rendu L8). JAMAIS d'image cassée : `onError` retombe aussi sur la pastille.
+   */
+  resolveAvatar?: AvatarResolver;
+}
+
+/** Vignette ronde d'un agent + fallback pastille si absente / chargement KO. */
+function Avatar({ url, alt }: { url: string; alt: string }): JSX.Element {
+  const [broken, setBroken] = useState(false);
+  if (broken) return <></>;
+  return (
+    <img
+      className="ravatar"
+      src={url}
+      alt={alt}
+      onError={() => setBroken(true)}
+    />
+  );
 }
 
 export function Roster({
@@ -28,6 +49,7 @@ export function Roster({
   currentAgent,
   pending,
   onPick,
+  resolveAvatar,
 }: RosterProps): JSX.Element {
   return (
     <aside className="roster" aria-label="Team iakaframe">
@@ -37,6 +59,7 @@ export function Roster({
           const isCurrent = m.agent.toLowerCase() === currentAgent.toLowerCase();
           const working = isCurrent && pending;
           const status = working ? "travaille" : "attend";
+          const avatarUrl = resolveAvatar?.(m.agent) ?? null;
           return (
             <li key={m.agent}>
               <button
@@ -50,6 +73,8 @@ export function Roster({
                   className={`rstatus ${working ? "working" : "idle"}`}
                   aria-hidden
                 />
+                {avatarUrl && <Avatar url={avatarUrl} alt={m.agent} />}
+                {/* Pastille [ROYAUME][Agent] CONSERVÉE (identité iakaframe, légende). */}
                 <span className="rbadge">{teamBadge(m)}</span>
                 <span className="rstate">{status}</span>
               </button>
