@@ -150,10 +150,10 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       Lien vision : PROJET **§4 admin général** + **§5 canal adresse**. **Phase 1 = sortant seul** ;
       **bidirectionnel = Lot 2 différé**. À arbitrer : qui choisit le support actif (reco Cockpit),
       versionner le flow n8n de référence (reco oui). Est. ~2 j-homme.)*
-- [ ] **L7** — Seed démo dev (projet test + team lancée + config par défaut)
+- [x] **L7** — Seed démo dev (projet test + team lancée + config par défaut)
       → `specs/instructions/L7-seed-demo-dev.md`
-      *(**cadré, arbitrages AR-1..4 TRANCHÉS par Stéphane (2026-06-26) — PRÊT pour Gimli, NON démarré** ;
-      cadré par 🧙 Gandalf. Au lancement du **build DEV/TEST uniquement** (derrière flag `cfg!(dev)` OU
+      *(implémenté, **gate Legolas PASS** — 105/105 front + 118/118 Rust (dont 14 `seed`), candidate `v0.6.0-rc` ;
+      arbitrages AR-1..4 tranchés par Stéphane (2026-06-26), cadré par 🧙 Gandalf. Au lancement du **build DEV/TEST uniquement** (derrière flag `cfg!(dev)` OU
       `IAKACOCKPIT_DEMO_SEED=1` — **ZÉRO seed en prod**), l'app s'ouvre **déjà peuplée** : (1) **vrai dossier
       démo** `<chapeau>/iaka-demo` (mini-repo git réel via `git::capture`, `specs/` pour donner du contexte à
       L3), détecté par `scan_portfolio` (L1) ; (2) **team « lancée »** = **5 onglets** PTY titrés

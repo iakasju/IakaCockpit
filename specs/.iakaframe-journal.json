@@ -38,5 +38,15 @@
     "dirty": true,
     "files": 17734,
     "note": "L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider."
+  },
+  {
+    "date": "2026-06-26 08:25",
+    "reason": "version",
+    "version": "v0.6.0-rc",
+    "branch": "main",
+    "commit": "10cd7b7 docs(L7): instruction seed demo dev (arbitrages AR-1..4 tranches)",
+    "dirty": true,
+    "files": 18778,
+    "note": "L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%."
   }
 ]

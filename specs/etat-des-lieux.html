@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-26 00:01 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-06-26 08:25 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.5.0-rc</div>
+  <div class="k">Version</div><div>v0.6.0-rc</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>338f48e docs(L5): instruction tracage machine des delegations (BROUILLON, a valider)</code></div>
+  <div class="k">Dernier commit</div><div><code>10cd7b7 docs(L7): instruction seed demo dev (arbitrages AR-1..4 tranches)</code></div>
   <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>17734 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider.</div>
+  <div class="k">Fichiers</div><div>18778 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>338f48e</code></td><td>2026-06-26</td><td>docs(L5): instruction tracage machine des delegations (BROUILLON, a valider)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>10cd7b7</code></td><td>2026-06-26</td><td>docs(L7): instruction seed demo dev (arbitrages AR-1..4 tranches)</td></tr>
+<tr><td><code>947fb88</code></td><td>2026-06-26</td><td>chore(L7): cargo fmt seed.rs + entree backlog L7 (remise au gate Legolas)</td></tr>
+<tr><td><code>89f8fb6</code></td><td>2026-06-26</td><td>feat(L7): facade seedDemo + hook useDemoSeed + onglets team (bootstrap demo)</td></tr>
+<tr><td><code>2307d1b</code></td><td>2026-06-26</td><td>feat(L7): backend seed.rs — seed demo dev (dossier git + config) borne par flag dev</td></tr>
+<tr><td><code>1352f09</code></td><td>2026-06-26</td><td>feat(ui): slider taille de police jusqu'a 200% (max 140 -&gt; 200)</td></tr>
+<tr><td><code>09dd850</code></td><td>2026-06-26</td><td>docs(L6): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.5.0-rc)</td></tr>
+<tr><td><code>338f48e</code></td><td>2026-06-26</td><td>docs(L5): instruction tracage machine des delegations (BROUILLON, a valider)</td></tr>
 <tr><td><code>21daabe</code></td><td>2026-06-26</td><td>docs(L6): instruction canal adresse externe via n8n-passerelle (validee Stephane)</td></tr>
 <tr><td><code>2e10620</code></td><td>2026-06-26</td><td>chore(L6): service n8n local dans la stack docker (recette canal adresse)</td></tr>
 <tr><td><code>ad73377</code></td><td>2026-06-25</td><td>docs(L6): workflow n8n de reference (JSON sans credentials) + README import + fixtures mock</td></tr>
-<tr><td><code>a56dde3</code></td><td>2026-06-25</td><td>feat(L6): facade notifyUser/n8nSetToken/n8nHasToken + Reglages canal adresse n8n</td></tr>
-<tr><td><code>7275f1e</code></td><td>2026-06-25</td><td>feat(L6): module notify Rust — canal adresse sortant via webhook n8n</td></tr>
-<tr><td><code>6cf7a5b</code></td><td>2026-06-25</td><td>docs(L4): checkpoint gate Legolas PASS (+re-gate) — backlog + etat des lieux (candidate v0.4.0-rc)</td></tr>
-<tr><td><code>1918fb9</code></td><td>2026-06-25</td><td>chore(L4): harnais recette CouchDB local (service docker couchdb:3 + init/seed)</td></tr>
-<tr><td><code>5c6c80d</code></td><td>2026-06-25</td><td>fix(L4): tri Mango sur cle d'index complete (no_usable_index contre idx-maincourante)</td></tr>
-<tr><td><code>3361c00</code></td><td>2026-06-25</td><td>docs(L4): instruction validee mains-courantes (cadrage Gandalf)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-06-26 08:25</td><td><span class='r r-version'>version</span></td><td>v0.6.0-rc</td><td>main</td><td>L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%.</td></tr>
 <tr><td>2026-06-26 00:01</td><td><span class='r r-version'>version</span></td><td>v0.5.0-rc</td><td>main</td><td>L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider.</td></tr>
 <tr><td>2026-06-25 22:47</td><td><span class='r r-version'>version</span></td><td>v0.4.0-rc</td><td>main</td><td>L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet.</td></tr>
 <tr><td>2026-06-25 21:43</td><td><span class='r r-version'>version</span></td><td>v0.3.0-rc</td><td>main</td><td>L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM-&gt;Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet.</td></tr>
