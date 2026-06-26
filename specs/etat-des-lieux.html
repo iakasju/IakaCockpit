@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-26 10:38 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-06-26 14:01 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.8.0-rc</div>
+  <div class="k">Version</div><div>-</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>43f58ff docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</code></div>
-  <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>19501 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</div>
+  <div class="k">Dernier commit</div><div><code>c400476 docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog</code></div>
+  <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
+  <div class="k">Fichiers</div><div>19459 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>43f58ff</code></td><td>2026-06-26</td><td>docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>c400476</code></td><td>2026-06-26</td><td>docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog</td></tr>
+<tr><td><code>48d722d</code></td><td>2026-06-26</td><td>docs(vision): grave le modele produit corrige — terminal-source / chat-vue, chef-runner, agents runner+modele (PROJET.md)</td></tr>
+<tr><td><code>d56af0f</code></td><td>2026-06-26</td><td>test(L9): non-regression de la trace — changer d'agent ne change pas les avatars passes</td></tr>
+<tr><td><code>898c4f6</code></td><td>2026-06-26</td><td>fix(L9): historique demo — emetteur par tour (Aragorn/Gandalf)</td></tr>
+<tr><td><code>094ead9</code></td><td>2026-06-26</td><td>fix(L9): Chat resout l'avatar de chaque bulle depuis turn.agent</td></tr>
+<tr><td><code>60c42db</code></td><td>2026-06-26</td><td>fix(L9): avatar par-tour — emetteur fige sur ChatTurn (preserve la trace)</td></tr>
+<tr><td><code>879edb9</code></td><td>2026-06-26</td><td>docs(L9): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.8.0-rc)</td></tr>
+<tr><td><code>43f58ff</code></td><td>2026-06-26</td><td>docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</td></tr>
 <tr><td><code>4e2cf74</code></td><td>2026-06-26</td><td>test(L9): import du script CouchDB via ?raw (sans dependance @types/node)</td></tr>
 <tr><td><code>703a8fb</code></td><td>2026-06-26</td><td>test(L9): coherence chat&lt;-&gt;main courante (C4) + doc sync-vignettes (CLAUDE.md)</td></tr>
-<tr><td><code>4f5e7df</code></td><td>2026-06-26</td><td>feat(L9): rendu vignettes dans le roster + avatars dans le chat (fallback pastille)</td></tr>
-<tr><td><code>9ce110d</code></td><td>2026-06-26</td><td>feat(L9): cle config ui_team + selecteur team dans Reglages</td></tr>
-<tr><td><code>366a84a</code></td><td>2026-06-26</td><td>feat(L9): resolveur de vignette (charte, team, roleIndex) + roleIndex sur DEMO_TEAM</td></tr>
-<tr><td><code>c48c773</code></td><td>2026-06-26</td><td>chore(L9): script sync-vignettes + manifest (sous-ensemble naonedge x 3 teams)</td></tr>
-<tr><td><code>967749b</code></td><td>2026-06-26</td><td>feat(L9): main courante CouchDB enrichie (delegation geste / rapport / verbatim)</td></tr>
-<tr><td><code>7f853a2</code></td><td>2026-06-26</td><td>feat(L9): historique de chat demo precharge (chaine de badges iakaframe)</td></tr>
-<tr><td><code>5de5610</code></td><td>2026-06-26</td><td>feat(L9): openConversation accepte un historique initial (retro-compatible)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-06-26 14:01</td><td><span class='r r-pause'>pause</span></td><td>-</td><td>main</td><td>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</td></tr>
 <tr><td>2026-06-26 10:38</td><td><span class='r r-version'>version</span></td><td>v0.8.0-rc</td><td>main</td><td>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</td></tr>
 <tr><td>2026-06-26 09:32</td><td><span class='r r-version'>version</span></td><td>v0.7.0-rc</td><td>main</td><td>L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat&lt;-&gt;Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation).</td></tr>
 <tr><td>2026-06-26 08:25</td><td><span class='r r-version'>version</span></td><td>v0.6.0-rc</td><td>main</td><td>L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%.</td></tr>

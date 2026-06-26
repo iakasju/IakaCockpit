@@ -68,5 +68,15 @@
     "dirty": true,
     "files": 19501,
     "note": "L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte)."
+  },
+  {
+    "date": "2026-06-26 14:01",
+    "reason": "pause",
+    "version": "-",
+    "branch": "main",
+    "commit": "c400476 docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog",
+    "dirty": false,
+    "files": 19459,
+    "note": "Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue."
   }
 ]

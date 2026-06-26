@@ -1,58 +1,64 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-06-26 10:38 (motif: version).
+> Genere par iakaframe (CLI) le 2026-06-26 14:01 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.8.0-rc |
+| Version | - |
 | Branche | main |
-| Dernier commit | 43f58ff docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee) |
-| Arbre | MODIFICATIONS NON COMMITEES |
-| Fichiers (hors .git/node_modules) | 19501 |
-| Note | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte). |
+| Dernier commit | c400476 docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog |
+| Arbre | propre |
+| Fichiers (hors .git/node_modules) | 19459 |
+| Note | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `c400476` | 2026-06-26 | docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog |
+| `48d722d` | 2026-06-26 | docs(vision): grave le modele produit corrige — terminal-source / chat-vue, chef-runner, agents runner+modele (PROJET.md) |
+| `d56af0f` | 2026-06-26 | test(L9): non-regression de la trace — changer d'agent ne change pas les avatars passes |
+| `898c4f6` | 2026-06-26 | fix(L9): historique demo — emetteur par tour (Aragorn/Gandalf) |
+| `094ead9` | 2026-06-26 | fix(L9): Chat resout l'avatar de chaque bulle depuis turn.agent |
+| `60c42db` | 2026-06-26 | fix(L9): avatar par-tour — emetteur fige sur ChatTurn (preserve la trace) |
+| `879edb9` | 2026-06-26 | docs(L9): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.8.0-rc) |
 | `43f58ff` | 2026-06-26 | docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee) |
 | `4e2cf74` | 2026-06-26 | test(L9): import du script CouchDB via ?raw (sans dependance @types/node) |
 | `703a8fb` | 2026-06-26 | test(L9): coherence chat<->main courante (C4) + doc sync-vignettes (CLAUDE.md) |
-| `4f5e7df` | 2026-06-26 | feat(L9): rendu vignettes dans le roster + avatars dans le chat (fallback pastille) |
-| `9ce110d` | 2026-06-26 | feat(L9): cle config ui_team + selecteur team dans Reglages |
-| `366a84a` | 2026-06-26 | feat(L9): resolveur de vignette (charte, team, roleIndex) + roleIndex sur DEMO_TEAM |
-| `c48c773` | 2026-06-26 | chore(L9): script sync-vignettes + manifest (sous-ensemble naonedge x 3 teams) |
-| `967749b` | 2026-06-26 | feat(L9): main courante CouchDB enrichie (delegation geste / rapport / verbatim) |
-| `7f853a2` | 2026-06-26 | feat(L9): historique de chat demo precharge (chaine de badges iakaframe) |
-| `5de5610` | 2026-06-26 | feat(L9): openConversation accepte un historique initial (retro-compatible) |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : Lot **L9 — Demo enrichie** boucle (cadrage Gandalf -> dev Gimli -> gate
-  Legolas **PASS** : 170/170 front + 132/132 Rust). (B) `useDemoSeed` ajoute `iaka-demo` au **Set de Work**
-  (il apparait enfin dans Working). (C) **conversation prechargee coherente** : historique de chat mocke
-  (delegation Aragorn->Gandalf / rapport / **verbatim**) + main courante L4 enrichie (`init-couchdb.sh`,
-  meme sequence canal geste/rapport/verbatim, `conv_id:"iaka-demo"`). (A) **vignettes themees par team** :
-  charte x team x role, 3 teams (lotr/avengers/starfleet) naonedge dark+light, 30 PNG embarques en `'self'`
-  (CSP intacte), resolveur sur manifest genere depuis `teams.json`, selecteur `ui_team` en Reglages,
-  **fallback pastille** si absente, rendu roster + avatars chat.
-- **En cours / a reprendre** : candidate `v0.8.0-rc` commitee **en local** (push differe). **L5** (tracage
-  delegations) reste **en cours** (emission a finir — cf. memoire). Stack Docker up ; Ollama hote requis.
-- **Prochaine etape concrete** : (1) **recette `tauri dev` de L9** : iaka-demo dans Working, conversation
-  prechargee (chat + main courante), changer de **team** en Reglages recaste roster+chat (vignettes) ;
-  (2) **finir L5** ; (3) recette n8n (L6) ; (4) differes. **Cosmetique a normaliser** : les PNG embarques
-  contiennent des donnees JPEG (sans impact `<img>`, a corriger au prochain `sync-vignettes.sh`).
-- **Pieges connus** : vignettes = sous-ensemble embarque (3 teams) ; `ui_team` defaut `lotr` ; fallback
-  pastille si vignette absente. Ne jamais demonter le PTY au toggle (L8). Terminal = login shell `-l` (L8/D10).
-  Chat/prochaine etape supposent `ollama serve` hote. Seed L7/L9 dev/test only. L5 : POST fire-and-forget avant exit.
+- **Ce qui vient d'etre fait** : Lots **L0→L4, L6, L7, L8, L9 livres** (gate Legolas PASS, candidate
+  **v0.8.0-rc**) + fix trace L9 (avatar par-tour). **Vision PRODUIT corrigee et GRAVEE** dans `PROJET.md §0`
+  (revision 2026-06-26) : **le TERMINAL = la conversation** (le chef-runner y tourne, source de verite,
+  controle `esc`) ; **le CHAT = une VUE FILTREE** (parole) ; **chat <-> terminal partagent l'entree** (stdin) ;
+  agents = runner+modele ; settings par agent ; CIBLE (runners reels par agent, per-projet, skills->frames,
+  graph delegation) separee de l'ETAPE ACTUELLE. Ca SUPERSEDE le modele L8. **L10 cadre et VALIDE** par Stephane.
+- **En cours / a reprendre** : **L10 — re-architecture conversation/session**, a DEMARRER. Arbitrages tranches :
+  un seul lot phase **P0->P3**, **commencer par le SPIKE P0**, **supprimer `ai.rs chat` (L8)** ; recos retenues
+  (NDJSON parse cote Rust, `@agent` injecte verbatim au chef, posture decidee par le spike, esc cote terminal).
+- **Prochaine etape concrete (PREMIERE ACTION A LA REPRISE)** : **lancer Gimli sur le SPIKE P0 de L10** —
+  prouver que `claude` (Claude Code) tourne en PTY avec un flux **stream-json** typé (sortie NDJSON par type,
+  ENTREE stream-json, `{"type":"interrupt"}` = esc). Resultat -> trancher posture B (fiable) vs A (degradee),
+  puis engager P1 (couture runner `RunnerSpec`/`terminal.rs` + terminal-source) -> P2 (vue filtree + entree
+  partagee) -> P3 (reglages). Instruction : `specs/instructions/L10-conversation-session.md`. Cf. memoires
+  `vision-terminal-source-chat-vue`, `ne-pas-deformer-architecture-via-mvp`.
+- **Pieges connus** : **APRES REBOOT, relancer les services** : `ollama serve` (hote 11434, modele llama3.1:8b) ;
+  stack Docker `cd docker && docker compose up -d` (ollama/litellm/couchdb/n8n) ; re-seeder CouchDB si besoin
+  (`bash docker/init-couchdb.sh`, admin/iaka-test). L'app : `npm run tauri dev` (port 3020 ; tuer un Vite
+  residuel avant). Le **reboot terminal** vise a donner a Claude Code/Tauri les **droits macOS de modif d'apps**
+  (necessaire au spike L10 : lancer `claude` runner). NaonEdge = theme par defaut INCIDENT, PAS la cible
+  d'identite (produit a part). NE PAS biaiser les briefs d'agents (cf. memoire). L5 (tracage delegations) reste
+  en cours (emission a finir). Recette n8n L6 manuelle non faite. Push differe (pas de remote Forgejo branche).
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
 | 2026-06-26 10:38 | version | v0.8.0-rc | main | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte). |
 | 2026-06-26 09:32 | version | v0.7.0-rc | main | L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation). |
 | 2026-06-26 08:25 | version | v0.6.0-rc | main | L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%. |
