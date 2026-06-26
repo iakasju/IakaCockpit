@@ -444,6 +444,64 @@ export function ptyRunnerOpen(
   });
 }
 
+// --- Tailer du transcript JSONL → vues filtrées (L10b) ---
+//
+// Le tailer (côté Rust, transcript.rs) lit le transcript JSONL que Claude Code écrit
+// EN DIRECT, parse chaque record (CSP/D7 : tout le parse vit côté Rust) et émet des
+// `RunnerEvent` typés homogènes sur `runner://event/{session_id}`. Le front ne fait
+// que démarrer/arrêter le tailer et s'abonner — AUCUN parse de format au front.
+
+/** Canal d'une vue dérivée (miroir de `transcript::EventKind`, Rust). */
+export type RunnerEventKind =
+  | "parole"
+  | "geste"
+  | "delegation"
+  | "activite"
+  | "pensee";
+
+/**
+ * Miroir de `transcript::RunnerEvent` (Rust, L10b) — une vue dérivée du transcript.
+ * Les champs optionnels sont OMIS côté Rust quand absents (snake_case, D7).
+ * - `parole` : `text` = parole (user tapé / assistant) ;
+ * - `geste` : `tool_name`/`tool_use_id`/`tool_input` (tool_use hors Task) ;
+ * - `delegation` : `agent` = subagent_type, `text` = description (tool_use Task) ;
+ * - `activite` : `tool_use_id`/`text` (tool_result, fin de geste) ;
+ * - `pensee` : `text` = réflexion interne (canal masquable).
+ * `is_sidechain` distingue le fil d'un sous-agent délégué.
+ */
+export interface RunnerEvent {
+  kind: RunnerEventKind;
+  role: "user" | "assistant";
+  is_sidechain: boolean;
+  agent?: string;
+  text?: string;
+  tool_name?: string;
+  tool_use_id?: string;
+  tool_input?: string;
+  ts?: string;
+}
+
+/**
+ * Démarre le tailer du transcript `transcriptPath` (chemin PRÉVU renvoyé par
+ * `ptyRunnerOpen`) et fait émettre ses `RunnerEvent` sur `runner://event/{sessionId}`.
+ * Idempotent côté Rust (un tailer déjà actif n'est pas redémarré) ; un `transcriptPath`
+ * vide (repli `shell`) est un no-op. `sessionId` = `session_id` du `RunnerSession`.
+ */
+export function transcriptTailStart(
+  sessionId: string,
+  transcriptPath: string,
+): Promise<void> {
+  return call<void>("transcript_tail_start", {
+    session_id: sessionId,
+    transcript_path: transcriptPath,
+  });
+}
+
+/** Arrête le tailer du `sessionId` (le PTY/runner n'est pas affecté). No-op si inactif. */
+export function transcriptTailStop(sessionId: string): Promise<void> {
+  return call<void>("transcript_tail_stop", { session_id: sessionId });
+}
+
 // --- Abonnement aux événements PTY (DEP-5) ---
 //
 // Helpers d'abonnement aux événements émis par Rust. C'est le SEUL endroit
@@ -548,6 +606,19 @@ export function onRunnerClosed(
 }
 
 /**
+ * S'abonne aux VUES dérivées du transcript (`runner://event/{sessionId}`, L10b) —
+ * `RunnerEvent` typés émis par le tailer Rust. Le `sessionId` = `session_id` du
+ * `RunnerSession`. Désabonnement à appeler au nettoyage. SEUL endroit autorisé à
+ * `listen` (miroir D6/D7).
+ */
+export function onRunnerEvent(
+  sessionId: string,
+  cb: (event: RunnerEvent) => void,
+): Promise<UnlistenFn> {
+  return listen<RunnerEvent>(`runner://event/${sessionId}`, (e) => cb(e.payload));
+}
+
+/**
  * Façade backend. Exposée en objet pour faciliter le mock dans les tests, en plus
  * des exports nommés (utilisés directement par les hooks/composants en L2).
  */
@@ -580,6 +651,8 @@ export const backend = {
   ptyResize,
   ptyClose,
   ptyRunnerOpen,
+  transcriptTailStart,
+  transcriptTailStop,
   onPtyOutput,
   onPtyClosed,
   runnerOpen,
@@ -589,6 +662,7 @@ export const backend = {
   onRunnerRaw,
   onRunnerStderr,
   onRunnerClosed,
+  onRunnerEvent,
 };
 
 export type Backend = typeof backend;

@@ -62,7 +62,11 @@ import {
   onRunnerRaw,
   onRunnerStderr,
   onRunnerClosed,
+  transcriptTailStart,
+  transcriptTailStop,
+  onRunnerEvent,
 } from "../api/backend";
+import type { RunnerEvent } from "../api/backend";
 
 describe("backend.ts (couche d'abstraction unique)", () => {
   beforeEach(() => {
@@ -239,6 +243,45 @@ describe("backend.ts (commandes métier L1)", () => {
     expect(invokeMock).toHaveBeenCalledWith("pty_close", { id: "t1" });
   });
 
+  it("transcriptTailStart invoque transcript_tail_start (session_id + transcript_path, L10b)", async () => {
+    await transcriptTailStart("sid-1", "/Users/u/.claude/projects/p/sid-1.jsonl");
+    expect(invokeMock).toHaveBeenCalledWith("transcript_tail_start", {
+      session_id: "sid-1",
+      transcript_path: "/Users/u/.claude/projects/p/sid-1.jsonl",
+    });
+  });
+
+  it("transcriptTailStop invoque transcript_tail_stop avec session_id (L10b)", async () => {
+    await transcriptTailStop("sid-1");
+    expect(invokeMock).toHaveBeenCalledWith("transcript_tail_stop", {
+      session_id: "sid-1",
+    });
+  });
+
+  it("onRunnerEvent s'abonne à runner://event/{sessionId} et délivre le RunnerEvent (L10b)", async () => {
+    let captured: RunnerEvent | null = null;
+    await onRunnerEvent("sid-9", (ev) => {
+      captured = ev;
+    });
+    expect(listenMock).toHaveBeenCalledWith(
+      "runner://event/sid-9",
+      expect.any(Function),
+    );
+    // Simule un event émis par Rust → la payload est délivrée telle quelle au cb.
+    const cb = listenMock.mock.calls.at(-1)?.[1] as (e: {
+      payload: RunnerEvent;
+    }) => void;
+    const sample: RunnerEvent = {
+      kind: "delegation",
+      role: "assistant",
+      is_sidechain: false,
+      agent: "gandalf",
+      text: "Cadrer L11",
+    };
+    cb({ payload: sample });
+    expect(captured).toEqual(sample);
+  });
+
   it("la façade expose toutes les fonctions métier L1", () => {
     for (const fn of [
       "scanPortfolio",
@@ -256,8 +299,11 @@ describe("backend.ts (commandes métier L1)", () => {
       "ptyResize",
       "ptyClose",
       "ptyRunnerOpen",
+      "transcriptTailStart",
+      "transcriptTailStop",
       "onPtyOutput",
       "onPtyClosed",
+      "onRunnerEvent",
     ] as const) {
       expect(typeof backend[fn]).toBe("function");
     }
