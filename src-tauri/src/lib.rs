@@ -59,6 +59,7 @@ pub fn run() {
             terminal::pty_resize,
             terminal::pty_close,
             ai::next_step,
+            ai::chat,
             ai::ai_set_key,
             ai::ai_has_key,
             maincourante::fetch_main_courante,
