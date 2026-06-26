@@ -517,6 +517,14 @@ pub fn ai_has_key() -> Result<bool, String> {
 /// vient du front (`messages`). Mock si endpoint vide / flag dev (A2). Dégrade en
 /// `Err(String)` lisible (D6), **jamais de panique**. Agent inconnu/vide →
 /// fallback responsable (Aragorn). **AUCUNE orchestration** : un seul appel (R-L8-3).
+///
+/// > **L10b — REFRAMÉ « source de vues » du cas Ollama (§ 5.4, arbitrage #3).** Sous
+/// > la cible **Claude Code**, la conversation dérive du **transcript JSONL**
+/// > (`transcript.rs`, `ConversationSource` → tailer) : `chat` n'est **PLUS** le moteur
+/// > de la conversation. Il est **conservé** comme **future impl Ollama de
+/// > `ConversationSource`** (c'est NOUS qui émettons request/response → la « source »
+/// > est le log de nos appels, sans fichier à tailer) — **ni supprimé, ni inerte**, mais
+/// > **NON branché** dans le chemin conversation en L10. `next_step` (L3) reste intact.
 #[tauri::command]
 pub fn chat(
     app: AppHandle,

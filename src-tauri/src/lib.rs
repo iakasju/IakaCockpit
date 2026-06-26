@@ -23,6 +23,7 @@ pub mod seed;
 pub mod services;
 pub mod shell;
 pub mod terminal;
+pub mod transcript;
 
 /// Commande de santé minimale — prouve le pont front↔back sans logique métier.
 #[tauri::command]
@@ -36,6 +37,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(terminal::TermState::default())
         .manage(runner::RunnerState::default())
+        .manage(transcript::TranscriptState::default())
         .setup(|app| {
             // Garantit une racine de chapeau persistée dès le premier boot
             // (défaut calculé par OS via `paths`). Best-effort : un échec d'I/O
@@ -61,6 +63,8 @@ pub fn run() {
             terminal::pty_resize,
             terminal::pty_close,
             terminal::pty_runner_open,
+            transcript::transcript_tail_start,
+            transcript::transcript_tail_stop,
             runner::runner_open,
             runner::runner_write,
             runner::runner_interrupt,

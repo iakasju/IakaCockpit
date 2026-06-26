@@ -1,5 +1,14 @@
 //! runner — chef-runner conversationnel en PIPES (L10 P1).
 //!
+//! > ⚠️ **PARQUÉ (virage L10b, `b7ac879`) — PAS la voie principale.** La voie pipes
+//! > `stream-json` **tue la TUI native** (réflexes `Shift+Tab`/`esc`/box perdus, cf.
+//! > finding ci-dessous). La cible retenue est le **chef-runner en TUI native dans un
+//! > PTY** (`terminal.rs::pty_runner_open`) + **vues dérivées du transcript JSONL**
+//! > (`transcript.rs`, tailer L10b). Ce module est **conservé « au chaud »** (code
+//! > testé, gate Legolas PASS) comme **transport `stream-json` alternatif documenté**
+//! > (usages non-interactifs/programmatiques) — **il n'est PAS branché dans le chemin
+//! > conversation** (cf. instruction L10 § 5.3).
+//!
 //! **Finding du spike P0** (`specs/mock/spike-l10/`) : le CLI `claude` en mode flux
 //! structuré (`--input-format stream-json --output-format stream-json --verbose`)
 //! **REFUSE** le NDJSON quand `stdin` est un TTY (`Error: Input must be provided…`).
