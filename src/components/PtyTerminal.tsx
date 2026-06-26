@@ -6,10 +6,13 @@
  *   - flux Rust → `term.write` (callback onData passé à open) ;
  *   - saisie xterm → `pty.write` ;
  *   - resize (addon-fit + ResizeObserver) → `pty.resize` ;
- *   - fermeture session (closed) → notice ; `pty.close` au démontage du composant
- *     (cleanup). **L8/D4** : en mode chat, le parent garde ce composant MONTÉ et le
- *     masque en CSS (`display:none`) — il ne le démonte PAS, sinon le shell mourrait
- *     (R-L8-1). Le ResizeObserver refit le terminal quand il redevient visible.
+ *   - fermeture session (closed) → notice. **L8/D4** : en mode chat, le parent garde
+ *     ce composant MONTÉ et le masque en CSS (`display:none`) — il ne le démonte PAS,
+ *     sinon le shell mourrait (R-L8-1). Le ResizeObserver refit le terminal quand il
+ *     redevient visible. **L10b/R-L10b-1** : au démontage du composant on dispose
+ *     UNIQUEMENT la surface xterm (term/onData/ResizeObserver) — on NE FERME PAS le
+ *     runner : il doit survivre au remontage (navigation, `React.StrictMode`). Le spawn
+ *     est idempotent côté `usePty` ; la fermeture passe par `usePty.close`.
  *
  * Aucun I/O Tauri direct : tout passe par le hook `usePty` (lui-même via la
  * façade). xterm est bundlé local → compatible CSP stricte L0 (pas de CDN, pas
@@ -115,9 +118,14 @@ export function PtyTerminal({
     return () => {
       onDataDisp.dispose();
       ro.disconnect();
-      // Ferme la session côté Rust + désabonne (anti-fuite R-L2-4).
-      void ptyRef.current.close(sessionId);
       term.dispose();
+      // NE FERME PAS le runner ici (R-L10b-1) : le chef-runner doit SURVIVRE au
+      // remontage du composant (navigation Working↔Portfolio, double-invocation des
+      // effets sous `React.StrictMode` en dev). Fermer ici tuait le process `claude`
+      // et, au remontage, en relançait un autre (nouveau `session_id`) → flux dédoublé
+      // (bug shell 2×) + tailer du transcript jamais (re)démarré sur le bon (chat muet).
+      // Le spawn est IDEMPOTENT et mémorisé dans `usePty` (`spawnRef`) ; la fermeture
+      // effective passe par `usePty.close` (cycle de vie de la conversation / app).
     };
     // sessionId/cwd/runnerKind/model identifient la session : effet une fois par onglet
     // (ptyRef est une réf stable, donc hors dépendances).

@@ -84,6 +84,15 @@ export function usePty(api: Backend = backend): UsePty {
   const [sessions, setSessions] = useState<Record<string, UsePtySession>>({});
   // Abonnements par session (hors state : pas de re-render au nettoyage).
   const subsRef = useRef<Record<string, Subs>>({});
+  // Spawn EFFECTIF (process Rust) par session — mémorisé pour être IDEMPOTENT
+  // (R-L10b-1) : un même `id` n'ouvre qu'UN seul PTY/runner, même si `open`/
+  // `openRunner` est rappelé (remontage du composant : navigation Working↔Portfolio,
+  // double-invocation des effets sous `React.StrictMode` en dev). Sans ce garde, on
+  // spawnait DEUX `claude` (deux `session_id`) sur le même `pty://output/{id}` → flux
+  // dédoublé (shell affiché 2×) et `session_id` instable → le tailer du transcript ne
+  // démarrait jamais sur le bon (chat muet). Le runner SURVIT au remontage (il n'est
+  // PAS fermé au démontage du composant) ; il n'est libéré que par `close` explicite.
+  const spawnRef = useRef<Record<string, Promise<RunnerSession | void>>>({});
 
   const setSession = useCallback(
     (id: string, patch: Partial<UsePtySession>): void => {
@@ -110,10 +119,13 @@ export function usePty(api: Backend = backend): UsePty {
   }, []);
 
   // Abonnement commun (output/closed) — partagé par `open` (shell legacy) et
-  // `openRunner` (chef-runner TUI native). Abonnements AVANT l'ouverture pour ne perdre
-  // aucun chunk initial.
+  // `openRunner` (chef-runner TUI native). **Rebind-safe** (R-L10b-1) : on désabonne
+  // d'abord un abonnement antérieur pour le MÊME `id` (remontage = nouvelle surface
+  // xterm) avant de réabonner → la sortie est routée vers le terminal COURANT, jamais
+  // vers un terminal disposé. Abonnement AVANT l'ouverture pour ne perdre aucun chunk.
   const subscribe = useCallback(
     async (id: string, opts?: OpenOptions): Promise<void> => {
+      cleanup(id); // désabonne la surface précédente (rebind sur la surface courante).
       const output = await api.onPtyOutput(id, (data) => {
         opts?.onData?.(data);
       });
@@ -128,22 +140,35 @@ export function usePty(api: Backend = backend): UsePty {
   );
 
   const open = useCallback(
-    async (
+    (
       id: string,
       cwd: string,
       cols: number,
       rows: number,
       opts?: OpenOptions,
     ): Promise<void> => {
-      await subscribe(id, opts);
-      await api.ptyOpen(id, cwd, cols, rows);
-      setSession(id, { ready: true, closed: false });
+      // Rebind la sortie sur la surface courante (toujours), spawn le PTY UNE FOIS.
+      const existing = spawnRef.current[id];
+      if (!existing) {
+        const spawn = (async () => {
+          await subscribe(id, opts);
+          await api.ptyOpen(id, cwd, cols, rows);
+          setSession(id, { ready: true, closed: false });
+        })();
+        spawnRef.current[id] = spawn;
+        return spawn as Promise<void>;
+      }
+      // Remontage : rebind la sortie sur la surface courante, PAS de second spawn.
+      return (async () => {
+        await subscribe(id, opts);
+        await existing;
+      })();
     },
     [api, subscribe, setSession],
   );
 
   const openRunner = useCallback(
-    async (
+    (
       id: string,
       kind: ChefRunnerKind,
       model: string | undefined,
@@ -152,15 +177,40 @@ export function usePty(api: Backend = backend): UsePty {
       rows: number,
       opts?: OpenOptions,
     ): Promise<RunnerSession> => {
-      await subscribe(id, opts);
-      const session = await api.ptyRunnerOpen(id, kind, model, cwd, cols, rows);
-      setSession(id, {
-        ready: true,
-        closed: false,
-        runnerSessionId: session.session_id,
-        transcriptPath: session.transcript_path,
-      });
-      return session;
+      // Garde d'IDEMPOTENCE posé SYNCHRONEMENT : une seconde invocation quasi-synchrone
+      // (StrictMode double-mount / remontage de vue) réutilise CE spawn au lieu de
+      // lancer un 2ᵉ `claude`. Le `session_id` reste donc STABLE (clef du tailer L10b).
+      const existing = spawnRef.current[id] as
+        | Promise<RunnerSession>
+        | undefined;
+      if (!existing) {
+        const spawn = (async () => {
+          await subscribe(id, opts);
+          const session = await api.ptyRunnerOpen(
+            id,
+            kind,
+            model,
+            cwd,
+            cols,
+            rows,
+          );
+          setSession(id, {
+            ready: true,
+            closed: false,
+            runnerSessionId: session.session_id,
+            transcriptPath: session.transcript_path,
+          });
+          return session;
+        })();
+        spawnRef.current[id] = spawn;
+        return spawn;
+      }
+      // Remontage : rebind la sortie sur la surface courante, PAS de second spawn ;
+      // on renvoie la session DÉJÀ ouverte (clef de tailer stable).
+      return (async () => {
+        await subscribe(id, opts);
+        return existing;
+      })();
     },
     [api, subscribe, setSession],
   );
@@ -179,6 +229,7 @@ export function usePty(api: Backend = backend): UsePty {
   const close = useCallback(
     async (id: string): Promise<void> => {
       cleanup(id);
+      delete spawnRef.current[id]; // libère le garde : un futur `open` pourra respawner.
       await api.ptyClose(id);
       setSessions((prev) => {
         const next = { ...prev };

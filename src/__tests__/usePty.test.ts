@@ -154,4 +154,60 @@ describe("usePty", () => {
     expect(api.ptyClose).toHaveBeenCalledWith("s1");
     expect(result.current.sessions.s1).toBeUndefined();
   });
+
+  // RÉGRESSION recette L10b (bug #2 « shell affiché 2× » + bug #1 session instable) :
+  // `PtyTerminal` est remonté deux fois sur le 1ᵉʳ montage par `React.StrictMode`
+  // (mount→cleanup→mount), et à chaque navigation Working↔Portfolio. Sans garde
+  // d'idempotence, `openRunner` lançait DEUX `claude` (deux `session_id`) sur le même
+  // `pty://output/{id}` → flux dédoublé + `session_id` instable (tailer sur le mauvais).
+  it("openRunner : un 2ᵉ appel sur le MÊME id NE relance PAS le runner (idempotent / anti-double-spawn)", async () => {
+    const { api } = mockPtyApi();
+    const { result } = renderHook(() => usePty(api));
+    await act(async () => {
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24);
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24);
+    });
+    // UN SEUL spawn réel malgré deux appels (StrictMode double-mount / remontage).
+    expect(api.ptyRunnerOpen).toHaveBeenCalledTimes(1);
+    // Le session_id reste STABLE (clef du tailer L10b).
+    expect(result.current.sessions.s1.runnerSessionId).toBe(
+      "11111111-2222-3333-4444-555555555555",
+    );
+  });
+
+  it("openRunner : un remontage REBIND la sortie sur la NOUVELLE surface (pas l'ancienne)", async () => {
+    const { api, outputCb } = mockPtyApi();
+    const { result } = renderHook(() => usePty(api));
+    const onDataA = vi.fn();
+    const onDataB = vi.fn();
+    await act(async () => {
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24, { onData: onDataA });
+    });
+    // Remontage : nouvelle surface xterm (onDataB) sur le MÊME id.
+    await act(async () => {
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24, { onData: onDataB });
+    });
+    act(() => outputCb.s1("box claude"));
+    // La sortie va à la surface COURANTE (B), pas à l'ancienne (A) disposée.
+    expect(onDataB).toHaveBeenCalledWith("box claude");
+    expect(onDataA).not.toHaveBeenCalled();
+    // Toujours un seul spawn.
+    expect(api.ptyRunnerOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("openRunner puis close : le garde d'idempotence est libéré (un futur open respawne)", async () => {
+    const { api } = mockPtyApi();
+    const { result } = renderHook(() => usePty(api));
+    await act(async () => {
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24);
+    });
+    await act(async () => {
+      await result.current.close("s1");
+    });
+    await act(async () => {
+      await result.current.openRunner("s1", "claude-code", undefined, "/root/p1", 80, 24);
+    });
+    // Fermé puis rouvert = deux spawns légitimes (le garde a été libéré par close).
+    expect(api.ptyRunnerOpen).toHaveBeenCalledTimes(2);
+  });
 });
