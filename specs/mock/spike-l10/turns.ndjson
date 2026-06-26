@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Reponds juste par le mot BANANE et rien d'autre."}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Repete le dernier mot que tu as dit."}]}}
