@@ -49,6 +49,12 @@ npm run test                 # vitest
 npm run test:coverage        # vitest + couverture v8
 bash scripts/quality.sh      # chaîne qualité complète (front + Rust)
 
+# Vignettes thémées (L9) — copie un sous-ensemble de PNG iakagraph + manifest :
+bash scripts/sync-vignettes.sh                       # défaut : naonedge {dark,light} x {lotr,avengers,starfleet} x 5 rôles
+IAKAGRAPH_ROOT=~/work/iakagraph TEAMS="lotr avengers starfleet" bash scripts/sync-vignettes.sh
+# Les PNG sont COMMITÉS (src/assets/vignettes/) et servis en 'self' (CSP intacte).
+# Relancer seulement pour mettre à jour le casting (nouvelle team / charte).
+
 # Côté Rust (depuis src-tauri/) :
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
@@ -199,6 +205,24 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **Livré en UN SEUL BLOC** (AR-5), un seul gate Legolas (structuration P1 enveloppe / P2 chat = guide
       d'implémentation interne). AR-4 = prompt **persona-aware** (wording à confirmer). Est. **~4 j-homme**
       (réévaluée +0,5 j après enrichissement AR-1 `@agent`/roster + terminal réel D10).)*
+- [ ] **L9** — Démo enrichie : vignettes thémées par team + projet démo dans Working + conversation
+      préchargée → `specs/instructions/L9-demo-enrichie.md`
+      *(**cadré** par 🧙 Gandalf (2026-06-26), suite à un **retour terrain L8**. **Phasé** : **L9-P1** = (B) fix
+      `useDemoSeed` ajoute `iaka-demo` au **set de Work** (`workset.add`, idempotent, flag dev — le projet
+      apparaît enfin dans Working) + (C) **conversation préchargée cohérente** : historique de **chat** mocké
+      (`src/mock/demoConversation.ts`, chaîne de badges délégation Aragorn→Gandalf / rapport / **verbatim**) via
+      `openConversation(..., initialHistory?)`, ET **main courante** L4 enrichie (`docker/init-couchdb.sh`,
+      séquence cohérente délégation **canal geste** / rapport / verbatim, `conv_id:"iaka-demo"`, docs `demo-1`
+      conservés). **L9-P2** = (A) **vignettes iakagraph par charte×team** dans **roster + chat** : résolveur
+      `resolveVignette(charte, team, roleIndex)` sur un **manifest** généré depuis `teams.json` (ordre = rôle),
+      sous-ensemble de PNG **embarqués dans le bundle front** (`src/assets/vignettes/`, servis en `'self'` →
+      **CSP intacte, zéro asset-protocol, zéro scope FS, offline**) via `scripts/sync-vignettes.sh` ; clé config
+      `ui_team` persistée + sélecteur dans Réglages ; **fallback pastille `[ROYAUME][Agent]`** si vignette
+      absente (jamais d'image cassée). MVP : charte **naonedge** (dark+light) × **3 teams** (lotr défaut /
+      avengers / starfleet) × 5 rôles. Réutilisation pure (vignettes Loki, roster/chat/conversations L8, seed L7,
+      main courante L4) ; façade unique, pas de god-component. Arbitrages ouverts : **B-1** (libellés royaume vs
+      rôle — reco garder + `roleIndex`), **C-1** (3 teams vs 11 — reco 3). Est. **≈ 2–3,5 j-homme** (P1 ~0,5–1 j,
+      P2 ~1,5–2,5 j).)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
