@@ -19,6 +19,10 @@ function mockPtyApi() {
       return unClosed;
     }),
     ptyOpen: vi.fn().mockResolvedValue(undefined),
+    ptyRunnerOpen: vi.fn().mockResolvedValue({
+      session_id: "11111111-2222-3333-4444-555555555555",
+      transcript_path: "/home/u/.claude/projects/-root-p1/sid.jsonl",
+    }),
     ptyWrite: vi.fn().mockResolvedValue(undefined),
     ptyResize: vi.fn().mockResolvedValue(undefined),
     ptyClose: vi.fn().mockResolvedValue(undefined),
@@ -49,6 +53,66 @@ describe("usePty", () => {
     });
     act(() => outputCb.s1("hello"));
     expect(onData).toHaveBeenCalledWith("hello");
+  });
+
+  it("openRunner : s'abonne, lance le chef-runner et mémorise session_id/transcript (L10a)", async () => {
+    const { api } = mockPtyApi();
+    const onData = vi.fn();
+    const { result } = renderHook(() => usePty(api));
+    let returned;
+    await act(async () => {
+      returned = await result.current.openRunner(
+        "s1",
+        "claude-code",
+        "claude-haiku-4-5",
+        "/root/p1",
+        80,
+        24,
+        { onData },
+      );
+    });
+    // Abonnements (mêmes événements PTY que open) + ouverture runner avec les bons args.
+    expect(api.onPtyOutput).toHaveBeenCalledWith("s1", expect.any(Function));
+    expect(api.onPtyClosed).toHaveBeenCalledWith("s1", expect.any(Function));
+    expect(api.ptyRunnerOpen).toHaveBeenCalledWith(
+      "s1",
+      "claude-code",
+      "claude-haiku-4-5",
+      "/root/p1",
+      80,
+      24,
+    );
+    // session_id + transcript mémorisés dans la session (clef pour le tailer L10b).
+    expect(result.current.sessions.s1.ready).toBe(true);
+    expect(result.current.sessions.s1.runnerSessionId).toBe(
+      "11111111-2222-3333-4444-555555555555",
+    );
+    expect(result.current.sessions.s1.transcriptPath).toContain(
+      ".claude/projects/",
+    );
+    expect(returned).toEqual({
+      session_id: "11111111-2222-3333-4444-555555555555",
+      transcript_path: "/home/u/.claude/projects/-root-p1/sid.jsonl",
+    });
+  });
+
+  it("openRunner : le flux output est branché (TUI native rendue par pty://output)", async () => {
+    const { api, outputCb } = mockPtyApi();
+    const onData = vi.fn();
+    const { result } = renderHook(() => usePty(api));
+    await act(async () => {
+      await result.current.openRunner(
+        "s1",
+        "claude-code",
+        undefined,
+        "/root/p1",
+        80,
+        24,
+        { onData },
+      );
+    });
+    act(() => outputCb.s1("\x1b[2K box claude"));
+    expect(onData).toHaveBeenCalledWith("\x1b[2K box claude");
   });
 
   it("write/resize délèguent aux commandes", async () => {

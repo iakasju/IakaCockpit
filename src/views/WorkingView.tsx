@@ -20,8 +20,8 @@ import type {
   ConvMode,
 } from "../hooks/useConversations";
 import { mentionPrefix, parseMention } from "../hooks/useConversations";
-import type { UseRunner } from "../hooks/useRunner";
-import { RunnerTerminal } from "../components/RunnerTerminal";
+import type { UsePty } from "../hooks/usePty";
+import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
@@ -32,11 +32,12 @@ export interface WorkingViewProps {
   conversations: Conversation[];
   active: Conversation | null;
   /**
-   * Hook chef-runner (L10) : le terminal-source (vue « Shell ») lance `claude` en
-   * pipes et rend son flux brut. Remplace l'ancien PTY shell pour le chef-runner ;
-   * `usePty`/`terminal.rs` restent disponibles pour le shell legacy (hors L10 P1).
+   * Hook PTY (L10a) : le terminal-source (vue « Shell ») lance le chef-runner `claude`
+   * en **TUI native** dans le PTY du projet (réflexes intacts : Shift+Tab, esc, box).
+   * Réutilise la couture PTY (`terminal.rs`/`PtyTerminal`) ; la couture pipes est
+   * parquée (hors chemin conversation). Le tailer du transcript = L10b.
    */
-  runner: UseRunner;
+  pty: UsePty;
   /** État du moteur « prochaine étape » (L3, conservé — D5). */
   nextStepResult: NextStep | null;
   nextStepLoading: boolean;
@@ -56,7 +57,7 @@ export function WorkingView({
   worksetProjects,
   conversations,
   active,
-  runner,
+  pty,
   nextStepResult,
   nextStepLoading,
   nextStepError,
@@ -170,10 +171,8 @@ export function WorkingView({
                 <button
                   type="button"
                   className="btn sm"
-                  title="Interrompre l'outil en cours du chef-runner (esc)"
-                  onClick={() =>
-                    void runner.interrupt(active.ptySessionId)
-                  }
+                  title="Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)"
+                  onClick={() => void pty.write(active.ptySessionId, "\x1b")}
                 >
                   Interrompre (esc)
                 </button>
@@ -200,12 +199,13 @@ export function WorkingView({
 
             <div className="convbody">
               {/*
-                Le chef-runner (terminal-source L10) est MONTÉ UNE FOIS par
+                Le chef-runner (terminal-source L10a) est MONTÉ UNE FOIS par
                 conversation et MASQUÉ en CSS quand mode=chat (R-L8-1/D4) — JAMAIS
-                démonté (sinon runner.close → process tué). On boucle sur toutes les
+                démonté (sinon pty.close → process claude tué). On boucle sur toutes les
                 conversations pour garder chaque runner vivant en arrière-plan même
-                quand on change de projet actif. La surface (RunnerTerminal) rend le
-                FLUX BRUT et reste typeable (frappe → tour ; esc → interruption).
+                quand on change de projet actif. La surface (PtyTerminal, runnerKind
+                claude-code) rend la TUI NATIVE : auto-lancement de `claude` dans le cwd
+                (zéro manip), frappe → stdin, réflexes natifs (Shift+Tab, esc, box).
               */}
               {conversations.map((c) => {
                 const visible =
@@ -217,10 +217,11 @@ export function WorkingView({
                     style={{ display: visible ? "block" : "none" }}
                     aria-hidden={!visible}
                   >
-                    <RunnerTerminal
+                    <PtyTerminal
                       sessionId={c.ptySessionId}
                       cwd={c.cwd}
-                      runner={runner}
+                      pty={pty}
+                      runnerKind="claude-code"
                     />
                   </div>
                 );

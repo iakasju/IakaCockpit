@@ -16,12 +16,26 @@
  * testable avec une façade mockée ; le pixel xterm est validé à la main (D8).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { backend, type Backend, type UnlistenFn } from "../api/backend";
+import {
+  backend,
+  type Backend,
+  type ChefRunnerKind,
+  type RunnerSession,
+  type UnlistenFn,
+} from "../api/backend";
 
 export interface UsePtySession {
   id: string;
   ready: boolean;
   closed: boolean;
+  /**
+   * `session_id` (uuid) du chef-runner ouvert dans ce PTY (L10a) — clef PTY ↔
+   * transcript JSONL ↔ session (consommée par le tailer L10b). Absent pour un PTY
+   * shell legacy (`open`) ou un chef-runner `kind:"shell"`.
+   */
+  runnerSessionId?: string;
+  /** Chemin PRÉVU du transcript JSONL du chef-runner (L10a) — pour le tailer L10b. */
+  transcriptPath?: string;
 }
 
 export interface OpenOptions {
@@ -40,6 +54,22 @@ export interface UsePty {
     rows: number,
     opts?: OpenOptions,
   ) => Promise<void>;
+  /**
+   * Ouvre un CHEF-RUNNER dans le PTY (L10a) : `claude` en TUI native (`kind`
+   * `"claude-code"`) ou le shell legacy (`"shell"`). Même plomberie d'événements que
+   * `open` (output/closed) ; en plus, mémorise `runnerSessionId`/`transcriptPath` et
+   * renvoie le `RunnerSession`. La frappe et le rendu xterm restent identiques (TUI
+   * native rendue par `pty://output`, frappe → stdin).
+   */
+  openRunner: (
+    id: string,
+    kind: ChefRunnerKind,
+    model: string | undefined,
+    cwd: string,
+    cols: number,
+    rows: number,
+    opts?: OpenOptions,
+  ) => Promise<RunnerSession>;
   write: (id: string, data: string) => Promise<void>;
   resize: (id: string, cols: number, rows: number) => Promise<void>;
   close: (id: string) => Promise<void>;
@@ -79,15 +109,11 @@ export function usePty(api: Backend = backend): UsePty {
     }
   }, []);
 
-  const open = useCallback(
-    async (
-      id: string,
-      cwd: string,
-      cols: number,
-      rows: number,
-      opts?: OpenOptions,
-    ): Promise<void> => {
-      // Abonnements AVANT l'ouverture pour ne perdre aucun chunk initial.
+  // Abonnement commun (output/closed) — partagé par `open` (shell legacy) et
+  // `openRunner` (chef-runner TUI native). Abonnements AVANT l'ouverture pour ne perdre
+  // aucun chunk initial.
+  const subscribe = useCallback(
+    async (id: string, opts?: OpenOptions): Promise<void> => {
       const output = await api.onPtyOutput(id, (data) => {
         opts?.onData?.(data);
       });
@@ -97,10 +123,46 @@ export function usePty(api: Backend = backend): UsePty {
         cleanup(id);
       });
       subsRef.current[id] = { output, closed };
+    },
+    [api, setSession, cleanup],
+  );
+
+  const open = useCallback(
+    async (
+      id: string,
+      cwd: string,
+      cols: number,
+      rows: number,
+      opts?: OpenOptions,
+    ): Promise<void> => {
+      await subscribe(id, opts);
       await api.ptyOpen(id, cwd, cols, rows);
       setSession(id, { ready: true, closed: false });
     },
-    [api, setSession, cleanup],
+    [api, subscribe, setSession],
+  );
+
+  const openRunner = useCallback(
+    async (
+      id: string,
+      kind: ChefRunnerKind,
+      model: string | undefined,
+      cwd: string,
+      cols: number,
+      rows: number,
+      opts?: OpenOptions,
+    ): Promise<RunnerSession> => {
+      await subscribe(id, opts);
+      const session = await api.ptyRunnerOpen(id, kind, model, cwd, cols, rows);
+      setSession(id, {
+        ready: true,
+        closed: false,
+        runnerSessionId: session.session_id,
+        transcriptPath: session.transcript_path,
+      });
+      return session;
+    },
+    [api, subscribe, setSession],
   );
 
   const write = useCallback(
@@ -140,5 +202,5 @@ export function usePty(api: Backend = backend): UsePty {
     };
   }, []);
 
-  return { sessions, open, write, resize, close };
+  return { sessions, open, openRunner, write, resize, close };
 }

@@ -52,6 +52,7 @@ import {
   ptyWrite,
   ptyResize,
   ptyClose,
+  ptyRunnerOpen,
   onPtyOutput,
   onPtyClosed,
   runnerOpen,
@@ -194,6 +195,45 @@ describe("backend.ts (commandes métier L1)", () => {
     });
   });
 
+  it("ptyRunnerOpen invoque pty_runner_open et renvoie le RunnerSession (L10a)", async () => {
+    invokeMock.mockResolvedValue({
+      session_id: "11111111-2222-3333-4444-555555555555",
+      transcript_path:
+        "/Users/u/.claude/projects/-home-u-work-proj/11111111-2222-3333-4444-555555555555.jsonl",
+    });
+    const sess = await ptyRunnerOpen(
+      "t1",
+      "claude-code",
+      "claude-haiku-4-5",
+      "/home/u/work/proj",
+      100,
+      30,
+    );
+    expect(invokeMock).toHaveBeenCalledWith("pty_runner_open", {
+      id: "t1",
+      kind: "claude-code",
+      model: "claude-haiku-4-5",
+      cwd: "/home/u/work/proj",
+      cols: 100,
+      rows: 30,
+    });
+    expect(sess.session_id).toBe("11111111-2222-3333-4444-555555555555");
+    expect(sess.transcript_path).toContain(".claude/projects/");
+  });
+
+  it("ptyRunnerOpen tolère model/cols/rows absents (défauts Rust)", async () => {
+    invokeMock.mockResolvedValue({ session_id: "x", transcript_path: "" });
+    await ptyRunnerOpen("t2", "claude-code", undefined, "/home/u/work/p");
+    expect(invokeMock).toHaveBeenCalledWith("pty_runner_open", {
+      id: "t2",
+      kind: "claude-code",
+      model: undefined,
+      cwd: "/home/u/work/p",
+      cols: undefined,
+      rows: undefined,
+    });
+  });
+
   it("ptyClose invoque pty_close avec id", async () => {
     await ptyClose("t1");
     expect(invokeMock).toHaveBeenCalledWith("pty_close", { id: "t1" });
@@ -215,6 +255,7 @@ describe("backend.ts (commandes métier L1)", () => {
       "ptyWrite",
       "ptyResize",
       "ptyClose",
+      "ptyRunnerOpen",
       "onPtyOutput",
       "onPtyClosed",
     ] as const) {

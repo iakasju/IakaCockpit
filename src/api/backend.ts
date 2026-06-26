@@ -398,6 +398,52 @@ export function ptyClose(id: string): Promise<void> {
   return call<void>("pty_close", { id });
 }
 
+// --- Chef-runner en TUI native dans le PTY (L10a) ---
+//
+// Le chef-runner (`claude` en TUI NATIVE interactive) tourne dans le MÊME PTY que le
+// shell legacy (terminal.rs étendu — PAS la couture pipes parquée). Il émet les MÊMES
+// événements `pty://output|closed/{id}` : la frappe va au stdin, la TUI native rend ses
+// réflexes (Shift+Tab, esc, box, dialogues de confiance). Le `session_id` (uuid)
+// pré-généré côté Rust est renvoyé ici : clef qui reliera PTY ↔ transcript JSONL ↔
+// session (le tailer du transcript = L10b ; ici on ne fait que lancer + récupérer la clef).
+
+/** Type de chef-runner ouvert dans un PTY (L10a). `shell` = repli legacy. */
+export type ChefRunnerKind = "claude-code" | "shell";
+
+/**
+ * Miroir de `terminal::RunnerSession` (Rust, L10a). `session_id` = clef PTY ↔ transcript
+ * ↔ session (consommée par le tailer L10b). `transcript_path` = chemin PRÉVU du transcript
+ * JSONL (`~/.claude/projects/<escaped>/<session_id>.jsonl`). Vides pour le repli `shell`.
+ */
+export interface RunnerSession {
+  session_id: string;
+  transcript_path: string;
+}
+
+/**
+ * Ouvre un chef-runner dans un PTY (`claude` en TUI native par défaut ; `cwd` validé
+ * sous le chapeau côté Rust). `model` optionnel → défaut Rust (réglage global = P3).
+ * Émet `pty://output|closed/{id}` (réutilise `onPtyOutput`/`onPtyClosed`). Renvoie le
+ * `RunnerSession` (session_id + chemin de transcript prévu).
+ */
+export function ptyRunnerOpen(
+  id: string,
+  kind: ChefRunnerKind,
+  model?: string,
+  cwd?: string,
+  cols?: number,
+  rows?: number,
+): Promise<RunnerSession> {
+  return call<RunnerSession>("pty_runner_open", {
+    id,
+    kind,
+    model,
+    cwd,
+    cols,
+    rows,
+  });
+}
+
 // --- Abonnement aux événements PTY (DEP-5) ---
 //
 // Helpers d'abonnement aux événements émis par Rust. C'est le SEUL endroit
@@ -533,6 +579,7 @@ export const backend = {
   ptyWrite,
   ptyResize,
   ptyClose,
+  ptyRunnerOpen,
   onPtyOutput,
   onPtyClosed,
   runnerOpen,

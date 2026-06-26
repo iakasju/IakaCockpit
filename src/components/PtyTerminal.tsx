@@ -19,6 +19,7 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import type { ChefRunnerKind } from "../api/backend";
 import type { UsePty } from "../hooks/usePty";
 
 export interface PtyTerminalProps {
@@ -28,12 +29,22 @@ export interface PtyTerminalProps {
   cwd: string;
   /** Hook PTY partagé (fourni par le parent). */
   pty: UsePty;
+  /**
+   * Si défini (L10a), lance un CHEF-RUNNER dans le PTY (`claude` en TUI native pour
+   * `"claude-code"`) au lieu du shell legacy. Le rendu et la frappe restent IDENTIQUES
+   * (TUI native via `pty://output`, frappe → stdin) : seul le programme spawné change.
+   */
+  runnerKind?: ChefRunnerKind;
+  /** Modèle du chef-runner (optionnel → défaut côté Rust ; réglage global = P3). */
+  model?: string;
 }
 
 export function PtyTerminal({
   sessionId,
   cwd,
   pty,
+  runnerKind,
+  model,
 }: PtyTerminalProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
@@ -76,16 +87,30 @@ export function PtyTerminal({
     const ro = new ResizeObserver(() => doResize());
     ro.observe(el);
 
-    // Ouverture de la session : flux Rust → xterm.
+    // Ouverture de la session : flux Rust → xterm. En mode chef-runner (L10a), on
+    // lance `claude` en TUI native (openRunner) ; sinon le shell legacy (open).
     let closedNotified = false;
-    void ptyRef.current.open(sessionId, cwd, term.cols, term.rows, {
-      onData: (chunk) => term.write(chunk),
+    const opts = {
+      onData: (chunk: string) => term.write(chunk),
       onClosed: () => {
         if (closedNotified) return;
         closedNotified = true;
         term.write("\r\n\x1b[2m[session terminée]\x1b[0m\r\n");
       },
-    });
+    };
+    if (runnerKind) {
+      void ptyRef.current.openRunner(
+        sessionId,
+        runnerKind,
+        model,
+        cwd,
+        term.cols,
+        term.rows,
+        opts,
+      );
+    } else {
+      void ptyRef.current.open(sessionId, cwd, term.cols, term.rows, opts);
+    }
 
     return () => {
       onDataDisp.dispose();
@@ -94,9 +119,9 @@ export function PtyTerminal({
       void ptyRef.current.close(sessionId);
       term.dispose();
     };
-    // sessionId/cwd identifient la session : effet une fois par onglet (ptyRef
-    // est une réf stable, donc hors dépendances).
-  }, [sessionId, cwd]);
+    // sessionId/cwd/runnerKind/model identifient la session : effet une fois par onglet
+    // (ptyRef est une réf stable, donc hors dépendances).
+  }, [sessionId, cwd, runnerKind, model]);
 
   return <div className="termmount" ref={mountRef} />;
 }
