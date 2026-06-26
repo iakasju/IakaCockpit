@@ -46,6 +46,14 @@ export interface ChatProps {
    * terminal reste le point de contrôle ; le chat offre l'ergonomie.
    */
   onInterrupt?: () => void;
+  /**
+   * Canal pensée masqué ? (L10b/P3). Si fourni AVEC `onToggleHidePensee`, le toggle est
+   * CONTRÔLÉ (persisté en config par le parent). Absent → état interne (rétro-compat L8,
+   * masquée par défaut).
+   */
+  hidePensee?: boolean;
+  /** Bascule le canal pensée (contrôlé) — voir `hidePensee`. */
+  onToggleHidePensee?: () => void;
 }
 
 /** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
@@ -72,10 +80,19 @@ export function Chat({
   onSend,
   resolveAvatar,
   onInterrupt,
+  hidePensee: hidePenseeProp,
+  onToggleHidePensee,
 }: ChatProps): JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // Pensée masquable (canal § 5 PROJET) — masquée par défaut (réduit le bruit).
-  const [hidePensee, setHidePensee] = useState(true);
+  // Contrôlé si le parent fournit `hidePensee` (+ toggle persisté) ; sinon état interne.
+  const [internalHide, setInternalHide] = useState(true);
+  const controlledPensee = hidePenseeProp !== undefined;
+  const hidePensee = controlledPensee ? hidePenseeProp : internalHide;
+  const togglePensee = (): void => {
+    if (controlledPensee) onToggleHidePensee?.();
+    else setInternalHide((v) => !v);
+  };
 
   // Présence d'au moins une pensée → afficher le bouton de masquage.
   const hasPensee = useMemo(
@@ -104,7 +121,7 @@ export function Chat({
               type="button"
               className={`btn xs${hidePensee ? "" : " accent"}`}
               aria-pressed={!hidePensee}
-              onClick={() => setHidePensee((v) => !v)}
+              onClick={togglePensee}
             >
               {hidePensee ? "Afficher la pensée" : "Masquer la pensée"}
             </button>

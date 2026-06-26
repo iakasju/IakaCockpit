@@ -31,6 +31,34 @@ describe("Roster — widget team (L8/D6)", () => {
     expect(screen.getAllByText("attend")).toHaveLength(4);
   });
 
+  it("L10b/P3 : workingAgents (transcript) prime — un délégué « travaille » même hors courant", () => {
+    // Gandalf délégué (minuscule, comme subagent_type) ; courant = Aragorn, pas pending.
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        workingAgents={new Set(["gandalf"])}
+        onPick={() => {}}
+      />,
+    );
+    // Seul Gandalf travaille (matching insensible à la casse).
+    expect(screen.getAllByText("travaille")).toHaveLength(1);
+    const gandalf = screen.getByTitle("S'adresser à Gandalf (@Gandalf)");
+    expect(gandalf.textContent).toContain("travaille");
+  });
+
+  it("L10b/P3 : workingAgents vide → aucun « travaille » (ignore pending, repli neutralisé)", () => {
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending
+        workingAgents={new Set()}
+        onPick={() => {}}
+      />,
+    );
+    expect(screen.queryByText("travaille")).toBeNull();
+  });
+
   it("met en évidence l'agent courant (aria-pressed)", () => {
     render(<Roster currentAgent="Gandalf" pending={false} onPick={() => {}} />);
     const current = screen.getByTitle("S'adresser à Gandalf (@Gandalf)");

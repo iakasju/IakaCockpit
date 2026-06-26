@@ -13,13 +13,14 @@
  * Plus de `tabsbar` (5 onglets PTY retirés, D5). L'état vit dans useConversations /
  * useNextStep ; les appels I/O passent par la façade. Aucun `invoke` ici.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { NextStep, Project } from "../api/backend";
 import type {
   Conversation,
   ConvMode,
 } from "../hooks/useConversations";
 import { mentionPrefix, parseMention } from "../hooks/useConversations";
+import { deriveWorkingAgents } from "../hooks/runnerView";
 import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
@@ -51,6 +52,10 @@ export interface WorkingViewProps {
   onRequestNextStep: (path: string) => void;
   /** Résolveur d'avatar par nom d'agent (L9) — vignettes roster + chat. */
   resolveAvatar?: AvatarResolver;
+  /** Canal pensée masqué ? (L10b/P3, réglage global persisté). */
+  hidePensee?: boolean;
+  /** Bascule + persiste l'état du canal pensée (L10b/P3). */
+  onToggleHidePensee?: () => void;
 }
 
 export function WorkingView({
@@ -68,11 +73,23 @@ export function WorkingView({
   onSend,
   onRequestNextStep,
   resolveAvatar,
+  hidePensee,
+  onToggleHidePensee,
 }: WorkingViewProps): JSX.Element {
   // Saisie par conversation (préfixe @agent au clic roster, D6).
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
   const [showNextStep, setShowNextStep] = useState(false);
+
+  // Statut roster VIVANT (L10b/P3) : agents « au travail » dérivés du transcript
+  // (délégations) de la conversation active. Recalculé à chaque nouveau tour.
+  const workingAgents = useMemo(
+    () =>
+      active
+        ? deriveWorkingAgents(active.history, active.pending, active.agent)
+        : new Set<string>(),
+    [active],
+  );
 
   const draft = active ? (drafts[active.projectId] ?? "") : "";
   const setDraft = (projectId: string, value: string): void =>
@@ -242,6 +259,9 @@ export function WorkingView({
                   onInterrupt={() =>
                     void pty.write(active.ptySessionId, "\x1b")
                   }
+                  // Canal pensée masquable persisté (L10b/P3) : contrôlé si fourni.
+                  hidePensee={hidePensee}
+                  onToggleHidePensee={onToggleHidePensee}
                 />
               )}
             </div>
@@ -260,6 +280,7 @@ export function WorkingView({
         <Roster
           currentAgent={active.agent}
           pending={active.pending}
+          workingAgents={workingAgents}
           onPick={pickAgent}
           resolveAvatar={resolveAvatar}
         />

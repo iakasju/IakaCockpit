@@ -74,3 +74,38 @@ export function runnerEventToTurn(ev: RunnerEvent): ChatTurn | null {
       return null;
   }
 }
+
+/**
+ * Dérive l'ensemble des agents « au travail » depuis l'historique (vues du transcript)
+ * — statut roster VIVANT (L10b/P3, § 6). PUR (aucun I/O/React) → testable.
+ *
+ * Heuristique MVP, locale, bornée (pas d'invention de canal) :
+ *   - une **délégation** (`kind:"delegation"`, `turn.agent` = sous-agent) met ce
+ *     sous-agent « au travail » ;
+ *   - une **parole assistant** de niveau chef « clôt » les délégations en cours (le
+ *     chef a repris la main / le compte-rendu est remonté) → on vide le set ;
+ *   - si `pending` (un tour est en vol), l'interlocuteur courant (le chef) travaille.
+ *
+ * Renvoie des noms **en minuscules** (le roster matche en insensible à la casse :
+ * `subagent_type` est minuscule, les membres team sont capitalisés). Limite assumée :
+ * une parole issue d'un fil de sous-agent peut clore tôt (is_sidechain non porté en
+ * ChatTurn) — acceptable en MVP (DEP-1 = statut temps réel « vivant »).
+ */
+export function deriveWorkingAgents(
+  history: ChatTurn[],
+  pending: boolean,
+  currentAgent: string,
+): Set<string> {
+  const working = new Set<string>();
+  for (const turn of history) {
+    if (turn.kind === "delegation" && turn.agent) {
+      working.add(turn.agent.toLowerCase());
+    } else if (turn.role === "assistant" && (turn.kind ?? "parole") === "parole") {
+      working.clear();
+    }
+  }
+  if (pending && currentAgent.trim().length > 0) {
+    working.add(currentAgent.toLowerCase());
+  }
+  return working;
+}

@@ -2,13 +2,14 @@
  * Roster — widget TEAM (L8, D6). Présentationnel pur.
  *
  * Liste les 5 agents (`DEMO_TEAM`, AR-3) en pastilles `[ROYAUME][Agent]` (royaume
- * MAJUSCULE) avec un STATUT local MVP : « travaille » (un tour de chat le concerne
- * est en vol) vs « attend » (idle). Le responsable / interlocuteur courant est mis
- * en évidence. Cliquer un agent → callback `onPick(agent)` (insère `@agent:` côté
- * saisie, D3/D6).
+ * MAJUSCULE) avec un STATUT local MVP : « travaille » vs « attend » (idle). Le
+ * responsable / interlocuteur courant est mis en évidence. Cliquer un agent →
+ * callback `onPick(agent)` (insère `@agent:` côté saisie, D3/D6).
  *
- * Statut = état LOCAL MVP (dérivé de `pending` + `currentAgent`), PAS un flux temps
- * réel (DEP-1). Aucun I/O ici (D8).
+ * Statut VIVANT (L10b/P3, § 6) : dérivé du **transcript** via `workingAgents`
+ * (ensemble de noms minuscules issus des délégations — `deriveWorkingAgents`). Repli
+ * L8 : à défaut, l'interlocuteur courant « travaille » si `pending`. PAS un flux
+ * temps réel persistant (DEP-1). Aucun I/O ici (D8).
  */
 import { useState } from "react";
 import { DEMO_TEAM, teamBadge, type DemoTeamMember } from "../mock/demoTeam";
@@ -19,8 +20,14 @@ export interface RosterProps {
   members?: readonly DemoTeamMember[];
   /** Interlocuteur courant (mis en évidence). */
   currentAgent: string;
-  /** Un tour de chat est en vol (→ l'agent courant « travaille »). */
+  /** Un tour de chat est en vol (→ l'agent courant « travaille », repli L8). */
   pending: boolean;
+  /**
+   * Agents « au travail » dérivés du transcript (L10b/P3) — noms en MINUSCULES
+   * (`deriveWorkingAgents`). Prime sur la logique `pending`/`currentAgent`. Absent →
+   * repli L8 (seul l'agent courant travaille si `pending`).
+   */
+  workingAgents?: ReadonlySet<string>;
   /** Clic sur un agent → adresser directement (`@agent:`). */
   onPick: (agent: string) => void;
   /**
@@ -48,6 +55,7 @@ export function Roster({
   members = DEMO_TEAM,
   currentAgent,
   pending,
+  workingAgents,
   onPick,
   resolveAvatar,
 }: RosterProps): JSX.Element {
@@ -57,7 +65,10 @@ export function Roster({
       <ul className="rosterlist">
         {members.map((m) => {
           const isCurrent = m.agent.toLowerCase() === currentAgent.toLowerCase();
-          const working = isCurrent && pending;
+          // Statut vivant du transcript (L10b/P3) ; repli L8 = courant + pending.
+          const working = workingAgents
+            ? workingAgents.has(m.agent.toLowerCase())
+            : isCurrent && pending;
           const status = working ? "travaille" : "attend";
           const avatarUrl = resolveAvatar?.(m.agent) ?? null;
           return (

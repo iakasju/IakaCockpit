@@ -160,6 +160,10 @@ export default function App(): JSX.Element {
             onSend={handleSend}
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
+            hidePensee={settings.hidePensee}
+            onToggleHidePensee={() =>
+              void settings.setHidePensee(!settings.hidePensee)
+            }
           />
         )}
         {grid.activeView === "settings" && (

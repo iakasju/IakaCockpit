@@ -338,4 +338,23 @@ describe("Chat — vues filtrées du transcript (L10b)", () => {
     );
     expect(container.querySelector(".chatbar")).toBeNull();
   });
+
+  it("L10b/P3 : toggle pensée CONTRÔLÉ — le clic appelle onToggleHidePensee (persisté)", () => {
+    const onToggle = vi.fn();
+    const history: ChatTurn[] = [
+      { role: "assistant", content: "je réfléchis", kind: "pensee" },
+    ];
+    // hidePensee=false (contrôlé) → la pensée est visible et le libellé propose de masquer.
+    render(
+      <Chat
+        {...baseProps}
+        history={history}
+        hidePensee={false}
+        onToggleHidePensee={onToggle}
+      />,
+    );
+    expect(screen.getByText("je réfléchis")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Masquer la pensée" }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
 });

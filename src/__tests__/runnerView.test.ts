@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { runnerEventToTurn } from "../hooks/runnerView";
+import { runnerEventToTurn, deriveWorkingAgents } from "../hooks/runnerView";
 import type { RunnerEvent } from "../api/backend";
+import type { ChatTurn } from "../hooks/useConversations";
 
 const base = { is_sidechain: false } as const;
 
@@ -108,5 +109,59 @@ describe("runnerEventToTurn — projection RunnerEvent → ChatTurn (L10b)", () 
       text: "",
     };
     expect(runnerEventToTurn(ev)).toBeNull();
+  });
+});
+
+describe("deriveWorkingAgents — statut roster vivant (L10b/P3)", () => {
+  it("une délégation met le sous-agent au travail (nom minuscule)", () => {
+    const history: ChatTurn[] = [
+      { role: "user", content: "cadre le lot" },
+      {
+        role: "assistant",
+        content: "Délègue à gandalf : cadrer",
+        kind: "delegation",
+        agent: "gandalf",
+      },
+    ];
+    const w = deriveWorkingAgents(history, false, "Aragorn");
+    expect(w.has("gandalf")).toBe(true);
+    expect(w.has("aragorn")).toBe(false); // pas pending
+  });
+
+  it("une parole assistant du chef clôt les délégations en cours", () => {
+    const history: ChatTurn[] = [
+      {
+        role: "assistant",
+        content: "Délègue à gandalf",
+        kind: "delegation",
+        agent: "gandalf",
+      },
+      // Le chef reprend la main (compte-rendu remonté) → délégation close.
+      { role: "assistant", content: "Cadrage terminé, voici la suite.", agent: "Aragorn" },
+    ];
+    const w = deriveWorkingAgents(history, false, "Aragorn");
+    expect(w.has("gandalf")).toBe(false);
+    expect(w.size).toBe(0);
+  });
+
+  it("pending → l'interlocuteur courant (chef) travaille", () => {
+    const w = deriveWorkingAgents([], true, "Aragorn");
+    expect(w.has("aragorn")).toBe(true);
+  });
+
+  it("gestes/activités/pensées ne changent pas le set de délégués", () => {
+    const history: ChatTurn[] = [
+      {
+        role: "assistant",
+        content: "Délègue à legolas",
+        kind: "delegation",
+        agent: "legolas",
+      },
+      { role: "assistant", content: "Bash — ls", kind: "geste" },
+      { role: "assistant", content: "Résultat : ok", kind: "activite" },
+      { role: "assistant", content: "je réfléchis", kind: "pensee" },
+    ];
+    const w = deriveWorkingAgents(history, false, "Aragorn");
+    expect(w.has("legolas")).toBe(true);
   });
 });
