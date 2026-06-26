@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { notifyUser } from "../api/backend";
 import type { NotifySupport, ServiceStatus } from "../api/backend";
+import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
 import type {
   Density,
   FontFamily,
@@ -41,6 +42,21 @@ const FONT: { id: FontFamily; label: string }[] = [
   { id: "system", label: "système" },
   { id: "serif", label: "serif" },
   { id: "mono-ui", label: "mono" },
+];
+
+/**
+ * Teams de vignettes disponibles (L9) : « aucune » (pastilles texte) + les teams
+ * embarquées dans le manifest. Libellés lisibles ; la charte suit le thème actif.
+ */
+const TEAM_LABELS: Record<string, string> = {
+  none: "Aucune (pastilles)",
+  lotr: "LOTR",
+  avengers: "Avengers",
+  starfleet: "Starfleet",
+};
+const TEAM_OPTIONS: { id: string; label: string }[] = [
+  { id: TEAM_NONE, label: TEAM_LABELS[TEAM_NONE] },
+  ...embeddedTeams().map((t) => ({ id: t, label: TEAM_LABELS[t] ?? t })),
 ];
 
 /** Supports de diffusion du canal adresse (L6, D2) — choisis côté Cockpit. */
@@ -273,6 +289,31 @@ export function SettingsView({
                   <div className="nm">{t.name}</div>
                 </button>
               ))}
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Team (vignettes)</div>
+                <div className="d">
+                  Incarne la team : un casting (univers) qui peuple les rôles.
+                  Les vignettes suivent la charte active. « Aucune » = pastilles
+                  texte.
+                </div>
+              </div>
+              <div className="ctl">
+                <select
+                  className="field"
+                  value={settings.team}
+                  aria-label="Team de vignettes"
+                  onChange={(e) => void settings.setTeam(e.target.value)}
+                >
+                  {TEAM_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>

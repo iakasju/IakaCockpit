@@ -21,6 +21,7 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     n8nActiveSupport: "slack",
     n8nTokenSet: false,
     theme: "naonedge-dark",
+    team: "lotr",
     ui: DEFAULT_UI,
     loaded: true,
     setRoot: noop,
@@ -34,6 +35,7 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     setN8nActiveSupport: noop,
     setN8nToken: noop,
     setTheme: noop,
+    setTeam: noop,
     setUiPref: noop,
     ...overrides,
   };
@@ -136,5 +138,40 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     );
     const slack = screen.getByRole("button", { name: "Slack" });
     expect(slack.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("L9-A3 : le sélecteur de team reflète la team active et appelle setTeam au changement", () => {
+    const setTeam = vi.fn(async () => {});
+    render(
+      <SettingsView
+        settings={makeSettings({ team: "avengers", setTeam })}
+        services={[]}
+        onRescan={() => {}}
+        onNotify={vi.fn(async () => ({ ok: true, provider: "mock", http_status: null }))}
+      />,
+    );
+    const select = screen.getByLabelText("Team de vignettes") as HTMLSelectElement;
+    expect(select.value).toBe("avengers");
+    fireEvent.change(select, { target: { value: "starfleet" } });
+    expect(setTeam).toHaveBeenCalledWith("starfleet");
+  });
+
+  it("L9 : le sélecteur de team propose « Aucune » + les teams embarquées", () => {
+    render(
+      <SettingsView
+        settings={makeSettings()}
+        services={[]}
+        onRescan={() => {}}
+        onNotify={vi.fn(async () => ({ ok: true, provider: "mock", http_status: null }))}
+      />,
+    );
+    const select = screen.getByLabelText("Team de vignettes");
+    const values = Array.from(select.querySelectorAll("option")).map(
+      (o) => (o as HTMLOptionElement).value,
+    );
+    expect(values).toContain("none");
+    expect(values).toContain("lotr");
+    expect(values).toContain("avengers");
+    expect(values).toContain("starfleet");
   });
 });

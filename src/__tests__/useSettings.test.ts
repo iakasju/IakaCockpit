@@ -7,6 +7,7 @@ import {
   CONFIG_KEYS,
   DEFAULT_UI,
   DEFAULT_THEME,
+  DEFAULT_TEAM,
   type DomTarget,
 } from "../hooks/useSettings";
 import type { Backend } from "../api/backend";
@@ -128,6 +129,27 @@ describe("useSettings — persistance (PO-2 / D4-bis)", () => {
     expect(api.configSet).toHaveBeenCalledWith("theme", "naonedge-light");
     expect(store["theme"]).toBe("naonedge-light");
     expect(dom.attrs["data-theme"]).toBe("naonedge-light");
+  });
+
+  it("L9-A3 : setTeam persiste la team (configSet 'ui_team') et un remontage la relit", async () => {
+    const { api, store } = makeApi();
+    const dom1 = makeDom();
+    const first = renderHook(() => useSettings({ api, dom: dom1 }));
+    await waitFor(() => expect(first.result.current.loaded).toBe(true));
+    // Défaut documenté.
+    expect(first.result.current.team).toBe(DEFAULT_TEAM);
+
+    await act(async () => {
+      await first.result.current.setTeam("avengers");
+    });
+    expect(api.configSet).toHaveBeenCalledWith(CONFIG_KEYS.team, "avengers");
+    expect(store[CONFIG_KEYS.team]).toBe("avengers");
+
+    // Remontage (= redémarrage) : la team est retrouvée.
+    const dom2 = makeDom();
+    const second = renderHook(() => useSettings({ api, dom: dom2 }));
+    await waitFor(() => expect(second.result.current.loaded).toBe(true));
+    expect(second.result.current.team).toBe("avengers");
   });
 
   it("setLitellmEndpoint persiste l'URL (clé non sensible)", async () => {

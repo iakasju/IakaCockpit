@@ -40,6 +40,8 @@ export const CONFIG_KEYS = {
   fontFamily: "ui_font_family",
   fontScale: "ui_font_scale",
   theme: "theme",
+  /** Team de vignettes thémées (L9, façade ; `none` = pastilles texte seules). */
+  team: "ui_team",
   litellmEndpoint: "litellm_endpoint",
   litellmModel: "litellm_model",
   couchdbUrl: "couchdb_url",
@@ -62,6 +64,13 @@ export const DEFAULT_UI: UiPrefs = {
 
 export const DEFAULT_THEME = "naonedge-dark";
 
+/**
+ * Team de vignettes par défaut (L9). `lotr` = casting historique iakaframe
+ * (homologues directs Odin/Aragorn/Gandalf/Gimli/Legolas). `none` désactive les
+ * vignettes (pastilles texte seules) — zéro régression L8.
+ */
+export const DEFAULT_TEAM = "lotr";
+
 export interface UseSettings {
   root: string | null;
   litellmEndpoint: string;
@@ -82,6 +91,8 @@ export interface UseSettings {
   /** Un token de webhook n8n est-il enregistré au keychain ? (présence seule, L6). */
   n8nTokenSet: boolean;
   theme: string;
+  /** Team de vignettes active (L9). `none` = pastilles texte seules. */
+  team: string;
   ui: UiPrefs;
   loaded: boolean;
   setRoot: (root: string) => Promise<void>;
@@ -102,6 +113,8 @@ export interface UseSettings {
   /** Écrit (vide = retire) le token du webhook n8n au keychain ; met à jour `n8nTokenSet` (L6). */
   setN8nToken: (value: string) => Promise<void>;
   setTheme: (id: string) => Promise<void>;
+  /** Persiste la team de vignettes (L9, config non sensible ui_team). */
+  setTeam: (team: string) => Promise<void>;
   setUiPref: <K extends keyof UiPrefs>(
     key: K,
     value: UiPrefs[K],
@@ -176,6 +189,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
 
   const [root, setRootState] = useState<string | null>(null);
   const [theme, setThemeState] = useState<string>(DEFAULT_THEME);
+  const [team, setTeamState] = useState<string>(DEFAULT_TEAM);
   const [litellmEndpoint, setLitellmState] = useState<string>("");
   const [litellmModel, setLitellmModelState] = useState<string>("");
   const [aiKeySet, setAiKeySet] = useState<boolean>(false);
@@ -229,8 +243,10 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       if (cancelled) return;
       const nextUi = parsePrefs(cfg);
       const nextTheme = cfg[CONFIG_KEYS.theme] || DEFAULT_THEME;
+      const nextTeam = cfg[CONFIG_KEYS.team] || DEFAULT_TEAM;
       setUi(nextUi);
       setThemeState(nextTheme);
+      setTeamState(nextTeam);
       setLitellmState(cfg[CONFIG_KEYS.litellmEndpoint] ?? "");
       setLitellmModelState(cfg[CONFIG_KEYS.litellmModel] ?? "");
       setAiKeySet(keySet);
@@ -341,6 +357,15 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     [api, ui],
   );
 
+  const setTeam = useCallback(
+    async (next: string): Promise<void> => {
+      // Config non sensible (ui_team) ; pas d'application DOM (le rendu lit `team`).
+      await api.configSet(CONFIG_KEYS.team, next);
+      setTeamState(next);
+    },
+    [api],
+  );
+
   const setUiPref = useCallback(
     async <K extends keyof UiPrefs>(
       key: K,
@@ -377,6 +402,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nActiveSupport,
       n8nTokenSet,
       theme,
+      team,
       ui,
       loaded,
       setRoot,
@@ -390,6 +416,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nActiveSupport,
       setN8nToken,
       setTheme,
+      setTeam,
       setUiPref,
     }),
     [
@@ -404,6 +431,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nActiveSupport,
       n8nTokenSet,
       theme,
+      team,
       ui,
       loaded,
       setRoot,
@@ -417,6 +445,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nActiveSupport,
       setN8nToken,
       setTheme,
+      setTeam,
       setUiPref,
     ],
   );
