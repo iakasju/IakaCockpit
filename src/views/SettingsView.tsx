@@ -11,7 +11,13 @@ import { useState } from "react";
 import { notifyUser } from "../api/backend";
 import type { NotifySupport, ServiceStatus } from "../api/backend";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
+import {
+  DEFAULT_CHEF_ALLOWED_TOOLS,
+  DEFAULT_CHEF_MODEL,
+} from "../hooks/useSettings";
 import type {
+  ChefRunnerKind,
+  ChefTrustMode,
   Density,
   FontFamily,
   NavPos,
@@ -64,6 +70,22 @@ const SUPPORTS: { id: NotifySupport; label: string }[] = [
   { id: "slack", label: "Slack" },
   { id: "discord", label: "Discord" },
   { id: "mqtt", label: "MQTT" },
+];
+
+/**
+ * Runners du chef-conversation (L10b/P3). Seul `claude-code` est branché/sélectionnable
+ * en L10 ; `ollama`/`codex` sont posés comme cible (extension) et donc DÉSACTIVÉS.
+ */
+const CHEF_RUNNERS: { id: ChefRunnerKind; label: string; enabled: boolean }[] = [
+  { id: "claude-code", label: "Claude Code (TUI native)", enabled: true },
+  { id: "ollama", label: "Ollama (cible — bientôt)", enabled: false },
+  { id: "codex", label: "Codex (cible — bientôt)", enabled: false },
+];
+
+/** Modes de trust du cwd du chef-runner (L10b/P3, § 4.5). */
+const TRUST_MODES: { id: ChefTrustMode; label: string }[] = [
+  { id: "inherit", label: "héritage" },
+  { id: "accept", label: "acceptation" },
 ];
 
 export interface SettingsViewProps {
@@ -120,6 +142,8 @@ export function SettingsView({
   const [n8nMsgDraft, setN8nMsgDraft] = useState<string>("");
   const [n8nTestResult, setN8nTestResult] = useState<string>("");
   const [n8nTesting, setN8nTesting] = useState<boolean>(false);
+  const [chefModelDraft, setChefModelDraft] = useState<string>("");
+  const [chefToolsDraft, setChefToolsDraft] = useState<string>("");
 
   // Pré-remplit les brouillons à la première valeur chargée.
   const rootValue = rootDraft || settings.root || "";
@@ -129,6 +153,12 @@ export function SettingsView({
   const couchUrlValue = couchUrlDraft || settings.couchdbUrl || "";
   const couchDbValue = couchDbDraft || settings.couchdbDb || "";
   const n8nUrlValue = n8nUrlDraft || settings.n8nWebhookUrl || "";
+  // Chef-runner (L10b/P3) : pré-rempli avec le défaut Rust quand non persisté, pour
+  // que le champ montre la valeur effective (vider + enregistrer → le défaut reprend).
+  const chefModelValue =
+    chefModelDraft || settings.chefModel || DEFAULT_CHEF_MODEL;
+  const chefToolsValue =
+    chefToolsDraft || settings.chefAllowedTools || DEFAULT_CHEF_ALLOWED_TOOLS;
 
   // Déclencheur « Tester l'envoi » (L6) : émet via la façade, affiche ack/erreur.
   // Aucun `invoke` ici — c'est `onNotify` (façade) qui parle à Rust (D6).
@@ -435,6 +465,143 @@ export function SettingsView({
                 >
                   Enregistrer
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="block">
+            <div className="bt">
+              <span className="e">🤖</span>
+              <h2>Chef-runner / Conversation</h2>
+            </div>
+            <p className="lead">
+              Le chef-runner possède la conversation (terminal-source) ; le chat en
+              est la vue filtrée. Ces réglages sont GLOBAUX (set par défaut du
+              cockpit) et lus à l'ouverture d'une conversation. Per-projet = cible
+              (hors périmètre actuel).
+            </p>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Runner par défaut</div>
+                <div className="d">
+                  Seul Claude Code (TUI native) est branché en l'état ; Ollama/Codex
+                  sont la cible (extension).
+                </div>
+              </div>
+              <div className="ctl">
+                <select
+                  className="field"
+                  value={settings.chefRunnerKind}
+                  aria-label="Runner du chef"
+                  onChange={(e) =>
+                    void settings.setChefRunnerKind(
+                      e.target.value as ChefRunnerKind,
+                    )
+                  }
+                >
+                  {CHEF_RUNNERS.map((r) => (
+                    <option key={r.id} value={r.id} disabled={!r.enabled}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Modèle du chef-runner</div>
+                <div className="d">
+                  Transmis à <code>claude --model</code>. Vide → défaut (
+                  {DEFAULT_CHEF_MODEL}).
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder={DEFAULT_CHEF_MODEL}
+                  value={chefModelValue}
+                  onChange={(e) => setChefModelDraft(e.target.value)}
+                  aria-label="Modèle du chef-runner"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => void settings.setChefModel(chefModelValue)}
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Outils autorisés (allowlist)</div>
+                <div className="d">
+                  <code>--allowedTools</code> (CSV). Jamais de bypass global. ⚠️ N'a
+                  d'effet que sur un workspace trusté (cf. trust ci-dessous). Vide →
+                  défaut ({DEFAULT_CHEF_ALLOWED_TOOLS}).
+                </div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="field"
+                  type="text"
+                  placeholder={DEFAULT_CHEF_ALLOWED_TOOLS}
+                  value={chefToolsValue}
+                  onChange={(e) => setChefToolsDraft(e.target.value)}
+                  aria-label="Allowlist d'outils du chef-runner"
+                />
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() =>
+                    void settings.setChefAllowedTools(chefToolsValue)
+                  }
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Trust du cwd</div>
+                <div className="d">
+                  <strong>héritage</strong> : confiance héritée d'un dossier parent
+                  trusté, sinon dialogue natif dans le terminal.{" "}
+                  <strong>acceptation</strong> : pré-accepte le cwd (idempotent) pour
+                  que le dialogue ne bloque pas l'auto-lancement.
+                </div>
+              </div>
+              <div className="ctl">
+                <Seg
+                  options={TRUST_MODES}
+                  value={settings.chefTrustMode}
+                  onChange={(v) => void settings.setChefTrustMode(v)}
+                />
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">Canal pensée</div>
+                <div className="d">
+                  Masque par défaut le canal « pensée » (thinking) dans le chat
+                  (réduit le bruit). Réglable aussi depuis la barre du chat.
+                </div>
+              </div>
+              <div className="ctl">
+                <Seg
+                  options={[
+                    { id: "hidden", label: "masquée" },
+                    { id: "shown", label: "visible" },
+                  ]}
+                  value={settings.hidePensee ? "hidden" : "shown"}
+                  onChange={(v) => void settings.setHidePensee(v === "hidden")}
+                />
               </div>
             </div>
           </div>

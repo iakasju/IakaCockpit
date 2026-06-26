@@ -22,6 +22,11 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     n8nTokenSet: false,
     theme: "naonedge-dark",
     team: "lotr",
+    chefRunnerKind: "claude-code",
+    chefModel: "",
+    chefAllowedTools: "",
+    chefTrustMode: "inherit",
+    hidePensee: true,
     ui: DEFAULT_UI,
     loaded: true,
     setRoot: noop,
@@ -36,6 +41,11 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     setN8nToken: noop,
     setTheme: noop,
     setTeam: noop,
+    setChefRunnerKind: noop,
+    setChefModel: noop,
+    setChefAllowedTools: noop,
+    setChefTrustMode: noop,
+    setHidePensee: noop,
     setUiPref: noop,
     ...overrides,
   };
@@ -154,6 +164,70 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     expect(select.value).toBe("avengers");
     fireEvent.change(select, { target: { value: "starfleet" } });
     expect(setTeam).toHaveBeenCalledWith("starfleet");
+  });
+
+  it("L10b/P3 : la section chef-runner expose modèle/allowlist/trust et appelle les setters", () => {
+    const setChefModel = vi.fn(async () => {});
+    const setChefAllowedTools = vi.fn(async () => {});
+    const setChefTrustMode = vi.fn(async () => {});
+    render(
+      <SettingsView
+        settings={makeSettings({
+          setChefModel,
+          setChefAllowedTools,
+          setChefTrustMode,
+        })}
+        services={[]}
+        onRescan={() => {}}
+        onNotify={vi.fn(async () => ({ ok: true, provider: "mock", http_status: null }))}
+      />,
+    );
+    // Modèle : champ pré-rempli au défaut, enregistrement via setChefModel.
+    const modelField = screen.getByLabelText(
+      "Modèle du chef-runner",
+    ) as HTMLInputElement;
+    fireEvent.change(modelField, { target: { value: "claude-sonnet-4-5" } });
+    fireEvent.click(
+      screen
+        .getByLabelText("Modèle du chef-runner")
+        .parentElement!.querySelector("button")!,
+    );
+    expect(setChefModel).toHaveBeenCalledWith("claude-sonnet-4-5");
+
+    // Allowlist.
+    const toolsField = screen.getByLabelText(
+      "Allowlist d'outils du chef-runner",
+    ) as HTMLInputElement;
+    fireEvent.change(toolsField, { target: { value: "Read,Glob" } });
+    fireEvent.click(
+      screen
+        .getByLabelText("Allowlist d'outils du chef-runner")
+        .parentElement!.querySelector("button")!,
+    );
+    expect(setChefAllowedTools).toHaveBeenCalledWith("Read,Glob");
+
+    // Trust mode : segment « acceptation ».
+    fireEvent.click(screen.getByRole("button", { name: "acceptation" }));
+    expect(setChefTrustMode).toHaveBeenCalledWith("accept");
+  });
+
+  it("L10b/P3 : seul Claude Code est sélectionnable (Ollama/Codex désactivés)", () => {
+    render(
+      <SettingsView
+        settings={makeSettings()}
+        services={[]}
+        onRescan={() => {}}
+        onNotify={vi.fn(async () => ({ ok: true, provider: "mock", http_status: null }))}
+      />,
+    );
+    const select = screen.getByLabelText("Runner du chef") as HTMLSelectElement;
+    const opts = Array.from(select.querySelectorAll("option"));
+    const claude = opts.find((o) => o.value === "claude-code")!;
+    const ollama = opts.find((o) => o.value === "ollama")!;
+    const codex = opts.find((o) => o.value === "codex")!;
+    expect(claude.disabled).toBe(false);
+    expect(ollama.disabled).toBe(true);
+    expect(codex.disabled).toBe(true);
   });
 
   it("L9 : le sélecteur de team propose « Aucune » + les teams embarquées", () => {
