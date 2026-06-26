@@ -13,22 +13,32 @@
  * utilisés par les tests team) mais ne servent plus à ouvrir 5 onglets en L8.
  */
 
-/** Une entrée team : royaume (MAJUSCULE) + nom d'agent. */
+/**
+ * Une entrée team : royaume (MAJUSCULE) + nom d'agent + `roleIndex` (L9).
+ *
+ * `roleIndex` = index du RÔLE iakagraph (clé invariante de `teams.json`,
+ * `~/work/iakagraph/specs/teams-casting.md`) : 0=portefeuille, 1=coordination,
+ * 2=cadrage, 3=dev, 4=qualité, 5=production, 6=design, 7=doc. Sert à piquer le
+ * bon slug dans la team choisie (résolveur de vignette). Les libellés `royaume`
+ * d'affichage (B-1 : `ACCUEIL` etc.) sont CONSERVÉS — pas de bascule vers les
+ * libellés de rôle iakagraph.
+ */
 export interface DemoTeamMember {
   royaume: string;
   agent: string;
+  roleIndex: number;
 }
 
 /**
- * Les 5 onglets team de la démo (ordre = chaîne iakaframe). Constante figée :
- * le périmètre L7 est exactement ces 5 (AR-1).
+ * Les 5 agents team de la démo (ordre = chaîne iakaframe). Constante figée :
+ * le périmètre L7 est exactement ces 5 (AR-1). `roleIndex` mappe vers teams.json.
  */
 export const DEMO_TEAM: readonly DemoTeamMember[] = [
-  { royaume: "PORTEFEUILLE", agent: "Odin" },
-  { royaume: "ACCUEIL", agent: "Aragorn" },
-  { royaume: "CADRAGE", agent: "Gandalf" },
-  { royaume: "DEV", agent: "Gimli" },
-  { royaume: "QUALITÉ", agent: "Legolas" },
+  { royaume: "PORTEFEUILLE", agent: "Odin", roleIndex: 0 },
+  { royaume: "ACCUEIL", agent: "Aragorn", roleIndex: 1 },
+  { royaume: "CADRAGE", agent: "Gandalf", roleIndex: 2 },
+  { royaume: "DEV", agent: "Gimli", roleIndex: 3 },
+  { royaume: "QUALITÉ", agent: "Legolas", roleIndex: 4 },
 ] as const;
 
 /** Pastille `[ROYAUME][Agent]` (royaume MAJUSCULE) d'un membre team (roster L8). */
