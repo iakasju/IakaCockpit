@@ -224,7 +224,7 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       main courante L4) ; façade unique, pas de god-component. Arbitrages ouverts : **B-1** (libellés royaume vs
       rôle — reco garder + `roleIndex`), **C-1** (3 teams vs 11 — reco 3). Est. **≈ 2–3,5 j-homme** (P1 ~0,5–1 j,
       P2 ~1,5–2,5 j).)*
-- [~] **L10** — Ré-architecture conversation/session (**terminal-source + chat-vue**) — **EN COURS : L10a PASS, L10b à venir**
+- [x] **L10** — Ré-architecture conversation/session (**terminal-source + chat-vue**) — **L10a + L10b LIVRÉS (gate PASS + recette terrain OK), candidate `v0.9.0-rc`**
       → `specs/instructions/L10-conversation-session.md`
       *(**cadré par 🧙 Gandalf, re-cadré post-spikes (2026-06-26)**, met l'app en conformité avec la **vision
       gravée** `PROJET.md` **§ 0**. **VIRAGE acté** : après le spike P0 (`stream-json` en pipes, `3ad0ffb`)
@@ -245,11 +245,22 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       native** (`PtyTerminal runnerKind=claude-code`, auto-lancé hands-off dans le cwd) ; pipes parqué
       débranché. **Recette réelle validée** : transcript écrit dans `iaka-demo` (preuve scrub env + auto-launch
       cwd). Commits `f99cdba`/`5335143`.)*
-      *(**L10b (P2+P3) — À DÉMARRER** : tailer `transcript.rs` côté Rust → `runner://event` (parse défensif,
-      mapping paroles/gestes/`Task`+`isSidechain`/activité/pensée), vues filtrées (chat = paroles, widget
-      délégations, état agents), **entrée partagée** chat↔terminal, bouton esc chat ; puis P3 réglages
-      globaux + reframe `ai.rs chat` Ollama. Gate Legolas L10b unique. Délégations à confirmer par un run live
-      avant fermeture du widget.)*
+      *(**L10b (P2+P3) — gate Legolas PASS + recette terrain OK** (2026-06-26). Tailer `transcript.rs` côté Rust
+      → `runner://event` (parse défensif, mapping paroles/gestes/**délégation = tool `Agent`** (pas `Task` !)
+      /activité/pensée), vues filtrées (chat = paroles attribuées par badge, gestes, délégations), **entrée
+      partagée** chat↔terminal (écho + `pty_write`, `@agent` verbatim), bouton esc chat, réglages globaux
+      (modèle/allowlist/trust/pensée en config), roster vivant. **3 cycles de débogage recette** : (1) args
+      Tauri v2 **camelCase** pour le tailer (snake_case → commande rejetée silencieusement) ; (2) double-spawn
+      **StrictMode** (garde `spawnRef`, PTY ne ferme plus au démontage) ; (3) plafond d'attente du tailer
+      **retiré** (Claude crée le transcript tard, après trust + 1er message). Recette finale OK avec `iaka-demo`
+      **pré-trusté** (`hasTrustDialogAccepted`). 234 front + 202 Rust verts. Commits `2954314`..`d4d0326`.)*
+      *(**Différé tracé (post-L10, hors lot, décidé avec Stéphane)** : (a) **spike P0bis Codex/ChatGPT** (CLI non
+      installé — vérifier `~/.codex/sessions`) avant tout runner Codex ; (b) **rendu xterm de la TUI native**
+      lent + lignes qui se chevauchent au scroll (gênant, secondaire) ; (c) **modèle « chef nu vs team »** : le
+      chef = `claude` générique, pas la team iakaframe (faut-il auto-`iakastart` ? rapport persona/roster ↔ chef
+      réel ?) ; (d) **Stop hook `identity-guard`** se déclenche sur le chef (hérité de `~/.claude` global) — à
+      neutraliser ou assumer ; (e) `isSidechain:true` non reconfirmé en TUI interactive (mappé/testé sur
+      fixtures). Voir mémoires `runner-natif-tail-transcript`, `transcript-delegation-agent-tool`.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
