@@ -38,6 +38,7 @@ import {
   configSet,
   configAll,
   nextStep,
+  chat,
   aiSetKey,
   aiHasKey,
   fetchMainCourante,
@@ -235,6 +236,33 @@ describe("backend.ts (moteur prochaine étape — L3)", () => {
     });
     expect(ns.provider).toBe("mock");
     expect(ns.suggestion).toBe("Fais X.");
+  });
+
+  it("chat invoque la commande chat avec path/agent/messages (L8/D2)", async () => {
+    invokeMock.mockResolvedValue({
+      content: "Réponse de l'agent.",
+      provider: "mock",
+      model: "llama3.1:8b",
+      tokens_in: null,
+      tokens_out: null,
+    });
+    const messages = [
+      { role: "user" as const, content: "Salut" },
+      { role: "assistant" as const, content: "Bonjour" },
+      { role: "user" as const, content: "Où en est-on ?" },
+    ];
+    const reply = await chat("/home/u/work/proj", "Gandalf", messages);
+    expect(invokeMock).toHaveBeenCalledWith("chat", {
+      path: "/home/u/work/proj",
+      agent: "Gandalf",
+      messages,
+    });
+    expect(reply.provider).toBe("mock");
+    expect(reply.content).toBe("Réponse de l'agent.");
+  });
+
+  it("la façade expose chat (L8)", () => {
+    expect(typeof backend.chat).toBe("function");
   });
 
   it("aiSetKey invoque ai_set_key avec value (write-only)", async () => {
