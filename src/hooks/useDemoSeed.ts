@@ -26,6 +26,8 @@
  */
 import { useEffect, useRef } from "react";
 import { backend, type Backend } from "../api/backend";
+import type { ChatTurn } from "./useConversations";
+import { DEMO_HISTORY } from "../mock/demoConversation";
 
 /** Id/libellé logique de la conversation démo (projet `iaka-demo`). */
 export const DEMO_PROJECT_ID = "iaka-demo";
@@ -35,20 +37,35 @@ export interface DemoSeedDeps {
   api?: Backend;
   /** Nombre de conversations déjà ouvertes (garde de non-doublon, D7). */
   conversationsCount: number;
-  /** Ouvre (ou ré-active) la conversation démo — réutilise `useConversations.openConversation`. */
+  /**
+   * Ouvre (ou ré-active) la conversation démo — réutilise
+   * `useConversations.openConversation`. L9 : un `initialHistory` optionnel
+   * précharge l'historique de démo (chaîne de badges iakaframe).
+   */
   openConversation: (
     projectId: string,
     title: string,
     cwd: string,
     agent?: string,
+    initialHistory?: ChatTurn[],
   ) => string;
   /** Rafraîchit le portfolio (fait apparaître la tuile démo). */
   refreshPortfolio: () => Promise<void> | void;
+  /**
+   * Ajoute le projet démo au **set de Work** (L9-B). Idempotent côté
+   * `useWorkset.add`. Optionnel : injecté par `App` ; absent en test → no-op.
+   */
+  addToWorkset?: (projectId: string) => void;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
-  const { api = backend, conversationsCount, openConversation, refreshPortfolio } =
-    deps;
+  const {
+    api = backend,
+    conversationsCount,
+    openConversation,
+    refreshPortfolio,
+    addToWorkset,
+  } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
   const ranRef = useRef(false);
@@ -59,6 +76,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   openRef.current = openConversation;
   const refreshRef = useRef(refreshPortfolio);
   refreshRef.current = refreshPortfolio;
+  const addWorkRef = useRef(addToWorkset);
+  addWorkRef.current = addToWorkset;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -77,9 +96,20 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
       if (!report.seeded || !report.demo_path) return;
 
       // Non-doublon (D7) : n'ouvre la conversation démo que si aucune n'est active.
+      // L9-C.1 : on précharge l'historique de démo (chaîne de badges iakaframe).
       if (countRef.current === 0) {
-        openRef.current(DEMO_PROJECT_ID, DEMO_PROJECT_ID, report.demo_path);
+        openRef.current(
+          DEMO_PROJECT_ID,
+          DEMO_PROJECT_ID,
+          report.demo_path,
+          undefined,
+          DEMO_HISTORY,
+        );
       }
+
+      // L9-B : le projet démo entre dans le set de Work (idempotent, non destructif).
+      // Borné par le flag dev (`seeded:true`) → inerte en prod. Reste sur Portfolio (AR-4).
+      addWorkRef.current?.(DEMO_PROJECT_ID);
 
       // Fait apparaître la tuile `iaka-demo` (AR-4 : on reste sur Portfolio).
       try {

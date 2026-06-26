@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useDemoSeed, DEMO_PROJECT_ID } from "../hooks/useDemoSeed";
+import { DEMO_HISTORY } from "../mock/demoConversation";
 import type { Backend, SeedReport } from "../api/backend";
+import type { ChatTurn } from "../hooks/useConversations";
 
 const SEEDED: SeedReport = {
   seeded: true,
@@ -22,18 +24,25 @@ function makeApi(report: SeedReport | (() => Promise<SeedReport>)): Backend {
   return { seedDemo: vi.fn(impl) } as unknown as Backend;
 }
 
-/** Mock typé d'`openConversation` (signature `(projectId, title, cwd, agent?) => id`). */
+/** Mock typé d'`openConversation` (signature L9 : `(projectId, title, cwd, agent?, initialHistory?) => id`). */
 function makeOpenConv() {
   return vi.fn<
-    (projectId: string, title: string, cwd: string, agent?: string) => string
+    (
+      projectId: string,
+      title: string,
+      cwd: string,
+      agent?: string,
+      initialHistory?: ChatTurn[],
+    ) => string
   >(() => "conv-id");
 }
 
 describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
-  it("seeded:true + aucune conversation → ouvre UNE conversation démo + refresh", async () => {
+  it("seeded:true + aucune conversation → ouvre UNE conversation démo + refresh + précharge l'historique (C.1)", async () => {
     const api = makeApi(SEEDED);
     const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
+    const addToWorkset = vi.fn();
 
     renderHook(() =>
       useDemoSeed({
@@ -41,6 +50,7 @@ describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
         conversationsCount: 0,
         openConversation,
         refreshPortfolio,
+        addToWorkset,
       }),
     );
 
@@ -50,7 +60,75 @@ describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
     expect(args[0]).toBe(DEMO_PROJECT_ID);
     expect(args[1]).toBe(DEMO_PROJECT_ID);
     expect(args[2]).toBe("/home/u/work/iaka-demo");
+    // L9-C.1 : l'historique de démo est passé en 5e argument (chaîne de badges).
+    expect(args[4]).toEqual(DEMO_HISTORY);
     await waitFor(() => expect(refreshPortfolio).toHaveBeenCalled());
+  });
+
+  it("L9-B : seeded:true → ajoute iaka-demo au set de Work (idempotent côté add)", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const addToWorkset = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        addToWorkset,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(addToWorkset).toHaveBeenCalledWith(DEMO_PROJECT_ID),
+    );
+    expect(addToWorkset).toHaveBeenCalledTimes(1);
+  });
+
+  it("L9-B : seeded:false (prod) → n'ajoute RIEN au set de Work", async () => {
+    const api = makeApi(INERT);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const addToWorkset = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        addToWorkset,
+      }),
+    );
+
+    await waitFor(() => expect(api.seedDemo).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(addToWorkset).not.toHaveBeenCalled();
+  });
+
+  it("L9-B : même conversation déjà active → ajoute QUAND MÊME au set de Work (B indépendant de C)", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const addToWorkset = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 1,
+        openConversation,
+        refreshPortfolio,
+        addToWorkset,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(addToWorkset).toHaveBeenCalledWith(DEMO_PROJECT_ID),
+    );
+    // La conversation n'est pas redoublée, mais le workset est bien alimenté.
+    expect(openConversation).not.toHaveBeenCalled();
   });
 
   it("seeded:false (flag off / prod) → n'ouvre AUCUNE conversation, ne refresh pas", async () => {

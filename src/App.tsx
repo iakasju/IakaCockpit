@@ -40,6 +40,8 @@ export default function App(): JSX.Element {
     conversationsCount: conversations.conversations.length,
     openConversation: conversations.openConversation,
     refreshPortfolio: portfolio.refresh,
+    // L9-B : le projet démo entre aussi dans le set de Work (idempotent).
+    addToWorkset: workset.add,
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
