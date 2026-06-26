@@ -4,6 +4,13 @@
 > **aucun code n'est écrit ici** — vision, valeurs, architecture cible, périmètre, réserves
 > de faisabilité (vérifiées sur le web) et plan en *moves*.
 > Rédigé par 🧙 Gandalf (P1 — cadrage), iakaframe. Date : 2026-06-24.
+> **Révision majeure 2026-06-26** : gravure du **modèle produit conversationnel** (portefeuille →
+> projet → sessions ; session = team d'agents pilotée par un **chef de projet** ; **un terminal =
+> source de vérité**, **chat = vue filtrée + entrée partagée** ; agent = **runner + modèle +
+> skills**). Cette révision **SUPERSEDE le modèle conversationnel de L8** (où le chat était un
+> dialogue Ollama one-shot et le shell un zsh générique). **Voir le nouveau § 0 (modèle produit)
+> + § CIBLE vs ÉTAPE ACTUELLE.** Sections révisées en conséquence : § 2.3 (runner — devient le
+> CŒUR), § 4 (vues Work/conversation), § 5 (canaux).
 
 > **Règle de priorité.** La vision de Stéphane prime. iakaIDE
 > (`/Users/sjupin/work/iakaIDE`) et sa reverse fonctionnelle sont **du matériau de
@@ -11,6 +18,95 @@
 > git, portfolio, PTY, services, config — cf. § 3.4) et on garde les concepts UX éprouvés
 > (grille de widgets + dock + onglets, moteur « prochaine étape »), mais le **front est
 > réécrit propre**. Partout où la vision diffère de l'existant, **la vision gagne**.
+
+---
+
+## 0. MODÈLE PRODUIT — portefeuille → projet → sessions (vision gravée 2026-06-26)
+
+> **Pièce maîtresse de la vision** (validée par Stéphane le 2026-06-26). Cette section décrit le
+> modèle produit **cible et complet** ; le § 0.4 sépare explicitement ce qui est **l'étape
+> actuelle** (fidèle à la cible) de ce qui reste **à tenir** (la cible). Toute session ultérieure
+> doit relire ce § 0 avant de toucher à l'architecture conversation/session — c'est le garde-fou
+> anti-déformation demandé par Stéphane.
+
+### 0.1 La hiérarchie : portefeuille → projet → sessions
+- **Portefeuille** : l'ensemble des projets vus depuis le chapeau (cf. § 1.3, § 2.5).
+- **Projet** : une **histoire de sessions de travail** liées à du code. Sa **tuile** Portfolio
+  porte un **état posé** (où en est le projet). Depuis cet état, trois gestes possibles :
+  - **voir la démo du moment** (démo préchargée, type L9 — incarne où en est le projet) ;
+  - **lancer** une nouvelle session ;
+  - **continuer** une session existante.
+- **Session** : une unité de travail. **Une session = une TEAM d'agents** pilotée par un **chef
+  de projet** (un agent). C'est l'objet vivant du travail.
+
+### 0.2 L'agent = runner + modèle + skills ; le CHEF = interlocuteur unique de Stéphane
+- **Chaque agent est un agent IA = un RUNNER + un MODÈLE.**
+  - **Runner** ∈ { ollama local, ollama lan, litellm local, litellm lan, **claude code**,
+    chatgpt, … } — le harnais qui exécute.
+  - **Modèle** : choisi dans le runner (ex. claude → sonnet / opus ; ollama → llama, qwen…).
+  - **Skills / compétences** : issus de la **base iakaframe** (les rôles-skills des royaumes).
+- **La conversation = MOI (Stéphane) ↔ le CHEF DE PROJET.** Le chef me parle avec **son** modèle.
+  C'est **LUI** qui parle aux agents de la team, **délègue**, et **rend compte en VERBATIM** des
+  actions de la team (jamais de ventriloquie — cf. méthode iakaframe, restitution en relais).
+- **Settings = par agent** : runner + modèle + skills se règlent **agent par agent** (la cible ;
+  cf. § 0.4 pour l'étape actuelle où les settings sont globaux avec un set par défaut).
+
+### 0.3 LE TERMINAL = source de vérité ; LE CHAT = vue filtrée + entrée partagée
+> C'est le point qui **SUPERSEDE le modèle de conversation de L8**. En L8 le chat était un
+> dialogue Ollama **one-shot** et le shell un **zsh générique** ; désormais **le terminal devient
+> la source** (le chef-runner — par défaut **Claude Code** — y tourne) et **le chat est une
+> projection filtrée de ce flux**, les deux **partageant l'entrée**.
+
+- **UN seul TERMINAL par session = celui du CHEF = TOUTE la conversation.** C'est le **flux brut
+  complet** où le runner s'exprime librement (sa pensée, ses gestes, sa parole). Le terminal est :
+  - la **source de vérité** de la session ;
+  - le **point de contrôle** : interrompre (`esc`) n'est possible **que là**.
+- **Le CHAT (style WhatsApp) est une VUE FILTRÉE de ce flux terminal** — projection ergonomique
+  « parole » (canal **adresse**), essentiellement **moi ↔ chef** + ses **comptes-rendus verbatim**
+  des agents. Le chat ne remplace pas le terminal : il en est une lecture filtrée.
+- **Chat ⇄ terminal partagent l'ENTRÉE.** Taper dans le chat **l'affiche dans le chat** ET
+  **l'injecte comme entrée standard (stdin) du terminal**. Une seule saisie, deux surfaces.
+
+  ```
+  ┌──────────────── SESSION (1 par travail) ────────────────┐
+  │  CHEF DE PROJET (agent = runner + modèle + skills)       │
+  │      runner défaut = Claude Code (CLI `claude` dans PTY) │
+  │                                                          │
+  │   TERMINAL (PTY)  ── flux brut complet ──► SOURCE DE     │
+  │   = toute la conversation du chef           VÉRITÉ +     │
+  │     (pensée / geste / adresse)              CONTRÔLE esc │
+  │        ▲                  │                              │
+  │        │ stdin partagé    │ projection FILTRÉE (adresse) │
+  │        │                  ▼                              │
+  │   CHAT WhatsApp ── moi ↔ chef + comptes-rendus verbatim  │
+  │   (saisie commune ─┘  des agents de la team)             │
+  └──────────────────────────────────────────────────────────┘
+  ```
+
+### 0.4 SÉPARATION EXPLICITE — ÉTAPE ACTUELLE vs CIBLE (anti-déformation)
+
+> **Règle de lecture (gravée à la demande de Stéphane).** L'**étape actuelle est FIDÈLE à la
+> cible** — ce n'est **PAS une déviation**, c'est une **réduction assumée** (orchestration hybride,
+> settings globaux) sur le chemin de la cible. Ne **jamais** confondre « ce qu'on livre
+> aujourd'hui » avec « ce que vise le produit ». Les deux colonnes ci-dessous doivent rester
+> distinctes dans toutes les futures instructions.
+
+| Dimension | **ÉTAPE ACTUELLE** (fidèle à la cible, livrable) | **CIBLE** (à tenir, ne pas perdre) |
+|---|---|---|
+| **Orchestration** | **HYBRIDE** : le **chef = un VRAI runner** (défaut **Claude Code** = lancer le CLI `claude` dans le PTY du projet) ; **la team = des PERSONAS** que le chef incarne. | **Runners RÉELS par agent** (multi-runner / multi-modèle), **câblés un par un** : chaque agent de la team tourne sur son propre runner+modèle. |
+| **Settings** | **GLOBAUX** au cockpit ; l'IHM **propose un set par défaut** : runner **Claude Code** + la **team iakaframe connue** (odin / aragorn / gandalf / gimli / legolas…). | **PER-PROJET** : team + runner/model **par agent**, réglés projet par projet. |
+| **Skills** | Skills iakaframe **de la base** (rôles connus), tels quels. | **Skills / compétences MODIFIABLES** → définir des **frames modifiés** (phase 2). |
+| **Couche vue** | **Réutilise l'existant déjà construit** : bulles chat, vignettes thémées (L9), personas, trace par-tour. | Idem enrichie (avatars, statuts vivants). |
+| **Graph de délégation / jalons** | (Hors étape actuelle.) | **Volet de CRÉATION du graph de délégation / jalons** de la méthode : construire/éditer le **workflow de la team**, + **variantes** de graph/jalons, + autres features autour du travail **inter-agents**. |
+
+- **Pourquoi l'étape actuelle est fidèle** : un chef-runner réel (Claude Code dans le PTY) qui
+  incarne les personas de la team **matérialise déjà** le modèle « 1 session = 1 team pilotée par
+  un chef », « 1 terminal = source », « chat = vue filtrée ». On **ne triche pas** : on **réduit**
+  (un seul runner réel au lieu de N) sans **déformer** le modèle. Le passage à des runners réels
+  par agent est une **extension**, pas une réécriture du modèle.
+- **Ce qui ne doit JAMAIS régresser** depuis ce § 0 : terminal = source de vérité unique de la
+  session ; chat = vue filtrée + entrée partagée ; conversation = Stéphane ↔ chef ; comptes-rendus
+  **verbatim** ; agent = runner+modèle+skills.
 
 ---
 
@@ -77,20 +173,44 @@ réalise en câblant des outils mûrs, pas en recodant des abstractions** (cf. �
 - Conséquence : **le même Cockpit tourne identiquement** sur les 3 OS dès le départ
   (décision verrouillée — cross-OS day one, pas « windows d'abord, le reste après »).
 
-### 2.2 Agnostique modèle (multi-LLM) — *via LiteLLM, socle v0.1*
-- **L'agnosticisme modèle passe par LiteLLM**, pas par une couche maison. Le Cockpit parle à
-  **une seule** API (compatible OpenAI) exposée par **LiteLLM (proxy self-hosted)** ; LiteLLM
-  route vers les backends réels. **On ne recode pas** le routage multi-provider.
-- **Côté Cockpit, un seul « provider » : LiteLLM.** Au départ, LiteLLM est configuré pour
-  router vers **Claude + Ollama** (les deux réellement câblés) ; en ajouter d'autres = config
-  LiteLLM, **sans toucher au Cockpit**. Pas de provider fantôme exposé dans l'app.
-- Un **mock** local reste possible en dev (réponses simulées sans appeler LiteLLM).
+### 2.2 Agnostique modèle (multi-LLM) — *le modèle se choisit DANS le runner (révisé 2026-06-26)*
 
-### 2.3 Agnostique runner (multi-runner) — *socle v0.1 (un runner câblé)*
-- L'« agent d'exécution » lancé par le Cockpit n'est pas figé sur un seul harnais.
-  Aujourd'hui : Claude Code en CLI. Demain : un autre runner (autre CLI agentique, script,
-  job). Le Cockpit pilote un **runner abstrait** (commande + cwd + env + canal de sortie
-  PTY), pas « Claude Code » en dur.
+> **Conciliation avec le § 0.2 / § 2.3.** Le modèle n'est plus pensé comme « un unique provider
+> LiteLLM » exclusif : **le modèle se choisit DANS le runner de l'agent**. **LiteLLM (local/lan)**
+> est **l'un des runners** disponibles (et le bon outil quand on veut router multi-provider sans
+> recoder) ; **Claude Code** (CLI) et **Ollama** (direct) sont **d'autres runners** où le modèle se
+> choisit aussi. On garde le principe « câbler l'existant plutôt que recoder le routage ».
+
+- **L'agnosticisme modèle se réalise par le couple runner+modèle de chaque agent** (§ 0.2). Quand
+  on veut **router multi-provider derrière une seule API**, on **passe par LiteLLM** (proxy
+  self-hosted, API OpenAI-compat) — **on ne recode pas** le routage multi-provider.
+- **LiteLLM = un runner parmi d'autres**, pas le seul point d'accès. Câblé pour router vers
+  **Claude + Ollama** ; en ajouter = config LiteLLM, **sans toucher au Cockpit**.
+- **Étape actuelle** : le **chef** tourne sur **Claude Code** (CLI) par défaut ; le moteur
+  « prochaine étape » (§ S5) et le chat L8 réutilisent un endpoint OpenAI-compat (Ollama/LiteLLM).
+- Un **mock** local reste possible en dev (réponses simulées sans appeler de runner réel).
+
+### 2.3 Agnostique runner (multi-runner) — *LE CŒUR du modèle (révisé 2026-06-26)*
+
+> **Promu de « différé » à CŒUR.** Le modèle produit § 0 fait de l'agnosticisme **runner** la
+> valeur **structurante** de la conversation : **un agent = un RUNNER + un MODÈLE + des skills**.
+> Ce qui était décrit ici comme « un runner câblé, le reste après » devient le **principe central**
+> autour duquel s'organisent sessions, chef de projet et team.
+
+- **Un agent IA = un RUNNER + un MODÈLE.** Le **runner** ∈ { ollama local, ollama lan, litellm
+  local, litellm lan, **claude code**, chatgpt, … } est le harnais d'exécution ; le **modèle** est
+  choisi *dans* le runner (claude → sonnet/opus ; ollama → llama/qwen…). Le Cockpit pilote un
+  **runner abstrait** (commande + cwd + env + canal PTY), **pas « Claude Code » en dur**.
+- **Le CHEF DE PROJET est un agent-runner** : par défaut **Claude Code** (le CLI `claude` lancé
+  dans le **PTY du projet**), dont le **flux PTY = la source de vérité** de la session (§ 0.3).
+- **Étape actuelle vs cible (cf. § 0.4)** :
+  - **Étape actuelle** : **un seul runner réel** (le chef = Claude Code), la **team = personas**
+    qu'il incarne ; **settings globaux** + set par défaut iakaframe.
+  - **Cible** : **runners RÉELS par agent** (multi-runner / multi-modèle), **câblés un par un**,
+    **settings per-projet** (runner + modèle + skills par agent).
+- **Conséquence d'architecture** : la couture runner doit être **un point d'abstraction net**
+  (lancer/écrire/lire/arrêter un runner identifié par royaume/agent), pour que passer de 1 à N
+  runners réels soit une **extension** et non une réécriture (cf. § 3.2 façade, § 0.4).
 
 ### 2.4 Agnostique cible de test/staging (multi-target) — *hors scope v0.1*
 Vision : déployer/tester un livrable sur plusieurs cibles (sandbox / Docker local / LAN /
@@ -191,13 +311,20 @@ Le **front**, lui, est **réécrit** (pas de god-component, hooks séparés).
 
 ### Vues produit — *socle v0.1*
 
+> **Révision 2026-06-26.** La vue **Work** est désormais structurée par le **modèle conversation
+> du § 0** : **portefeuille → projet → session** ; une session = **un chef de projet (agent-runner)
+> + une team** ; **un terminal = source de vérité** ; **un chat = vue filtrée + entrée partagée**.
+> Le modèle « N onglets PTY » de L2 et le chat one-shot de L8 sont **supersedés** (cf. § 0.3).
+
 | Vue | Rôle | Contenu |
 |---|---|---|
-| **Dashboard projets** | Vue portefeuille du chapeau | Cartes de projets (git propre/sale, ahead/behind, version, dernière activité). **Réutilise `naonedge-dashboard`** (scan + cartes + onglets par projet). |
-| **Work** | Plan de travail d'un projet (≈ iakaIDE) | Moteur **« prochaine étape » IA** (cœur), jalons à valider, commits en attente, travail récent. |
-| **Grille widgets + dock** | Cockpit composable | Widgets repositionnables (portefeuille, agents, jalons, services, PTY, mains courantes…) + dock pour ajouter/retirer. |
-| **PTY par projet** | Terminaux des runners (cross-OS) | N onglets = N sessions PTY ; **titre = `[ROYAUME][Agent]` + état** (working/pending/stopped). Shell par défaut selon l'OS. |
-| **Mains courantes 3-canaux** | Journal filtrable par projet | adresse / geste / pensée / agent — branché sur **iakaboxlogs** (§ 5). Filtres applicables aussi au PTY. |
+| **Dashboard projets** | Vue portefeuille du chapeau | Cartes de projets (git propre/sale, ahead/behind, version, dernière activité) ; **tuile à état posé** d'où l'on peut **voir la démo du moment**, **lancer** ou **continuer** une session (§ 0.1). **Réutilise `naonedge-dashboard`**. |
+| **Work (session)** | Plan de travail d'un projet = **une session** | **Chat ↔ Terminal** d'**une** conversation pilotée par le **chef de projet** (agent-runner, défaut Claude Code) ; **widget Roster** de la team ; moteur **« prochaine étape » IA**, jalons à valider, commits/travail récent. |
+| **Terminal (chef) = SOURCE** | Le PTY du chef-runner | **UN terminal par session** = flux brut complet du chef (pensée/geste/adresse) ; **source de vérité** + **seul point de contrôle** (`esc`). Login shell réel (D10). |
+| **Chat (vue filtrée)** | Projection « parole » du flux terminal | Bulles WhatsApp **moi ↔ chef** + comptes-rendus **verbatim** des agents (canal **adresse**) ; **partage l'entrée** avec le terminal (taper dans le chat = stdin du PTY). |
+| **Roster team** | La team de la session | Pastilles `[ROYAUME][Agent]` (+ vignettes thémées L9) + statut attend/travaille ; le **chef** mis en évidence ; clic agent → s'adresser (`@agent`). |
+| **Grille widgets + dock** | Cockpit composable | Widgets repositionnables (portefeuille, roster, jalons, services, terminal, mains courantes…) + dock. |
+| **Mains courantes 3-canaux** | Journal filtrable par projet | adresse / geste / pensée / agent — branché sur **iakaboxlogs** (§ 5). Filtres applicables aussi au terminal/chat. |
 
 ### Écrans ADMIN — *HORIZON (hors v0.1)*
 
@@ -208,9 +335,11 @@ La **suite admin complète** est **différée** (hors socle). Tracée pour mémo
 | **Admin projets** | Ajouter/retirer un projet du chapeau, brancher Forgejo | Horizon |
 | **Admin team / agents** | Roster des royaumes/agents, qui est armé | Horizon |
 | **Admin agent** + **admin par prompt** | Fiche agent + champ prompt éditant `agent.md` (§ 4.1) | Horizon |
-| **Admin skills** | Inventaire/activation des skills | Horizon |
+| **Settings PAR AGENT** (runner + modèle + skills) | Régler **par agent** son **runner** (ollama/litellm/claude code/chatgpt…), son **modèle**, ses **skills** (§ 0.2) | **CIBLE** (étape actuelle : settings **globaux** + **set par défaut** : runner Claude Code + team iakaframe — § 0.4) |
+| **Admin skills** (skills MODIFIABLES → frames) | Inventaire/activation **et modification** des skills pour définir des **frames modifiés** (phase 2, § 0.4) | **CIBLE** (horizon) |
+| **Volet GRAPH de délégation / jalons** | **Créer/éditer le workflow** de la team (graph de délégation + jalons de la méthode) + **variantes** ; features autour du travail **inter-agents** (§ 0.4) | **CIBLE** (horizon) |
 | **Admin tools (MCP)** | **Lien vers Obot** (pas de manager maison) | Horizon (différé) |
-| **Admin cockpit** | Réglages globaux : LiteLLM, endpoints, thème, chapeau | Partiel v0.1 (réglages minimaux : chapeau, endpoint LiteLLM, thème) |
+| **Admin cockpit** | Réglages globaux : runners/endpoints (Claude Code, LiteLLM, Ollama), thème, **team par défaut**, chapeau | Partiel v0.1 (réglages minimaux : chapeau, endpoint IA, thème, team — étape actuelle § 0.4) |
 
 ### 4.1 ADMIN PAR PROMPT — *horizon (différé)*
 Vision : sur l'écran **Admin agent**, un **champ de prompt** modifie le comportement d'un
@@ -228,6 +357,14 @@ Vision (trois voies) : **upload** d'image · **génération par prompt** (ComfyU
 > **Remontée en socle v0.1** : c'est **la signature de la méthode** (rien de comparable chez
 > OpenWebUI/AnythingLLM/LM Studio/Codex/Claude Desktop) et **ce n'est pas cher** —
 > **iakaboxlogs existe déjà** (déployé/validé). On branche, on ne rebâtit pas.
+
+> **Conciliation avec le modèle conversation § 0.3 (révision 2026-06-26).** Le **terminal du chef
+> = la source** porte le **flux brut des 3 canaux** (pensée / geste / adresse). Le **chat WhatsApp
+> est précisément la VUE FILTRÉE sur le canal « adresse »** (moi ↔ chef + comptes-rendus verbatim).
+> Autrement dit, le modèle « terminal source / chat vue filtrée » **EST** une application directe du
+> modèle 3-canaux : les filtres ci-dessous (adresse/geste/pensée/agent) sont **le même mécanisme**
+> qui produit la vue chat depuis le flux terminal. La main courante 3-canaux (journal iakaboxlogs)
+> et la projection chat partagent donc **la même grammaire de canaux**.
 
 **Une main courante par projet** : un **journal FILTRABLE par canal**, directement adossé au
 **concept des 3 canaux d'un agent LLM**
@@ -349,6 +486,11 @@ prochaine étape, lance un runner par projet, journalise en 3-canaux**, avec un 
   (cf. § 10.1). **Non planifié** — pas en v0.1.
 - **Suite admin complète** : admin projets/team/agents/agent/skills, **admin-par-prompt** +
   édition `agent.md`.
+- **CIBLE conversationnelle (§ 0.4)** — à tenir, hors étape actuelle : **runners RÉELS par agent**
+  (multi-runner/multi-modèle, câblés un par un) ; **settings PER-PROJET** (team + runner/model par
+  agent) ; **skills MODIFIABLES → frames modifiés** (phase 2) ; **volet de CRÉATION du graph de
+  délégation / jalons** (+ variantes, features inter-agents). *(L'étape actuelle = orchestration
+  hybride : chef = vrai runner Claude Code, team = personas ; settings globaux + set par défaut.)*
 - **Portraits générés** d'agents (upload / génération ComfyUI / référence charte).
 - **Modes de présentation A & C** (terminal old-school / WhatsApp) + commutateur.
 - **Providers IA additionnels** (ajoutés côté config LiteLLM, pas côté Cockpit).
@@ -528,6 +670,30 @@ Chaque feature reçoit son fichier dans `specs/instructions/` AVANT implémentat
   (WhatsApp) en horizon.
 - **2026-06-24** — **Process resserré, maquettes JPG sautées. Plan en 3 moves** : DAYONE →
   maquette runnable FAKE (HTML jetable, valider l'UX) → dev.
+- **2026-06-26** — **MODÈLE PRODUIT CONVERSATIONNEL GRAVÉ (révision majeure, § 0).** Stéphane :
+  **portefeuille → projet → sessions** ; un projet = une histoire de sessions (tuile à **état
+  posé** : voir la démo / lancer / continuer) ; **une session = une TEAM pilotée par un CHEF DE
+  PROJET (agent)** ; **un agent = un RUNNER + un MODÈLE + des skills** (runner ∈ ollama/litellm
+  local|lan, **claude code**, chatgpt… ; modèle dans le runner ; skills iakaframe). **La
+  conversation = Stéphane ↔ le chef** (son modèle) ; **lui** parle/délègue à la team et **rend
+  compte en VERBATIM**. **UN terminal par session = celui du chef = SOURCE DE VÉRITÉ + point de
+  contrôle (`esc`)** ; **le CHAT WhatsApp = VUE FILTRÉE** (canal adresse) **partageant l'ENTRÉE**
+  (taper dans le chat = stdin du terminal). **Settings par agent** (cible).
+- **2026-06-26** — **Cette révision SUPERSEDE le modèle conversationnel de L8** (chat = dialogue
+  Ollama one-shot, shell = zsh générique). Désormais : **terminal = source** (le chef-runner Claude
+  Code y tourne), **chat = vue filtrée + entrée liée**. § 2.3 (runner) **promu de différé à CŒUR** ;
+  § 2.2 (modèle) **concilié** (le modèle se choisit DANS le runner ; LiteLLM = un runner parmi
+  d'autres) ; § 4 (vues Work/terminal/chat/roster) et § 5 (canaux : chat = vue filtrée du canal
+  adresse) révisés.
+- **2026-06-26** — **SÉPARATION ÉTAPE ACTUELLE vs CIBLE gravée (§ 0.4, anti-déformation).** L'étape
+  actuelle est **FIDÈLE à la cible, PAS une déviation** : orchestration **HYBRIDE** (chef = **vrai
+  runner** Claude Code dans le PTY ; team = **personas** qu'il incarne), **settings GLOBAUX** + set
+  par défaut (runner Claude Code + team iakaframe connue), réutilise la **couche vue** existante
+  (bulles, vignettes L9, personas, trace par-tour). **CIBLE à tenir** : **runners RÉELS par agent**
+  (multi-runner/modèle câblés un par un), **settings PER-PROJET**, **skills MODIFIABLES → frames**
+  (phase 2), **volet de CRÉATION du graph de délégation / jalons** (+ variantes, features
+  inter-agents). **Le re-cadrage architecture conversation/session viendra en lot séparé** (pas dans
+  cette révision de vision).
 
 ---
 
