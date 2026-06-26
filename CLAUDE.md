@@ -224,6 +224,28 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       main courante L4) ; façade unique, pas de god-component. Arbitrages ouverts : **B-1** (libellés royaume vs
       rôle — reco garder + `roleIndex`), **C-1** (3 teams vs 11 — reco 3). Est. **≈ 2–3,5 j-homme** (P1 ~0,5–1 j,
       P2 ~1,5–2,5 j).)*
+- [ ] **L10** — Ré-architecture conversation/session (**terminal-source + chat-vue**)
+      → `specs/instructions/L10-conversation-session.md`
+      *(**cadré par 🧙 Gandalf (2026-06-26)**, met l'app en conformité avec la **vision gravée**
+      `PROJET.md` **§ 0** (modèle produit conversationnel). **Modèle réalisé** : **1 session = 1
+      chef-runner** (étape actuelle : défaut **Claude Code** = CLI `claude` lancé dans le **PTY du
+      projet**) qui possède **toute la conversation** ; le **terminal = source de vérité + seul point de
+      contrôle `esc`** ; le **chat (bulles) = VUE FILTRÉE** de ce flux (canal « adresse ») ; **entrée
+      partagée** (taper dans le chat = écho chat **+** stdin du runner). **CIBLE tenue / différée** :
+      runners RÉELS par agent (multi-runner/modèle), settings PER-PROJET, skills→frames, volet graph
+      délégation/jalons — l'étape actuelle (chef réel + team = personas + settings globaux) est une
+      **réduction FIDÈLE, pas une déviation**. **Point dur n°2** (dériver le chat du flux runner ANSI) :
+      reco **posture B = flux structuré `claude --print --input-format stream-json --output-format
+      stream-json`** (NDJSON typé → filtre par type de message, `{"type":"interrupt"}` = esc) — fiable
+      MAIS flag **sous-documenté** (issue Anthropic #24594) → **dérisqué par un spike P0 qui tranche
+      A/B**. **Phasé P0 spike → P1 couture runner (`RunnerSpec`/`runner_open|write|interrupt|close` sur
+      `terminal.rs`, `validate_cwd` conservé) + terminal-source → P2 vue filtrée + entrée partagée +
+      migration `useConversations`/`Chat`, retrait `ai.rs chat` L8 (`next_step` L3 conservé) → P3
+      réglages globaux.** Réutilisation max (PTY L2, couche vue L8/L9), façade unique D7, **CSP intacte**
+      (parse NDJSON côté Rust), pas de god-component. **6 « À arbitrer » en attente Stéphane** (granularité
+      gate, posture A/B, lieu du parse, sort de `chat` L8, sémantique `@agent`, affordance esc). Est.
+      **≈ 6–9 j-homme** (P0 ~0,5–1 j · P1 ~2–3 j · P2 ~2,5–3,5 j · P3 ~1–1,5 j), **risque MOYEN-ÉLEVÉ
+      concentré sur P0/P2** (inconnu = stabilité du NDJSON `stream-json`). **À valider avant exécution.**)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
