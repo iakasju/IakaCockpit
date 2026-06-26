@@ -28,10 +28,11 @@ export const GANDALF_REPORT_VERBATIM =
   "chat ↔ main courante. Trois critères d'acceptation, deux arbitrages tranchés.";
 
 /**
- * Historique de démo (chaîne de badges iakaframe). L'identité d'un tour assistant
- * est portée par l'agent courant de la conversation côté UI ; on ouvre la
- * conversation avec Aragorn comme responsable, et le contenu nomme explicitement
- * l'agent qui parle (badge `[ROYAUME][Agent]`) pour la lisibilité de la démo.
+ * Historique de démo (chaîne de badges iakaframe). L9 fix : chaque tour assistant
+ * porte son ÉMETTEUR figé (`agent`) — les tours d'Aragorn → `agent: "Aragorn"`,
+ * ceux de Gandalf → `agent: "Gandalf"`. Le rendu par-tour (`Chat.tsx`) résout
+ * l'avatar depuis `turn.agent`, donc la scène délégation/rapport/verbatim affiche
+ * les BONS avatars et préserve la trace, même si l'interlocuteur courant change.
  */
 export const DEMO_HISTORY: readonly ChatTurn[] = [
   {
@@ -40,12 +41,14 @@ export const DEMO_HISTORY: readonly ChatTurn[] = [
   },
   {
     role: "assistant",
+    agent: "Aragorn",
     content:
       "🟢 [ACCUEIL][Aragorn] — Bien reçu. Le cadrage relève de Gandalf : je lui " +
       "délègue l'instruction. [ACCUEIL][Aragorn] 🟢",
   },
   {
     role: "assistant",
+    agent: "Gandalf",
     content:
       "🔵 [CADRAGE][Gandalf] — Je prends le cadrage de L9.\n\n" +
       GANDALF_REPORT_VERBATIM +
@@ -53,6 +56,7 @@ export const DEMO_HISTORY: readonly ChatTurn[] = [
   },
   {
     role: "assistant",
+    agent: "Aragorn",
     content:
       "🟢 [ACCUEIL][Aragorn] — Je restitue le rapport de Gandalf, verbatim :\n\n" +
       "[CADRAGE][Gandalf] « " +
