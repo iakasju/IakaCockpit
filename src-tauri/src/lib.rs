@@ -18,6 +18,7 @@ pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
 pub mod secrets;
+pub mod seed;
 pub mod services;
 pub mod shell;
 pub mod terminal;
@@ -66,6 +67,7 @@ pub fn run() {
             notify::notify_user,
             notify::n8n_set_token,
             notify::n8n_has_token,
+            seed::seed_demo,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");
