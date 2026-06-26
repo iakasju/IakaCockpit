@@ -491,15 +491,22 @@ export function transcriptTailStart(
   sessionId: string,
   transcriptPath: string,
 ): Promise<void> {
+  // Tauri v2 attend les arguments de commande en camelCase (mappés vers les params
+  // snake_case Rust `session_id`/`transcript_path`). ⚠️ Les AUTRES commandes n'ont que
+  // des params d'UN seul mot (`id`, `cwd`, `path`…) → camelCase == snake_case, donc le
+  // bug ne s'y voyait pas ; ici les params en DEUX mots l'exposent. Passer snake_case
+  // faisait rejeter l'appel (« missing required key sessionId ») → le tailer ne démarrait
+  // JAMAIS (chat muet). On envoie donc bien `sessionId`/`transcriptPath`.
   return call<void>("transcript_tail_start", {
-    session_id: sessionId,
-    transcript_path: transcriptPath,
+    sessionId,
+    transcriptPath,
   });
 }
 
 /** Arrête le tailer du `sessionId` (le PTY/runner n'est pas affecté). No-op si inactif. */
 export function transcriptTailStop(sessionId: string): Promise<void> {
-  return call<void>("transcript_tail_stop", { session_id: sessionId });
+  // camelCase attendu par Tauri v2 (cf. `transcriptTailStart`).
+  return call<void>("transcript_tail_stop", { sessionId });
 }
 
 // --- Abonnement aux événements PTY (DEP-5) ---

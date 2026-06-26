@@ -62,11 +62,9 @@ export function useRunnerViews({
       startedRef.current.add(sid);
       const projectId = conv.projectId;
 
-      void api.transcriptTailStart(sid, path).catch(() => {
-        // Hors Tauri / erreur : on rouvre la porte pour un éventuel retry ultérieur.
-        startedRef.current.delete(sid);
-      });
-
+      // S'ABONNER D'ABORD, démarrer le tailer ENSUITE (ordre voulu) : si le transcript
+      // existe déjà (réouverture), le tailer relit depuis le début et émet aussitôt — on
+      // ne veut perdre aucun event entre `start` et l'enregistrement du listener.
       void api
         .onRunnerEvent(sid, (ev) => {
           const turn = runnerEventToTurn(ev);
@@ -74,9 +72,12 @@ export function useRunnerViews({
         })
         .then((unlisten) => {
           unlistenRef.current[sid] = unlisten;
+          return api.transcriptTailStart(sid, path);
         })
         .catch(() => {
-          /* hors Tauri / abonnement impossible : no-op */
+          // Hors Tauri / abonnement ou démarrage impossible : on rouvre la porte pour
+          // un éventuel retry ultérieur.
+          startedRef.current.delete(sid);
         });
     }
     // Dépend des sessions PTY (apparition d'un runnerSessionId) ; les conversations

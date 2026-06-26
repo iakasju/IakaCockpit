@@ -36,8 +36,12 @@ const ptySession = (
   transcriptPath?: string,
 ): UsePtySession => ({ id, ready: true, closed: false, runnerSessionId, transcriptPath });
 
+/** Vide la file de microtâches (l'abonnement puis le démarrage du tailer sont chaînés). */
+const flush = (): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, 0));
+
 describe("useRunnerViews — branchement tailer → conversation (L10b)", () => {
-  it("démarre le tailer + s'abonne quand un runnerSessionId apparaît", () => {
+  it("démarre le tailer + s'abonne quand un runnerSessionId apparaît", async () => {
     const api = makeApi();
     const conversations = [conv("p1", "pty-1")];
     const ptySessions = {
@@ -51,11 +55,13 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
         appendTurn: vi.fn(),
       }),
     );
+    // On s'abonne D'ABORD, puis le tailer démarre (chaîné) → flush des microtâches.
+    await flush();
+    expect(api.onRunnerEvent).toHaveBeenCalledWith("sid-1", expect.any(Function));
     expect(api.transcriptTailStart).toHaveBeenCalledWith(
       "sid-1",
       "/t/sid-1.jsonl",
     );
-    expect(api.onRunnerEvent).toHaveBeenCalledWith("sid-1", expect.any(Function));
   });
 
   it("ne démarre RIEN tant que le runnerSessionId/transcriptPath sont absents (repli shell)", () => {
@@ -126,7 +132,7 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
     expect(appendTurn).not.toHaveBeenCalled();
   });
 
-  it("idempotent : un re-render ne redémarre pas un tailer déjà actif", () => {
+  it("idempotent : un re-render ne redémarre pas un tailer déjà actif", async () => {
     const api = makeApi();
     const ptySessions = {
       "pty-1": ptySession("pty-1", "sid-1", "/t/sid-1.jsonl"),
@@ -144,6 +150,7 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
       { initialProps: { ptySessions } },
     );
     rerender({ ptySessions: { ...ptySessions } });
+    await flush();
     expect(api.transcriptTailStart).toHaveBeenCalledTimes(1);
   });
 

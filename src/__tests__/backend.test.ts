@@ -243,19 +243,32 @@ describe("backend.ts (commandes métier L1)", () => {
     expect(invokeMock).toHaveBeenCalledWith("pty_close", { id: "t1" });
   });
 
-  it("transcriptTailStart invoque transcript_tail_start (session_id + transcript_path, L10b)", async () => {
+  // RÉGRESSION recette L10b (bug #1 « chat muet ») : Tauri v2 attend les arguments de
+  // commande en **camelCase**. Les autres commandes n'ont que des params d'UN mot
+  // (`id`, `cwd`, `path`…) → camelCase == snake_case, donc invisible ; ici les params en
+  // DEUX mots l'exposent. Passer `session_id`/`transcript_path` (snake_case) faisait
+  // rejeter l'appel (« missing required key sessionId ») → le tailer ne démarrait JAMAIS.
+  it("transcriptTailStart invoque transcript_tail_start avec des clés camelCase (sessionId + transcriptPath)", async () => {
     await transcriptTailStart("sid-1", "/Users/u/.claude/projects/p/sid-1.jsonl");
     expect(invokeMock).toHaveBeenCalledWith("transcript_tail_start", {
-      session_id: "sid-1",
-      transcript_path: "/Users/u/.claude/projects/p/sid-1.jsonl",
+      sessionId: "sid-1",
+      transcriptPath: "/Users/u/.claude/projects/p/sid-1.jsonl",
     });
+    // Garde explicite : AUCUNE clé snake_case (sinon Tauri v2 rejette → tailer muet).
+    const calls = invokeMock.mock.calls;
+    const args = calls[calls.length - 1][1] as Record<string, unknown>;
+    expect(args).not.toHaveProperty("session_id");
+    expect(args).not.toHaveProperty("transcript_path");
   });
 
-  it("transcriptTailStop invoque transcript_tail_stop avec session_id (L10b)", async () => {
+  it("transcriptTailStop invoque transcript_tail_stop avec la clé camelCase sessionId (L10b)", async () => {
     await transcriptTailStop("sid-1");
     expect(invokeMock).toHaveBeenCalledWith("transcript_tail_stop", {
-      session_id: "sid-1",
+      sessionId: "sid-1",
     });
+    const calls = invokeMock.mock.calls;
+    const args = calls[calls.length - 1][1] as Record<string, unknown>;
+    expect(args).not.toHaveProperty("session_id");
   });
 
   it("onRunnerEvent s'abonne à runner://event/{sessionId} et délivre le RunnerEvent (L10b)", async () => {
