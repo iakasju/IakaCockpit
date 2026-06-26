@@ -83,13 +83,16 @@ export interface UseConversations {
   /**
    * Ouvre (ou ré-active) la conversation d'un projet et la rend active.
    * Dédoublonne par `projectId` (calque `useGridState.openTab`). `agent` optionnel
-   * = responsable par défaut. Renvoie le `ptySessionId` (stable).
+   * = responsable par défaut. `initialHistory` optionnel (L9) précharge l'historique
+   * à la création SEULEMENT (rétro-compat : défaut `[]` ; ignoré si la conv existe).
+   * Renvoie le `ptySessionId` (stable).
    */
   openConversation: (
     projectId: string,
     title: string,
     cwd: string,
     agent?: string,
+    initialHistory?: ChatTurn[],
   ) => string;
   /** Sélectionne une conversation existante comme active. */
   setActive: (projectId: string) => void;
@@ -136,6 +139,7 @@ export function useConversations(api: Backend = backend): UseConversations {
       title: string,
       cwd: string,
       agent: string = DEFAULT_RESPONSIBLE,
+      initialHistory: ChatTurn[] = [],
     ): string => {
       const existing = convRef.current.find((c) => c.projectId === projectId);
       if (existing) {
@@ -150,7 +154,8 @@ export function useConversations(api: Backend = backend): UseConversations {
         mode: "chat", // défaut = chat (AR-2)
         agent,
         ptySessionId,
-        history: [],
+        // L9 : copie défensive (rétro-compat : défaut `[]` → comportement L8 inchangé).
+        history: [...initialHistory],
         pending: false,
         error: null,
       };

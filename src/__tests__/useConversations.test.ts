@@ -72,6 +72,38 @@ describe("useConversations — 1 conversation/projet (L8/D1)", () => {
     expect(result.current.active?.ptySessionId).toBe(sid);
   });
 
+  it("L9-C2 : sans initialHistory → history vide (rétro-compat L8 stricte)", () => {
+    const { result } = renderHook(() => useConversations(makeApi()));
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    expect(result.current.active?.history).toEqual([]);
+  });
+
+  it("L9-C1 : avec initialHistory → la conversation est préchargée (copie défensive)", () => {
+    const { result } = renderHook(() => useConversations(makeApi()));
+    const seed = [
+      { role: "user" as const, content: "salut" },
+      { role: "assistant" as const, content: "bonjour" },
+    ];
+    act(() =>
+      result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", seed),
+    );
+    expect(result.current.active?.history).toEqual(seed);
+    // Copie défensive : muter la source ne doit pas affecter la conversation.
+    seed.push({ role: "user", content: "intrus" });
+    expect(result.current.active?.history).toHaveLength(2);
+  });
+
+  it("L9-C1 : initialHistory ignoré si la conversation existe déjà (création seulement)", () => {
+    const { result } = renderHook(() => useConversations(makeApi()));
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() =>
+      result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", [
+        { role: "user", content: "tardif" },
+      ]),
+    );
+    expect(result.current.active?.history).toEqual([]);
+  });
+
   it("setAgent change l'interlocuteur courant (persona)", () => {
     const { result } = renderHook(() => useConversations(makeApi()));
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));
