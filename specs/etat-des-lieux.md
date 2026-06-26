@@ -31,21 +31,28 @@
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : Lots **L0→L4, L6, L7, L8, L9 livres** (gate Legolas PASS, candidate
-  **v0.8.0-rc**) + fix trace L9 (avatar par-tour). **Vision PRODUIT corrigee et GRAVEE** dans `PROJET.md §0`
-  (revision 2026-06-26) : **le TERMINAL = la conversation** (le chef-runner y tourne, source de verite,
-  controle `esc`) ; **le CHAT = une VUE FILTREE** (parole) ; **chat <-> terminal partagent l'entree** (stdin) ;
-  agents = runner+modele ; settings par agent ; CIBLE (runners reels par agent, per-projet, skills->frames,
-  graph delegation) separee de l'ETAPE ACTUELLE. Ca SUPERSEDE le modele L8. **L10 cadre et VALIDE** par Stephane.
-- **En cours / a reprendre** : **L10 — re-architecture conversation/session**, a DEMARRER. Arbitrages tranches :
-  un seul lot phase **P0->P3**, **commencer par le SPIKE P0**, **supprimer `ai.rs chat` (L8)** ; recos retenues
-  (NDJSON parse cote Rust, `@agent` injecte verbatim au chef, posture decidee par le spike, esc cote terminal).
-- **Prochaine etape concrete (PREMIERE ACTION A LA REPRISE)** : **lancer Gimli sur le SPIKE P0 de L10** —
-  prouver que `claude` (Claude Code) tourne en PTY avec un flux **stream-json** typé (sortie NDJSON par type,
-  ENTREE stream-json, `{"type":"interrupt"}` = esc). Resultat -> trancher posture B (fiable) vs A (degradee),
-  puis engager P1 (couture runner `RunnerSpec`/`terminal.rs` + terminal-source) -> P2 (vue filtree + entree
-  partagee) -> P3 (reglages). Instruction : `specs/instructions/L10-conversation-session.md`. Cf. memoires
-  `vision-terminal-source-chat-vue`, `ne-pas-deformer-architecture-via-mvp`.
+- **Ce qui vient d'etre fait** : Lots **L0->L9 livres** (candidate v0.8.0-rc). Puis **L10 demarre et
+  VIRAGE majeur acte** (2026-06-26). Deux spikes : **P0** (`3ad0ffb`) a prouve `claude --print
+  --input-format stream-json` en pipes — fiable MAIS **tue la TUI native** (perte des reflexes
+  `Shift+Tab`/`esc`) ; **L10b** (`b7ac879`, `specs/mock/spike-l10b/`) a prouve la **CIBLE** : runner en
+  **TUI NATIVE dans le PTY** (reflexes intacts) **+ vues derivees du TRANSCRIPT JSONL** de session ecrit
+  en direct (`~/.claude/projects/<cwd-escaped>/<sid>.jsonl`), zero parsing ANSI. Gotcha cle : **scrubber
+  `CLAUDE_CODE_*`** avant spawn (sinon nested = pas de transcript). Instruction **re-cadree** par Gandalf
+  (`4caf3e2`) + 6 arbitrages tranches (`f49e6fc`) : allowlist explicite, gate fin L10a/L10b, `ai.rs chat`
+  reframe source Ollama, esc bouton+natif, `@agent` verbatim, delegations sur preuve live. **L10a (P1)
+  LIVRE : gate Legolas PASS + recette terrain OK** (candidate `v0.9.0-rc`) — `terminal.rs` etendu
+  (`pty_runner_open`, session_id uuid, scrub env, allowlist), Working bascule en TUI native auto-lancee
+  hands-off dans le cwd ; recette reelle = transcript ecrit dans `iaka-demo` (preuve). Pipes `runner.rs`
+  **parque au chaud**.
+- **En cours / a reprendre** : **L10b (P2+P3)** — a DEMARRER. P2 = tailer `transcript.rs` cote Rust ->
+  `runner://event` (mapping paroles/gestes/`Task`+`isSidechain`/activite/pensee) + vues filtrees (chat,
+  widget delegations, etat agents) + **entree partagee** chat<->terminal + bouton esc chat. P3 = reglages
+  globaux + reframe `ai.rs chat` Ollama. Gate Legolas L10b unique. **Delegations a confirmer par un run
+  live** (faire deleguer le chef via outil `Task`) avant de fermer le widget delegations.
+- **Prochaine etape concrete** : **lancer Gimli sur L10b/P2** (tailer transcript + vues). Instruction a
+  jour : `specs/instructions/L10-conversation-session.md` (sections L10b/P2-P3, §4.2/4.3). Differe trace :
+  **spike P0bis Codex/ChatGPT** (CLI non installe — verifier `~/.codex/sessions`) avant tout runner Codex.
+  Cf. memoires `runner-natif-tail-transcript`, `vision-terminal-source-chat-vue`, `ne-pas-deformer-architecture-via-mvp`.
 - **Pieges connus** : **APRES REBOOT, relancer les services** : `ollama serve` (hote 11434, modele llama3.1:8b) ;
   stack Docker `cd docker && docker compose up -d` (ollama/litellm/couchdb/n8n) ; re-seeder CouchDB si besoin
   (`bash docker/init-couchdb.sh`, admin/iaka-test). L'app : `npm run tauri dev` (port 3020 ; tuer un Vite
@@ -58,6 +65,7 @@
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-06-26 | version | v0.9.0-rc | main | L10a (P1) — gate Legolas PASS + recette terrain OK. VIRAGE acte apres spikes : runner en TUI NATIVE dans le PTY (reflexes Shift+Tab/esc) + vues derivees du transcript JSONL de session (zero parsing ANSI). terminal.rs etendu (pty_runner_open, session_id uuid, scrub env CLAUDE_CODE_*, allowlist) ; Working auto-lance claude hands-off dans le cwd. Pipes runner.rs parque. Recette = transcript ecrit dans iaka-demo. Reste L10b (tailer + vues filtrees + entree partagee). |
 | 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
 | 2026-06-26 10:38 | version | v0.8.0-rc | main | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte). |
 | 2026-06-26 09:32 | version | v0.7.0-rc | main | L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation). |

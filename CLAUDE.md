@@ -224,28 +224,32 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       main courante L4) ; façade unique, pas de god-component. Arbitrages ouverts : **B-1** (libellés royaume vs
       rôle — reco garder + `roleIndex`), **C-1** (3 teams vs 11 — reco 3). Est. **≈ 2–3,5 j-homme** (P1 ~0,5–1 j,
       P2 ~1,5–2,5 j).)*
-- [ ] **L10** — Ré-architecture conversation/session (**terminal-source + chat-vue**)
+- [~] **L10** — Ré-architecture conversation/session (**terminal-source + chat-vue**) — **EN COURS : L10a PASS, L10b à venir**
       → `specs/instructions/L10-conversation-session.md`
-      *(**cadré par 🧙 Gandalf (2026-06-26)**, met l'app en conformité avec la **vision gravée**
-      `PROJET.md` **§ 0** (modèle produit conversationnel). **Modèle réalisé** : **1 session = 1
-      chef-runner** (étape actuelle : défaut **Claude Code** = CLI `claude` lancé dans le **PTY du
-      projet**) qui possède **toute la conversation** ; le **terminal = source de vérité + seul point de
-      contrôle `esc`** ; le **chat (bulles) = VUE FILTRÉE** de ce flux (canal « adresse ») ; **entrée
-      partagée** (taper dans le chat = écho chat **+** stdin du runner). **CIBLE tenue / différée** :
-      runners RÉELS par agent (multi-runner/modèle), settings PER-PROJET, skills→frames, volet graph
-      délégation/jalons — l'étape actuelle (chef réel + team = personas + settings globaux) est une
-      **réduction FIDÈLE, pas une déviation**. **Point dur n°2** (dériver le chat du flux runner ANSI) :
-      reco **posture B = flux structuré `claude --print --input-format stream-json --output-format
-      stream-json`** (NDJSON typé → filtre par type de message, `{"type":"interrupt"}` = esc) — fiable
-      MAIS flag **sous-documenté** (issue Anthropic #24594) → **dérisqué par un spike P0 qui tranche
-      A/B**. **Phasé P0 spike → P1 couture runner (`RunnerSpec`/`runner_open|write|interrupt|close` sur
-      `terminal.rs`, `validate_cwd` conservé) + terminal-source → P2 vue filtrée + entrée partagée +
-      migration `useConversations`/`Chat`, retrait `ai.rs chat` L8 (`next_step` L3 conservé) → P3
-      réglages globaux.** Réutilisation max (PTY L2, couche vue L8/L9), façade unique D7, **CSP intacte**
-      (parse NDJSON côté Rust), pas de god-component. **6 « À arbitrer » en attente Stéphane** (granularité
-      gate, posture A/B, lieu du parse, sort de `chat` L8, sémantique `@agent`, affordance esc). Est.
-      **≈ 6–9 j-homme** (P0 ~0,5–1 j · P1 ~2–3 j · P2 ~2,5–3,5 j · P3 ~1–1,5 j), **risque MOYEN-ÉLEVÉ
-      concentré sur P0/P2** (inconnu = stabilité du NDJSON `stream-json`). **À valider avant exécution.**)*
+      *(**cadré par 🧙 Gandalf, re-cadré post-spikes (2026-06-26)**, met l'app en conformité avec la **vision
+      gravée** `PROJET.md` **§ 0**. **VIRAGE acté** : après le spike P0 (`stream-json` en pipes, `3ad0ffb`)
+      qui marchait MAIS **tuait la TUI native** (réflexes `Shift+Tab`/`esc`), le spike **L10b** (`b7ac879`,
+      `specs/mock/spike-l10b/`) a prouvé la cible : **runner en TUI NATIVE dans le PTY** (réflexes intacts)
+      **+ vues dérivées du TRANSCRIPT JSONL de session** que Claude Code écrit en direct
+      (`~/.claude/projects/<cwd-escaped>/<sid>.jsonl`) — **zéro parsing ANSI**. Couture pipes `runner.rs`
+      **parquée au chaud** (`0ddebc7`/`b10b393`, repli `stream-json` documenté). 6 arbitrages tranchés :
+      permissions = **allowlist explicite** (`--allowedTools Read,Glob,Grep,Bash` + pré-requis trust), gate
+      **fin L10a/L10b**, `ai.rs chat` reframé **source Ollama**, esc = bouton chat + natif, `@agent` verbatim,
+      délégations conditionnées à un **run de confirmation live** (`Task`/`isSidechain`). Abstraction
+      `ConversationSource` (3 cas : Claude Code ✅ prouvé, Ollama API, **Codex à spiker** — CLI non installé,
+      P0bis différé).*
+      *(**L10a (P1) — gate Legolas PASS + recette terrain OK** (2026-06-26, candidate `v0.9.0-rc`). 165 Rust
+      (+18 `terminal::`) + 194 front verts, `quality.sh` OK. `terminal.rs` étendu (`pty_runner_open`,
+      `RunnerSpec` claude-code/shell, session_id uuid pré-généré + `transcript_path`, **scrub env
+      `CLAUDE_CODE_*`**, allowlist, `validate_cwd` conservé) ; Working bascule la vue Shell sur la **TUI
+      native** (`PtyTerminal runnerKind=claude-code`, auto-lancé hands-off dans le cwd) ; pipes parqué
+      débranché. **Recette réelle validée** : transcript écrit dans `iaka-demo` (preuve scrub env + auto-launch
+      cwd). Commits `f99cdba`/`5335143`.)*
+      *(**L10b (P2+P3) — À DÉMARRER** : tailer `transcript.rs` côté Rust → `runner://event` (parse défensif,
+      mapping paroles/gestes/`Task`+`isSidechain`/activité/pensée), vues filtrées (chat = paroles, widget
+      délégations, état agents), **entrée partagée** chat↔terminal, bouton esc chat ; puis P3 réglages
+      globaux + reframe `ai.rs chat` Ollama. Gate Legolas L10b unique. Délégations à confirmer par un run live
+      avant fermeture du widget.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
