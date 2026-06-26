@@ -25,6 +25,15 @@ export type ConvMode = "chat" | "shell";
 export interface ChatTurn {
   role: "user" | "assistant";
   content: string;
+  /**
+   * Émetteur du tour, FIGÉ au moment où il est produit (L9 fix avatar par-tour).
+   * Pour un tour `assistant` = l'agent qui l'a produit (persona courante / `@agent`
+   * de CE tour). Pour un tour `user` = absent (pas d'avatar agent). Optionnel et
+   * rétro-compatible : si absent, le rendu retombe sur la persona de la conversation
+   * (comportement L8). NE DOIT JAMAIS être une référence vivante à `Conversation.agent` :
+   * changer l'interlocuteur ensuite ne change pas les tours déjà présents.
+   */
+  agent?: string;
 }
 
 export interface Conversation {
@@ -213,7 +222,13 @@ export function useConversations(api: Backend = backend): UseConversations {
         const reply: ChatReply = await api.chat(conv.cwd, agent, messages);
         patch(projectId, (c) => ({
           ...c,
-          history: [...c.history, { role: "assistant", content: reply.content }],
+          // L9 fix : on FIGE l'émetteur du tour (l'agent de CE tour), pas une
+          // référence à `c.agent`. Changer l'interlocuteur plus tard ne touchera
+          // pas ce tour → la trace qui-a-dit-quoi est préservée.
+          history: [
+            ...c.history,
+            { role: "assistant", content: reply.content, agent },
+          ],
           pending: false,
         }));
       } catch (e) {
