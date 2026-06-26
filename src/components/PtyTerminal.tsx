@@ -6,8 +6,10 @@
  *   - flux Rust → `term.write` (callback onData passé à open) ;
  *   - saisie xterm → `pty.write` ;
  *   - resize (addon-fit + ResizeObserver) → `pty.resize` ;
- *   - fermeture session (closed) → notice ; fermeture d'onglet → `pty.close`
- *     (géré par le parent via `useGridState.closeTab`, qui démonte ce composant).
+ *   - fermeture session (closed) → notice ; `pty.close` au démontage du composant
+ *     (cleanup). **L8/D4** : en mode chat, le parent garde ce composant MONTÉ et le
+ *     masque en CSS (`display:none`) — il ne le démonte PAS, sinon le shell mourrait
+ *     (R-L8-1). Le ResizeObserver refit le terminal quand il redevient visible.
  *
  * Aucun I/O Tauri direct : tout passe par le hook `usePty` (lui-même via la
  * façade). xterm est bundlé local → compatible CSP stricte L0 (pas de CDN, pas

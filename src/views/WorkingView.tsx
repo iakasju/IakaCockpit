@@ -1,48 +1,88 @@
 /**
- * WorkingView — vue Working (D3). Set de Work à gauche, onglets PTY + terminal
- * RÉEL au centre, zone conversation = PLACEHOLDER propre (PO-3 tranché).
+ * WorkingView — vue Working reworkée (L8, D5). « 1 projet = 1 conversation ».
  *
- * Présentationnel : reçoit la liste des projets du set de Work, l'état des
- * onglets (useGridState) et le hook PTY (passé au PtyTerminal). Aucun I/O direct.
+ * Assemble (présentationnel, PAS de god-component — D8) :
+ *   - gauche  : worklist (set de Work) — inchangée ;
+ *   - centre  : espace conversation = barre de tête (titre + toggle Chat/Shell +
+ *               bouton « prochaine étape ») + corps ;
+ *               • Shell = PtyTerminal plein cadre, MONTÉ UNE FOIS et MASQUÉ en CSS
+ *                 quand mode=chat (le shell SURVIT au toggle — R-L8-1/D4) ;
+ *               • Chat  = bulles + saisie (composant Chat) ;
+ *   - droite  : widget Roster (5 agents + statut + clic → @agent, D6).
+ *
+ * Plus de `tabsbar` (5 onglets PTY retirés, D5). L'état vit dans useConversations /
+ * useNextStep ; les appels I/O passent par la façade. Aucun `invoke` ici.
  */
+import { useState } from "react";
 import type { NextStep, Project } from "../api/backend";
-import type { PtyTab } from "../hooks/useGridState";
+import type {
+  Conversation,
+  ConvMode,
+} from "../hooks/useConversations";
+import { mentionPrefix, parseMention } from "../hooks/useConversations";
 import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
+import { Chat } from "../components/Chat";
+import { Roster } from "../components/Roster";
 
 export interface WorkingViewProps {
   worksetProjects: Project[];
-  tabs: PtyTab[];
-  activeTabId: string | null;
+  conversations: Conversation[];
+  active: Conversation | null;
   pty: UsePty;
-  /** État du moteur « prochaine étape » (L3). */
+  /** État du moteur « prochaine étape » (L3, conservé — D5). */
   nextStepResult: NextStep | null;
   nextStepLoading: boolean;
   nextStepError: string | null;
   onOpenProject: (project: Project) => void;
   onAddProject: () => void;
-  onSelectTab: (id: string) => void;
-  onCloseTab: (id: string) => void;
-  /** Déclenche une demande de suggestion sur le projet de l'onglet `cwd`. */
+  onSetMode: (projectId: string, mode: ConvMode) => void;
+  onSetAgent: (projectId: string, agent: string) => void;
+  /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
+  onSend: (projectId: string, agent: string, content: string) => void;
   onRequestNextStep: (path: string) => void;
 }
 
 export function WorkingView({
   worksetProjects,
-  tabs,
-  activeTabId,
+  conversations,
+  active,
   pty,
   nextStepResult,
   nextStepLoading,
   nextStepError,
   onOpenProject,
   onAddProject,
-  onSelectTab,
-  onCloseTab,
+  onSetMode,
+  onSetAgent,
+  onSend,
   onRequestNextStep,
 }: WorkingViewProps): JSX.Element {
-  const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
+  // Saisie par conversation (préfixe @agent au clic roster, D6).
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
+  const [showNextStep, setShowNextStep] = useState(false);
+
+  const draft = active ? (drafts[active.projectId] ?? "") : "";
+  const setDraft = (projectId: string, value: string): void =>
+    setDrafts((prev) => ({ ...prev, [projectId]: value }));
+
+  // Clic roster : insère le préfixe @agent et fixe l'interlocuteur courant (D6).
+  const pickAgent = (agent: string): void => {
+    if (!active) return;
+    onSetAgent(active.projectId, agent);
+    setDraft(active.projectId, mentionPrefix(agent));
+  };
+
+  // Envoi : la persona courante = l'@agent en tête, sinon l'agent de la conv (D3).
+  const sendActive = (content: string): void => {
+    if (!active) return;
+    const mentioned = parseMention(content);
+    const agent = mentioned ?? active.agent;
+    onSend(active.projectId, agent, content);
+    setDraft(active.projectId, "");
+  };
 
   return (
     <section className="view wk" aria-label="Working">
@@ -74,7 +114,7 @@ export function WorkingView({
             <button
               key={p.id}
               type="button"
-              className="workitem"
+              className={`workitem${active?.projectId === p.id ? " active" : ""}`}
               onClick={() => onOpenProject(p)}
             >
               <span className="av">{p.id.slice(0, 1).toUpperCase()}</span>
@@ -88,61 +128,111 @@ export function WorkingView({
       </aside>
 
       <div className="workpane">
-        <div className="tabsbar" role="tablist">
-          {tabs.map((t) => (
-            <div
-              key={t.id}
-              role="tab"
-              aria-selected={t.id === activeTabId}
-              className={`tab${t.id === activeTabId ? " active" : ""}`}
-              onClick={() => onSelectTab(t.id)}
-            >
-              <span>{t.title}</span>
-              <span
-                className="x"
-                role="button"
-                aria-label={`Fermer ${t.title}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCloseTab(t.id);
-                }}
+        {active ? (
+          <>
+            <div className="convhead">
+              <div className="convtitle">
+                <span className="ct-nm">{active.title}</span>
+                <span className="ct-agent" title="Interlocuteur courant">
+                  {active.agent}
+                </span>
+              </div>
+              <div className="modetoggle" role="tablist" aria-label="Mode">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={active.mode === "chat"}
+                  className={`seg${active.mode === "chat" ? " active" : ""}`}
+                  onClick={() => onSetMode(active.projectId, "chat")}
+                >
+                  Chat
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={active.mode === "shell"}
+                  className={`seg${active.mode === "shell" ? " active" : ""}`}
+                  onClick={() => onSetMode(active.projectId, "shell")}
+                >
+                  Shell
+                </button>
+              </div>
+              <button
+                type="button"
+                className={`btn sm${showNextStep ? " accent" : ""}`}
+                aria-pressed={showNextStep}
+                onClick={() => setShowNextStep((v) => !v)}
               >
-                ×
-              </span>
+                Prochaine étape
+              </button>
             </div>
-          ))}
-        </div>
 
-        <div className="workbody">
-          {activeTab ? (
-            <>
+            {showNextStep && (
               <NextStepPanel
-                projectId={activeTab.projectId}
+                projectId={active.projectId}
                 result={nextStepResult}
                 loading={nextStepLoading}
                 error={nextStepError}
-                onRequest={() => onRequestNextStep(activeTab.cwd)}
+                onRequest={() => onRequestNextStep(active.cwd)}
               />
-              <div className="termwrap">
-                {/* clé = id de session : remonter le composant à chaque onglet */}
-                <PtyTerminal
-                  key={activeTab.id}
-                  sessionId={activeTab.id}
-                  cwd={activeTab.cwd}
-                  pty={pty}
+            )}
+
+            <div className="convbody">
+              {/*
+                Le PTY est MONTÉ UNE FOIS par conversation et MASQUÉ en CSS quand
+                mode=chat (R-L8-1/D4) — JAMAIS démonté (sinon pty.close → shell mort).
+                On boucle sur toutes les conversations pour garder chaque shell vivant
+                en arrière-plan même quand on change de projet actif.
+              */}
+              {conversations.map((c) => {
+                const visible =
+                  c.projectId === active.projectId && c.mode === "shell";
+                return (
+                  <div
+                    key={c.ptySessionId}
+                    className="termwrap"
+                    style={{ display: visible ? "block" : "none" }}
+                    aria-hidden={!visible}
+                  >
+                    <PtyTerminal
+                      sessionId={c.ptySessionId}
+                      cwd={c.cwd}
+                      pty={pty}
+                    />
+                  </div>
+                );
+              })}
+
+              {active.mode === "chat" && (
+                <Chat
+                  history={active.history}
+                  agent={active.agent}
+                  pending={active.pending}
+                  error={active.error}
+                  draft={draft}
+                  onDraftChange={(v) => setDraft(active.projectId, v)}
+                  onSend={sendActive}
                 />
-              </div>
-            </>
-          ) : (
-            <div className="workempty">
-              <span className="e">⌨</span>
-              Aucune session ouverte.
-              <br />
-              Choisis un projet du set de Work pour ouvrir un terminal.
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="workempty">
+            <span className="e">💬</span>
+            Aucune conversation ouverte.
+            <br />
+            Choisis un projet du set de Work pour ouvrir sa conversation.
+          </div>
+        )}
       </div>
+
+      {active && (
+        <Roster
+          currentAgent={active.agent}
+          pending={active.pending}
+          onPick={pickAgent}
+        />
+      )}
     </section>
   );
 }

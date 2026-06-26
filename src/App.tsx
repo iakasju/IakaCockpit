@@ -9,6 +9,7 @@
 import { useMemo } from "react";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
+import { useConversations } from "./hooks/useConversations";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -25,17 +26,19 @@ import "./theme/app.css";
 export default function App(): JSX.Element {
   const portfolio = usePortfolio();
   const grid = useGridState();
+  const conversations = useConversations();
   const workset = useWorkset();
   const pty = usePty();
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
 
-  // Bootstrap démo dev (L7) : seede dossier+config côté Rust (inerte en prod) puis
-  // ouvre les onglets team si aucun onglet ouvert. Reste sur Portfolio (AR-4).
+  // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
+  // (inerte en prod) puis ouvre UNE conversation pour le projet démo (plus 5
+  // onglets) si aucune conversation active. Reste sur Portfolio (AR-4).
   useDemoSeed({
-    tabsCount: grid.tabs.length,
-    openTab: grid.openTab,
+    conversationsCount: conversations.conversations.length,
+    openConversation: conversations.openConversation,
     refreshPortfolio: portfolio.refresh,
   });
 
@@ -46,7 +49,7 @@ export default function App(): JSX.Element {
   );
 
   const openProject = (project: Project): void => {
-    grid.openTab(project.id, project.id, project.path);
+    conversations.openConversation(project.id, project.id, project.path);
     grid.setActiveView("working");
   };
 
@@ -79,7 +82,9 @@ export default function App(): JSX.Element {
             onClick={() => grid.setActiveView("working")}
           >
             Working
-            {grid.tabs.length > 0 && <span className="nu">{grid.tabs.length}</span>}
+            {conversations.conversations.length > 0 && (
+              <span className="nu">{conversations.conversations.length}</span>
+            )}
           </button>
           <button
             type="button"
@@ -108,16 +113,19 @@ export default function App(): JSX.Element {
         {grid.activeView === "working" && (
           <WorkingView
             worksetProjects={worksetProjects}
-            tabs={grid.tabs}
-            activeTabId={grid.activeTabId}
+            conversations={conversations.conversations}
+            active={conversations.active}
             pty={pty}
             nextStepResult={nextStep.result}
             nextStepLoading={nextStep.loading}
             nextStepError={nextStep.error}
             onOpenProject={openProject}
             onAddProject={() => void addProject()}
-            onSelectTab={grid.setActiveTab}
-            onCloseTab={grid.closeTab}
+            onSetMode={conversations.setMode}
+            onSetAgent={conversations.setAgent}
+            onSend={(projectId, agent, content) =>
+              void conversations.send(projectId, agent, content)
+            }
             onRequestNextStep={(path) => void nextStep.request(path)}
           />
         )}

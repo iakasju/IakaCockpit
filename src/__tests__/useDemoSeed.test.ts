@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useDemoSeed } from "../hooks/useDemoSeed";
-import { DEMO_TEAM } from "../mock/demoTeam";
+import { useDemoSeed, DEMO_PROJECT_ID } from "../hooks/useDemoSeed";
 import type { Backend, SeedReport } from "../api/backend";
 
 const SEEDED: SeedReport = {
@@ -23,82 +22,96 @@ function makeApi(report: SeedReport | (() => Promise<SeedReport>)): Backend {
   return { seedDemo: vi.fn(impl) } as unknown as Backend;
 }
 
-/** Mock typé d'`openTab` (signature `(projectId, title, cwd) => id`). */
-function makeOpenTab() {
-  return vi.fn<(projectId: string, title: string, cwd: string) => string>(
-    () => "tab-id",
-  );
+/** Mock typé d'`openConversation` (signature `(projectId, title, cwd, agent?) => id`). */
+function makeOpenConv() {
+  return vi.fn<
+    (projectId: string, title: string, cwd: string, agent?: string) => string
+  >(() => "conv-id");
 }
 
-describe("useDemoSeed — bootstrap démo (L7)", () => {
-  it("seeded:true + tabs vides → ouvre les 5 onglets team + refresh portfolio", async () => {
+describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
+  it("seeded:true + aucune conversation → ouvre UNE conversation démo + refresh", async () => {
     const api = makeApi(SEEDED);
-    const openTab = makeOpenTab();
+    const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
 
     renderHook(() =>
-      useDemoSeed({ api, tabsCount: 0, openTab, refreshPortfolio }),
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+      }),
     );
 
-    await waitFor(() => expect(openTab).toHaveBeenCalledTimes(DEMO_TEAM.length));
-    // Les onglets pointent sur le dossier démo et portent un titre [ROYAUME][Agent].
-    for (let i = 0; i < DEMO_TEAM.length; i++) {
-      const args = openTab.mock.calls[i];
-      expect(args[1]).toBe(`[${DEMO_TEAM[i].royaume}][${DEMO_TEAM[i].agent}]`);
-      expect(args[2]).toBe("/home/u/work/iaka-demo");
-    }
+    // L8/D7 : UNE seule conversation (plus 5 onglets).
+    await waitFor(() => expect(openConversation).toHaveBeenCalledTimes(1));
+    const args = openConversation.mock.calls[0];
+    expect(args[0]).toBe(DEMO_PROJECT_ID);
+    expect(args[1]).toBe(DEMO_PROJECT_ID);
+    expect(args[2]).toBe("/home/u/work/iaka-demo");
     await waitFor(() => expect(refreshPortfolio).toHaveBeenCalled());
   });
 
-  it("seeded:false (flag off / prod) → n'ouvre AUCUN onglet, ne refresh pas", async () => {
+  it("seeded:false (flag off / prod) → n'ouvre AUCUNE conversation, ne refresh pas", async () => {
     const api = makeApi(INERT);
-    const openTab = makeOpenTab();
+    const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
 
     renderHook(() =>
-      useDemoSeed({ api, tabsCount: 0, openTab, refreshPortfolio }),
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+      }),
     );
 
     await waitFor(() => expect(api.seedDemo).toHaveBeenCalled());
     await Promise.resolve();
-    expect(openTab).not.toHaveBeenCalled();
+    expect(openConversation).not.toHaveBeenCalled();
     expect(refreshPortfolio).not.toHaveBeenCalled();
   });
 
-  it("seeded:true mais tabs déjà ouverts (>0) → n'ouvre PAS d'onglet (non-doublon)", async () => {
+  it("seeded:true mais une conversation déjà active (>0) → n'ouvre PAS (non-doublon)", async () => {
     const api = makeApi(SEEDED);
-    const openTab = makeOpenTab();
+    const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
 
     renderHook(() =>
-      useDemoSeed({ api, tabsCount: 3, openTab, refreshPortfolio }),
+      useDemoSeed({
+        api,
+        conversationsCount: 1,
+        openConversation,
+        refreshPortfolio,
+      }),
     );
 
     await waitFor(() => expect(api.seedDemo).toHaveBeenCalled());
     await waitFor(() => expect(refreshPortfolio).toHaveBeenCalled());
-    // Onglets déjà présents → on ne redouble pas, mais on rafraîchit la tuile.
-    expect(openTab).not.toHaveBeenCalled();
+    // Conversation déjà présente → on ne redouble pas, mais on rafraîchit la tuile.
+    expect(openConversation).not.toHaveBeenCalled();
   });
 
   it("exécution unique par session : un re-render ne ré-appelle pas seedDemo", async () => {
     const api = makeApi(SEEDED);
-    const openTab = makeOpenTab();
+    const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
 
     const { rerender } = renderHook(
-      (props: { tabsCount: number }) =>
+      (props: { conversationsCount: number }) =>
         useDemoSeed({
           api,
-          tabsCount: props.tabsCount,
-          openTab,
+          conversationsCount: props.conversationsCount,
+          openConversation,
           refreshPortfolio,
         }),
-      { initialProps: { tabsCount: 0 } },
+      { initialProps: { conversationsCount: 0 } },
     );
 
     await waitFor(() => expect(api.seedDemo).toHaveBeenCalledTimes(1));
-    rerender({ tabsCount: 5 });
-    rerender({ tabsCount: 5 });
+    rerender({ conversationsCount: 1 });
+    rerender({ conversationsCount: 1 });
     // Toujours un seul appel : le useRef garde l'exécution unique.
     expect(api.seedDemo).toHaveBeenCalledTimes(1);
   });
@@ -107,16 +120,21 @@ describe("useDemoSeed — bootstrap démo (L7)", () => {
     const api = makeApi(async () => {
       throw new Error("not in tauri");
     });
-    const openTab = makeOpenTab();
+    const openConversation = makeOpenConv();
     const refreshPortfolio = vi.fn(async () => {});
 
     renderHook(() =>
-      useDemoSeed({ api, tabsCount: 0, openTab, refreshPortfolio }),
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+      }),
     );
 
     await waitFor(() => expect(api.seedDemo).toHaveBeenCalled());
     await Promise.resolve();
-    expect(openTab).not.toHaveBeenCalled();
+    expect(openConversation).not.toHaveBeenCalled();
     expect(refreshPortfolio).not.toHaveBeenCalled();
   });
 });

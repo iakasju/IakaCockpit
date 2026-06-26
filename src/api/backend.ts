@@ -68,6 +68,28 @@ export interface NextStep {
 }
 
 /**
+ * Miroir de `ai::ChatMessage` (Rust, L8) — un message du fil de chat. `role` vaut
+ * `"user"` (l'utilisateur) ou `"assistant"` (l'agent). L'historique vit côté front
+ * (mémoire MVP, D3) et est réinjecté à chaque tour.
+ */
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Miroir de `ai::ChatReply` (Rust, L8) — réponse d'un tour de chat. `provider` vaut
+ * `"litellm"` (endpoint réel) ou `"mock"` (simulé, sans réseau).
+ */
+export interface ChatReply {
+  content: string;
+  provider: string;
+  model: string | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+}
+
+/**
  * Les 3 canaux de la main courante + le canal "agent" (relais inter-agents).
  * Contrat UX partagé (L2/L4) : `mock/feed.ts` réutilise ce type, pas de duplication.
  */
@@ -194,6 +216,23 @@ export function checkServices(): Promise<ServiceStatus[]> {
  */
 export function nextStep(path: string): Promise<NextStep> {
   return call<NextStep>("next_step", { path });
+}
+
+/**
+ * Un tour de chat projet (L8, D2) EN TANT QUE `agent` (persona). `agent` = persona
+ * courante : responsable par défaut (Aragorn projet / Odin portefeuille), ou agent
+ * `@mentionné` (D3). `messages` = historique multi-tours (user/assistant) ; le
+ * système (persona + contexte projet) est ajouté CÔTÉ RUST. Mode réel (endpoint
+ * configuré) ou mock (endpoint vide / flag dev) — `provider` l'indique. Rejette
+ * avec un message lisible si l'endpoint est injoignable (dégradation propre Rust).
+ * L'appel réseau IA vit UNIQUEMENT côté Rust (CSP stricte) — aucun client HTTP front.
+ */
+export function chat(
+  path: string,
+  agent: string,
+  messages: ChatMessage[],
+): Promise<ChatReply> {
+  return call<ChatReply>("chat", { path, agent, messages });
 }
 
 /**
@@ -409,6 +448,7 @@ export const backend = {
   configSet,
   configAll,
   nextStep,
+  chat,
   aiSetKey,
   aiHasKey,
   fetchMainCourante,

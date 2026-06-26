@@ -1,15 +1,16 @@
 /**
- * demoTeam — MISE EN SCÈNE DÉMO (L7), PAS un runner d'agents.
+ * demoTeam — TEAM iakaframe (mise en scène, PAS un runner d'agents).
  *
- * Liste des onglets « team » ouverts au boot de démo (build dev uniquement, gardé
- * par le flag côté Rust + `useDemoSeed`). Chaque entrée donne un **onglet PTY = un
- * shell nu** dont le TITRE porte `[ROYAUME][Agent]` — une mise en scène visuelle de
- * la team iakaframe, **aucun agent réel n'est lancé** (le runner autonome est
- * explicitement HORS lot L7 ; le titrage `[ROYAUME][Agent]` lié au moteur d'agents
- * 3-canaux reste DEP-2 depuis L2).
+ * `DEMO_TEAM` = les **5 agents** de la team (AR-3) couvrant dispatch → cadrage →
+ * dev → qualité. Royaume en MAJUSCULE. Facile à étendre (5→8).
  *
- * AR-1 (TRANCHÉ par Stéphane) : **5 agents** couvrant dispatch → cadrage → dev →
- * qualité. Royaume en MAJUSCULE. Facile à étendre (5→8) si besoin futur.
+ * L7 : alimentait les **onglets** PTY au boot de démo. **L8 (D6/D7)** : `DEMO_TEAM`
+ * alimente désormais le **widget roster** (pastilles `[ROYAUME][Agent]` + statut
+ * attend/travaille, clic → `@agent`), plus les onglets. **Aucun agent réel n'est
+ * lancé** : la mise en scène est visuelle ; le moteur d'agents 3-canaux reste DEP-1.
+ *
+ * Les helpers `teamTabTitle`/`teamTabProjectId` sont CONSERVÉS (compat, encore
+ * utilisés par les tests team) mais ne servent plus à ouvrir 5 onglets en L8.
  */
 
 /** Une entrée team : royaume (MAJUSCULE) + nom d'agent. */
@@ -30,9 +31,14 @@ export const DEMO_TEAM: readonly DemoTeamMember[] = [
   { royaume: "QUALITÉ", agent: "Legolas" },
 ] as const;
 
+/** Pastille `[ROYAUME][Agent]` (royaume MAJUSCULE) d'un membre team (roster L8). */
+export function teamBadge(member: DemoTeamMember): string {
+  return `[${member.royaume}][${member.agent}]`;
+}
+
 /** Titre d'onglet `[ROYAUME][Agent]` (royaume MAJUSCULE) pour un membre team. */
 export function teamTabTitle(member: DemoTeamMember): string {
-  return `[${member.royaume}][${member.agent}]`;
+  return teamBadge(member);
 }
 
 /** Id de projet logique des onglets team (un par membre, distinct du dossier démo). */
