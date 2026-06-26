@@ -313,13 +313,15 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 /// pas rester orphelin si aucun transcript n'apparaît jamais — ex. kind `shell`).
 const CREATE_WAIT_MAX: Duration = Duration::from_secs(120);
 
-/// Boucle de tail : attend la création du fichier, puis lit incrémentalement les
-/// lignes COMPLÈTES (terminées par `\n`), mappe chaque record et émet les events.
-/// Lit depuis le DÉBUT du fichier (reconstruction complète : un toggle chat↔terminal
-/// ne relance pas le tailer, l'historique reste cohérent).
-fn tail_loop(app: AppHandle, session_id: String, path: String, stop: Arc<AtomicBool>) {
+/// Cœur du tail, ISOLÉ du transport (AppHandle) pour être TESTABLE (R-L10b-2) : attend
+/// la création du fichier, puis lit incrémentalement les lignes COMPLÈTES (terminées
+/// par `\n`), mappe chaque record et **pousse chaque event dans `emit`**. Lit depuis le
+/// DÉBUT du fichier (reconstruction complète : un toggle chat↔terminal ne relance pas le
+/// tailer, l'historique reste cohérent). C'est la partie « live » (held fd qui voit les
+/// `append`) qui échappait aux tests `map_record` purs et au gate (façade mockée).
+fn tail_file(path: &str, stop: &Arc<AtomicBool>, mut emit: impl FnMut(&RunnerEvent)) {
     let source = TranscriptSource;
-    let p = Path::new(&path);
+    let p = Path::new(path);
 
     // 1. Attente de création (heartbeat borné). (risque (b) : latence ~quelques s.)
     let mut waited = Duration::ZERO;
@@ -362,13 +364,21 @@ fn tail_loop(app: AppHandle, session_id: String, path: String, stop: Arc<AtomicB
                         continue;
                     }
                     for ev in source.map_record(raw_line) {
-                        let _ = app.emit(&format!("runner://event/{session_id}"), &ev);
+                        emit(&ev);
                     }
                 }
             }
             Err(_) => break,
         }
     }
+}
+
+/// Wrapper de transport : branche [`tail_file`] sur l'`AppHandle` Tauri (émission de
+/// `runner://event/{session_id}`). La logique de tail vit dans `tail_file` (testable).
+fn tail_loop(app: AppHandle, session_id: String, path: String, stop: Arc<AtomicBool>) {
+    tail_file(&path, &stop, |ev| {
+        let _ = app.emit(&format!("runner://event/{session_id}"), ev);
+    });
 }
 
 /// Démarre le tailer du transcript `transcript_path` et émet ses events sur
@@ -708,5 +718,103 @@ mod tests {
         let s = short_json(&long);
         assert!(s.chars().count() <= TOOL_INPUT_MAX + 1); // +1 pour l'ellipse
         assert!(s.ends_with('…'));
+    }
+
+    // --- Boucle de tail LIVE (R-L10b-2) : régression de la recette terrain ---
+    //
+    // Ces tests exercent `tail_file` (la partie « held fd qui voit les `append` »)
+    // qui échappait aux tests `map_record` purs ET au gate front (façade mockée). La
+    // recette terrain a montré le chat MUET : la cause #1 était l'appel `transcript_
+    // tail_start` rejeté (args snake_case vs camelCase, côté façade — couvert par un
+    // test front) ; ici on verrouille que, DÈS lors que le tailer tourne sur un vrai
+    // fichier qui grossit, il ÉMET bien les events attendus.
+
+    use std::io::Write as _;
+    use std::sync::atomic::AtomicBool;
+
+    /// Lance `tail_file` dans un thread, écrit des lignes JSONL INCRÉMENTALEMENT dans le
+    /// fichier (comme Claude Code qui `append`), et renvoie les events collectés.
+    fn run_tail_collect(lines: &[&str]) -> Vec<RunnerEvent> {
+        let dir = std::env::temp_dir().join(format!("iaka-tail-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join(format!(
+            "t-{}.jsonl",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let path_str = path.to_string_lossy().to_string();
+
+        let stop = Arc::new(AtomicBool::new(false));
+        let collected = Arc::new(Mutex::new(Vec::<RunnerEvent>::new()));
+
+        let stop_t = Arc::clone(&stop);
+        let collected_t = Arc::clone(&collected);
+        let path_t = path_str.clone();
+        let handle = std::thread::spawn(move || {
+            tail_file(&path_t, &stop_t, |ev| {
+                collected_t.lock().unwrap().push(ev.clone());
+            });
+        });
+
+        // Crée puis fait GROSSIR le fichier par appends successifs (held fd côté tailer).
+        let mut f = std::fs::File::create(&path).unwrap();
+        for line in lines {
+            writeln!(f, "{line}").unwrap();
+            f.flush().unwrap();
+            std::thread::sleep(Duration::from_millis(40));
+        }
+        // Laisse le tailer rattraper l'EOF puis on l'arrête.
+        std::thread::sleep(Duration::from_millis(400));
+        stop.store(true, Ordering::Relaxed);
+        let _ = handle.join();
+        let _ = std::fs::remove_file(&path);
+
+        let out = collected.lock().unwrap().clone();
+        out
+    }
+
+    #[test]
+    fn tail_file_emet_les_events_dun_fichier_qui_grossit_en_direct() {
+        // Schéma RÉEL (extraits du transcript de recette) : une parole user, une parole
+        // assistant, un geste — ajoutés EN DIRECT après l'ouverture du tailer.
+        let evs = run_tail_collect(&[
+            r#"{"type":"user","message":{"role":"user","content":"hello"}}"#,
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"👋 Hello! Ready."}]}}"#,
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}"#,
+        ]);
+        // Au moins une parole assistant DOIT remonter (c'est ELLE qui peuple le chat et
+        // retombe le `pending` côté front — le symptôme « chat muet / pending bloqué »).
+        assert!(
+            evs.iter()
+                .any(|e| e.kind == EventKind::Parole && e.role == "assistant"),
+            "le tailer doit émettre la parole assistant depuis un fichier qui grossit en direct : {evs:?}"
+        );
+        assert!(evs.iter().any(|e| e.kind == EventKind::Geste));
+    }
+
+    #[test]
+    fn tail_file_voit_les_appends_apres_un_premier_eof() {
+        // Verrouille la mécanique « held fd » : le tailer atteint l'EOF sur la 1ʳᵉ ligne,
+        // PUIS une nouvelle ligne est ajoutée → elle doit quand même être émise (la
+        // recette a montré que le transcript apparaît ~20-30 s après, par appends).
+        let evs = run_tail_collect(&[
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"premier"}]}}"#,
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"second apres EOF"}]}}"#,
+        ]);
+        let paroles: Vec<_> = evs
+            .iter()
+            .filter(|e| e.kind == EventKind::Parole)
+            .filter_map(|e| e.text.as_deref())
+            .collect();
+        assert!(
+            paroles.contains(&"premier"),
+            "1ʳᵉ ligne émise : {paroles:?}"
+        );
+        assert!(
+            paroles.contains(&"second apres EOF"),
+            "ligne ajoutée APRÈS le 1ᵉʳ EOF émise aussi (held fd) : {paroles:?}"
+        );
     }
 }
