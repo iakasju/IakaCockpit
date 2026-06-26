@@ -11,16 +11,41 @@
 //! Événements émis (le front L2 s'y abonnera) :
 //! - `pty://output/{id}` -> `String` (flux de sortie) ;
 //! - `pty://closed/{id}`  -> `()` (fin de session).
+//!
+//! **L10a — chef-runner en TUI NATIVE dans le PTY** (virage acté, spike L10b
+//! `b7ac879`). En plus du shell legacy (`pty_open`), ce module ouvre un **chef-runner**
+//! (`pty_runner_open`) : le **VRAI** `claude` lancé en TUI native interactive dans le
+//! MÊME PTY (réflexes intacts : `Shift+Tab`, `esc`, box, dialogues). Le flux ANSI passe
+//! par `pty://output/{id}` comme pour un shell ; la frappe va au stdin. Les **vues
+//! filtrées** ne dérivent PAS de l'écran ANSI mais du **transcript JSONL** que Claude
+//! Code écrit en direct (tailer = L10b). On NE réutilise PAS la couture pipes
+//! `runner.rs` (parquée : elle tue la TUI). GOTCHA DUR du spike : l'env est **scrubbé**
+//! (`CLAUDE_CODE_*`/`CLAUDECODE`) sinon le `claude` enfant se croit *nested* et n'écrit
+//! AUCUN transcript. `session_id` (uuid) **pré-généré côté Rust** AVANT le spawn, passé
+//! au runner ET renvoyé au front : clef qui reliera PTY <-> transcript <-> session.
 
-use portable_pty::{native_pty_system, MasterPty, PtySize};
+use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
+use uuid::Uuid;
 
 use crate::paths::resolve_hat_root;
 use crate::shell::default_shell;
+
+/// Modèle Claude Code par défaut du chef-runner (L10a, PROVISOIRE). Haiku = bon marché
+/// pour le dev/démo, et éprouvé par le spike L10b. Remplaçable par une clé config non
+/// sensible en **L10b/P3** (réglage global).
+const DEFAULT_CHEF_MODEL: &str = "claude-haiku-4-5";
+
+/// Allowlist d'outils du chef-runner — **constante cadrée** (arbitrage #2, § 4.5).
+/// Lecture/exploration par défaut, **sans bypass global** (`--dangerously-skip-permissions`
+/// INTERDIT). Liste éditable en config = **L10b/P3**. ⚠️ N'a d'effet que sur un workspace
+/// **trusté** (sinon le CLI ignore l'allowlist — cf. PRÉ-REQUIS TRUST § 4.5).
+const CHEF_ALLOWED_TOOLS: &str = "Read,Glob,Grep,Bash";
 
 struct Session {
     master: Box<dyn MasterPty + Send>,
@@ -51,15 +76,8 @@ fn validate_cwd(root: &Path, cwd: &str) -> Result<PathBuf, String> {
     Ok(candidate.to_path_buf())
 }
 
-#[tauri::command]
-pub fn pty_open(
-    app: AppHandle,
-    state: State<TermState>,
-    id: String,
-    cwd: Option<String>,
-    cols: Option<u16>,
-    rows: Option<u16>,
-) -> Result<(), String> {
+/// Ouvre une `PtyPair` à la taille demandée (défauts 80x24).
+fn open_pty(cols: Option<u16>, rows: Option<u16>) -> Result<portable_pty::PtyPair, String> {
     let pty_system = native_pty_system();
     let size = PtySize {
         rows: rows.unwrap_or(24),
@@ -67,18 +85,20 @@ pub fn pty_open(
         pixel_width: 0,
         pixel_height: 0,
     };
-    let pair = pty_system.openpty(size).map_err(|e| e.to_string())?;
+    pty_system.openpty(size).map_err(|e| e.to_string())
+}
 
-    // Shell par OS (socle L0) — jamais `powershell.exe` en dur.
-    let mut cmd = default_shell().to_command();
-
-    // cwd optionnel : validé sous le chapeau avant tout spawn (D3).
-    if let Some(d) = cwd.as_ref().filter(|d| !d.is_empty()) {
-        let root = resolve_hat_root();
-        let validated = validate_cwd(&root, d)?;
-        cmd.cwd(validated);
-    }
-
+/// Spawn `cmd` dans le slave de `pair`, branche le thread de lecture
+/// (`pty://output/{id}` puis `pty://closed/{id}` en fin) et enregistre la session.
+/// **Logique commune** au shell legacy (`pty_open`) et au chef-runner
+/// (`pty_runner_open`) : le PTY se comporte à l'identique (output→front, frappe→stdin).
+fn spawn_into_state(
+    app: &AppHandle,
+    state: &State<TermState>,
+    id: String,
+    pair: portable_pty::PtyPair,
+    cmd: CommandBuilder,
+) -> Result<(), String> {
     let child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
     drop(pair.slave);
 
@@ -115,6 +135,30 @@ pub fn pty_open(
 }
 
 #[tauri::command]
+pub fn pty_open(
+    app: AppHandle,
+    state: State<TermState>,
+    id: String,
+    cwd: Option<String>,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<(), String> {
+    let pair = open_pty(cols, rows)?;
+
+    // Shell par OS (socle L0) — jamais `powershell.exe` en dur.
+    let mut cmd = default_shell().to_command();
+
+    // cwd optionnel : validé sous le chapeau avant tout spawn (D3).
+    if let Some(d) = cwd.as_ref().filter(|d| !d.is_empty()) {
+        let root = resolve_hat_root();
+        let validated = validate_cwd(&root, d)?;
+        cmd.cwd(validated);
+    }
+
+    spawn_into_state(&app, &state, id, pair, cmd)
+}
+
+#[tauri::command]
 pub fn pty_write(state: State<TermState>, id: String, data: String) -> Result<(), String> {
     let mut map = state.0.lock().unwrap();
     let s = map.get_mut(&id).ok_or("session inconnue")?;
@@ -146,6 +190,206 @@ pub fn pty_close(state: State<TermState>, id: String) -> Result<(), String> {
         let _ = s.child.kill();
     }
     Ok(())
+}
+
+// ===========================================================================
+// L10a — Chef-runner en TUI native dans le PTY
+// ===========================================================================
+
+/// Spécification d'un chef-runner (point d'abstraction L10 : passer de 1 à N runners
+/// réels doit être une **extension**, pas une réécriture — PROJET § 2.3). `session_id`
+/// = `Some(uuid)` pour `claude-code` (clef transcript), `None` pour le repli `shell`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RunnerSpec {
+    /// `"claude-code"` (défaut) ou `"shell"` (repli legacy = `default_shell()`).
+    kind: String,
+    /// Programme à lancer (résolu par OS — modèle `shell.rs`, jamais de chemin en dur).
+    program: String,
+    /// Arguments du programme.
+    args: Vec<String>,
+    /// `--session-id` pré-généré (claude-code) ; `None` pour le shell legacy.
+    session_id: Option<String>,
+    /// Faut-il scrubber l'env `CLAUDE_CODE_*`/`CLAUDECODE` (claude-code uniquement).
+    scrub_env: bool,
+}
+
+/// Compte rendu d'ouverture d'un chef-runner, renvoyé au front (D7, snake_case).
+/// `session_id` = clef qui reliera PTY <-> transcript JSONL <-> session (consommée par
+/// le tailer L10b). `transcript_path` = chemin PRÉVU du transcript (utile au critère
+/// L10a « un transcript apparaît » et au tailer L10b). Vides pour le repli `shell`.
+#[derive(Debug, Clone, Serialize)]
+pub struct RunnerSession {
+    pub session_id: String,
+    pub transcript_path: String,
+}
+
+/// Nom du binaire Claude Code par OS (modèle `shell.rs` : pas de chemin en dur, la
+/// résolution PATH est faite au spawn). Sur Windows le lanceur npm est `claude.cmd`.
+fn claude_program() -> String {
+    if cfg!(windows) {
+        "claude.cmd".to_string()
+    } else {
+        "claude".to_string()
+    }
+}
+
+/// Arguments du chef-runner `claude-code` (TUI native — PAS de `--print`, prouvé spike
+/// L10b). `--session-id` rend le transcript DÉTERMINISTE ; `--allowedTools` = allowlist
+/// cadrée (arbitrage #2), **jamais** `--dangerously-skip-permissions`. Schéma figé Rust.
+fn chef_args(session_id: &str, model: &str) -> Vec<String> {
+    vec![
+        "--session-id".to_string(),
+        session_id.to_string(),
+        "--model".to_string(),
+        model.to_string(),
+        "--allowedTools".to_string(),
+        CHEF_ALLOWED_TOOLS.to_string(),
+    ]
+}
+
+/// Construit la `RunnerSpec` d'un `kind`. `claude-code` → `claude` en TUI native avec
+/// `session_id` pré-généré. `shell` → repli legacy `default_shell()` (login `-l` D10,
+/// sans session/scrub). Tout autre kind est rejeté.
+fn resolve_runner_spec(
+    kind: &str,
+    model: Option<String>,
+    session_id: &str,
+) -> Result<RunnerSpec, String> {
+    match kind {
+        "claude-code" => {
+            let model = model
+                .filter(|m| !m.trim().is_empty())
+                .unwrap_or_else(|| DEFAULT_CHEF_MODEL.to_string());
+            Ok(RunnerSpec {
+                kind: kind.to_string(),
+                program: claude_program(),
+                args: chef_args(session_id, &model),
+                session_id: Some(session_id.to_string()),
+                scrub_env: true,
+            })
+        }
+        "shell" => {
+            let sh = default_shell();
+            Ok(RunnerSpec {
+                kind: kind.to_string(),
+                program: sh.program,
+                args: sh.args,
+                session_id: None,
+                scrub_env: false,
+            })
+        }
+        other => Err(format!("kind de chef-runner inconnu : {other}")),
+    }
+}
+
+/// Prédicat PUR de scrub d'environnement (GOTCHA DUR n°1 du spike L10b). Un `claude`
+/// enfant qui hérite de `CLAUDECODE` / `CLAUDE_CODE_*` se croit *nested* et N'ÉCRIT
+/// AUCUN transcript top-level. On retire largement (défensif) ces variables + quelques
+/// marqueurs d'agent. Borné à `CLAUDE_CODE_*` (pas tout `CLAUDE_*`) pour ne pas casser
+/// une éventuelle config légitime.
+fn should_scrub_env(key: &str) -> bool {
+    key.starts_with("CLAUDE_CODE_") || matches!(key, "CLAUDECODE" | "CLAUDE_EFFORT" | "AI_AGENT")
+}
+
+/// Applique le scrub d'env sur le `CommandBuilder` (qui hérite par défaut de l'env du
+/// process courant) : retire toute variable que [`should_scrub_env`] désigne. Fixe aussi
+/// `TERM=xterm-256color` pour que la TUI native se rende correctement (calque spike).
+fn apply_env_scrub(cmd: &mut CommandBuilder) {
+    for (key, _) in std::env::vars_os() {
+        if key.to_str().is_some_and(should_scrub_env) {
+            cmd.env_remove(&key);
+        }
+    }
+    cmd.env("TERM", "xterm-256color");
+}
+
+/// Escaping du chemin de projet → nom de dossier de transcript, CONFIRMÉ par le spike
+/// L10b : chemin **absolu**, chaque `/` **ET** `.` remplacé par `-`
+/// (ex. `/Users/sjupin/work/iaka-demo` → `-Users-sjupin-work-iaka-demo`). *(Windows :
+/// règle à confirmer au tailer L10b ; macOS/Linux = prouvé.)*
+fn escape_cwd(cwd: &str) -> String {
+    cwd.chars()
+        .map(|c| if c == '/' || c == '.' { '-' } else { c })
+        .collect()
+}
+
+/// Chemin PRÉVU du transcript JSONL pour `(cwd, session_id)` :
+/// `<home>/.claude/projects/<escaped>/<session_id>.jsonl`. Pur/testable (le tailer L10b
+/// le consommera ; ici on le renvoie au front au titre du critère L10a).
+fn transcript_path(home: &Path, cwd: &str, session_id: &str) -> PathBuf {
+    home.join(".claude")
+        .join("projects")
+        .join(escape_cwd(cwd))
+        .join(format!("{session_id}.jsonl"))
+}
+
+/// Ouvre un **chef-runner** dans un PTY : `claude` en TUI native (kind `claude-code`,
+/// défaut) ou le shell legacy (kind `shell`). `session_id` (uuid) est **pré-généré ici**
+/// AVANT le spawn, passé au runner ET renvoyé au front. Le `cwd` (si fourni) DOIT rester
+/// sous le chapeau (rejeté sinon — `validate_cwd`). Émet `pty://output|closed/{id}` comme
+/// un shell (PTY inchangé). **Trust (§ 4.5)** : on NE force PAS la confiance ni le bypass ;
+/// le PTY étant interactif, un éventuel dialogue de confiance s'affiche dans la TUI et
+/// l'utilisateur répond nativement (jamais de blocage silencieux) ; un cwd sous un dossier
+/// parent déjà trusté (`~/work`) hérite la confiance.
+// Commande Tauri : les arguments sont désérialisés par nom (pas de struct payload pour
+// rester aligné sur `pty_open`/la façade D7) — d'où le dépassement assumé.
+#[allow(clippy::too_many_arguments)]
+#[tauri::command]
+pub fn pty_runner_open(
+    app: AppHandle,
+    state: State<TermState>,
+    id: String,
+    kind: String,
+    model: Option<String>,
+    cwd: Option<String>,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<RunnerSession, String> {
+    // session_id pré-généré côté Rust AVANT le spawn (clef PTY <-> transcript).
+    let session_id = Uuid::new_v4().to_string();
+    let spec = resolve_runner_spec(&kind, model, &session_id)?;
+
+    let pair = open_pty(cols, rows)?;
+
+    let mut cmd = CommandBuilder::new(&spec.program);
+    cmd.args(&spec.args);
+
+    // Scrub env (claude-code) : sinon AUCUN transcript (gotcha dur du spike).
+    if spec.scrub_env {
+        apply_env_scrub(&mut cmd);
+    }
+
+    // cwd optionnel : validé sous le chapeau avant tout spawn (anti-évasion, D3).
+    let validated_cwd = match cwd.as_ref().filter(|d| !d.is_empty()) {
+        Some(d) => {
+            let root = resolve_hat_root();
+            let v = validate_cwd(&root, d)?;
+            cmd.cwd(&v);
+            Some(v)
+        }
+        None => None,
+    };
+
+    spawn_into_state(&app, &state, id, pair, cmd)?;
+
+    // Chemin de transcript prévu (claude-code + cwd connu) : renvoyé au front.
+    let transcript = match (&spec.session_id, &validated_cwd) {
+        (Some(sid), Some(path)) => transcript_path(&home_dir(), &path.to_string_lossy(), sid)
+            .to_string_lossy()
+            .into_owned(),
+        _ => String::new(),
+    };
+
+    Ok(RunnerSession {
+        session_id: spec.session_id.unwrap_or_default(),
+        transcript_path: transcript,
+    })
+}
+
+/// Répertoire personnel (réutilise `dirs`, déjà au socle). Renvoie un chemin vide si
+/// introuvable (le front retombe alors sur la seule `session_id`).
+fn home_dir() -> PathBuf {
+    dirs::home_dir().unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -206,5 +450,136 @@ mod tests {
             "/home/u/work-secret/x"
         };
         assert!(validate_cwd(&root(), sibling).is_err());
+    }
+
+    // ===================================================================
+    // L10a — chef-runner (résolution, args, scrub env, transcript escaping)
+    // ===================================================================
+
+    const SID: &str = "11111111-2222-3333-4444-555555555555";
+
+    #[test]
+    fn claude_program_est_coherent_avec_los() {
+        let p = claude_program();
+        assert!(!p.is_empty());
+        if cfg!(windows) {
+            assert_eq!(p, "claude.cmd");
+        } else {
+            assert_eq!(p, "claude");
+        }
+    }
+
+    #[test]
+    fn chef_args_porte_session_modele_et_allowlist() {
+        let args = chef_args(SID, "claude-haiku-4-5");
+        // session-id pré-généré + modèle + allowlist cadrée, appariés (flag, valeur).
+        for (flag, value) in [
+            ("--session-id", SID),
+            ("--model", "claude-haiku-4-5"),
+            ("--allowedTools", CHEF_ALLOWED_TOOLS),
+        ] {
+            let i = args.iter().position(|a| a == flag).expect("flag présent");
+            assert_eq!(args.get(i + 1).map(String::as_str), Some(value));
+        }
+    }
+
+    #[test]
+    fn chef_args_ne_contient_jamais_bypass_ni_print() {
+        // Garde anti-dérive (arbitrage #2) : ni bypass total, ni mode --print (TUI native).
+        let args = chef_args(SID, "m");
+        assert!(!args.iter().any(|a| a == "--dangerously-skip-permissions"));
+        assert!(!args.iter().any(|a| a == "--print"));
+    }
+
+    #[test]
+    fn allowlist_par_defaut_est_lecture_exploration() {
+        // Constante cadrée = lecture/exploration, sans écriture libre par défaut.
+        assert_eq!(CHEF_ALLOWED_TOOLS, "Read,Glob,Grep,Bash");
+    }
+
+    #[test]
+    fn resolve_spec_claude_code_par_defaut() {
+        let spec = resolve_runner_spec("claude-code", None, SID).unwrap();
+        assert_eq!(spec.kind, "claude-code");
+        assert_eq!(spec.program, claude_program());
+        assert_eq!(spec.session_id.as_deref(), Some(SID));
+        assert!(spec.scrub_env);
+        assert!(spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
+    }
+
+    #[test]
+    fn resolve_spec_honore_le_modele_fourni() {
+        let spec =
+            resolve_runner_spec("claude-code", Some("claude-sonnet-4-5".into()), SID).unwrap();
+        assert!(spec.args.iter().any(|a| a == "claude-sonnet-4-5"));
+        assert!(!spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
+    }
+
+    #[test]
+    fn resolve_spec_modele_vide_retombe_sur_le_defaut() {
+        let spec = resolve_runner_spec("claude-code", Some("  ".into()), SID).unwrap();
+        assert!(spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
+    }
+
+    #[test]
+    fn resolve_spec_shell_est_le_repli_legacy_sans_session() {
+        // Le repli shell = default_shell() (login -l D10), sans session-id ni scrub.
+        let spec = resolve_runner_spec("shell", None, SID).unwrap();
+        assert_eq!(spec.kind, "shell");
+        assert_eq!(spec.program, default_shell().program);
+        assert_eq!(spec.args, default_shell().args);
+        assert!(spec.session_id.is_none());
+        assert!(!spec.scrub_env);
+        assert!(!spec.args.iter().any(|a| a == "--session-id"));
+    }
+
+    #[test]
+    fn resolve_spec_rejette_un_kind_inconnu() {
+        assert!(resolve_runner_spec("bidon", None, SID).is_err());
+    }
+
+    #[test]
+    fn scrub_env_cible_les_variables_de_session_claude() {
+        // GOTCHA DUR : on retire CLAUDE_CODE_* / CLAUDECODE (sinon aucun transcript).
+        assert!(should_scrub_env("CLAUDECODE"));
+        assert!(should_scrub_env("CLAUDE_CODE_SESSION_ID"));
+        assert!(should_scrub_env("CLAUDE_CODE_ENTRYPOINT"));
+        assert!(should_scrub_env("CLAUDE_EFFORT"));
+        assert!(should_scrub_env("AI_AGENT"));
+    }
+
+    #[test]
+    fn scrub_env_epargne_les_variables_legitimes() {
+        // Borné : on ne casse pas l'env général ni une config claude non-session.
+        assert!(!should_scrub_env("HOME"));
+        assert!(!should_scrub_env("PATH"));
+        assert!(!should_scrub_env("TERM"));
+        assert!(!should_scrub_env("CLAUDE_CONFIG_DIR")); // pas CLAUDE_CODE_*
+    }
+
+    #[test]
+    fn escape_cwd_remplace_slash_et_point_par_tiret() {
+        // Règle confirmée par observation du vrai fichier (spike L10b).
+        assert_eq!(
+            escape_cwd("/Users/sjupin/work/iaka-demo"),
+            "-Users-sjupin-work-iaka-demo"
+        );
+        assert_eq!(
+            escape_cwd("/Users/sjupin/work/IakaCockpit"),
+            "-Users-sjupin-work-IakaCockpit"
+        );
+        // Un point dans un segment est AUSSI remplacé.
+        assert_eq!(escape_cwd("/home/u/work/my.app"), "-home-u-work-my-app");
+    }
+
+    #[test]
+    fn transcript_path_compose_le_chemin_attendu() {
+        let home = Path::new("/Users/sjupin");
+        let p = transcript_path(home, "/Users/sjupin/work/iaka-demo", SID);
+        assert_eq!(
+            p,
+            Path::new("/Users/sjupin/.claude/projects/-Users-sjupin-work-iaka-demo")
+                .join(format!("{SID}.jsonl"))
+        );
     }
 }

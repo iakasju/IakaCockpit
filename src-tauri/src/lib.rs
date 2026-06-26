@@ -60,6 +60,7 @@ pub fn run() {
             terminal::pty_write,
             terminal::pty_resize,
             terminal::pty_close,
+            terminal::pty_runner_open,
             runner::runner_open,
             runner::runner_write,
             runner::runner_interrupt,
