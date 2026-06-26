@@ -26,6 +26,7 @@
 
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use serde::Serialize;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -33,19 +34,28 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
+use crate::config::{read_chef_settings, ChefSettings};
 use crate::paths::resolve_hat_root;
 use crate::shell::default_shell;
 
-/// Modèle Claude Code par défaut du chef-runner (L10a, PROVISOIRE). Haiku = bon marché
-/// pour le dev/démo, et éprouvé par le spike L10b. Remplaçable par une clé config non
-/// sensible en **L10b/P3** (réglage global).
+/// Modèle Claude Code par défaut du chef-runner. Haiku = bon marché pour le dev/démo,
+/// et éprouvé par le spike L10b. **L10b/P3** : devient le **fallback** d'une clé config
+/// non sensible (`config::KEY_CHEF_MODEL`) — la constante n'est plus en dur dans le
+/// spawn, elle ne sert qu'en l'absence de réglage persisté.
 const DEFAULT_CHEF_MODEL: &str = "claude-haiku-4-5";
 
-/// Allowlist d'outils du chef-runner — **constante cadrée** (arbitrage #2, § 4.5).
+/// Allowlist d'outils du chef-runner — **défaut cadré** (arbitrage #2, § 4.5).
 /// Lecture/exploration par défaut, **sans bypass global** (`--dangerously-skip-permissions`
-/// INTERDIT). Liste éditable en config = **L10b/P3**. ⚠️ N'a d'effet que sur un workspace
-/// **trusté** (sinon le CLI ignore l'allowlist — cf. PRÉ-REQUIS TRUST § 4.5).
+/// INTERDIT). **L10b/P3** : devient le **fallback** d'une clé config éditable
+/// (`config::KEY_CHEF_ALLOWED_TOOLS`). ⚠️ N'a d'effet que sur un workspace **trusté**
+/// (sinon le CLI ignore l'allowlist — cf. PRÉ-REQUIS TRUST § 4.5 + [`TrustMode`]).
 const CHEF_ALLOWED_TOOLS: &str = "Read,Glob,Grep,Bash";
+
+/// Mode de trust par défaut (L10b/P3). `inherit` = on NE force rien : un cwd sous un
+/// dossier parent déjà trusté hérite la confiance, sinon le dialogue natif s'affiche
+/// dans la TUI (terminal = seul point de contrôle). Fallback de
+/// `config::KEY_CHEF_TRUST_MODE`.
+const DEFAULT_TRUST_MODE: &str = "inherit";
 
 struct Session {
     master: Box<dyn MasterPty + Send>,
@@ -196,6 +206,34 @@ pub fn pty_close(state: State<TermState>, id: String) -> Result<(), String> {
 // L10a — Chef-runner en TUI native dans le PTY
 // ===========================================================================
 
+/// Mode de trust du cwd du chef-runner (L10b/P3, arbitrage § 4.5 + risque (f)).
+/// Le **PRÉ-REQUIS TRUST** est gravé : si le workspace n'est pas trusté, le CLI
+/// **IGNORE l'allowlist** (`Ignoring N permissions.allow entries… not trusted`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TrustMode {
+    /// **Défaut.** On NE force rien : un cwd sous un dossier parent déjà trusté
+    /// (`~/work`) hérite la confiance ; sinon le dialogue natif de confiance s'affiche
+    /// dans la TUI et l'utilisateur répond (terminal = seul point de contrôle). Aucune
+    /// écriture de fichier.
+    Inherit,
+    /// **Pré-acceptation.** On assure (idempotent, non destructif) une entrée de
+    /// confiance pour le cwd dans `~/.claude.json` AVANT le spawn, pour que le dialogue
+    /// ne **bloque pas** l'auto-lancement hands-off (risque (f)). Pas de bypass de
+    /// permissions (l'allowlist reste la politique) : on ne fait qu'« assurer le trust ».
+    Accept,
+}
+
+impl TrustMode {
+    /// Résout le mode depuis la config (absent → défaut `DEFAULT_TRUST_MODE` ; valeur
+    /// inconnue → `Inherit`, sans surprise).
+    fn from_config(value: Option<&str>) -> TrustMode {
+        match value.unwrap_or(DEFAULT_TRUST_MODE) {
+            "accept" => TrustMode::Accept,
+            _ => TrustMode::Inherit,
+        }
+    }
+}
+
 /// Spécification d'un chef-runner (point d'abstraction L10 : passer de 1 à N runners
 /// réels doit être une **extension**, pas une réécriture — PROJET § 2.3). `session_id`
 /// = `Some(uuid)` pour `claude-code` (clef transcript), `None` pour le repli `shell`.
@@ -207,10 +245,12 @@ struct RunnerSpec {
     program: String,
     /// Arguments du programme.
     args: Vec<String>,
-    /// `--session-id` pré-généré (claude-code) ; `None` pour le shell legacy.
+    /// `--session-id` pré-généré (claude-code) ; `None` pour le repli `shell`.
     session_id: Option<String>,
     /// Faut-il scrubber l'env `CLAUDE_CODE_*`/`CLAUDECODE` (claude-code uniquement).
     scrub_env: bool,
+    /// Mode de trust du cwd (claude-code ; `Inherit` non pertinent pour le shell).
+    trust_mode: TrustMode,
 }
 
 /// Compte rendu d'ouverture d'un chef-runner, renvoyé au front (D7, snake_case).
@@ -235,37 +275,46 @@ fn claude_program() -> String {
 
 /// Arguments du chef-runner `claude-code` (TUI native — PAS de `--print`, prouvé spike
 /// L10b). `--session-id` rend le transcript DÉTERMINISTE ; `--allowedTools` = allowlist
-/// cadrée (arbitrage #2), **jamais** `--dangerously-skip-permissions`. Schéma figé Rust.
-fn chef_args(session_id: &str, model: &str) -> Vec<String> {
+/// (réglage global L10b/P3, défaut `CHEF_ALLOWED_TOOLS`), **jamais**
+/// `--dangerously-skip-permissions`. Schéma figé Rust.
+fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> {
     vec![
         "--session-id".to_string(),
         session_id.to_string(),
         "--model".to_string(),
         model.to_string(),
         "--allowedTools".to_string(),
-        CHEF_ALLOWED_TOOLS.to_string(),
+        allowed_tools.to_string(),
     ]
 }
 
 /// Construit la `RunnerSpec` d'un `kind`. `claude-code` → `claude` en TUI native avec
-/// `session_id` pré-généré. `shell` → repli legacy `default_shell()` (login `-l` D10,
-/// sans session/scrub). Tout autre kind est rejeté.
+/// `session_id` pré-généré, **modèle / allowlist / trust résolus depuis les réglages
+/// globaux** (L10b/P3) avec **fallback sur les constantes** si absents. `shell` → repli
+/// legacy `default_shell()` (login `-l` D10, sans session/scrub). Tout autre kind rejeté.
 fn resolve_runner_spec(
     kind: &str,
     model: Option<String>,
+    allowed_tools: Option<String>,
+    trust_mode: Option<&str>,
     session_id: &str,
 ) -> Result<RunnerSpec, String> {
     match kind {
         "claude-code" => {
+            // Réglage global ou fallback constante (vide/blanc = défaut).
             let model = model
                 .filter(|m| !m.trim().is_empty())
                 .unwrap_or_else(|| DEFAULT_CHEF_MODEL.to_string());
+            let tools = allowed_tools
+                .filter(|t| !t.trim().is_empty())
+                .unwrap_or_else(|| CHEF_ALLOWED_TOOLS.to_string());
             Ok(RunnerSpec {
                 kind: kind.to_string(),
                 program: claude_program(),
-                args: chef_args(session_id, &model),
+                args: chef_args(session_id, &model, &tools),
                 session_id: Some(session_id.to_string()),
                 scrub_env: true,
+                trust_mode: TrustMode::from_config(trust_mode),
             })
         }
         "shell" => {
@@ -276,9 +325,78 @@ fn resolve_runner_spec(
                 args: sh.args,
                 session_id: None,
                 scrub_env: false,
+                trust_mode: TrustMode::Inherit,
             })
         }
         other => Err(format!("kind de chef-runner inconnu : {other}")),
+    }
+}
+
+/// Le cwd est-il DÉJÀ marqué trusté dans le JSON de config Claude ? (`projects[cwd]
+/// .hasTrustDialogAccepted == true`). Pur/testable. Sert de garde d'idempotence pour
+/// ne pas réécrire `~/.claude.json` inutilement (mode `Accept`).
+fn cwd_already_trusted(existing: &Option<Value>, cwd: &str) -> bool {
+    existing
+        .as_ref()
+        .and_then(|v| v.get("projects"))
+        .and_then(|p| p.get(cwd))
+        .and_then(|e| e.get("hasTrustDialogAccepted"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Fusionne (NON destructif) une entrée de confiance pour `cwd` dans le JSON de config
+/// Claude (`~/.claude.json`). Préserve **toutes** les autres clés ; crée `projects`
+/// puis `projects[cwd]` s'ils manquent et y pose `hasTrustDialogAccepted = true`.
+/// PUR/testable (aucun I/O). Un `existing` non-objet est remplacé par un objet neuf.
+fn merge_trust_entry(existing: Option<Value>, cwd: &str) -> Value {
+    let mut root = match existing {
+        Some(v @ Value::Object(_)) => v,
+        _ => Value::Object(serde_json::Map::new()),
+    };
+    let obj = root.as_object_mut().expect("root est un objet");
+    let projects = obj
+        .entry("projects")
+        .or_insert_with(|| Value::Object(serde_json::Map::new()));
+    if !projects.is_object() {
+        *projects = Value::Object(serde_json::Map::new());
+    }
+    let projects = projects.as_object_mut().unwrap();
+    let entry = projects
+        .entry(cwd.to_string())
+        .or_insert_with(|| Value::Object(serde_json::Map::new()));
+    if !entry.is_object() {
+        *entry = Value::Object(serde_json::Map::new());
+    }
+    entry
+        .as_object_mut()
+        .unwrap()
+        .insert("hasTrustDialogAccepted".to_string(), Value::Bool(true));
+    root
+}
+
+/// Écriture ATOMIQUE (temp + rename dans le même dossier) — limite le risque de course
+/// avec les écritures que Claude Code fait lui-même sur `~/.claude.json`.
+fn write_atomic(path: &Path, contents: &str) -> std::io::Result<()> {
+    let tmp = path.with_file_name(".claude.json.iakacockpit.tmp");
+    std::fs::write(&tmp, contents)?;
+    std::fs::rename(&tmp, path)
+}
+
+/// Assure (best-effort, idempotent) le trust du `cwd` dans `~/.claude.json` (mode
+/// `Accept`). Échec **silencieux** : on ne bloque JAMAIS le spawn (au pire le dialogue
+/// natif s'affiche dans la TUI). No-op si le cwd est déjà trusté (pas de réécriture).
+fn ensure_cwd_trusted(home: &Path, cwd: &str) {
+    let path = home.join(".claude.json");
+    let existing = std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok());
+    if cwd_already_trusted(&existing, cwd) {
+        return; // déjà trusté : aucune écriture (idempotent).
+    }
+    let merged = merge_trust_entry(existing, cwd);
+    if let Ok(s) = serde_json::to_string_pretty(&merged) {
+        let _ = write_atomic(&path, &s);
     }
 }
 
@@ -347,7 +465,22 @@ pub fn pty_runner_open(
 ) -> Result<RunnerSession, String> {
     // session_id pré-généré côté Rust AVANT le spawn (clef PTY <-> transcript).
     let session_id = Uuid::new_v4().to_string();
-    let spec = resolve_runner_spec(&kind, model, &session_id)?;
+
+    // Réglages GLOBAUX du chef-runner (L10b/P3) lus en config non sensible (best-effort).
+    // Le `model` explicite (param front) PRIME sur le réglage ; chacun retombe sur la
+    // constante du module si absent (cf. `resolve_runner_spec`).
+    let chef: ChefSettings = crate::db::open(&app)
+        .ok()
+        .map(|conn| read_chef_settings(&conn))
+        .unwrap_or_default();
+    let effective_model = model.or(chef.model);
+    let spec = resolve_runner_spec(
+        &kind,
+        effective_model,
+        chef.allowed_tools,
+        chef.trust_mode.as_deref(),
+        &session_id,
+    )?;
 
     let pair = open_pty(cols, rows)?;
 
@@ -369,6 +502,15 @@ pub fn pty_runner_open(
         }
         None => None,
     };
+
+    // Mode de trust `Accept` (réglage global) : pré-acceptation idempotente du cwd dans
+    // `~/.claude.json` AVANT le spawn, pour que le dialogue ne bloque pas l'auto-lancement
+    // (risque (f)). `Inherit` (défaut) ne touche à rien (dialogue natif si besoin).
+    if spec.trust_mode == TrustMode::Accept {
+        if let Some(cwd) = &validated_cwd {
+            ensure_cwd_trusted(&home_dir(), &cwd.to_string_lossy());
+        }
+    }
 
     spawn_into_state(&app, &state, id, pair, cmd)?;
 
@@ -471,7 +613,7 @@ mod tests {
 
     #[test]
     fn chef_args_porte_session_modele_et_allowlist() {
-        let args = chef_args(SID, "claude-haiku-4-5");
+        let args = chef_args(SID, "claude-haiku-4-5", CHEF_ALLOWED_TOOLS);
         // session-id pré-généré + modèle + allowlist cadrée, appariés (flag, valeur).
         for (flag, value) in [
             ("--session-id", SID),
@@ -484,9 +626,23 @@ mod tests {
     }
 
     #[test]
+    fn chef_args_honore_une_allowlist_personnalisee() {
+        // L10b/P3 : l'allowlist est un réglage global (plus une constante en dur).
+        let args = chef_args(SID, "m", "Read,Glob,Edit,Write");
+        let i = args
+            .iter()
+            .position(|a| a == "--allowedTools")
+            .expect("flag présent");
+        assert_eq!(
+            args.get(i + 1).map(String::as_str),
+            Some("Read,Glob,Edit,Write")
+        );
+    }
+
+    #[test]
     fn chef_args_ne_contient_jamais_bypass_ni_print() {
         // Garde anti-dérive (arbitrage #2) : ni bypass total, ni mode --print (TUI native).
-        let args = chef_args(SID, "m");
+        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS);
         assert!(!args.iter().any(|a| a == "--dangerously-skip-permissions"));
         assert!(!args.iter().any(|a| a == "--print"));
     }
@@ -499,32 +655,64 @@ mod tests {
 
     #[test]
     fn resolve_spec_claude_code_par_defaut() {
-        let spec = resolve_runner_spec("claude-code", None, SID).unwrap();
+        let spec = resolve_runner_spec("claude-code", None, None, None, SID).unwrap();
         assert_eq!(spec.kind, "claude-code");
         assert_eq!(spec.program, claude_program());
         assert_eq!(spec.session_id.as_deref(), Some(SID));
         assert!(spec.scrub_env);
         assert!(spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
+        // Sans réglage allowlist → fallback constante.
+        assert!(spec.args.iter().any(|a| a == CHEF_ALLOWED_TOOLS));
+        // Sans réglage trust → Inherit (défaut).
+        assert_eq!(spec.trust_mode, TrustMode::Inherit);
     }
 
     #[test]
     fn resolve_spec_honore_le_modele_fourni() {
-        let spec =
-            resolve_runner_spec("claude-code", Some("claude-sonnet-4-5".into()), SID).unwrap();
+        let spec = resolve_runner_spec(
+            "claude-code",
+            Some("claude-sonnet-4-5".into()),
+            None,
+            None,
+            SID,
+        )
+        .unwrap();
         assert!(spec.args.iter().any(|a| a == "claude-sonnet-4-5"));
         assert!(!spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
     }
 
     #[test]
     fn resolve_spec_modele_vide_retombe_sur_le_defaut() {
-        let spec = resolve_runner_spec("claude-code", Some("  ".into()), SID).unwrap();
+        let spec = resolve_runner_spec("claude-code", Some("  ".into()), None, None, SID).unwrap();
         assert!(spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
+    }
+
+    #[test]
+    fn resolve_spec_honore_allowlist_et_trust_des_reglages() {
+        // L10b/P3 : allowlist éditable + trust mode lus depuis les réglages globaux.
+        let spec = resolve_runner_spec(
+            "claude-code",
+            None,
+            Some("Read,Glob".into()),
+            Some("accept"),
+            SID,
+        )
+        .unwrap();
+        assert!(spec.args.iter().any(|a| a == "Read,Glob"));
+        assert!(!spec.args.iter().any(|a| a == CHEF_ALLOWED_TOOLS));
+        assert_eq!(spec.trust_mode, TrustMode::Accept);
+    }
+
+    #[test]
+    fn resolve_spec_allowlist_vide_retombe_sur_le_defaut() {
+        let spec = resolve_runner_spec("claude-code", None, Some("   ".into()), None, SID).unwrap();
+        assert!(spec.args.iter().any(|a| a == CHEF_ALLOWED_TOOLS));
     }
 
     #[test]
     fn resolve_spec_shell_est_le_repli_legacy_sans_session() {
         // Le repli shell = default_shell() (login -l D10), sans session-id ni scrub.
-        let spec = resolve_runner_spec("shell", None, SID).unwrap();
+        let spec = resolve_runner_spec("shell", None, None, None, SID).unwrap();
         assert_eq!(spec.kind, "shell");
         assert_eq!(spec.program, default_shell().program);
         assert_eq!(spec.args, default_shell().args);
@@ -535,7 +723,74 @@ mod tests {
 
     #[test]
     fn resolve_spec_rejette_un_kind_inconnu() {
-        assert!(resolve_runner_spec("bidon", None, SID).is_err());
+        assert!(resolve_runner_spec("bidon", None, None, None, SID).is_err());
+    }
+
+    // --- L10b/P3 : mode de trust + fusion de l'entrée ~/.claude.json ---
+
+    #[test]
+    fn trust_mode_from_config_resout_accept_et_defaut() {
+        assert_eq!(TrustMode::from_config(Some("accept")), TrustMode::Accept);
+        assert_eq!(TrustMode::from_config(Some("inherit")), TrustMode::Inherit);
+        // Valeur inconnue / absente → Inherit (défaut, sans surprise).
+        assert_eq!(TrustMode::from_config(Some("bidon")), TrustMode::Inherit);
+        assert_eq!(TrustMode::from_config(None), TrustMode::Inherit);
+        // La constante documentaire reflète bien le défaut.
+        assert_eq!(
+            TrustMode::from_config(Some(DEFAULT_TRUST_MODE)),
+            TrustMode::Inherit
+        );
+    }
+
+    #[test]
+    fn merge_trust_entry_cree_l_entree_sur_un_json_absent() {
+        let cwd = "/Users/u/work/iaka-demo";
+        let merged = merge_trust_entry(None, cwd);
+        assert!(cwd_already_trusted(&Some(merged), cwd));
+    }
+
+    #[test]
+    fn merge_trust_entry_preserve_les_autres_cles() {
+        // Schéma proche du vrai ~/.claude.json : on ne doit RIEN écraser d'autre.
+        let existing: Value = serde_json::json!({
+            "numStartups": 42,
+            "projects": {
+                "/Users/u/work/autre": { "hasTrustDialogAccepted": true, "history": [1, 2] }
+            }
+        });
+        let cwd = "/Users/u/work/iaka-demo";
+        let merged = merge_trust_entry(Some(existing), cwd);
+        // L'entrée demandée est posée…
+        assert!(cwd_already_trusted(&Some(merged.clone()), cwd));
+        // …sans toucher aux clés/projets existants.
+        assert_eq!(merged.get("numStartups").and_then(Value::as_i64), Some(42));
+        let autre = merged
+            .get("projects")
+            .and_then(|p| p.get("/Users/u/work/autre"))
+            .unwrap();
+        assert_eq!(
+            autre.get("hasTrustDialogAccepted").and_then(Value::as_bool),
+            Some(true)
+        );
+        assert!(autre.get("history").is_some());
+    }
+
+    #[test]
+    fn merge_trust_entry_remplace_un_json_non_objet() {
+        // Un fichier corrompu (ex. tableau) ne fait pas paniquer : on repart d'un objet.
+        let merged = merge_trust_entry(Some(serde_json::json!([1, 2, 3])), "/c");
+        assert!(cwd_already_trusted(&Some(merged), "/c"));
+    }
+
+    #[test]
+    fn cwd_already_trusted_est_faux_quand_absent() {
+        assert!(!cwd_already_trusted(&None, "/c"));
+        let existing = Some(serde_json::json!({ "projects": {} }));
+        assert!(!cwd_already_trusted(&existing, "/c"));
+        let untrusted = Some(serde_json::json!({
+            "projects": { "/c": { "hasTrustDialogAccepted": false } }
+        }));
+        assert!(!cwd_already_trusted(&untrusted, "/c"));
     }
 
     #[test]
