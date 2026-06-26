@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+// Import du script bash en TEXTE BRUT via Vite (`?raw`) — pas de dépendance
+// `@types/node` ni d'accès `fs` (typé via vite/client).
+import COUCH_SH from "../../docker/init-couchdb.sh?raw";
 import {
   DEMO_HISTORY_AGENTS,
   GANDALF_REPORT_VERBATIM,
@@ -11,10 +12,6 @@ import {
  * (L4, docker/init-couchdb.sh). La même scène (mêmes agents, délégation /
  * rapport / verbatim) doit se retrouver des deux côtés.
  */
-const COUCH_SH = readFileSync(
-  resolve(__dirname, "../../docker/init-couchdb.sh"),
-  "utf8",
-);
 
 describe("cohérence démo chat ↔ main courante (L9-C4)", () => {
   it("le script CouchDB seede bien la conversation iaka-demo", () => {
