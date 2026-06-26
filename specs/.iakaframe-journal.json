@@ -58,5 +58,15 @@
     "dirty": true,
     "files": 19420,
     "note": "L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation)."
+  },
+  {
+    "date": "2026-06-26 10:38",
+    "reason": "version",
+    "version": "v0.8.0-rc",
+    "branch": "main",
+    "commit": "43f58ff docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)",
+    "dirty": true,
+    "files": 19501,
+    "note": "L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte)."
   }
 ]

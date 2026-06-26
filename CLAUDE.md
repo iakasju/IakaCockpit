@@ -205,9 +205,10 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **Livré en UN SEUL BLOC** (AR-5), un seul gate Legolas (structuration P1 enveloppe / P2 chat = guide
       d'implémentation interne). AR-4 = prompt **persona-aware** (wording à confirmer). Est. **~4 j-homme**
       (réévaluée +0,5 j après enrichissement AR-1 `@agent`/roster + terminal réel D10).)*
-- [ ] **L9** — Démo enrichie : vignettes thémées par team + projet démo dans Working + conversation
+- [x] **L9** — Démo enrichie : vignettes thémées par team + projet démo dans Working + conversation
       préchargée → `specs/instructions/L9-demo-enrichie.md`
-      *(**cadré** par 🧙 Gandalf (2026-06-26), suite à un **retour terrain L8**. **Phasé** : **L9-P1** = (B) fix
+      *(implémenté, **gate Legolas PASS** — 170/170 front + 132/132 Rust, candidate `v0.8.0-rc` ; 3 teams
+      (lotr/avengers/starfleet) naonedge dark+light, CSP intacte, 30 PNG en `'self'`. Cadré par 🧙 Gandalf (2026-06-26), suite à un **retour terrain L8**. **Phasé** : **L9-P1** = (B) fix
       `useDemoSeed` ajoute `iaka-demo` au **set de Work** (`workset.add`, idempotent, flag dev — le projet
       apparaît enfin dans Working) + (C) **conversation préchargée cohérente** : historique de **chat** mocké
       (`src/mock/demoConversation.ts`, chaîne de badges délégation Aragorn→Gandalf / rapport / **verbatim**) via

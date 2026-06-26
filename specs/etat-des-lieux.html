@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-26 09:32 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-06-26 10:38 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.7.0-rc</div>
+  <div class="k">Version</div><div>v0.8.0-rc</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>eab1684 docs(L8): instruction conversation projet (chat/shell + roster, arbitrages tranches)</code></div>
+  <div class="k">Dernier commit</div><div><code>43f58ff docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</code></div>
   <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>19420 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat&lt;-&gt;Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation).</div>
+  <div class="k">Fichiers</div><div>19501 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>eab1684</code></td><td>2026-06-26</td><td>docs(L8): instruction conversation projet (chat/shell + roster, arbitrages tranches)</td></tr>
-<tr><td><code>df67cba</code></td><td>2026-06-26</td><td>docs(L8): entree backlog L8 — implemente, remis au gate Legolas</td></tr>
-<tr><td><code>0dead5e</code></td><td>2026-06-26</td><td>test(L8): facade chat, useConversations, Chat, Roster</td></tr>
-<tr><td><code>2e6a121</code></td><td>2026-06-26</td><td>feat(L8): conversation projet (chat/shell + roster) — rework Working (D1/D4/D5/D6/D7)</td></tr>
-<tr><td><code>d7fb2c0</code></td><td>2026-06-26</td><td>feat(L8): commande chat(path, agent, messages) persona-aware (Rust, D2)</td></tr>
-<tr><td><code>cd3e9ef</code></td><td>2026-06-26</td><td>feat(L0): login shell interactif (-l Unix) sourcant le profil — terminal reel (D10)</td></tr>
-<tr><td><code>1145741</code></td><td>2026-06-26</td><td>docs(L7): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.6.0-rc)</td></tr>
-<tr><td><code>10cd7b7</code></td><td>2026-06-26</td><td>docs(L7): instruction seed demo dev (arbitrages AR-1..4 tranches)</td></tr>
-<tr><td><code>947fb88</code></td><td>2026-06-26</td><td>chore(L7): cargo fmt seed.rs + entree backlog L7 (remise au gate Legolas)</td></tr>
-<tr><td><code>89f8fb6</code></td><td>2026-06-26</td><td>feat(L7): facade seedDemo + hook useDemoSeed + onglets team (bootstrap demo)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>43f58ff</code></td><td>2026-06-26</td><td>docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</td></tr>
+<tr><td><code>4e2cf74</code></td><td>2026-06-26</td><td>test(L9): import du script CouchDB via ?raw (sans dependance @types/node)</td></tr>
+<tr><td><code>703a8fb</code></td><td>2026-06-26</td><td>test(L9): coherence chat&lt;-&gt;main courante (C4) + doc sync-vignettes (CLAUDE.md)</td></tr>
+<tr><td><code>4f5e7df</code></td><td>2026-06-26</td><td>feat(L9): rendu vignettes dans le roster + avatars dans le chat (fallback pastille)</td></tr>
+<tr><td><code>9ce110d</code></td><td>2026-06-26</td><td>feat(L9): cle config ui_team + selecteur team dans Reglages</td></tr>
+<tr><td><code>366a84a</code></td><td>2026-06-26</td><td>feat(L9): resolveur de vignette (charte, team, roleIndex) + roleIndex sur DEMO_TEAM</td></tr>
+<tr><td><code>c48c773</code></td><td>2026-06-26</td><td>chore(L9): script sync-vignettes + manifest (sous-ensemble naonedge x 3 teams)</td></tr>
+<tr><td><code>967749b</code></td><td>2026-06-26</td><td>feat(L9): main courante CouchDB enrichie (delegation geste / rapport / verbatim)</td></tr>
+<tr><td><code>7f853a2</code></td><td>2026-06-26</td><td>feat(L9): historique de chat demo precharge (chaine de badges iakaframe)</td></tr>
+<tr><td><code>5de5610</code></td><td>2026-06-26</td><td>feat(L9): openConversation accepte un historique initial (retro-compatible)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-06-26 10:38</td><td><span class='r r-version'>version</span></td><td>v0.8.0-rc</td><td>main</td><td>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</td></tr>
 <tr><td>2026-06-26 09:32</td><td><span class='r r-version'>version</span></td><td>v0.7.0-rc</td><td>main</td><td>L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat&lt;-&gt;Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation).</td></tr>
 <tr><td>2026-06-26 08:25</td><td><span class='r r-version'>version</span></td><td>v0.6.0-rc</td><td>main</td><td>L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%.</td></tr>
 <tr><td>2026-06-26 00:01</td><td><span class='r r-version'>version</span></td><td>v0.5.0-rc</td><td>main</td><td>L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider.</td></tr>
