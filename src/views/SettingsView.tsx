@@ -239,7 +239,7 @@ export function SettingsView({
                   className="range"
                   type="range"
                   min={80}
-                  max={140}
+                  max={200}
                   step={5}
                   value={settings.ui.fontScale}
                   onChange={(e) =>
