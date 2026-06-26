@@ -23,6 +23,19 @@ export type Density = "comfort" | "standard" | "compact";
 export type Shape = "round" | "square";
 export type FontFamily = "system" | "serif" | "mono-ui";
 
+/**
+ * Runner du chef-conversation (L10b/P3). `claude-code` = seul branché en L10 ;
+ * `ollama`/`codex` = champs prévus pour l'extension (cible), NON sélectionnables.
+ */
+export type ChefRunnerKind = "claude-code" | "ollama" | "codex";
+
+/**
+ * Mode de trust du cwd du chef-runner (L10b/P3, miroir de `terminal::TrustMode`).
+ * `inherit` = héritage parent trusté / dialogue natif ; `accept` = pré-acceptation
+ * idempotente dans `~/.claude.json` (le dialogue ne bloque pas l'auto-lancement).
+ */
+export type ChefTrustMode = "inherit" | "accept";
+
 export interface UiPrefs {
   navPos: NavPos;
   density: Density;
@@ -48,6 +61,13 @@ export const CONFIG_KEYS = {
   couchdbDb: "couchdb_db",
   n8nWebhookUrl: "n8n_webhook_url",
   n8nActiveSupport: "n8n_active_support",
+  /** Réglages GLOBAUX du chef-runner (L10b/P3) — miroir des clés `config.rs`. */
+  chefRunnerKind: "chef_runner_kind",
+  chefModel: "chef_model",
+  chefAllowedTools: "chef_allowed_tools",
+  chefTrustMode: "chef_trust_mode",
+  /** Canal pensée masqué par défaut dans le chat (L10b/P3, persisté). */
+  hidePensee: "ui_hide_pensee",
 } as const;
 
 /** Support de diffusion par défaut (L6, D2) si non configuré. */
@@ -71,6 +91,22 @@ export const DEFAULT_THEME = "naonedge-dark";
  */
 export const DEFAULT_TEAM = "lotr";
 
+// --- Défauts des réglages globaux du chef-runner (L10b/P3) ---
+// Miroir des constantes Rust (`terminal.rs`) : le front les affiche comme défauts ;
+// la VÉRITÉ d'exécution est côté Rust (`pty_runner_open` lit la config, fallback
+// constantes). Vider un champ → le défaut Rust reprend.
+
+/** Runner par défaut du chef (seul `claude-code` est branché/sélectionnable en L10). */
+export const DEFAULT_CHEF_RUNNER_KIND: ChefRunnerKind = "claude-code";
+/** Modèle par défaut du chef-runner (miroir `DEFAULT_CHEF_MODEL` Rust). */
+export const DEFAULT_CHEF_MODEL = "claude-haiku-4-5";
+/** Allowlist d'outils par défaut (miroir `CHEF_ALLOWED_TOOLS` Rust, arbitrage #2). */
+export const DEFAULT_CHEF_ALLOWED_TOOLS = "Read,Glob,Grep,Bash";
+/** Mode de trust par défaut (miroir `DEFAULT_TRUST_MODE` Rust). */
+export const DEFAULT_CHEF_TRUST_MODE: ChefTrustMode = "inherit";
+/** Canal pensée masqué par défaut (réduit le bruit du transcript). */
+export const DEFAULT_HIDE_PENSEE = true;
+
 export interface UseSettings {
   root: string | null;
   litellmEndpoint: string;
@@ -93,6 +129,16 @@ export interface UseSettings {
   theme: string;
   /** Team de vignettes active (L9). `none` = pastilles texte seules. */
   team: string;
+  /** Runner du chef-conversation (L10b/P3 ; `claude-code` seul branché en L10). */
+  chefRunnerKind: ChefRunnerKind;
+  /** Modèle du chef-runner (vide = défaut Rust ; non sensible, L10b/P3). */
+  chefModel: string;
+  /** Allowlist d'outils du chef-runner (`--allowedTools`, vide = défaut Rust). */
+  chefAllowedTools: string;
+  /** Mode de trust du cwd du chef-runner (L10b/P3). */
+  chefTrustMode: ChefTrustMode;
+  /** Le canal pensée est-il masqué dans le chat ? (L10b/P3, persisté). */
+  hidePensee: boolean;
   ui: UiPrefs;
   loaded: boolean;
   setRoot: (root: string) => Promise<void>;
@@ -115,6 +161,16 @@ export interface UseSettings {
   setTheme: (id: string) => Promise<void>;
   /** Persiste la team de vignettes (L9, config non sensible ui_team). */
   setTeam: (team: string) => Promise<void>;
+  /** Persiste le runner du chef (L10b/P3, config non sensible). */
+  setChefRunnerKind: (kind: ChefRunnerKind) => Promise<void>;
+  /** Persiste le modèle du chef-runner (L10b/P3, config non sensible). */
+  setChefModel: (model: string) => Promise<void>;
+  /** Persiste l'allowlist d'outils du chef-runner (L10b/P3, config non sensible). */
+  setChefAllowedTools: (tools: string) => Promise<void>;
+  /** Persiste le mode de trust du cwd (L10b/P3, config non sensible). */
+  setChefTrustMode: (mode: ChefTrustMode) => Promise<void>;
+  /** Persiste l'état masqué/visible du canal pensée (L10b/P3). */
+  setHidePensee: (hide: boolean) => Promise<void>;
   setUiPref: <K extends keyof UiPrefs>(
     key: K,
     value: UiPrefs[K],
@@ -159,6 +215,18 @@ export function parseSupport(value: string | undefined): NotifySupport {
     : DEFAULT_SUPPORT;
 }
 
+/** Valide le runner du chef (L10b/P3) ; défaut si invalide/absent. */
+export function parseRunnerKind(value: string | undefined): ChefRunnerKind {
+  return value === "claude-code" || value === "ollama" || value === "codex"
+    ? value
+    : DEFAULT_CHEF_RUNNER_KIND;
+}
+
+/** Valide le mode de trust (L10b/P3) ; défaut `inherit` si invalide/absent. */
+export function parseTrustMode(value: string | undefined): ChefTrustMode {
+  return value === "accept" ? "accept" : DEFAULT_CHEF_TRUST_MODE;
+}
+
 function parsePrefs(cfg: Record<string, string>): UiPrefs {
   const ui: UiPrefs = { ...DEFAULT_UI };
   const nav = cfg[CONFIG_KEYS.navPos];
@@ -200,6 +268,15 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
   const [n8nActiveSupport, setN8nActiveSupportState] =
     useState<NotifySupport>(DEFAULT_SUPPORT);
   const [n8nTokenSet, setN8nTokenSet] = useState<boolean>(false);
+  const [chefRunnerKind, setChefRunnerKindState] = useState<ChefRunnerKind>(
+    DEFAULT_CHEF_RUNNER_KIND,
+  );
+  const [chefModel, setChefModelState] = useState<string>("");
+  const [chefAllowedTools, setChefAllowedToolsState] = useState<string>("");
+  const [chefTrustMode, setChefTrustModeState] = useState<ChefTrustMode>(
+    DEFAULT_CHEF_TRUST_MODE,
+  );
+  const [hidePensee, setHidePenseeState] = useState<boolean>(DEFAULT_HIDE_PENSEE);
   const [ui, setUi] = useState<UiPrefs>(DEFAULT_UI);
   const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -256,6 +333,16 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nWebhookUrlState(cfg[CONFIG_KEYS.n8nWebhookUrl] ?? "");
       setN8nActiveSupportState(parseSupport(cfg[CONFIG_KEYS.n8nActiveSupport]));
       setN8nTokenSet(n8nTokenPresent);
+      // Réglages chef-runner (L10b/P3) : non sensibles, lus avec configAll.
+      setChefRunnerKindState(parseRunnerKind(cfg[CONFIG_KEYS.chefRunnerKind]));
+      setChefModelState(cfg[CONFIG_KEYS.chefModel] ?? "");
+      setChefAllowedToolsState(cfg[CONFIG_KEYS.chefAllowedTools] ?? "");
+      setChefTrustModeState(parseTrustMode(cfg[CONFIG_KEYS.chefTrustMode]));
+      setHidePenseeState(
+        cfg[CONFIG_KEYS.hidePensee] !== undefined
+          ? cfg[CONFIG_KEYS.hidePensee] === "true"
+          : DEFAULT_HIDE_PENSEE,
+      );
       setRootState(r);
       applyToDom(domRef.current, nextTheme, nextUi);
       setLoaded(true);
@@ -366,6 +453,46 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     [api],
   );
 
+  const setChefRunnerKind = useCallback(
+    async (kind: ChefRunnerKind): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.chefRunnerKind, kind);
+      setChefRunnerKindState(kind);
+    },
+    [api],
+  );
+
+  const setChefModel = useCallback(
+    async (model: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.chefModel, model);
+      setChefModelState(model);
+    },
+    [api],
+  );
+
+  const setChefAllowedTools = useCallback(
+    async (tools: string): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.chefAllowedTools, tools);
+      setChefAllowedToolsState(tools);
+    },
+    [api],
+  );
+
+  const setChefTrustMode = useCallback(
+    async (mode: ChefTrustMode): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.chefTrustMode, mode);
+      setChefTrustModeState(mode);
+    },
+    [api],
+  );
+
+  const setHidePensee = useCallback(
+    async (hide: boolean): Promise<void> => {
+      await api.configSet(CONFIG_KEYS.hidePensee, String(hide));
+      setHidePenseeState(hide);
+    },
+    [api],
+  );
+
   const setUiPref = useCallback(
     async <K extends keyof UiPrefs>(
       key: K,
@@ -403,6 +530,11 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nTokenSet,
       theme,
       team,
+      chefRunnerKind,
+      chefModel,
+      chefAllowedTools,
+      chefTrustMode,
+      hidePensee,
       ui,
       loaded,
       setRoot,
@@ -417,6 +549,11 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nToken,
       setTheme,
       setTeam,
+      setChefRunnerKind,
+      setChefModel,
+      setChefAllowedTools,
+      setChefTrustMode,
+      setHidePensee,
       setUiPref,
     }),
     [
@@ -432,6 +569,11 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nTokenSet,
       theme,
       team,
+      chefRunnerKind,
+      chefModel,
+      chefAllowedTools,
+      chefTrustMode,
+      hidePensee,
       ui,
       loaded,
       setRoot,
@@ -446,6 +588,11 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nToken,
       setTheme,
       setTeam,
+      setChefRunnerKind,
+      setChefModel,
+      setChefAllowedTools,
+      setChefTrustMode,
+      setHidePensee,
       setUiPref,
     ],
   );

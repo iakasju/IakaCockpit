@@ -294,6 +294,77 @@ describe("useSettings — persistance (PO-2 / D4-bis)", () => {
       expect(isSecret(k), `${k} ne doit pas être filtré`).toBe(false);
     }
   });
+
+  // --- L10b/P3 : réglages globaux du chef-runner + canal pensée ---
+
+  it("réglages chef-runner : défauts documentés au montage", async () => {
+    const { api } = makeApi();
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.chefRunnerKind).toBe("claude-code");
+    expect(result.current.chefModel).toBe(""); // vide → défaut Rust
+    expect(result.current.chefAllowedTools).toBe("");
+    expect(result.current.chefTrustMode).toBe("inherit");
+    expect(result.current.hidePensee).toBe(true);
+  });
+
+  it("setChefModel/AllowedTools/TrustMode persistent et se relisent au remontage", async () => {
+    const { api, store } = makeApi();
+    const first = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(first.result.current.loaded).toBe(true));
+    await act(async () => {
+      await first.result.current.setChefModel("claude-sonnet-4-5");
+      await first.result.current.setChefAllowedTools("Read,Glob,Edit");
+      await first.result.current.setChefTrustMode("accept");
+    });
+    expect(api.configSet).toHaveBeenCalledWith(
+      CONFIG_KEYS.chefModel,
+      "claude-sonnet-4-5",
+    );
+    expect(store[CONFIG_KEYS.chefAllowedTools]).toBe("Read,Glob,Edit");
+    expect(store[CONFIG_KEYS.chefTrustMode]).toBe("accept");
+    // Remontage : valeurs retrouvées.
+    const second = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(second.result.current.loaded).toBe(true));
+    expect(second.result.current.chefModel).toBe("claude-sonnet-4-5");
+    expect(second.result.current.chefAllowedTools).toBe("Read,Glob,Edit");
+    expect(second.result.current.chefTrustMode).toBe("accept");
+  });
+
+  it("trust mode invalide en config retombe sur le défaut (inherit)", async () => {
+    const { api } = makeApi({ [CONFIG_KEYS.chefTrustMode]: "yolo" });
+    const { result } = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.chefTrustMode).toBe("inherit");
+  });
+
+  it("setHidePensee persiste l'état (string booléen) et se relit au remontage", async () => {
+    const { api, store } = makeApi();
+    const first = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(first.result.current.loaded).toBe(true));
+    await act(async () => {
+      await first.result.current.setHidePensee(false);
+    });
+    expect(api.configSet).toHaveBeenCalledWith(CONFIG_KEYS.hidePensee, "false");
+    expect(store[CONFIG_KEYS.hidePensee]).toBe("false");
+    const second = renderHook(() => useSettings({ api, dom: makeDom() }));
+    await waitFor(() => expect(second.result.current.loaded).toBe(true));
+    expect(second.result.current.hidePensee).toBe(false);
+  });
+
+  it("les clés chef-runner ne matchent PAS le filtre secret (configAll)", () => {
+    const isSecret = (k: string): boolean =>
+      /token|key|secret|password/i.test(k);
+    for (const k of [
+      CONFIG_KEYS.chefRunnerKind,
+      CONFIG_KEYS.chefModel,
+      CONFIG_KEYS.chefAllowedTools,
+      CONFIG_KEYS.chefTrustMode,
+      CONFIG_KEYS.hidePensee,
+    ]) {
+      expect(isSecret(k), `${k} ne doit pas être filtré`).toBe(false);
+    }
+  });
 });
 
 describe("applyToDom / parsePrefs", () => {
