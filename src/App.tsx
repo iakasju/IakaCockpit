@@ -14,6 +14,7 @@ import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
+import { useDemoSeed } from "./hooks/useDemoSeed";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView } from "./views/WorkingView";
 import { SettingsView } from "./views/SettingsView";
@@ -29,6 +30,14 @@ export default function App(): JSX.Element {
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
+
+  // Bootstrap démo dev (L7) : seede dossier+config côté Rust (inerte en prod) puis
+  // ouvre les onglets team si aucun onglet ouvert. Reste sur Portfolio (AR-4).
+  useDemoSeed({
+    tabsCount: grid.tabs.length,
+    openTab: grid.openTab,
+    refreshPortfolio: portfolio.refresh,
+  });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
   const worksetProjects = useMemo<Project[]>(

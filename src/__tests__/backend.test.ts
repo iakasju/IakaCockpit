@@ -46,6 +46,7 @@ import {
   notifyUser,
   n8nSetToken,
   n8nHasToken,
+  seedDemo,
   ptyOpen,
   ptyWrite,
   ptyResize,
@@ -372,6 +373,43 @@ describe("backend.ts (canal adresse externe n8n — L6)", () => {
     const facade = backend as unknown as Record<string, unknown>;
     expect(facade["n8nGetToken"]).toBeUndefined();
     expect(facade["getN8nToken"]).toBeUndefined();
+  });
+});
+
+describe("backend.ts (seed démo dev — L7)", () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  it("seedDemo invoque seed_demo sans args et renvoie le SeedReport", async () => {
+    invokeMock.mockResolvedValue({
+      seeded: true,
+      demo_path: "/home/u/work/iaka-demo",
+      created_dir: true,
+      config_keys_set: ["litellm_endpoint", "litellm_model"],
+    });
+    const report = await seedDemo();
+    expect(invokeMock).toHaveBeenCalledWith("seed_demo", undefined);
+    expect(report.seeded).toBe(true);
+    expect(report.demo_path).toBe("/home/u/work/iaka-demo");
+    expect(report.config_keys_set).toContain("litellm_endpoint");
+  });
+
+  it("seedDemo relaie un report inerte (flag off / prod)", async () => {
+    invokeMock.mockResolvedValue({
+      seeded: false,
+      demo_path: null,
+      created_dir: false,
+      config_keys_set: [],
+    });
+    const report = await seedDemo();
+    expect(report.seeded).toBe(false);
+    expect(report.demo_path).toBeNull();
+  });
+
+  it("la façade expose seedDemo", () => {
+    expect(typeof backend.seedDemo).toBe("function");
   });
 });
 

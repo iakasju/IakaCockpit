@@ -119,6 +119,19 @@ export interface NotifyAck {
   http_status: number | null;
 }
 
+/**
+ * Miroir de `seed::SeedReport` (Rust, L7) — compte rendu du seed de démo dev.
+ * `seeded:false` = flag dev off (seed inerte) → le bootstrap front ne fait rien.
+ * `demo_path` = dossier de démo à ouvrir (onglets team) ; `created_dir` = créé ce
+ * run ; `config_keys_set` = clés config réellement posées (vide si déjà présentes).
+ */
+export interface SeedReport {
+  seeded: boolean;
+  demo_path: string | null;
+  created_dir: boolean;
+  config_keys_set: string[];
+}
+
 /** Miroir de `services::ServiceStatus` (Rust). */
 export interface ServiceStatus {
   name: string;
@@ -271,6 +284,23 @@ export function n8nHasToken(): Promise<boolean> {
   return call<boolean>("n8n_has_token");
 }
 
+// --- Seed démo dev (L7) ---
+//
+// Orchestration de démo bornée CÔTÉ RUST par un flag dev (`cfg!(dev)` ou
+// `IAKACOCKPIT_DEMO_SEED=1`) : en build de prod, la commande est inerte
+// (`seeded:false`). Le seed (FS+git+config) vit côté Rust ; le front ne fait
+// qu'`invoke` via cette façade, puis ouvre les onglets team (état UI).
+
+/**
+ * Seed de démo dev (idempotent, non destructif). Crée le mini-repo `iaka-demo`
+ * sous le chapeau (si absent) et pose les clés config non sensibles (si absentes),
+ * puis renvoie un `SeedReport`. **Inerte en prod** (`seeded:false`) : aucune
+ * écriture. Le front ne déclenche l'ouverture des onglets team que si `seeded:true`.
+ */
+export function seedDemo(): Promise<SeedReport> {
+  return call<SeedReport>("seed_demo");
+}
+
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
 
 /** Racine du chapeau (défaut calculé par OS si non persistée). */
@@ -387,6 +417,7 @@ export const backend = {
   notifyUser,
   n8nSetToken,
   n8nHasToken,
+  seedDemo,
   ptyOpen,
   ptyWrite,
   ptyResize,
