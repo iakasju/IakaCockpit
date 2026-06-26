@@ -1,9 +1,11 @@
 # Instruction : L10 — Ré-architecture conversation/session (terminal-source + chat-vue)
 
 > Rédigé par 🧙 Gandalf (P1 — cadrage). Consommé par 🪓 Gimli (exécution, P2), gate 🏹 Legolas (P3).
-> **Statut : RÉVISÉ post-spike P0 (2026-06-26) — posture B ACTÉE par Stéphane.** Le spike a tranché le
-> point dur n°2 ; les hypothèses qui restaient ouvertes sont closes (cf. § Journal de décision posture).
-> **P1 est désormais codable** sur des faits prouvés (commit `3ad0ffb`, `specs/mock/spike-l10/`).
+> **Statut : RE-CADRÉ EN PROFONDEUR (2026-06-26) — VIRAGE D'ARCHITECTURE acté par Stéphane et PROUVÉ
+> par deux spikes.** L'approche `stream-json` en **pipes** (P0/P1, `runner.rs`) est **abandonnée comme
+> voie principale** ; la cible — désormais **prouvée end-to-end (spike L10b)** — est **le runner en TUI
+> NATIVE interactive dans un PTY**, et **les vues dérivent du TRANSCRIPT JSONL** que Claude Code écrit
+> en direct sur disque. Voir le **§ Journal de décision** (le virage, ses raisons, les commits).
 > Doc en français, code/identifiants en anglais. **Lot structurant #10** de MOVE 3.
 >
 > **Source de vérité (à relire en premier) :** `specs/PROJET.md` **§ 0 — Modèle produit** (révision
@@ -14,33 +16,64 @@
 > SQLite non sensible, secrets keychain, **CSP stricte**), conventions (MVP d'abord, réutiliser
 > l'existant, pas de god-component, mocker les API en dev).
 >
-> **Code inspecté en lecture seule le 2026-06-26** (rien n'est supposé) : `src/views/WorkingView.tsx`,
-> `src/components/{PtyTerminal,Chat,Roster,NextStepPanel}.tsx`, `src/hooks/{usePty,useConversations}.ts`,
-> `src/api/backend.ts`, `src-tauri/src/{terminal,shell,ai}.rs`.
->
-> **Faits techniques PROUVÉS par le spike P0 le 2026-06-26** (commit `3ad0ffb`, captures dans
-> `specs/mock/spike-l10/` — ils ne reposent plus sur des suppositions web, ils sont **exécutés sur
-> `claude` v2.1.193 / macOS**) :
-> - **Commande qui marche** :
->   `claude --print --input-format stream-json --output-format stream-json --verbose [--include-partial-messages]
->   --model <m> --dangerously-skip-permissions --allowedTools <...>`. **`--verbose` est OBLIGATOIRE** avec
->   `--output-format stream-json` (sinon refus). `--include-partial-messages` est **optionnel** (deltas
->   token-par-token via `stream_event` — beaucoup de bruit, à n'activer que si streaming token voulu).
-> - **FINDING MAJEUR — stdin ne doit PAS être un TTY.** Dans un vrai PTY, `claude` détecte
->   `isatty(stdin)==true` et **REFUSE** le mode NDJSON (`Error: Input must be provided…`). Le chef-runner
->   doit donc tourner avec **stdin/stdout en PIPES**, xterm devenant une **surface de RENDU** du flux brut
->   (le flux reste la source de vérité — cible § 0 intacte). → **conséquence d'architecture** : une
->   **nouvelle couture pipes** (`runner.rs`), PAS un réemploi direct du PTY de `terminal.rs` (cf. § 4).
-> - **Multi-tours** : on enchaîne les tours en **continuant d'écrire des messages `{"type":"user",…}` sur
->   le MÊME stdin d'un seul process long-vécu** — **pas** besoin de `--continue`/`--resume` à chaud (ceux-ci
->   servent à **reprendre une session passée**, pas à chaîner dans une session en cours).
-> - **Sortie NDJSON typée** (1 ligne = 1 objet JSON) : `system`(`init`/`status`…), `assistant`(blocs
->   `thinking`/`text`/`tool_use`), `user`(blocs `tool_result`), `result`(`subtype:"success"`),
->   `stream_event` (si partial-messages), `rate_limit_event`/`out_of_credits` (types dédiés → exploitables IHM).
-> - **Interrupt** : `{"type":"interrupt"}` sur stdin **avorte l'outil en cours (exit 137), le process
->   survit** = l'`esc` voulu. **Confirmé** par le spike.
-> - **Stabilité** : parse défensif léger (try/catch par ligne, ignorer les lignes non-JSON, router stderr
->   à part). **Aucun parseur ANSI.**
+> **Code inspecté en lecture seule le 2026-06-26** (rien n'est supposé) : `src-tauri/src/terminal.rs`
+> (PTY + `validate_cwd`), `src-tauri/src/{shell,runner,ai}.rs`, `src/components/{PtyTerminal,Chat,
+> Roster,NextStepPanel}.tsx`, `src/hooks/{usePty,useConversations}.ts`, `src/api/backend.ts`,
+> `src/views/WorkingView.tsx`.
+
+---
+
+## 0. LE VIRAGE EN UNE PAGE (à lire avant tout)
+
+**Ce qui change.** Le P0/P1 visait à lancer `claude --print --input-format stream-json` **en pipes**,
+xterm devenant une **surface de rendu du NDJSON brut**. Cette voie **fonctionne** (spike P0 `3ad0ffb`,
+code `runner.rs` `0ddebc7`/`b10b393`, gate Legolas PASS) **mais elle TUE la TUI native interactive** :
+plus de **box Claude Code**, plus de **`Shift+Tab` automode**, plus de **`esc` natif**, plus des
+**réflexes** que Stéphane utilise au quotidien. Le mode `stream-json` exige `stdin` en pipe (pas un
+TTY) → le runner n'est **plus** une vraie TUI. C'est inacceptable pour la cible « le terminal est la
+source de vérité **et** le poste de pilotage de Stéphane ».
+
+**La nouvelle cible — PROUVÉE de bout en bout (spike L10b `b7ac879`).** On lance `claude` **en TUI
+native interactive dans un PTY** (la couture PTY existante `terminal.rs`/`PtyTerminal`/`usePty`, login
+shell L8) — c'est le **vrai** `claude`, tous les réflexes marchent. **Les vues (chat, gestes,
+délégations) ne dérivent PLUS de l'écran ANSI** : elles dérivent du **transcript JSONL que Claude Code
+écrit EN DIRECT sur disque**, qu'on **tail**e en parallèle pendant que la TUI tourne. Le terminal reste
+la source de vérité **littérale** ; le transcript en est la **projection structurée** ; le chat est une
+**vue filtrée** de ce transcript.
+
+```
+┌──────────────────── SESSION (1 par travail) ──────────────────────────────┐
+│  CHEF-RUNNER : `claude` en TUI NATIVE INTERACTIVE dans un PTY              │
+│    (terminal.rs réutilisé — PtyTerminal = la vraie box Claude Code :       │
+│     Shift+Tab automode, esc natif, dialogues de permission… INTACTS)       │
+│    spawn : current_dir = <cwd projet> (validate_cwd) · --session-id <uuid> │
+│            · ENV SCRUBBÉ (CLAUDE_CODE_* / CLAUDECODE — sinon AUCUN          │
+│              transcript : gotcha dur du spike) · ZÉRO manip humaine         │
+│                          │ écrit EN DIRECT                                  │
+│                          ▼                                                  │
+│  TRANSCRIPT JSONL : ~/.claude/projects/<cwd-escaped>/<session_id>.jsonl     │
+│    (escaping : chemin absolu, chaque '/' ET '.' → '-')                     │
+│                          │ tail -f (Rust : FS + CSP/D7)                     │
+│                          ▼                                                  │
+│  TAILER côté Rust → parse records → events typés runner://event/{id}       │
+│    assistant.text / user.text → PAROLES (chat)                             │
+│    assistant.tool_use        → GESTES                                      │
+│    tool_use name=="Task" (+isSidechain) → DÉLÉGATIONS                      │
+│    tool_result (record user) → ACTIVITÉ des agents                         │
+│    thinking                  → canal PENSÉE (masquable)                    │
+│        ▲ stdin partagé              │ projection FILTRÉE (canal adresse)    │
+│  ┌─────┴───────────────────────┐    ▼                                      │
+│  │ Widget SHELL = PtyTerminal  │  CHAT bulles (VUE) — Chat.tsx réutilisé    │
+│  │ = TUI native (source+esc)   │  moi ↔ chef + comptes-rendus verbatim      │
+│  └─────────────────────────────┘  (saisie commune ─┘)                      │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pourquoi c'est FIDÈLE à la vision (et meilleur)** : (1) le terminal redevient la **vraie** source de
+vérité ET le **vrai** point de contrôle (`esc` natif), § 0.3 PROJET tenu **à la lettre** ; (2) la vue
+filtrée naît d'un **canal structuré** (le type de record du transcript), pas d'une heuristique d'écran
+fragile — le filtre « adresse / geste / pensée » du § 5 PROJET devient le **même mécanisme** ; (3) on
+**réutilise PLUS de code** (la couture PTY entière) que la voie pipes.
 
 ---
 
@@ -51,11 +84,12 @@
 
 | Dimension | **ÉTAPE ACTUELLE (ce que L10 livre)** | **CIBLE (à tenir, hors L10)** |
 |---|---|---|
-| Orchestration | **HYBRIDE** : le **chef = UN vrai runner** (défaut **Claude Code** = CLI `claude` lancé en **PIPES** dans le cwd du projet ; xterm = surface de rendu du flux) ; la **team = personas** que le chef incarne. | **Runners RÉELS par agent** (multi-runner/modèle), câblés un par un. |
-| Conversation | **1 session = 1 terminal-chef = TOUTE la conversation** ; le **chat = vue filtrée** de ce flux ; **entrée partagée** chat→stdin. | Idem, inchangé (c'est le modèle gravé). |
+| Orchestration | **HYBRIDE** : le **chef = UN vrai runner** (défaut **Claude Code** = CLI `claude` lancé en **TUI native dans le PTY** du cwd projet) ; la **team = personas** que le chef incarne (et délègue via `Task`). | **Runners RÉELS par agent** (multi-runner/modèle), câblés un par un. |
+| Conversation | **1 session = 1 terminal-chef = TOUTE la conversation** ; le **chat = vue filtrée du transcript** ; **entrée partagée** chat→PTY. | Idem, inchangé (c'est le modèle gravé). |
 | Settings | **GLOBAUX** au cockpit + set par défaut : runner Claude Code + team iakaframe (odin/aragorn/gandalf/gimli/legolas…). | **PER-PROJET** : runner+modèle+skills **par agent**. |
-| Couche vue | **RÉUTILISE l'existant** : bulles `Chat.tsx`, vignettes thémées (L9), personas, trace par-tour, `Roster.tsx`, `PtyTerminal.tsx` (L2). | Idem enrichie (statuts vivants depuis le flux). |
-| Graph délégation / jalons | **Hors L10.** | Volet de création du graph de délégation / jalons (+ variantes). |
+| Couche vue | **RÉUTILISE l'existant** : bulles `Chat.tsx`, vignettes thémées (L9), personas, trace par-tour, `Roster.tsx`, `PtyTerminal.tsx` (L2). | Idem enrichie (statuts vivants depuis le transcript). |
+| Source des vues | **TRANSCRIPT JSONL de Claude Code** (tail live). | **Une « source de vues » abstraite par runner** (§ 4) : transcript pour Claude Code, **appels API** pour Ollama, format de session **à spiker** pour Codex. |
+| Graph délégation / jalons | **Hors L10** (mais la trace `Task`/`isSidechain` est **captée** dès P2). | Volet de création du graph de délégation / jalons (+ variantes). |
 
 **Ce qui ne doit JAMAIS régresser** (garde-fou § 0.4) : terminal = source de vérité unique ; chat = vue
 filtrée + entrée partagée ; conversation = Stéphane ↔ chef ; comptes-rendus **verbatim** ; agent =
@@ -64,319 +98,359 @@ déformation** : passer à N runners réels devra être une **extension** de la 
 
 ---
 
-## 2. Ce qui existe (à réutiliser/migrer — pas réinventer)
+## 2. FAITS PROUVÉS par les spikes (acquis — ne reposent plus sur des suppositions)
 
-| Élément | Où | État / rôle pour L10 |
-|---|---|---|
-| **xterm réel typeable** | `src/components/PtyTerminal.tsx`, `src/hooks/usePty.ts` | xterm + `write`/`onData`/resize. **Réutilisé comme SURFACE DE RENDU** du flux runner (le finding spike interdit de coller un PTY au chef-runner : xterm affiche le flux brut `runner://raw`, ce n'est plus un PTY shell). La frappe est routée vers `runner_write`. |
-| **Backend PTY** | `src-tauri/src/terminal.rs` (`pty_open/write/resize/close`, events `pty://output|closed/{id}`) | **Reste pour le SHELL LEGACY** (repli `shell`, non-runner). **Le chef-runner ne passe PAS par lui** : le spike a prouvé que `claude` refuse le NDJSON quand stdin est un TTY. → couture **pipes** séparée (`runner.rs`, § 4). `validate_cwd` (anti-évasion chapeau) **conservé** des deux côtés. |
-| **Résolution shell/login** | `src-tauri/src/shell.rs` (`default_shell`, login `-l` D10) | Modèle à suivre pour **résoudre le binaire `claude`** par OS (résolution PATH, args). Le chef-runner ne lance PAS un login shell : il lance directement le binaire en pipes. |
-| **Modèle conversation L8** | `src/hooks/useConversations.ts` (tours, agent par-tour, mode `chat|shell`) | **Migré** : le `mode chat|shell` devient **chat-vue ⇄ terminal-source de la MÊME session** ; `send` ne sera plus un appel `backend.chat` one-shot mais une **écriture stdin** vers le runner. `ChatTurn`/`agent` par-tour **conservés** (la vue filtrée les peuple). |
-| **Vue chat** | `src/components/Chat.tsx` (bulles, avatars par-tour) | **Réutilisé** comme **vue filtrée**. La saisie devient l'**entrée partagée**. |
-| **Roster team** | `src/components/Roster.tsx`, `src/mock/demoTeam.ts` | **Réutilisé** : personas que le chef incarne ; clic → `@agent`. |
-| **Vue Working** | `src/views/WorkingView.tsx` | **Remaniée** : le toggle Chat/Shell devient **deux vues d'une même session-runner**. |
-| **Façade** | `src/api/backend.ts` (D7, unique `invoke`/`listen`) | **Étendue** : commandes runner (`runner_open/write/interrupt/close`) + events de flux. **Aucun `invoke` hors façade.** |
-| **Client IA L3** | `src-tauri/src/ai.rs` (`chat`, `next_step` OpenAI-compat) | **`next_step` (L3) CONSERVÉ** (moteur prochaine étape, orthogonal). **`chat` L8 = remplacé** (voir § 5) : la conversation n'est plus un appel Ollama one-shot mais la lecture du flux runner. |
+### 2.1 Spike P0 — `stream-json` en pipes (commit `3ad0ffb`, `specs/mock/spike-l10/`)
+- Le mode `claude --print --input-format stream-json --output-format stream-json --verbose` **fonctionne**
+  (NDJSON typé, multi-tours sur stdin long-vécu, `{"type":"interrupt"}` = abort `exit 137`).
+- **MAIS** : `stdin` doit être un **pipe**, **pas un TTY** (sinon `Error: Input must be provided…`).
+  Conséquence : **plus de TUI native** → **réflexes perdus**. **C'est ce qui motive le virage.**
+
+### 2.2 Spike L10b — TUI native + transcript JSONL (commit `b7ac879`, `specs/mock/spike-l10b/`)
+> **C'est LA preuve de la cible.** Référence exécutable : `spike_l10b.py` (+ `probe_*.py`). Le
+> `pty_raw.log` capté montre la TUI native rendue : box Claude Code, `⏵⏵ bypass permissions on
+> (shift+tab to cycle)`, `esc to interrupt`, spinner « thinking », un `ls -1` (geste), un transcript
+> résumable (`claude --resume <sid>`).
+
+- **Auto-lancement hands-off en PTY ✓** : `pty.openpty`, `os.chdir(cwd)`, `execvpe(claude …)` →
+  **réflexes natifs visibles**. **Zéro manip** : pas de `cd`, pas de taper `claude`.
+- **`--session-id <uuid>` pré-généré rend le fichier de transcript DÉTERMINISTE** (pas de glob à
+  deviner) — on connaît **d'avance** quel fichier tailer.
+- **Le transcript est créé LIVE** (~6 s après le 1er tour) et écrit **incrémentalement** → un simple
+  **`tail -f` suffit** (pas besoin d'attendre l'exit du process). Confirmé par `probe_persistence.py`
+  (« FICHIER APPARU LIVE a t+… ») et `probe_graceful.py`.
+- **GOTCHA DUR n°1 (bloquant si oublié) — SCRUB ENV.** Le `claude` enfant **hérite** des variables
+  `CLAUDECODE=1` / `CLAUDE_CODE_*` du parent → il se croit **nested** et **n'écrit AUCUN transcript
+  top-level**. **`runner_open` DOIT scrubber ces variables avant le spawn** (cf. `spike_l10b.py` l.62-71 :
+  on retire `CLAUDE_CODE_*`, `CLAUDECODE`, et par prudence `CLAUDE_EFFORT`/`AI_AGENT`). **Exigence gravée.**
+  *(En prod, le process Tauri n'est pas lui-même une session Claude Code, donc l'env est souvent propre ;
+  mais le scrub DÉFENSIF est obligatoire — robustesse, et le cockpit peut être lancé depuis une session
+  `claude` en dev.)*
+- **Règle d'escaping du chemin CONFIRMÉE par observation du vrai fichier** : chemin **absolu**, chaque
+  `/` **ET** `.` remplacé par `-` (ex. `/Users/sjupin/work/iaka-demo` → `-Users-sjupin-work-iaka-demo` ;
+  `IakaCockpit` → `-Users-sjupin-work-IakaCockpit`). Dossier : `~/.claude/projects/<escaped>/`.
+- **Schéma transcript ≠ schéma stdout `stream-json`** : **plus riche**. Chaque record porte `timestamp`,
+  `uuid`/`parentUuid` (arbre **threadé**), `cwd`, `version`, `gitBranch`, `sessionId`, `userType`,
+  et le `message` avec blocs `thinking` / `text` / `tool_use` / `tool_result`. Records additionnels
+  observés/attendus : `system`, `attachment`, `file-history-snapshot`, `ai-title`, `last-prompt`, `mode`,
+  `permission-mode`, `queue-operation`. **Le parse vit côté Rust** (D7/CSP : aucune logique de
+  format/réseau dans le front).
+- **Délégations** : un `tool_use` `name=="Task"` (+ records `isSidechain:true` pour le fil du sous-agent)
+  matérialise une délégation. ⚠️ **NON prouvé live** : aucun sous-agent `Task` n'a été spawné pendant le
+  spike (les tours testés = parole + `ls`). **À confirmer par un run dédié** avant de fermer le widget
+  délégations (cf. § 9 Risques + § 10 À arbitrer).
+- **Trust** : un cwd **sous un dossier trusté** hérite la confiance. Cas **non-trusté** : le spike
+  auto-acceptait le dialogue (Enter) ; **en prod, la TUI étant interactive, le dialogue de confiance
+  peut simplement s'afficher dans le PTY** et Stéphane répond nativement (cohérent « terminal = seul
+  point de contrôle »).
 
 ---
 
-## 3. Le point dur n°2 — DÉRIVER LE CHAT (vue filtrée) DU FLUX TERMINAL — **RÉSOLU (posture B)**
+## 3. Ce qui existe (à réutiliser/migrer — pas réinventer)
 
-> C'était LE point dur. Le **spike P0 a tranché** : **posture B = flux structuré `stream-json`**, **actée
-> par Stéphane** (2026-06-26, commit `3ad0ffb`). Cette section consigne la décision ; le repli posture A
-> n'est plus la voie (cf. § Journal de décision posture pour la trace).
-
-**Le piège évité.** Le flux brut d'un runner lancé **en TUI interactive** (binaire nu dans un PTY) est de
-l'**ANSI/TUI** (status line, spinners, repaint). En dériver une vue « parole » par parsing d'écran
-dé-ANSI-isé est **fragile** (casse à chaque maj du runner). C'était la posture A.
-
-**Ce que le spike a prouvé (faits, pas web).** Le CLI `claude` offre un **mode flux structuré** émettant
-du **NDJSON typé** (un objet/ligne) — exploitable directement, **sans aucun parsing d'écran** :
-- `system` (init : `session_id`, `model`, `tools`…) ;
-- `assistant` / `user` (messages ; contenu en blocs `thinking` / `text` / `tool_use` / `tool_result`) ;
-- `stream_event` (deltas `text_delta`, seulement si `--include-partial-messages`) ;
-- `result` (`subtype:"success"` = fin de tour : coût, usage) ; `rate_limit_event`/`out_of_credits`.
-
-**Dérivation de la vue (filtre par TYPE, stable)** — c'est le mécanisme retenu pour le chat :
-- **parole** (canal *adresse*) = `assistant` → blocs `text` → bulle ;
-- **geste** = `assistant` → `tool_use`, apparié au `user` → `tool_result` ;
-- **pensée** = `assistant` → blocs `thinking` (canal **masquable**, cf. § 5 PROJET) ;
-- **fin de tour** = `result` (`subtype:"success"`).
-
-**Entrée + contrôle** : l'entrée est aussi du NDJSON (`{"type":"user",…}`), on **enchaîne les tours sur le
-même stdin long-vécu** (pas de `--continue` à chaud), et **`{"type":"interrupt"}`** sur stdin = **`esc`**
-(abort outil → exit 137, le process survit). **Tout ceci confirmé par le spike.**
-
-**Pourquoi B réalise le modèle gravé sans le trahir** : la vue filtrée naît du **canal** (type de message),
-pas d'une heuristique d'écran ; le filtre « adresse / geste / pensée » du § 5 PROJET devient **le même
-mécanisme** qui produit le chat. La cible « vue filtrée fiable » est tenue.
-
-**⚠️ Contrainte d'architecture imposée par le spike (TTY).** Le mode NDJSON exige **stdin/stdout en
-PIPES** : dans un PTY, `claude` détecte un TTY et **refuse** (`Error: Input must be provided…`). Le
-chef-runner ne peut donc **pas** réutiliser le PTY de `terminal.rs` — il faut une **couture pipes**
-dédiée (`runner.rs`, § 4). xterm devient une **surface de rendu** du flux brut, pas un PTY shell.
+| Élément | Où | État / rôle pour L10 (cible TUI-native) |
+|---|---|---|
+| **PTY cross-OS + xterm typeable** | `src-tauri/src/terminal.rs` (`pty_open/write/resize/close`, events `pty://output|closed/{id}`, `validate_cwd`) · `src/components/PtyTerminal.tsx` · `src/hooks/usePty.ts` | **CŒUR RÉUTILISÉ.** Le widget Shell = la **vraie TUI** `claude` dans ce PTY. On **étend `pty_open`** pour spawner un **runner** (`claude …`) au lieu de `default_shell()` ; **tout le reste du PTY est inchangé** (output→xterm, frappe→stdin, resize, close). **`validate_cwd` (anti-évasion chapeau) conservé et appliqué au cwd du runner.** |
+| **Résolution shell/login** | `src-tauri/src/shell.rs` (`default_shell`, login `-l` D10) | Modèle à suivre pour **résoudre le binaire `claude`** par OS (PATH, jamais de chemin en dur). |
+| **Couture pipes `stream-json`** | `src-tauri/src/runner.rs` (`RunnerSpec`, `PermissionPolicy`, `runner_open/write/interrupt/close`, events `runner://raw|stderr|closed`) — commits `0ddebc7`/`b10b393`, **gate Legolas PASS** | **PARQUÉ « au chaud » (décision Stéphane).** **Pas la voie principale** (tue la TUI), **mais pas jeté** : code testé, conservé comme **transport `stream-json` alternatif documenté** (usages non-interactifs/programmatiques, ou runner sans TUI). Voir § 5.3. **Ne pas le brancher dans le chemin conversation.** |
+| **Modèle conversation L8** | `src/hooks/useConversations.ts` (tours, agent par-tour, mode `chat|shell`) | **Migré** : `mode chat|shell` → **chat-vue ⇄ terminal-source de la MÊME session** ; `send` n'est plus `backend.chat` one-shot mais **écriture stdin PTY** (`pty_write`) ; les tours `assistant` sont peuplés par le **tailer** (pas par une valeur de retour). `ChatTurn`/`agent` par-tour **conservés**. |
+| **Vue chat** | `src/components/Chat.tsx` (bulles, avatars par-tour, vignettes L9) | **Réutilisé** comme **vue filtrée**. La saisie devient l'**entrée partagée**. |
+| **Roster team** | `src/components/Roster.tsx`, `src/mock/demoTeam.ts` | **Réutilisé** : personas que le chef incarne ; clic → `@agent` ; **statut « travaille/attend » dérivable du transcript** (tool_use sans tool_result = en cours). |
+| **Vue Working** | `src/views/WorkingView.tsx` | **Remaniée** : toggle Chat/Shell = **deux vues d'une même session-runner**. |
+| **Façade** | `src/api/backend.ts` (D7, unique `invoke`/`listen`) | **Étendue** : commande d'ouverture runner-PTY + abonnement `runner://event` (vue filtrée). **Aucun `invoke`/`listen` hors façade.** |
+| **Client IA L3/L8** | `src-tauri/src/ai.rs` (`next_step`, `chat`) | **`next_step` (L3) CONSERVÉ** (moteur prochaine étape, orthogonal). **`chat` L8** : sort à clarifier (§ 5.4 + À arbitrer #3) — candidat à **devenir la « source de vues » du runner Ollama**, pas forcément à supprimer. |
 
 ---
 
 ## 4. Architecture cible du lot (couture runner = point d'abstraction net)
 
 La couture runner est l'extension critique (PROJET § 2.3) : passer de 1 à N runners réels doit être une
-extension, pas une réécriture. On pose donc une abstraction **« runner »** au-dessus du PTY existant.
+**extension**, pas une réécriture. On pose donc deux abstractions complémentaires.
 
-```
-┌──────────────────────── SESSION (1 par travail) ────────────────────────┐
-│  CHEF-RUNNER : `claude` lancé en PIPES (PAS un PTY — finding spike TTY)  │
-│                                                                          │
-│  src-tauri  runner.rs  RunnerSpec{kind, program, args, cwd, env}         │
-│     ├─ runner_open(session_id, spec)  → spawn en PIPES (stdin/out/err)   │
-│     │      args claude-code = --print --input-format stream-json         │
-│     │      --output-format stream-json --verbose --model <m> …           │
-│     ├─ runner_write(session_id, data) → écrit {"type":"user",…} sur stdin│
-│     │      (entrée partagée chat + frappe xterm ; tours = même stdin)    │
-│     ├─ runner_interrupt(session_id)   → {"type":"interrupt"} (= esc)     │
-│     └─ runner_close(session_id)                                          │
-│  reader thread : 1 ligne stdout = 1 objet JSON (parse défensif côté Rust)│
-│  events: runner://raw/{id} (texte rendu→xterm) · runner://event/{id}     │
-│          (objets NDJSON typés → vue filtrée) · stderr routé à part       │
-│        ▲ stdin partagé              │ projection FILTRÉE (canal adresse)  │
-│  ┌─────┴───────────────────────┐    ▼                                    │
-│  │ xterm (SURFACE DE RENDU)    │  CHAT bulles (VUE) — Chat.tsx réutilisé  │
-│  │ PtyTerminal réutilisé       │  moi ↔ chef + comptes-rendus verbatim    │
-│  └─────────────────────────────┘  (saisie commune ─┘)                    │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+### 4.1 Le runner-PTY (exécution) — réutilise `terminal.rs`
+- Un **`RunnerSpec`** identifie : `kind` (`claude-code` par défaut ; `shell` = repli legacy L2),
+  `program`, `args`, `cwd`, `session_id`, `env_scrub`. **Résolution du binaire `claude` par OS** sur le
+  modèle de `shell.rs` (PATH, jamais de chemin en dur).
+- **`pty_open` étendu** (ou variante `runner_open` au-dessus du même PTY) : si `kind==claude-code`, spawn
+  `claude --session-id <uuid> --model <m> [politique permissions]` avec **`current_dir = validate_cwd(cwd)`**
+  et **env SCRUBBÉ** (`CLAUDE_CODE_*`, `CLAUDECODE`, …). Sinon `default_shell()` (legacy). **Le reste du
+  PTY est inchangé** (output→`pty://output`, frappe→stdin, resize, close).
+- **`session_id` est pré-généré côté Rust** (uuid) **avant** le spawn, **passé au runner** ET **renvoyé
+  au front** : il est la clé qui relie le PTY, le transcript à tailer, et la session côté `useConversations`.
 
-- **Le runner abstrait** (`RunnerSpec`) identifie un kind (`claude-code` par défaut ; `shell` = repli /
-  legacy L2 via `terminal.rs`) + programme/args/cwd/env. **Résolution du binaire `claude` par OS** sur le
-  modèle de `shell.rs` (PATH, jamais de chemin en dur). **`validate_cwd` (chapeau) conservé** : un runner
-  reste un vecteur d'exécution.
-- **Le chef-runner est une plomberie PIPES NEUVE** (`runner.rs`), **distincte du PTY** de `terminal.rs`
-  (lequel reste pour le shell legacy). Raison : le finding spike (stdin TTY ⇒ refus NDJSON). `runner.rs`
-  spawn `claude` avec stdin/stdout/stderr en pipes, lit stdout **ligne par ligne** (un thread reader),
-  **parse le NDJSON côté Rust** (try/catch par ligne, lignes non-JSON ignorées, stderr routé à part) et
-  émet **deux flux** : `runner://raw/{id}` (texte lisible → xterm, source visible) et `runner://event/{id}`
-  (objets typés → vue filtrée). **Le parsing NDJSON vit côté Rust** (D7/D2 + CSP : aucune logique de
-  format/réseau dans le front). **→ Arbitrage #3 TRANCHÉ par le spike : parse côté Rust, runner en pipes.**
+### 4.2 La « source de vues » (projection) — abstraction multi-runner
+> **C'est ici que se joue le 1→N.** Une **vue** (parole/geste/délégation/activité/pensée) ne dépend PAS
+> du runner : seul **d'où on lit** ces events change. On définit une **`ConversationSource`** qui émet des
+> **events typés homogènes** quel que soit le runner.
+
+| Runner | Source de vues | État |
+|---|---|---|
+| **Claude Code** | **Tailer du transcript JSONL** (`~/.claude/projects/<escaped>/<sid>.jsonl`), parse records → events. | **✓ PROUVÉ (L10b).** Implémenté en L10 (P2). |
+| **Ollama** (local/LAN) | **Nos propres appels API** : c'est NOUS qui émettons les messages (request/response) — la source de vues est le **log de nos appels** (réemploi possible de `ai.rs chat`, reframé). **Pas de fichier à tailer.** | **Connu** (mécanique L8). Branché **hors L10** (cible) ; l'interface est posée en L10. |
+| **Codex / ChatGPT** | Format de session **inconnu** : CLI **non installé** ⇒ **SPIKE REQUIS** (vérifier p.ex. `~/.codex/sessions`, schéma, écriture live). | **NON prouvé.** Spike préalable au branchement (cf. § 6 P0bis). **Hors L10.** |
+
+- L'interface commune (à poser dès P2, même si seul Claude Code est branché) : `ConversationSource` →
+  produit un flux d'events `{kind: parole|geste|delegation|activite|pensee, agent, payload, ts}`. Le
+  filtre chat, le roster et (plus tard) le graph délégation consomment **ce flux**, **pas** le format
+  natif du runner. **Passer à Ollama/Codex = ajouter une implémentation de `ConversationSource`**, sans
+  toucher aux vues.
+
+### 4.3 Le tailer de transcript (Claude Code) — côté Rust
+- Entrée : `(session_id, cwd)`. Calcule `escaped = cwd` avec `/` **et** `.` → `-`, chemin
+  `~/.claude/projects/<escaped>/<session_id>.jsonl`.
+- **Attend la création** du fichier (heartbeat, ~quelques s), puis **tail live** (lecture incrémentale,
+  gestion des lignes partielles : ne traiter qu'une ligne complète terminée par `\n`).
+- **Parse défensif** par record (try/catch par ligne, lignes non-JSON ignorées) → mappe vers events
+  typés et **émet `runner://event/{session_id}`**. **Tout le parse vit côté Rust** (D7/CSP).
+- **Mapping** (cf. `spike_l10b.py` `render_block`/`handle_record`) :
+  - `assistant.text` / `user.text` (record `user` saisi) → **parole** ;
+  - `assistant.tool_use` → **geste** (apparié au `tool_result` par `tool_use_id`) ;
+  - `tool_use name=="Task"` (+ fil `isSidechain:true`) → **délégation** (`subagent_type`, `description`) ;
+  - `tool_result` (record `user`) → **activité** (fin de geste / agent au travail) ;
+  - `thinking` → **pensée** (canal **masquable**, § 5 PROJET).
+
+### 4.4 Garde-fous d'architecture (non négociables)
+- **Façade unique D7** : la commande runner et l'abonnement `runner://event` passent **exclusivement**
+  par `src/api/backend.ts`. **Aucun `invoke`/`listen` ailleurs.**
+- **CSP stricte intacte** : aucun client réseau/format dans le front ; le tailer et le parse sont **Rust**.
+- **`validate_cwd`** (anti-évasion chapeau) appliqué au cwd du runner (un runner = vecteur d'exécution).
+- **Pas de god-component** : un hook dédié (`useRunnerSession` ou évolution de `useConversations`).
+- **MVP d'abord** : historique en mémoire (persistance différée) ; un seul runner réel (le chef).
 
 ---
 
 ## 5. Migration depuis L8 (ce qu'on garde / remplace)
 
-- **`useConversations` — migré, pas jeté.** Le modèle « 1 conversation par projet », `ChatTurn` (avec
-  `agent` figé par-tour, fix L9), l'historique et le roster **restent**. Ce qui change :
-  - le champ `mode: "chat" | "shell"` devient **`view: "chat" | "terminal"`** sur **la MÊME session-runner**
-    (plus deux univers : une source, deux surfaces — cf. point n°7) ;
-  - `send(projectId, agent, content)` **ne fait plus** `backend.chat(...)` (appel Ollama one-shot). Il
-    **écrit dans le stdin du runner** (`runner_write`) et **écho dans le chat** (tour `user`). La réponse
-    du chef **n'est plus** une valeur de retour : elle **arrive par le flux** `runner://event` et peuple
-    l'historique (tours `assistant`, agent par-tour préservé).
-- **`Chat.tsx` — réutilisé** comme vue filtrée (présentationnel inchangé ; il reçoit des `ChatTurn`
-  produits par le filtre, plus par `backend.chat`).
-- **`src-tauri/src/ai.rs` `chat` — retiré du chemin conversation.** La commande `chat` L8 n'est plus le
-  moteur de la conversation. **→ À arbitrer #4 :** soit on la **supprime** (et le type TS `ChatReply` +
-  `backend.chat`), soit on la **garde inerte** derrière un flag pour un éventuel « mode chat LLM direct »
-  hors-session. Recommandation : **la retirer** (MVP, pas de code mort), en notant la décision.
-- **`next_step` (L3) — CONSERVÉ tel quel.** Orthogonal à la conversation (suggestion de prochaine étape).
-  Le panneau `NextStepPanel` reste disponible dans la vue session.
+### 5.1 `useConversations` — migré, pas jeté
+- « 1 conversation par projet », `ChatTurn` (`agent` figé par-tour, fix L9), historique, roster **restent**.
+- `mode: "chat" | "shell"` → **`view: "chat" | "terminal"`** sur **la MÊME session-runner** (une source,
+  deux surfaces).
+- `send(projectId, agent, content)` **ne fait plus** `backend.chat(...)`. Il **écrit dans le PTY du
+  runner** (`pty_write`, terminé par `\r` pour soumettre la TUI) **et écho dans le chat** (tour `user`).
+  La réponse du chef **arrive par le tailer** (`runner://event` → tours `assistant`, agent par-tour
+  préservé).
+
+### 5.2 `Chat.tsx` / `Roster.tsx` — réutilisés
+- `Chat.tsx` = vue filtrée (présentationnel inchangé ; reçoit des `ChatTurn` produits par le filtre).
+- `Roster.tsx` = personas + statut **attend/travaille** dérivé du transcript (`tool_use` sans
+  `tool_result` apparié = en cours).
+
+### 5.3 `runner.rs` (pipes `stream-json`) — PARQUÉ, pas supprimé
+- Décision Stéphane : **« garder au chaud »**. C'est du code **testé** (gate Legolas PASS) qui prouve le
+  transport `stream-json`. **Rôle retenu** : **transport alternatif documenté** (option non-interactive /
+  programmatique / futur runner sans TUI), **hors du chemin conversation principal**. **Ne pas le brancher**
+  dans la vue ; **ne pas le jeter**. Une note dans son en-tête doit pointer vers ce virage (L10b).
+
+### 5.4 `ai.rs chat` (L8) — sort à clarifier (À arbitrer #3)
+- Sous la cible **Claude Code**, le chat = projection du **transcript** : `ai.rs chat` n'est **plus** le
+  moteur de la conversation Claude Code.
+- **MAIS** le cas **Ollama** garde des **appels API** : `ai.rs chat` est le **candidat naturel** pour être
+  la **« source de vues » du runner Ollama** (§ 4.2). → **Recommandation Gandalf : ne PAS supprimer `chat`
+  maintenant** ; le **reframer/parquer** comme adaptateur Ollama de `ConversationSource` (branché hors
+  L10). Décision à Stéphane.
+- **`next_step` (L3) — CONSERVÉ tel quel.** `NextStepPanel` reste disponible dans la vue session.
 
 ---
 
-## 6. Sémantique de l'entrée partagée + comptes-rendus + contrôle
+## 6. Phasage (la cible tenue à chaque phase)
 
-- **Entrée partagée (point n°3 du brief).** Une **seule zone de saisie** par session. Taper :
-  1. **affiche le texte dans le chat** (tour `user`, écho immédiat) ;
-  2. **l'injecte en stdin du runner** (`runner_write`) — message NDJSON `{"type":"user",…}` (posture B
-     actée).
-  - Le **`@agent`** (parsing `parseMention` existant) est **conservé comme convention d'adresse** : il
-    **préfixe le texte injecté** (le chef lit « @Gimli : … » et délègue/incarne), **et** fixe la persona
-    d'écho côté chat. Il **n'orchestre rien côté cockpit** (le chef orchestre). **→ À arbitrer #5 :**
-    `@agent` injecté **verbatim** (recommandé, le chef gère) vs traduit en directive.
-  - Le **terminal xterm reste typeable directement** (frappe → `runner_write` aussi) : c'est la source et
-    le point de contrôle. Taper dans le terminal **n'écho pas** forcément dans le chat (c'est du flux
-    brut ; seul le filtre décide ce qui remonte en bulle).
-- **Comptes-rendus verbatim du chef (point n°5).** Quand le chef restitue le travail d'un agent de la
-  team (méthode iakaframe : restitution en relais, badges `[ROYAUME][Agent]`, sans ventriloquie), ces
-  lignes apparaissent dans le chat **comme bulles attribuées à l'agent émetteur** (l'`agent` du `ChatTurn`
-  = l'émetteur du compte-rendu). En posture B, le filtre s'appuie sur les **badges** présents dans le
-  texte du chef pour attribuer la bulle ; **aucune reformulation** côté cockpit (verbatim).
-- **Contrôle `esc` / interruption (point n°6).** L'interruption est **seulement côté terminal-source** :
-  un bouton/affordance **« Interrompre (esc) »** dans l'IHM (et la touche `Esc` quand le terminal a le
-  focus) appelle **`runner_interrupt`** → `{"type":"interrupt"}` (posture B actée ; abort outil → exit
-  137, process survit — **confirmé spike**).
-  L'IHM **rend visible** l'état « le chef travaille / interruptible » (réutilise le statut roster +
-  l'état `pending`/streaming). **→ À arbitrer #6 :** placement de l'affordance esc (barre de session
-  recommandée) + faut-il l'exposer aussi depuis la vue chat.
+> Lot gros → phasé. Chaque phase est livrable et **ne déforme pas** la cible. **Les spikes P0 sont FAITS.**
 
----
+### P0 — SPIKES de dé-risquage — ✅ **FAITS (2026-06-26)**
+- **P0-a** : `stream-json` en pipes — `3ad0ffb` (`specs/mock/spike-l10/`). Conclusion : marche **mais tue
+  la TUI** → écarté comme voie principale (le code `runner.rs` est parqué, § 5.3).
+- **P0-b (L10b)** : TUI native + transcript JSONL — `b7ac879` (`specs/mock/spike-l10b/`). **Verdict :
+  CIBLE PROUVÉE end-to-end** (auto-lancement hands-off, transcript live, escaping, scrub env). **C'est la
+  voie retenue.**
 
-## 7. Phasage (la cible tenue à chaque phase)
+### P0bis — SPIKE Codex/ChatGPT (PRÉALABLE au runner Codex — hors étape actuelle)
+- CLI **non installé** : installer/évaluer, vérifier l'existence et le schéma d'un **fichier de session**
+  (p.ex. `~/.codex/sessions/...`), son écriture **live**, sa parsabilité. **Bloque uniquement** le
+  branchement du runner Codex (cible) — **ne bloque pas** P1/P2 (chef = Claude Code). À programmer quand
+  Stéphane prend le runner Codex.
 
-> Lot gros → phasé. Chaque phase est livrable et **ne déforme pas** la cible.
+### P1 — Couture runner-PTY + AUTO-LANCEMENT hands-off (chef = Claude Code en TUI native)
+- **Étendre `terminal.rs`** : `RunnerSpec` (kind `claude-code`/`shell`) ; `pty_open` (ou `runner_open`)
+  spawne `claude --session-id <uuid pré-généré> --model <m> [permissions]` avec **`current_dir =
+  validate_cwd(cwd)`** et **ENV SCRUBBÉ** (`CLAUDE_CODE_*`, `CLAUDECODE`, …). Résolution `claude` par OS
+  (modèle `shell.rs`). **PTY inchangé pour le reste** ; `default_shell()` reste le repli `shell`.
+- **Façade `backend.ts`** : commande d'ouverture runner (renvoie le `session_id`) + helpers existants PTY.
+- **`PtyTerminal`** : **inchangé sur le fond** — il rend la **TUI native** (`pty://output`), la frappe va
+  au stdin. (C'est le **vrai** `claude` : `Shift+Tab`, `esc`, dialogues de permission/confiance marchent.)
+- **Critère P1 (observable) :** ouvrir un projet dans Working **lance `claude` en TUI native dans son cwd**,
+  **sans aucune manip** (pas de `cd`, pas de taper `claude`) ; les **réflexes natifs** fonctionnent
+  (`Shift+Tab` automode, `esc`, la box) ; **un transcript apparaît** sous `~/.claude/projects/<escaped>/
+  <session_id>.jsonl` (preuve du scrub env). (Settings globaux + set par défaut.)
 
-### P0 — SPIKE de dé-risquage — ✅ **FAIT (2026-06-26, commit `3ad0ffb`)**
-Mené hors-app (`specs/mock/spike-l10/`, `claude` v2.1.193). **Verdict : posture B FERMÉE, actée par
-Stéphane.** NDJSON stable et parsable par `type` (zéro parsing d'écran), multi-tours sur stdin long-vécu,
-interrupt fonctionnel (exit 137, process survit). **Finding majeur** : stdin **ne doit pas être un TTY**
-→ chef-runner en **pipes** (`runner.rs`), xterm = surface de rendu (intégré en § 3/§ 4/P1). Détail :
-`specs/mock/spike-l10/README.md`.
-
-### P1 — Couture runner PIPES + terminal-source (chef = Claude Code en pipes)
-- **Nouveau module `runner.rs`** : `RunnerSpec` + `runner_open/write/interrupt/close`. Le chef-runner
-  est spawné **en PIPES** (stdin/stdout/stderr — **PAS** un PTY ; finding spike), `validate_cwd` conservé,
-  résolution du binaire `claude` par OS (modèle `shell.rs`). **`terminal.rs` (PTY) reste inchangé** pour
-  le **fallback `shell` legacy**.
-- **Args du kind `claude-code`** : `--print --input-format stream-json --output-format stream-json
-  --verbose --model <m>` (+ `--include-partial-messages` seulement si streaming token voulu ; +
-  `--dangerously-skip-permissions`/`--allowedTools` selon politique — à cadrer P3, cf. risque résiduel).
-- **Cycle de vie session** : un **seul process `claude` long-vécu** par session ; **enchaîner les tours =
-  écrire de nouveaux messages `{"type":"user",…}` sur le MÊME stdin** (NE PAS rouvrir, NE PAS `--continue`
-  à chaud — `--continue`/`--resume <session_id>` ne servent qu'à **reprendre une session passée**,
-  hors P1). `runner_close` ferme stdin + termine le process.
-- **Reader thread** côté Rust : lit stdout ligne par ligne, parse défensif (try/catch, ignore non-JSON,
-  stderr à part), émet `runner://raw/{id}` (vers xterm) — le parse→`event` arrive en P2.
-- **Façade `backend.ts`** : commandes runner + helper events `onRunnerRaw` (seul endroit `invoke`/`listen`).
-- **`PtyTerminal` rebranché** sur `runner://raw` (surface de rendu) ; la frappe xterm → `runner_write`.
-- **Critère P1 :** dans Working, ouvrir un projet **lance `claude` en pipes dans son cwd** ; le terminal
-  (xterm) **affiche le flux brut** du chef et reste **typeable** (frappe → stdin) ; **un 2ᵉ tour** écrit
-  sur le même stdin répond ; **`esc`/interrupt** avorte l'outil en cours et le process survit. (Settings
-  globaux + set par défaut.)
-
-### P2 — Vue filtrée (chat) + entrée partagée
-- Parse NDJSON (posture B) côté Rust → `runner://event` ; filtre type→canal ; peuplement des `ChatTurn`
-  (parole = `assistant.text` ; comptes-rendus verbatim attribués par badge).
-- Saisie unique → écho chat (`user`) + `runner_write` ; `@agent` injecté ; toggle **chat-vue ⇄
-  terminal-source** de la **même** session (fin du « deux univers » L8 — point n°7).
-- Migration `useConversations`/`Chat` (§ 5) ; retrait `ai.rs chat` (selon arbitrage #4).
-- **Critère P2 :** taper dans le chat l'affiche ET pilote le chef ; les réponses/ comptes-rendus du chef
-  remontent en bulles attribuées ; basculer chat↔terminal montre la **même** session.
+### P2 — Tailer transcript + vues filtrées (paroles / gestes / délégations / activité) + entrée partagée
+- **Tailer côté Rust** (§ 4.3) : escaping, attente création, tail live, parse défensif → events typés,
+  émission `runner://event/{session_id}`. **Interface `ConversationSource`** posée (§ 4.2), implémentation
+  **Claude Code** branchée (Ollama/Codex = adaptateurs futurs, non branchés).
+- **Vue filtrée** : `runner://event` → `ChatTurn` (parole = `assistant.text` ; comptes-rendus **verbatim**
+  attribués par badge `[ROYAUME][Agent]`) ; **gestes** et **délégations** (`Task`/`isSidechain`) captés et
+  rendus (au minimum tracés ; widget délégation = MVP). **Pensée** masquable.
+- **Entrée partagée** : saisie unique → écho chat (`user`) + `pty_write` (frappe + `\r`) ; `@agent`
+  préfixe le texte injecté ; toggle **chat-vue ⇄ terminal-source** de la **même** session.
+- **Migration** `useConversations`/`Chat` (§ 5) ; `ai.rs chat` reframé/parqué (selon #3).
+- **Critère P2 (observable) :** taper dans le chat l'affiche ET pilote le chef (le transcript reflète la
+  saisie) ; les **réponses et comptes-rendus verbatim** du chef remontent en bulles **attribuées** ; les
+  **gestes** (et **délégations** si confirmées live, cf. risque) apparaissent ; basculer chat↔terminal
+  montre la **même** session.
 
 ### P3 — Réglages globaux (set par défaut) + finitions
-- Réglage **global** : runner par défaut (Claude Code) + endpoint/binaire, team iakaframe par défaut
-  (réutilise `config_*` L0/keychain si clé requise). **PER-PROJET = hors L10 (cible).**
-- Statut roster vivant dérivé du flux ; affordance esc visible ; doc état des lieux + backlog `CLAUDE.md`.
+- Réglage **global** : runner par défaut (Claude Code) + **modèle** (clé config non sensible, réutilise
+  `config_*` L0 ; keychain si une clé devient requise) + **politique de permissions** (cf. À arbitrer #2).
+- Statut roster vivant dérivé du transcript ; affordance `esc` (cf. #4) ; canal **pensée** masquable ;
+  doc état des lieux + backlog `CLAUDE.md`. **PER-PROJET = hors L10 (cible).**
 
-**Différé explicite (cible, NON régressée) :** runners réels par agent / multi-runner ; settings
-per-projet ; skills→frames ; volet graph délégation/jalons. (Le découpage P1→P3 peut devenir des lots
-L10a/L10b si Stéphane préfère gater plus fin — **À arbitrer #1**.)
+**Différé explicite (cible, NON régressée) :** runners réels par agent / multi-runner (Ollama branché,
+Codex après P0bis) ; settings per-projet ; skills→frames ; volet graph délégation/jalons. (Découpage
+P1→P3 → lots L10a/L10b possible si Stéphane préfère gater plus fin — **À arbitrer #5**.)
 
 ---
 
-## 8. Fichiers concernés (prévision — Gimli affine)
+## 7. Fichiers concernés (prévision — Gimli affine)
 
-- `src-tauri/src/runner.rs` *(nouveau)* — `RunnerSpec`, résolution binaire par OS, `runner_open/write/
-  interrupt/close`, **spawn en PIPES** (stdin/stdout/stderr — **PAS** le PTY de `terminal.rs` : finding
-  spike TTY), reader thread + parsing NDJSON côté Rust (posture B), émission `runner://raw|event/{id}`.
-  Réutilise `validate_cwd` (chapeau) + le modèle de résolution OS de `shell.rs`.
-- `src-tauri/src/terminal.rs` — **inchangé sur le fond** : reste la plomberie **PTY du shell legacy**
-  (`default_shell`). **Ne PAS y brancher le chef-runner** (il refuse le NDJSON sur un stdin TTY).
-  Préserver l'existant PTY/`validate_cwd`.
-- `src-tauri/src/shell.rs` — modèle de résolution par OS réutilisé (pas de régression).
-- `src-tauri/src/lib.rs` — enregistrer les nouvelles commandes/état.
-- `src/api/backend.ts` — commandes runner + helpers events `onRunnerRaw`/`onRunnerEvent` (seul endroit
-  `invoke`/`listen`).
+- `src-tauri/src/terminal.rs` — **étendu** : `RunnerSpec` + spawn runner (`claude --session-id … --model …`)
+  au lieu de `default_shell()` quand `kind==claude-code` ; **`current_dir = validate_cwd(cwd)`** ; **ENV
+  SCRUBBÉ** (`CLAUDE_CODE_*`/`CLAUDECODE`). PTY/`validate_cwd`/events `pty://*` **conservés**. `session_id`
+  pré-généré renvoyé au front. *(Naming : tension possible avec `runner.rs` parqué — Gimli tranche
+  `runner_open` dans `terminal.rs` vs réemploi `pty_open` étendu ; ne PAS toucher `runner.rs` parqué.)*
+- `src-tauri/src/transcript.rs` *(nouveau)* — tailer JSONL : escaping path, attente création, tail live,
+  parse défensif des records → events typés, émission `runner://event/{id}`. **Parse côté Rust.**
+- `src-tauri/src/runner.rs` — **PARQUÉ, inchangé fonctionnellement** ; ajouter une **note d'en-tête** :
+  voie `stream-json`/pipes écartée comme principale (virage L10b), conservée comme transport alternatif.
+- `src-tauri/src/shell.rs` — modèle de résolution par OS réutilisé pour localiser `claude` (pas de régression).
+- `src-tauri/src/lib.rs` — enregistrer la commande runner + l'état du tailer.
+- `src/api/backend.ts` — commande d'ouverture runner (renvoie `session_id`) + helper `onRunnerEvent`
+  (seul endroit `invoke`/`listen`).
 - `src/hooks/useRunnerSession.ts` *(nouveau, ou évolution de `useConversations`)* — état session-runner,
-  filtre→`ChatTurn`, entrée partagée. **Pas de god-component.**
-- `src/components/{PtyTerminal,Chat,Roster}.tsx` — réutilisés (PtyTerminal rebranché sur le flux runner).
+  filtre `runner://event`→`ChatTurn`, entrée partagée. **Pas de god-component.**
+- `src/components/{PtyTerminal,Chat,Roster}.tsx` — réutilisés (PtyTerminal **inchangé sur le fond** : il
+  rend la TUI native).
 - `src/views/WorkingView.tsx` — toggle chat-vue ⇄ terminal-source d'une même session ; affordance esc.
-- `src-tauri/src/ai.rs` + `src/api/backend.ts` — retrait `chat` L8 (selon #4) ; `next_step` conservé.
-- `CLAUDE.md` — entrée backlog L10 (ci-dessous).
+- `src-tauri/src/ai.rs` + `src/api/backend.ts` — `chat` L8 reframé/parqué (selon #3) ; `next_step` conservé.
+- `CLAUDE.md` — entrée backlog L10 (à mettre à jour après gate).
 - `specs/PROJET.md` — modèle déjà gravé § 0 (rien à changer au modèle). **À FAIRE (hors périmètre code,
-  note de Gandalf)** : ajouter au journal de décision de PROJET.md une ligne actant **posture B (spike
-  P0, commit `3ad0ffb`)** + le finding TTY/pipes — pour que la vision porte la trace de la décision.
+  note de Gandalf)** : ajouter au **journal de décision de PROJET.md** une ligne actant le **virage**
+  (P0 `stream-json` pipes → cible **TUI-native + transcript JSONL**, spike L10b `b7ac879`) — pour que la
+  vision porte la trace de la décision. *(Gandalf ne touche pas PROJET.md dans ce lot.)*
 
 ---
 
-## 9. Comportement attendu (critères observables)
+## 8. Comportement attendu (critères observables)
 
-- Ouvrir un projet dans Working **lance le chef-runner** (Claude Code) **en pipes** dans le **cwd du
-  projet** (sous le chapeau) ; le terminal (xterm = surface de rendu) affiche le flux brut du chef et
-  **reste typeable** (frappe → stdin) ; le chef **survit** au basculement de vue.
-- La **même saisie** affiche dans le chat ET pilote le runner (stdin) ; le `@agent` est respecté.
+- Ouvrir un projet dans Working **lance le chef-runner** (Claude Code) **en TUI native** dans le **cwd du
+  projet** (sous le chapeau), **sans aucune manip humaine** ; les **réflexes natifs** marchent (`Shift+Tab`,
+  `esc`, box, dialogues) ; le chef **survit** au basculement de vue.
+- Un **transcript JSONL** est écrit **live** sous `~/.claude/projects/<escaped>/<session_id>.jsonl`
+  (preuve du **scrub env**) ; le **tailer** en dérive les vues **sans parser l'écran ANSI**.
+- La **même saisie** affiche dans le chat ET pilote le runner (stdin PTY) ; le `@agent` est respecté.
 - Les **réponses et comptes-rendus verbatim** du chef remontent dans le chat en **bulles attribuées**
-  (agent par-tour préservé), sans reformulation côté cockpit.
-- **Chat ⇄ terminal = une seule session** (pas deux univers) ; basculer ne perd pas l'état.
-- **`esc`/interrupt** interrompt le chef **uniquement côté terminal-source**, et l'IHM le rend visible.
-- **Aucune régression** des gates existants : CSP stricte intacte (aucun client réseau/format dans le
-  front — parse NDJSON côté Rust), façade unique D7 respectée (aucun `invoke`/`listen` hors `backend.ts`),
-  `validate_cwd` (anti-évasion chapeau) toujours appliqué au runner, pas de god-component.
+  (agent par-tour préservé), sans reformulation côté cockpit. Les **gestes** (et **délégations** `Task`,
+  si confirmées live) sont captés.
+- **Chat ⇄ terminal = une seule session** ; basculer ne perd pas l'état.
+- **`esc`/interruption** se fait **nativement dans la TUI** (terminal = seul point de contrôle) ; l'IHM
+  peut exposer une affordance qui envoie `esc` au PTY (cf. #4).
+- **Aucune régression** des gates existants : CSP stricte intacte (parse/tailer **côté Rust**), façade
+  unique D7 respectée (aucun `invoke`/`listen` hors `backend.ts`), `validate_cwd` toujours appliqué au
+  runner, pas de god-component.
 
-## 10. Vérification
+## 9. Vérification
 
-- [x] Spike P0 mené ; **posture B tranchée et actée par Stéphane** (commit `3ad0ffb`, `specs/mock/spike-l10/`).
+- [x] Spikes P0 menés ; **virage acté par Stéphane** (P0-a `3ad0ffb` écarté ; **P0-b/L10b `b7ac879` =
+      cible prouvée**).
 - [ ] Typecheck OK · Lint OK (`npm run typecheck`, `npm run lint`)
-- [ ] Tests front à jour et verts (`npm run test`) — filtre NDJSON→`ChatTurn` testé (façade mockée) ;
-      pas de régression `usePty`/conversations.
+- [ ] Tests front à jour et verts (`npm run test`) — filtre `runner://event`→`ChatTurn` testé (façade
+      mockée) ; pas de régression `usePty`/conversations.
 - [ ] Rust : `cargo fmt --check` · `cargo clippy -D warnings` · `cargo test` — `validate_cwd` couvert,
-      résolution binaire runner testée (cross-OS, sans spawn réel comme `shell.rs`).
+      **escaping du chemin** testé (pur, cross-OS), parse défensif du transcript testé (échantillons JSONL
+      du spike L10b comme fixtures), **scrub env** vérifié, résolution binaire `claude` par OS (sans spawn
+      réel, comme `shell.rs`).
 - [ ] `bash scripts/quality.sh` vert.
-- [ ] **Testé dans l'app réelle par Stéphane** : un vrai `claude` tourne **en pipes** (flux rendu dans
-      xterm), chat-vue pilote, `esc` interrompt.
+- [ ] **Testé dans l'app réelle par Stéphane** : un vrai `claude` se lance **en TUI native** dans le cwd
+      **sans manip**, réflexes natifs OK, le chat-vue se peuple depuis le transcript, `esc` interrompt.
 
-## 11. Hors scope (cible NON régressée — différée)
+## 10. Hors scope (cible NON régressée — différée)
 
-- Runners réels **par agent** / multi-runner / multi-modèle (étape actuelle = 1 chef réel + personas).
+- Runners réels **par agent** / multi-runner (Ollama branché hors L10, Codex après P0bis) / multi-modèle.
 - Settings **per-projet** (étape actuelle = globaux + set par défaut).
-- Skills **modifiables** → frames ; volet **graph de délégation / jalons** ; features inter-agents.
-- Modes de présentation A (old-school) / C (WhatsApp pur) au-delà de l'existant ; canaux externes.
+- Skills **modifiables** → frames ; volet **graph de délégation / jalons** (la **trace** `Task`/`isSidechain`
+  est captée en P2, mais le **volet d'édition** du graph est hors L10).
+- Modes de présentation A/C au-delà de l'existant ; canaux externes.
 - Branchement iakaboxlogs/3-canaux du flux runner (L4 reste lecture CouchDB ; le filtre L10 partage la
   *grammaire* de canaux mais ne réécrit pas la main courante).
 
 ---
 
-## Risques résiduels (tracés post-spike — à assumer, pas bloquants)
+## 11. Risques résiduels (tracés — à assumer / à lever)
 
-- **(a) Gardes de sécurité internes du CLI** : les commandes composées (`&&`) peuvent être basculées en
-  background par `claude` lui-même. Indépendant de `validate_cwd` (chapeau) — **assumé**, à surveiller.
-- **(b) Coût / quota réels** : `rate_limit_event` / `out_of_credits` sont émis comme **types NDJSON
-  dédiés** → exploitables IHM (afficher l'état, désactiver la saisie). **Renforce le besoin du réglage
-  modèle global (P3).**
-- **(c) `--include-partial-messages`** génère beaucoup de `stream_event` → **n'activer que** si le
-  streaming token-par-token est voulu (sinon bruit inutile dans le flux).
+- **(a) Délégations non prouvées LIVE.** `Task`/`isSidechain` est **dans le schéma** mais **aucun sous-agent
+  `Task` n'a été spawné** pendant L10b. **À lever par un run dédié** (faire déléguer le chef) **avant de
+  fermer** le widget délégations en P2. **Bloquant pour le widget délégation seulement**, pas pour P1.
+- **(b) Latence transcript.** ~6 s avant la 1ʳᵉ écriture observée → l'IHM doit gérer le **délai** (état
+  « en cours », pas de bulle figée). Le `tail` doit gérer **lignes partielles** et **flush tardif**.
+- **(c) Scrub env incomplet.** Si une variable `CLAUDE_CODE_*` est oubliée → **aucun transcript**. **Scrub
+  large + test de présence du fichier** en garde-fou (cf. critère P1).
+- **(d) Stabilité du schéma transcript.** Format **interne** non documenté/contractuel → parse **défensif**
+  (records inconnus ignorés, jamais de panique), fixtures issues du spike, tolérance aux nouveaux types de
+  records.
+- **(e) Coût/quota réels** (le chef = vrai modèle) → renforce le réglage **modèle global** (P3) ; afficher
+  l'état si le runner signale une limite (la TUI le montre nativement de toute façon).
+- **(f) Cas non-trusté** : en prod la TUI **affiche** le dialogue de confiance (interactif) — vérifier que
+  ça ne **bloque pas** silencieusement l'auto-lancement (l'utilisateur répond dans le PTY).
 
-## À ARBITRER (revient à Stéphane — gate)
+## 12. À ARBITRER (revient à Stéphane — gate)
 
-1. **Granularité du gate** : un seul lot L10 (P1→P3) ou découpage en **L10a (P1)** / **L10b (P2+P3)** ?
-   *(P0 fait.)* — **OUVERT.**
-2. ~~**Posture du runner**~~ — **RÉSOLU : posture B (flux structuré `stream-json`), actée par Stéphane**
-   (spike P0, commit `3ad0ffb`). Repli posture A abandonné (cf. Journal de décision ci-dessous).
-3. ~~**Où vit le parse NDJSON / véhicule du chef-runner**~~ — **TRANCHÉ par le spike** : chef-runner en
-   **PIPES** (`runner.rs`, pas le PTY) ; **parse NDJSON côté Rust**. (Le finding TTY l'impose.)
-4. **`ai.rs chat` L8** : **supprimer** (recommandé, pas de code mort) vs garder inerte pour un futur
-   « chat LLM direct » hors-session. — **OUVERT.**
-5. **Sémantique `@agent`** : injecté **verbatim** au chef (recommandé) vs traduit en directive cockpit.
-   — **OUVERT.**
-6. **Affordance `esc`** : barre de session (recommandé) ; l'exposer aussi côté vue chat ou terminal seul ?
-   — **OUVERT.**
-7. **Politique permissions du chef-runner** *(nouveau, soulevé par le spike)* : le spike a tourné avec
-   `--dangerously-skip-permissions` + `--allowedTools` restreint. **Quelle politique en P1/P3 ?** (skip
-   total vs allowlist d'outils vs prompts). Touche la sécurité — **à arbitrer** (reco : allowlist explicite,
-   pas de skip total par défaut). — **OUVERT.**
+1. **Délégations** : fermer le **widget délégation** en P2 (sous réserve du run de confirmation, risque (a))
+   ou le **différer** (capter/tracer seulement en P2, widget plus tard) ? — **OUVERT.**
+2. **Politique de permissions du chef-runner** : trois options —
+   (i) **laisser le prompt de permission remonter DANS la TUI** (le plus cohérent avec « terminal = seul
+   point de contrôle », et possible car la TUI est interactive — **reco Gandalf**) ;
+   (ii) `--permission-mode`/allowlist explicite (`--allowedTools`) sans bypass ;
+   (iii) `--dangerously-skip-permissions` (hands-off total — utilisé par le spike, **risqué** par défaut).
+   Touche la sécurité. — **OUVERT.**
+3. **Sort de `ai.rs chat` (L8) + Ollama** : **reframer/parquer** `chat` comme **source de vues du runner
+   Ollama** (reco — pas de suppression, prépare le multi-runner) vs **supprimer** (MVP, pas de code mort)
+   vs garder inerte. Clarifie aussi si le **chat Ollama** survit comme runner alternatif. — **OUVERT.**
+4. **Affordance `esc`** : la TUI a **déjà** `esc` natif. Faut-il **aussi** exposer un bouton « Interrompre »
+   côté vue chat (qui enverrait `esc` au PTY) — reco **oui, discret**, pour l'ergonomie chat — ou s'en
+   tenir au natif ? — **OUVERT.**
+5. **Sémantique `@agent`** : préfixe **verbatim** injecté au chef (reco — le chef délègue/incarne) vs
+   directive traduite côté cockpit. — **OUVERT.**
+6. **Granularité du gate** : un seul lot L10 (P1→P3) ou découpage **L10a (P1)** / **L10b (P2+P3)** ?
+   *(spikes faits.)* — **OUVERT.**
 
 ---
 
-## Journal de décision posture (post-spike P0)
+## Journal de décision (le VIRAGE)
 
-- **2026-06-26 — Spike P0 mené** (`specs/mock/spike-l10/`, commit `3ad0ffb`, `claude` v2.1.193, macOS).
-- **Décision : posture B FERMÉE — actée par Stéphane.** Le flux structuré `--input-format stream-json
-  --output-format stream-json --verbose` est **stable, parsable par `type`** (parole/geste/pensée/
-  fin-de-tour), multi-tours sur stdin long-vécu, interrupt fonctionnel. La voie ANSI (posture A) est
-  **abandonnée** (elle n'est plus le repli : la spec se ferme sur B). Trace conservée pour historique.
-- **Finding intégré à l'archi** : stdin TTY ⇒ refus NDJSON → chef-runner en **pipes** (`runner.rs`),
-  distinct du PTY (`terminal.rs`, gardé pour le shell legacy) ; xterm = surface de rendu.
-- **Corrections d'hypothèses tombées** : (1) le chaînage des tours **n'utilise pas** `--continue`/`--resume`
-  (réservés à la reprise d'une session passée) mais le **même stdin** ; (2) `--verbose` est **obligatoire** ;
-  (3) le runner **n'est pas spawné dans le PTY**.
-- **À répercuter hors code** : ligne au journal de `PROJET.md` (note § 8). Pas de modif du modèle § 0.
+- **2026-06-26 — Spike P0-a** (`stream-json` en pipes, `specs/mock/spike-l10/`, commit `3ad0ffb`,
+  `claude` v2.1.193). Conclusion : le mode `--input-format stream-json` **fonctionne** (NDJSON typé,
+  multi-tours, interrupt) **mais impose `stdin` en pipe (pas un TTY)** ⇒ **plus de TUI native** ⇒
+  **réflexes perdus** (`Shift+Tab`, `esc`, box). Le code `runner.rs` (commits `0ddebc7`/`b10b393`, gate
+  Legolas PASS) est **conservé PARQUÉ** comme transport alternatif documenté (décision Stéphane : « garder
+  au chaud »), **pas comme voie principale**.
+- **2026-06-26 — Spike P0-b / L10b** (`specs/mock/spike-l10b/`, commit `b7ac879`). **VIRAGE acté par
+  Stéphane** : la cible est le **runner en TUI NATIVE dans un PTY** (réflexes intacts), **vues dérivées
+  du TRANSCRIPT JSONL** écrit live par Claude Code (`~/.claude/projects/<escaped>/<sid>.jsonl`), **PAS**
+  du parsing d'écran ANSI. **Prouvé end-to-end** : auto-lancement hands-off (cwd + `--session-id`),
+  transcript live (~6 s), escaping (`/` et `.` → `-`), **scrub env obligatoire** (`CLAUDE_CODE_*`/
+  `CLAUDECODE`, sinon aucun transcript), schéma transcript riche (arbre threadé `uuid`/`parentUuid`,
+  `isSidechain`, blocs `thinking/text/tool_use/tool_result`).
+- **Conséquences d'architecture** : (1) **réutiliser la couture PTY** (`terminal.rs`/`PtyTerminal`/`usePty`)
+  en y lançant `claude` au lieu d'un shell — PAS la couture pipes ; (2) **nouveau tailer** `transcript.rs`
+  (parse **côté Rust**, CSP/D7) ; (3) abstraction **`ConversationSource`** (transcript pour Claude Code,
+  appels API pour Ollama, format à spiker pour Codex) pour que 1→N runners soit une **extension** ;
+  (4) `runner.rs` parqué (§ 5.3) ; (5) `ai.rs chat` L8 candidat à devenir la **source Ollama** (§ 5.4).
+- **À répercuter hors code** : ligne au journal de `PROJET.md` (note § 7). Pas de modif du modèle § 0
+  (la cible TUI-native + transcript **réalise** § 0.3 plus fidèlement que la voie pipes).
 
-## Sources (faits initiaux — désormais confirmés/corrigés par le spike P0, voir Journal ci-dessus)
-- Claude Code — mode headless / `-p`, `--output-format` (text/json/stream-json), `--continue`/`--resume`,
-  `--append-system-prompt`, schéma d'événements : [Run Claude Code programmatically](https://code.claude.com/docs/en/headless) ·
-  [CLI reference](https://code.claude.com/docs/en/cli-reference)
-- `--input-format stream-json` (bidirectionnel) **sous-documenté** (justifie le spike P0) :
-  [issue #24594](https://github.com/anthropics/claude-code/issues/24594)
-- Message **`{"type":"interrupt"}`** sur stdin = équivalent **esc** (abort outil, session vivante) :
-  [issue #41665](https://github.com/anthropics/claude-code/issues/41665)
-- Format NDJSON / types de messages (assistant/user/result/system, deltas) :
-  [Claude stream-json event cheatsheet (takopi)](https://takopi.dev/reference/runners/claude/stream-json-cheatsheet/) ·
-  [Parsing stream-json with jq (ytyng)](https://www.ytyng.com/en/blog/claude-stream-json-jq)
-- Stack PTY (rappel, déjà gravé) : `portable-pty` + xterm sur Tauri 2 (PROJET § 10.5).
+## Sources (faits — désormais PROUVÉS par les spikes ci-dessus)
+- **Spike L10b (preuve de la cible)** : `specs/mock/spike-l10b/spike_l10b.py` + `probe_persistence.py`
+  (transcript live), `probe_graceful.py`, `probe_forensic.py`, capture `pty_raw.log` (TUI native rendue).
+- **Spike P0-a** : `specs/mock/spike-l10/README.md` (+ `pipe_interrupt.py`/`pty_interrupt.py`).
+- Claude Code — transcript de session JSONL sous `~/.claude/projects/<cwd-escaped>/`, `--session-id`,
+  `--resume`, `--model`, modes de permission : [CLI reference](https://code.claude.com/docs/en/cli-reference) ·
+  [Run Claude Code programmatically](https://code.claude.com/docs/en/headless).
+- Stack PTY (rappel, déjà gravé) : `portable-pty` + xterm sur Tauri 2 (PROJET § 10.5 / § 3.1).
