@@ -2,11 +2,6 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SettingsView } from "../views/SettingsView";
 import { DEFAULT_UI, type UseSettings } from "../hooks/useSettings";
-import {
-  defaultTeamFromDemo,
-  DEFAULT_TEAM_ID,
-  type UseTeams,
-} from "../hooks/useTeams";
 import type { NotifyAck, notifyUser } from "../api/backend";
 
 type NotifyFn = typeof notifyUser;
@@ -56,38 +51,13 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
   };
 }
 
-/** Stub de `useTeams` : une team par défaut éditable, setters spies. */
-function makeTeams(overrides: Partial<UseTeams> = {}): UseTeams {
-  const team = defaultTeamFromDemo("lotr");
-  return {
-    teams: [team],
-    loaded: true,
-    defaultTeamId: DEFAULT_TEAM_ID,
-    teamForProject: () => team,
-    coordinatorOf: (t) => t.agents.find((a) => a.id === t.coordinator) ?? null,
-    agentInTeam: (t, name) =>
-      t.agents.find((a) => a.name.toLowerCase() === name.toLowerCase()) ?? null,
-    hasBinding: () => false,
-    upsertTeam: vi.fn(async () => {}),
-    removeTeam: vi.fn(async () => {}),
-    upsertAgent: vi.fn(async () => {}),
-    removeAgent: vi.fn(async () => {}),
-    setCoordinator: vi.fn(async () => {}),
-    bindProjectTeam: vi.fn(async () => {}),
-    reload: vi.fn(async () => {}),
-    ...overrides,
-  };
-}
-
 function renderView(props: {
   settings?: UseSettings;
-  teams?: UseTeams;
   onNotify?: NotifyFn;
 }) {
   return render(
     <SettingsView
       settings={props.settings ?? makeSettings()}
-      teams={props.teams ?? makeTeams()}
       services={[]}
       onRescan={() => {}}
       onNotify={
@@ -222,13 +192,12 @@ describe("SettingsView — vignettes & chef-runner", () => {
     expect(values).toContain("starfleet");
   });
 
-  it("L11 : l'éditeur « Teams & agents » est rendu (runner par agent)", () => {
+  it("L13 : l'éditeur « Teams & agents » n'est PLUS dans Réglages (sorti vers la vue Teams)", () => {
     renderView({});
     expect(
-      screen.getByRole("heading", { name: "Teams & agents" }),
-    ).toBeTruthy();
-    // Le runner du coordinateur (Aragorn = roleIndex 1) est éditable par agent.
-    expect(screen.getByLabelText("Runner de aragorn")).toBeTruthy();
+      screen.queryByRole("heading", { name: "Teams & agents" }),
+    ).toBeNull();
+    expect(screen.queryByLabelText("Runner de aragorn")).toBeNull();
   });
 });
 
@@ -242,7 +211,6 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     { item: "Charte", id: "set-charte" },
     { item: "Cockpit", id: "set-cockpit" },
     { item: "IA (LiteLLM)", id: "set-ia" },
-    { item: "Teams & agents", id: "set-teams" },
     { item: "Sécurité d'exécution", id: "set-securite" },
     { item: "Main courante", id: "set-maincourante" },
     { item: "Canal adresse (n8n)", id: "set-adresse" },
@@ -256,7 +224,8 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     const { container } = renderView({});
     const nav = screen.getByRole("navigation", { name: "Sections réglages" });
     const items = Array.from(nav.querySelectorAll("button.seti")).map(labelOf);
-    // Plus aucun item décoratif « Généraux »/« Cockpit » seul : 10 sections réelles.
+    // Plus aucun item décoratif « Généraux »/« Cockpit » seul ; Teams sortie (L13)
+    // dans sa vue dédiée : 9 sections réelles restantes.
     expect(items).toEqual(EXPECTED.map((e) => e.item));
     // Chaque item a une section-cible présente dans le panneau.
     for (const e of EXPECTED) {

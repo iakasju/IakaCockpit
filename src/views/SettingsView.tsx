@@ -20,8 +20,6 @@ import type {
   Shape,
   UseSettings,
 } from "../hooks/useSettings";
-import type { UseTeams } from "../hooks/useTeams";
-import { TeamsEditor } from "../components/TeamsEditor";
 
 const THEMES: { id: string; name: string; sw: string[] }[] = [
   { id: "naonedge-dark", name: "NaonEdge dark", sw: ["#0a0a0a", "#161616", "#c8a44e"] },
@@ -102,7 +100,6 @@ const SETTINGS_GROUPS: { label: string; items: SettingsSection[] }[] = [
     items: [
       { id: "set-cockpit", label: "Cockpit", icon: "🎩" },
       { id: "set-ia", label: "IA (LiteLLM)", icon: "🧠" },
-      { id: "set-teams", label: "Teams & agents", icon: "👥" },
       { id: "set-securite", label: "Sécurité d'exécution", icon: "🤖" },
       { id: "set-maincourante", label: "Main courante", icon: "📓" },
       { id: "set-adresse", label: "Canal adresse (n8n)", icon: "📣" },
@@ -114,8 +111,6 @@ const FIRST_SECTION_ID = SETTINGS_GROUPS[0].items[0].id;
 
 export interface SettingsViewProps {
   settings: UseSettings;
-  /** Autorité des teams/agents (L11) — alimente l'éditeur « Teams & agents ». */
-  teams: UseTeams;
   services: ServiceStatus[];
   onRescan: () => void;
   /**
@@ -150,7 +145,6 @@ function Seg<T extends string>(props: {
 
 export function SettingsView({
   settings,
-  teams,
   services,
   onRescan,
   onNotify = notifyUser,
@@ -520,11 +514,7 @@ export function SettingsView({
             </div>
           </div>
 
-          {/* ---------- TEAMS & AGENTS (L11 : runner+modèle+skills PAR AGENT) ---------- */}
-          <div id="set-teams" className="anchor">
-            <TeamsEditor teams={teams} />
-          </div>
-
+          {/* TEAMS & AGENTS : sortis dans la vue dédiée « Teams » (L13). */}
           <div className="block" id="set-securite">
             <div className="bt">
               <span className="e">🤖</span>
@@ -533,9 +523,9 @@ export function SettingsView({
             <p className="lead">
               Le coordinateur de la team possède la conversation (terminal-source) ; le
               chat en est la vue filtrée. Le <strong>runner et le modèle</strong> se
-              règlent désormais <strong>par agent</strong> (« Teams &amp; agents »
-              ci-dessus). Ces réglages-ci restent <strong>GLOBAUX</strong> (politique de
-              sécurité d'exécution, lue à l'ouverture d'une conversation).
+              règlent désormais <strong>par agent</strong> (page « Teams »). Ces
+              réglages-ci restent <strong>GLOBAUX</strong> (politique de sécurité
+              d'exécution, lue à l'ouverture d'une conversation).
             </p>
 
             <div className="fieldrow">

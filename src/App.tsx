@@ -21,6 +21,7 @@ import { useDemoSeed } from "./hooks/useDemoSeed";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { JournalView } from "./views/JournalView";
+import { TeamsView } from "./views/TeamsView";
 import { SettingsView } from "./views/SettingsView";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
@@ -206,6 +207,13 @@ export default function App(): JSX.Element {
           </button>
           <button
             type="button"
+            className={`navbtn${grid.activeView === "teams" ? " active" : ""}`}
+            onClick={() => grid.setActiveView("teams")}
+          >
+            Teams
+          </button>
+          <button
+            type="button"
             className={`navbtn${grid.activeView === "settings" ? " active" : ""}`}
             onClick={() => grid.setActiveView("settings")}
           >
@@ -253,10 +261,10 @@ export default function App(): JSX.Element {
           />
         )}
         {grid.activeView === "journal" && <JournalView />}
+        {grid.activeView === "teams" && <TeamsView teams={teams} />}
         {grid.activeView === "settings" && (
           <SettingsView
             settings={settings}
-            teams={teams}
             services={services.services}
             onRescan={() => void portfolio.refresh()}
           />
