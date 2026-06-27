@@ -1,13 +1,14 @@
 /**
- * demoTeam — TEAM iakaframe (mise en scène, PAS un runner d'agents).
+ * demoTeam — TEAM iakaframe (mise en scène + **GRAINE de la team par défaut** L11).
  *
  * `DEMO_TEAM` = les **5 agents** de la team (AR-3) couvrant dispatch → cadrage →
  * dev → qualité. Royaume en MAJUSCULE. Facile à étendre (5→8).
  *
  * L7 : alimentait les **onglets** PTY au boot de démo. **L8 (D6/D7)** : `DEMO_TEAM`
- * alimente désormais le **widget roster** (pastilles `[ROYAUME][Agent]` + statut
- * attend/travaille, clic → `@agent`), plus les onglets. **Aucun agent réel n'est
- * lancé** : la mise en scène est visuelle ; le moteur d'agents 3-canaux reste DEP-1.
+ * alimente le **widget roster** (pastilles `[ROYAUME][Agent]` + statut attend/travaille,
+ * clic → `@agent`). **L11** : `DEMO_TEAM` n'est plus un mock figé — il devient la
+ * **graine** de la team par défaut éditable (`useTeams` la convertit en `Team` si la
+ * clé config `teams` est vide). Il reste un défaut de secours pour le roster hors team.
  *
  * Les helpers `teamTabTitle`/`teamTabProjectId` sont CONSERVÉS (compat, encore
  * utilisés par les tests team) mais ne servent plus à ouvrir 5 onglets en L8.
@@ -40,6 +41,28 @@ export const DEMO_TEAM: readonly DemoTeamMember[] = [
   { royaume: "DEV", agent: "Gimli", roleIndex: 3 },
   { royaume: "QUALITÉ", agent: "Legolas", roleIndex: 4 },
 ] as const;
+
+/**
+ * Skills (ids de skill-rôles iakaframe) par agent connu (AR-1, L11). Sert à peupler
+ * `agent.skills` lors du bootstrap de la team par défaut. `gandalf` → `iakaframe-cadrage`
+ * (skill de cadrage) ; `odin` → `iakaframe-odin` ; les autres → `iakaframe-<nom>`. Un
+ * agent hors de cette table reçoit `[]` (agent créé / inconnu).
+ */
+export const SKILL_BY_AGENT: Readonly<Record<string, string[]>> = {
+  odin: ["iakaframe-odin"],
+  aragorn: ["iakaframe-aragorn"],
+  gandalf: ["iakaframe-cadrage"],
+  gimli: ["iakaframe-gimli"],
+  legolas: ["iakaframe-legolas"],
+  loki: ["iakaframe-loki"],
+  nathalie: ["iakaframe-nathalie"],
+  helm: ["iakaframe-helm"],
+};
+
+/** Skills connus d'un agent par nom (insensible à la casse) ; `[]` si inconnu. */
+export function skillsForAgent(name: string): string[] {
+  return [...(SKILL_BY_AGENT[name.toLowerCase()] ?? [])];
+}
 
 /** Pastille `[ROYAUME][Agent]` (royaume MAJUSCULE) d'un membre team (roster L8). */
 export function teamBadge(member: DemoTeamMember): string {
