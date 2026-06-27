@@ -11,12 +11,8 @@ import { useState } from "react";
 import { notifyUser } from "../api/backend";
 import type { NotifySupport, ServiceStatus } from "../api/backend";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
-import {
-  DEFAULT_CHEF_ALLOWED_TOOLS,
-  DEFAULT_CHEF_MODEL,
-} from "../hooks/useSettings";
+import { DEFAULT_CHEF_ALLOWED_TOOLS } from "../hooks/useSettings";
 import type {
-  ChefRunnerKind,
   ChefTrustMode,
   Density,
   FontFamily,
@@ -24,6 +20,8 @@ import type {
   Shape,
   UseSettings,
 } from "../hooks/useSettings";
+import type { UseTeams } from "../hooks/useTeams";
+import { TeamsEditor } from "../components/TeamsEditor";
 
 const THEMES: { id: string; name: string; sw: string[] }[] = [
   { id: "naonedge-dark", name: "NaonEdge dark", sw: ["#0a0a0a", "#161616", "#c8a44e"] },
@@ -72,16 +70,6 @@ const SUPPORTS: { id: NotifySupport; label: string }[] = [
   { id: "mqtt", label: "MQTT" },
 ];
 
-/**
- * Runners du chef-conversation (L10b/P3). Seul `claude-code` est branché/sélectionnable
- * en L10 ; `ollama`/`codex` sont posés comme cible (extension) et donc DÉSACTIVÉS.
- */
-const CHEF_RUNNERS: { id: ChefRunnerKind; label: string; enabled: boolean }[] = [
-  { id: "claude-code", label: "Claude Code (TUI native)", enabled: true },
-  { id: "ollama", label: "Ollama (cible — bientôt)", enabled: false },
-  { id: "codex", label: "Codex (cible — bientôt)", enabled: false },
-];
-
 /** Modes de trust du cwd du chef-runner (L10b/P3, § 4.5). */
 const TRUST_MODES: { id: ChefTrustMode; label: string }[] = [
   { id: "inherit", label: "héritage" },
@@ -90,6 +78,8 @@ const TRUST_MODES: { id: ChefTrustMode; label: string }[] = [
 
 export interface SettingsViewProps {
   settings: UseSettings;
+  /** Autorité des teams/agents (L11) — alimente l'éditeur « Teams & agents ». */
+  teams: UseTeams;
   services: ServiceStatus[];
   onRescan: () => void;
   /**
@@ -124,6 +114,7 @@ function Seg<T extends string>(props: {
 
 export function SettingsView({
   settings,
+  teams,
   services,
   onRescan,
   onNotify = notifyUser,
@@ -142,7 +133,6 @@ export function SettingsView({
   const [n8nMsgDraft, setN8nMsgDraft] = useState<string>("");
   const [n8nTestResult, setN8nTestResult] = useState<string>("");
   const [n8nTesting, setN8nTesting] = useState<boolean>(false);
-  const [chefModelDraft, setChefModelDraft] = useState<string>("");
   const [chefToolsDraft, setChefToolsDraft] = useState<string>("");
 
   // Pré-remplit les brouillons à la première valeur chargée.
@@ -153,10 +143,8 @@ export function SettingsView({
   const couchUrlValue = couchUrlDraft || settings.couchdbUrl || "";
   const couchDbValue = couchDbDraft || settings.couchdbDb || "";
   const n8nUrlValue = n8nUrlDraft || settings.n8nWebhookUrl || "";
-  // Chef-runner (L10b/P3) : pré-rempli avec le défaut Rust quand non persisté, pour
-  // que le champ montre la valeur effective (vider + enregistrer → le défaut reprend).
-  const chefModelValue =
-    chefModelDraft || settings.chefModel || DEFAULT_CHEF_MODEL;
+  // Chef-runner (L10b/P3) : l'allowlist reste GLOBALE (sécurité d'exécution, AR-3).
+  // Le runner/modèle sont désormais définis PAR AGENT (« Teams & agents », L11).
   const chefToolsValue =
     chefToolsDraft || settings.chefAllowedTools || DEFAULT_CHEF_ALLOWED_TOOLS;
 
@@ -469,72 +457,21 @@ export function SettingsView({
             </div>
           </div>
 
+          {/* ---------- TEAMS & AGENTS (L11 : runner+modèle+skills PAR AGENT) ---------- */}
+          <TeamsEditor teams={teams} />
+
           <div className="block">
             <div className="bt">
               <span className="e">🤖</span>
-              <h2>Chef-runner / Conversation</h2>
+              <h2>Sécurité d'exécution du chef-runner</h2>
             </div>
             <p className="lead">
-              Le chef-runner possède la conversation (terminal-source) ; le chat en
-              est la vue filtrée. Ces réglages sont GLOBAUX (set par défaut du
-              cockpit) et lus à l'ouverture d'une conversation. Per-projet = cible
-              (hors périmètre actuel).
+              Le coordinateur de la team possède la conversation (terminal-source) ; le
+              chat en est la vue filtrée. Le <strong>runner et le modèle</strong> se
+              règlent désormais <strong>par agent</strong> (« Teams &amp; agents »
+              ci-dessus). Ces réglages-ci restent <strong>GLOBAUX</strong> (politique de
+              sécurité d'exécution, lue à l'ouverture d'une conversation).
             </p>
-
-            <div className="fieldrow">
-              <div className="lab">
-                <div className="t">Runner par défaut</div>
-                <div className="d">
-                  Seul Claude Code (TUI native) est branché en l'état ; Ollama/Codex
-                  sont la cible (extension).
-                </div>
-              </div>
-              <div className="ctl">
-                <select
-                  className="field"
-                  value={settings.chefRunnerKind}
-                  aria-label="Runner du chef"
-                  onChange={(e) =>
-                    void settings.setChefRunnerKind(
-                      e.target.value as ChefRunnerKind,
-                    )
-                  }
-                >
-                  {CHEF_RUNNERS.map((r) => (
-                    <option key={r.id} value={r.id} disabled={!r.enabled}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="fieldrow">
-              <div className="lab">
-                <div className="t">Modèle du chef-runner</div>
-                <div className="d">
-                  Transmis à <code>claude --model</code>. Vide → défaut (
-                  {DEFAULT_CHEF_MODEL}).
-                </div>
-              </div>
-              <div className="ctl">
-                <input
-                  className="field"
-                  type="text"
-                  placeholder={DEFAULT_CHEF_MODEL}
-                  value={chefModelValue}
-                  onChange={(e) => setChefModelDraft(e.target.value)}
-                  aria-label="Modèle du chef-runner"
-                />
-                <button
-                  type="button"
-                  className="btn sm"
-                  onClick={() => void settings.setChefModel(chefModelValue)}
-                >
-                  Enregistrer
-                </button>
-              </div>
-            </div>
 
             <div className="fieldrow">
               <div className="lab">

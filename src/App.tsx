@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
+import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
@@ -29,6 +30,7 @@ export default function App(): JSX.Element {
   const portfolio = usePortfolio();
   const grid = useGridState();
   const conversations = useConversations();
+  const teams = useTeams();
   const workset = useWorkset();
   const pty = usePty();
   const settings = useSettings();
@@ -169,6 +171,7 @@ export default function App(): JSX.Element {
         {grid.activeView === "settings" && (
           <SettingsView
             settings={settings}
+            teams={teams}
             services={services.services}
             onRescan={() => void portfolio.refresh()}
           />
