@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.actions{display:flex;gap:12px;margin-top:22px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.proj{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 1px 0 var(--line-soft),0 16px 36px -28px rgba(20,22,28,.25);transition:.18s}
+.proj:hover{transform:translateY(-3px)}
+.proj .top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.proj .ic{width:42px;height:42px;border-radius:13px;background:var(--deep);display:grid;place-items:center;font-size:20px}
+.proj h3{font-family:var(--display);font-weight:600;font-size:17px}
+.proj .path{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.proj .desc{font-size:13.5px;color:var(--ink2);line-height:1.55;margin-bottom:18px;min-height:40px}
+.proj .foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line-soft);padding-top:14px}
+.avatars{display:flex}.avatars img{width:28px;height:28px;border-radius:8px;object-fit:cover;margin-left:-7px;box-shadow:0 0 0 3px var(--card)}.avatars img:first-child{margin-left:0}
+.scan{display:flex;flex-direction:column;gap:2px}
+.scanrow{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:13px;transition:.12s}
+.scanrow:hover{background:var(--card)}
+.scanrow .nm{font-family:var(--display);font-weight:500;font-size:14.5px}
+.scanrow .pth{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.scanrow .meta{margin-left:auto;font-size:12px;color:var(--ink3);display:flex;gap:16px;align-items:center}
+.add{border:1px solid var(--line);background:transparent;color:var(--acc);font-weight:600;font-size:13px;border-radius:10px;padding:7px 14px;cursor:pointer}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a class="on" title="Portfolio">🗂️<small>Folio</small></a>
+  <a title="Working">🛠️<small>Work</small></a>
+  <a title="Journal">📓<small>Log</small></a>
+  <a title="Teams">👥<small>Team</small></a>
+  <div class="sep"></div>
+  <a title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Portefeuille</div>
+  <h1 class="title">Portfolio</h1>
+  <p class="sub">Le chapeau <span style="font-family:var(--mono);font-size:13px">~/work</span> est scanné en continu. Ajoute des projets à ton <b>set de Work</b> pour ouvrir leur conversation.</p>
+  <div class="actions">
+    <button class="btn primary">⟳ Rescanner le chapeau</button>
+    <button class="btn soft">+ Importer un dossier</button>
+  </div>
+
+  <div class="rowhead"><h2>Set de Work · 3 projets</h2><a class="link" href="#">tout désélectionner</a></div>
+  <div class="cards">
+    <div class="proj">
+      <div class="top"><div class="ic">📦</div><div><h3>iaka-demo</h3><div class="path">~/work/iaka-demo</div></div><span class="chip live" style="margin-left:auto">● en cours</span></div>
+      <div class="desc">Dossier de démonstration. Conversation ouverte avec la team iakaframe.</div>
+      <div class="foot"><div class="avatars"><img src="../assets/aragorn.png"><img src="../assets/gandalf.png"><img src="../assets/gimli.png"></div><span class="eb" style="margin-left:auto">git · 14 commits</span></div>
+    </div>
+    <div class="proj">
+      <div class="top"><div class="ic">🛰️</div><div><h3>iakacockpit</h3><div class="path">~/work/IakaCockpit</div></div><span class="chip" style="margin-left:auto">au repos</span></div>
+      <div class="desc">Le cockpit lui-même. Candidate v0.9.0-rc, ré-architecture terminal-source livrée.</div>
+      <div class="foot"><div class="avatars"><img src="../assets/aragorn.png"><img src="../assets/legolas.png"></div><span class="eb" style="margin-left:auto">rust · react · tauri</span></div>
+    </div>
+    <div class="proj">
+      <div class="top"><div class="ic">🎨</div><div><h3>iakagraph</h3><div class="path">~/work/iakagraph</div></div><span class="chip" style="margin-left:auto">au repos</span></div>
+      <div class="desc">Atelier des chartes &amp; vignettes : 10 chartes, 11 teams, 952 portraits.</div>
+      <div class="foot"><div class="avatars"><img src="../assets/frodo.png"></div><span class="eb" style="margin-left:auto">design · assets</span></div>
+    </div>
+  </div>
+
+  <div class="rowhead"><h2>Détectés dans le chapeau · 6</h2><a class="link" href="#">filtrer…</a></div>
+  <div class="scan">
+    <div class="scanrow"><span class="dot i"></span><div><div class="nm">iakabox</div><div class="pth">~/work/iakabox</div></div><div class="meta"><span>infra · docker</span><span>main · propre</span></div><button class="add">+ Set de Work</button></div>
+    <div class="scanrow"><span class="dot i"></span><div><div class="nm">iakaframe</div><div class="pth">~/work/iakaframe</div></div><div class="meta"><span>méthode · skills</span><span>main · propre</span></div><button class="add">+ Set de Work</button></div>
+    <div class="scanrow"><span class="dot o"></span><div><div class="nm">iaka-notify</div><div class="pth">~/work/iaka-notify</div></div><div class="meta"><span>n8n · flows</span><span>3 fichiers modifiés</span></div><button class="add">+ Set de Work</button></div>
+    <div class="scanrow"><span class="dot i"></span><div><div class="nm">litellm-stack</div><div class="pth">~/work/litellm-stack</div></div><div class="meta"><span>ia · proxy</span><span>main · propre</span></div><button class="add">+ Set de Work</button></div>
+  </div>
+</div></div>
+</body></html>

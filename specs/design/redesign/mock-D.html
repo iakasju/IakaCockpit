@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="D" data-charte="ember">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock D — charte « Ember » (neuve)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CHARTE « EMBER » — proposition NEUVE (Loki, 2026-06-27)
+   Intention : identité PROPRE à IakaCockpit, ni naonedge (dark/or)
+   ni studio (blanc/indigo). Papier chaud + encre + braise (ember).
+   Optimiste, artisanal-premium, voix grotesque assumée.
+   ============================================================ */
+:root{
+  /* surfaces — papier chaud */
+  --bg:#f5efe6; --card:#fffdf9; --deep:#ece3d5; --line:#e3d8c6; --line-soft:#ece3d5;
+  /* encre chaude */
+  --ink:#23190f; --ink2:#6e6253; --ink3:#a89a86;
+  /* accent PRIMAIRE = braise */
+  --ember:#e0531d; --ember-l:#f47a3e; --ember-rgb:224,83,29;
+  /* secondaire = pin profond (sémantique / contraste froid) */
+  --pine:#0f6b5e; --plum:#7b3f8f; --gold:#c98a17;
+  /* formes */
+  --r:16px; --r-lg:26px;
+  --shadow:0 2px 0 var(--line), 0 22px 44px -30px rgba(35,25,15,.45);
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --text:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--text);background:
+  radial-gradient(1200px 480px at 85% -10%, rgba(224,83,29,.07), transparent 60%),
+  var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* ---- topbar ---- */
+header{display:flex;align-items:center;gap:18px;padding:22px 48px;max-width:1240px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em}
+.brand .mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--ember),var(--ember-l));
+  display:grid;place-items:center;color:#fff;font-size:18px;box-shadow:0 6px 16px -6px rgba(var(--ember-rgb),.6)}
+nav{display:flex;gap:6px;margin-left:14px}
+nav a{font-size:14px;color:var(--ink2);text-decoration:none;padding:7px 14px;border-radius:99px;transition:.15s}
+nav a:hover{background:var(--deep)}
+nav a.on{background:var(--ink);color:var(--bg);font-weight:500}
+header .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ghost{font-size:13px;color:var(--ink2);background:var(--card);border:1px solid var(--line);padding:8px 14px;border-radius:99px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:18px 48px 70px}
+
+/* ---- héros accueil ---- */
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin:18px 0 44px}
+.hero .kick{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);margin-bottom:14px}
+.hero h1{font-family:var(--display);font-weight:700;font-size:50px;line-height:1.02;letter-spacing:-.025em;max-width:16ch}
+.hero h1 .em{color:var(--ember)}
+.cta{display:flex;gap:12px}
+.btn{font-family:var(--display);font-weight:600;font-size:14.5px;padding:13px 22px;border-radius:14px;border:0;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ember{background:linear-gradient(140deg,var(--ember),var(--ember-l));color:#fff;box-shadow:0 10px 24px -10px rgba(var(--ember-rgb),.7)}
+
+/* ---- bandeau stats ---- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+.stat{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.stat .n{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.02em}
+.stat .l{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.stat .n.e{color:var(--ember)} .stat .n.p{color:var(--pine)}
+
+/* ---- grille de projets ---- */
+.sechead{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 20px}
+.sechead h2{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.01em}
+.sechead .more{font-size:13px;color:var(--ember);text-decoration:none;font-weight:500}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.proj{background:var(--card);border-radius:var(--r-lg);padding:24px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.2s}
+.proj:hover{transform:translateY(-4px)}
+.proj .accent{position:absolute;top:0;left:0;right:0;height:5px}
+.proj .accent.e{background:linear-gradient(90deg,var(--ember),var(--ember-l))}
+.proj .accent.p{background:var(--pine)} .proj .accent.l{background:var(--plum)}
+.proj h3{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;margin:8px 0 4px}
+.proj .path{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink3);margin-bottom:16px}
+.proj .desc{font-size:13.5px;line-height:1.6;color:var(--ink2);margin-bottom:20px;min-height:44px}
+.proj .foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line-soft);padding-top:16px}
+.avatars{display:flex}
+.avatars img{width:30px;height:30px;border-radius:9px;object-fit:cover;margin-left:-8px;box-shadow:0 0 0 3px var(--card)}
+.avatars img:first-child{margin-left:0}
+.live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--pine)}
+.live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--pine);box-shadow:0 0 0 3px rgba(15,107,94,.18)}
+.sleep{margin-left:auto;font-size:12px;color:var(--ink3)}
+.tagrow{display:flex;gap:6px;margin-bottom:14px}
+.t{font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--deep);color:var(--ink2)}
+.t.e{background:rgba(var(--ember-rgb),.12);color:var(--ember)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="mark">◆</span> Cockpit<span style="color:var(--ember)">.</span></div>
+    <nav>
+      <a class="on">Accueil</a><a>Working</a><a>Journal</a><a>Teams</a><a>Réglages</a>
+    </nav>
+    <div class="right">
+      <span class="ghost">charte · ember</span>
+      <span class="ghost">⌘K</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <div class="kick">Bon retour, Stéphane</div>
+        <h1>Trois projets,<br>une <span class="em">équipe prête</span> à reprendre.</h1>
+      </div>
+      <div class="cta">
+        <button class="btn primary">Importer un dossier</button>
+        <button class="btn ember">▸ Reprendre iaka-demo</button>
+      </div>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><div class="n">3</div><div class="l">projets dans le set de Work</div></div>
+      <div class="stat"><div class="n e">1</div><div class="l">conversation vivante</div></div>
+      <div class="stat"><div class="n p">5</div><div class="l">agents en ligne · iakaframe</div></div>
+      <div class="stat"><div class="n">12</div><div class="l">teams disponibles</div></div>
+    </div>
+
+    <div class="sechead">
+      <h2>Set de Work</h2>
+      <a class="more" href="#">tout le portfolio →</a>
+    </div>
+
+    <div class="cards">
+      <div class="proj">
+        <div class="accent e"></div>
+        <div class="tagrow"><span class="t e">actif</span><span class="t">git · 14 commits</span></div>
+        <h3>iaka-demo</h3>
+        <div class="path">~/work/iaka-demo</div>
+        <div class="desc">Dossier de démonstration. Conversation ouverte avec la team iakaframe, terminal-source en écriture.</div>
+        <div class="foot">
+          <div class="avatars">
+            <img src="assets/aragorn.png"><img src="assets/gandalf.png"><img src="assets/gimli.png"><img src="assets/legolas.png">
+          </div>
+          <span class="live">en cours</span>
+        </div>
+      </div>
+
+      <div class="proj">
+        <div class="accent p"></div>
+        <div class="tagrow"><span class="t">v0.9.0-rc</span><span class="t">rust · react</span></div>
+        <h3>iakacockpit</h3>
+        <div class="path">~/work/IakaCockpit</div>
+        <div class="desc">Le cockpit lui-même. Ré-architecture terminal-source livrée, candidate v0.9.0-rc.</div>
+        <div class="foot">
+          <div class="avatars"><img src="assets/aragorn.png"><img src="assets/legolas.png"></div>
+          <span class="sleep">au repos · 2 j</span>
+        </div>
+      </div>
+
+      <div class="proj">
+        <div class="accent l"></div>
+        <div class="tagrow"><span class="t">design</span><span class="t">952 vignettes</span></div>
+        <h3>iakagraph</h3>
+        <div class="path">~/work/iakagraph</div>
+        <div class="desc">Atelier des chartes &amp; vignettes. 10 chartes, 11 teams — la matière visuelle du cockpit.</div>
+        <div class="foot">
+          <div class="avatars"><img src="assets/frodo.png"></div>
+          <span class="sleep">au repos · 3 j</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

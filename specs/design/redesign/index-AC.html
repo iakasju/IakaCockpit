@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A vs C — l'app entière · Loki</title>
+<style>
+ body{margin:0;background:#15161a;color:#e7e9ee;font-family:-apple-system,system-ui,sans-serif;line-height:1.5}
+ header{padding:38px 40px 10px;max-width:1500px;margin:0 auto}
+ h1{font-size:28px;margin:0 0 6px;letter-spacing:-.02em}
+ .lead{color:#9aa0ad;font-size:14.5px;max-width:90ch}
+ .legend{display:flex;gap:26px;margin:16px 0 0;font-size:13px;color:#c0c5cf}
+ .legend b{color:#fff}
+ .tabs{display:flex;gap:8px;max-width:1500px;margin:22px auto 0;padding:0 40px}
+ .tabs button{background:#22242b;color:#c0c5cf;border:1px solid #2e3038;border-radius:10px;padding:9px 16px;font-size:14px;cursor:pointer}
+ .tabs button.on{background:#5b5bd6;color:#fff;border-color:transparent}
+ .wrap{max-width:1500px;margin:0 auto;padding:18px 40px 80px}
+ .page{margin-bottom:40px}
+ .page h2{font-size:18px;margin:0 0 3px}
+ .page .pp{color:#9aa0ad;font-size:13px;margin:0 0 12px}
+ .cmp{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+ .col .cap{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+ .col.A .cap{color:#9b9bf0} .col.C .cap{color:#7ee3b0}
+ .col a.open{font-weight:400;text-transform:none;letter-spacing:0;color:#7a78ff;font-size:12px;margin-left:auto}
+ img{width:100%;border-radius:12px;border:1px solid #2a2c33;display:block;box-shadow:0 24px 50px -34px #000}
+ .hide{display:none}
+ .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+</style></head>
+<body>
+<header>
+  <h1>Direction A vs Direction C — sur l'application entière</h1>
+  <p class="lead">Les 5 pages réelles, déclinées dans chaque direction, parti-pris constant. <b style="color:#9b9bf0">A — Rail de commande</b> : studio-clair, Space Grotesk, rail d'icônes, sans-bord, calme &amp; aéré. <b style="color:#7ee3b0">C — Cockpit mono</b> : studio-clair, JetBrains Mono, barre ⌘K + bandeau de statut à LEDs, panneaux plats, dense &amp; clavier-first, terminal-source en héros. Même palette (studio-clair) pour les deux : ce qui change, c'est la <b>grammaire</b> et la <b>voix typo</b>. Chaque écran est cliquable (HTML autonome).</p>
+  <div class="legend"><span><span class="dot" style="background:#9b9bf0"></span> A = sûr, lisible, généraliste</span><span><span class="dot" style="background:#7ee3b0"></span> C = puissant, dense, fidèle à la vision terminal-source</span></div>
+</header>
+<div class="tabs">
+  <button class="on" onclick="show('side')">Côte à côte</button>
+  <button onclick="show('A')">A seul</button>
+  <button onclick="show('C')">C seul</button>
+</div>
+<div class="wrap" id="grid"></div>
+
+<script>
+const pages = [
+  ["Portfolio","portefeuille de projets — scan du chapeau, set de Work, ajout/retrait",
+    {A:"cartes sans-bord, set de Work + détectés, aéré", C:"table dense mono, LEDs d'état, toggles set de Work, clavier"}],
+  ["Working","1 projet = 1 conversation — roster · chat · terminal-source",
+    {A:"roster portraits | chat bulles+badges | terminal en bas, calme", C:"sessions+roster | terminal HÉROS au centre | chat = vue dérivée du transcript"}],
+  ["Journal","main courante 3 canaux (adresse/geste/pensée), filtrable",
+    {A:"timeline calme, canal = couleur du nœud, pensée en italique", C:"flux de log dense, colonnes ts/canal/from→to/projet/msg, LEDs"}],
+  ["Teams","éditeur teams/agents — runner, modèle, skills, coordinateur",
+    {A:"liste d'agents | éditeur fiche à droite, sans-bord", C:"matrice de config dense, édition inline cellule par cellule"}],
+  ["Réglages","sommaire (Interface/Police/Charte/Cockpit/IA/Sécurité/MainCourante/n8n/Services)",
+    {A:"sous-nav + sections, segmented controls, swatches de charte", C:"arbre + clés/valeurs — esprit « éditer un fichier de config »"}],
+];
+const files = {Portfolio:"portfolio",Working:"working",Journal:"journal",Teams:"teams","Réglages":"reglages"};
+function render(mode){
+  const g = document.getElementById('grid'); g.innerHTML='';
+  for(const [name,desc,notes] of pages){
+    const f = files[name];
+    const block = document.createElement('div'); block.className='page';
+    block.innerHTML = `<h2>${name}</h2><div class="pp">${desc}</div>`;
+    const cmp = document.createElement('div'); cmp.className='cmp';
+    const colA = `<div class="col A ${mode==='C'?'hide':''}"><div class="cap"><span class="dot" style="background:#9b9bf0"></span>A — ${notes.A}<a class="open" href="A/${f}.html">ouvrir ↗</a></div><img src="captures/A-${f}.png"></div>`;
+    const colC = `<div class="col C ${mode==='A'?'hide':''}"><div class="cap"><span class="dot" style="background:#7ee3b0"></span>C — ${notes.C}<a class="open" href="C/${f}.html">ouvrir ↗</a></div><img src="captures/C-${f}.png"></div>`;
+    cmp.innerHTML = colA + colC;
+    if(mode!=='side') cmp.style.gridTemplateColumns='1fr';
+    block.appendChild(cmp); g.appendChild(block);
+  }
+}
+function show(m){document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));event.target.classList.add('on');render(m);}
+render('side');
+</script>
+</body></html>

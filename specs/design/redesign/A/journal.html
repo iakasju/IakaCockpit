@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.filters{display:flex;gap:10px;margin:22px 0 8px;align-items:center;flex-wrap:wrap}
+.fchip{font-size:13px;font-weight:500;padding:8px 15px;border-radius:99px;background:var(--deep);color:var(--ink2);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.fchip.on{background:var(--ink);color:var(--bg)}
+.fchip .d{width:8px;height:8px;border-radius:50%}
+.search{flex:1;min-width:200px;border:0;background:var(--deep);border-radius:99px;padding:9px 16px;font-family:var(--text);font-size:13.5px}
+.legend{font-size:12.5px;color:var(--ink3);margin:14px 0 26px}
+.legend b{color:var(--ink2)}
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--line-soft)}
+.ev{position:relative;margin-bottom:26px}
+.ev .node{position:absolute;left:-30px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--bg);display:grid;place-items:center}
+.ev .node i{width:10px;height:10px;border-radius:50%}
+.canal-adresse i{background:var(--blue)} .canal-geste i{background:var(--acc)} .canal-pensee i{background:var(--ink3)}
+.ev .head{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.ev .who{font-family:var(--display);font-weight:600;font-size:14px}
+.ev .arrow{color:var(--ink3)}
+.ev .proj{font-family:var(--mono);font-size:11px;color:var(--acc)}
+.ev .lab{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.lab.adresse{background:rgba(59,130,246,.12);color:var(--blue)}
+.lab.geste{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.lab.pensee{background:var(--deep);color:var(--ink3)}
+.ev .time{margin-left:auto;font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.ev .body{font-size:14px;line-height:1.6;color:var(--ink);max-width:70ch}
+.ev.canal-pensee .body{color:var(--ink2);font-style:italic}
+.ev .body code{font-family:var(--mono);font-size:12.5px;background:var(--deep);padding:1px 6px;border-radius:6px}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a title="Portfolio">🗂️<small>Folio</small></a>
+  <a title="Working">🛠️<small>Work</small></a>
+  <a class="on" title="Journal">📓<small>Log</small></a>
+  <a title="Teams">👥<small>Team</small></a>
+  <div class="sep"></div>
+  <a title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad">
+  <div class="eyebrow">Main courante</div>
+  <h1 class="title">Journal</h1>
+  <p class="sub">Trois canaux de communication tracés : <b>adresse</b> (humain ↔ agents), <b>geste</b> (délégations machine), <b>pensée</b> (raisonnement). Lecture seule depuis iakaboxlogs.</p>
+  <div class="filters">
+    <span class="fchip on">Tous</span>
+    <span class="fchip"><span class="d" style="background:var(--blue)"></span>adresse</span>
+    <span class="fchip"><span class="d" style="background:var(--acc)"></span>geste</span>
+    <span class="fchip"><span class="d" style="background:var(--ink3)"></span>pensée</span>
+    <input class="search" placeholder="filtrer par agent, projet…">
+  </div>
+  <div class="legend">Canal porté par la couleur du nœud · <b>bleu</b> adresse · <b>indigo</b> geste · <b>gris</b> pensée.</div>
+
+  <div class="tl">
+    <div class="ev canal-adresse">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Stéphane</span><span class="arrow">→</span><span class="who">Aragorn</span><span class="lab adresse">adresse</span><span class="proj">iaka-demo</span><span class="time">10:42</span></div>
+      <div class="body">Le site est trop vieux, trop lourd, pas assez aéré — lance la refonte avec Loki.</div>
+    </div>
+    <div class="ev canal-geste">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Aragorn</span><span class="arrow">⇄</span><span class="who">Gandalf</span><span class="lab geste">geste</span><span class="proj">iaka-demo</span><span class="time">10:43</span></div>
+      <div class="body">Délégation <code>tool_use Agent</code> — « audit des écrans + hiérarchie de l'information ».</div>
+    </div>
+    <div class="ev canal-pensee">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Gandalf</span><span class="lab pensee">pensée</span><span class="proj">iaka-demo</span><span class="time">10:44</span></div>
+      <div class="body">Le point dur n'est pas la charte mais la grammaire de mise en page ; trois passes : nav, sans-bord, typo.</div>
+    </div>
+    <div class="ev canal-geste">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Gandalf</span><span class="arrow">→</span><span class="who">Aragorn</span><span class="lab geste">geste</span><span class="proj">iaka-demo</span><span class="time">10:48</span></div>
+      <div class="body">Rapport remonté au coordinateur · 1 délégation close · plan validé.</div>
+    </div>
+    <div class="ev canal-adresse">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Aragorn</span><span class="arrow">→</span><span class="who">Stéphane</span><span class="lab adresse">adresse</span><span class="proj">iaka-demo</span><span class="time">10:51</span></div>
+      <div class="body">Audit prêt, 4 hypothèses de refonte rendues. Tu peux trancher.</div>
+    </div>
+    <div class="ev canal-pensee">
+      <div class="node"><i></i></div>
+      <div class="head"><span class="who">Legolas</span><span class="lab pensee">pensée</span><span class="proj">iakacockpit</span><span class="time">09:58</span></div>
+      <div class="body">Gate L10b : 234 front + 202 Rust verts, recette terrain OK. Candidate v0.9.0-rc.</div>
+    </div>
+  </div>
+</div></div>
+</body></html>

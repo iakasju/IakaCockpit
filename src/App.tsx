@@ -28,6 +28,9 @@ import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import type { Project } from "./api/backend";
 import "./theme/tokens.css";
+// Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
+// commités et servis en 'self' (CSP intacte, zero origine Google, offline).
+import "./theme/fonts.css";
 // Chartes iakagraph embarquees (L14) : un bloc data-theme par charte non-naonedge,
 // servi en 'self' via le bundle Vite (build-time) -> CSP intacte, zero inline runtime.
 import "./assets/chartes/chartes.css";
@@ -176,55 +179,84 @@ export default function App(): JSX.Element {
 
   return (
     <main className="app-shell" data-navpos={settings.ui.navPos}>
-      <header className="topbar">
-        <div className="brand">
-          <span className="grue" aria-hidden>
-            🏗
-          </span>
-          IakaCockpit
+      {/* Direction A : rail d'icônes vertical (FOLIO / WORK / LOG / TEAM + Réglages
+          en pied) — REMPLACE la barre d'onglets-pilule. La nav reste pilotée par
+          useGridState (ViewId inchangé) ; seul le RENDU du sélecteur change. Les
+          libellés accessibles (aria-label) gardent les noms pleins. */}
+      <nav className="rail" aria-label="Navigation principale">
+        <div className="brand" aria-hidden>
+          i
         </div>
-        <nav className="nav" aria-label="Navigation principale">
-          <button
-            type="button"
-            className={`navbtn${grid.activeView === "portfolio" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("portfolio")}
-          >
-            Portfolio
-          </button>
-          <button
-            type="button"
-            className={`navbtn${grid.activeView === "working" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("working")}
-          >
-            Working
-            {conversations.conversations.length > 0 && (
-              <span className="nu">{conversations.conversations.length}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`navbtn${grid.activeView === "journal" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("journal")}
-          >
-            Journal
-          </button>
-          <button
-            type="button"
-            className={`navbtn${grid.activeView === "teams" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("teams")}
-          >
-            Teams
-          </button>
-          <button
-            type="button"
-            className={`navbtn${grid.activeView === "settings" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("settings")}
-          >
-            Réglages
-          </button>
-        </nav>
-        <div className="spc" />
-      </header>
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "portfolio" ? " on" : ""}`}
+          aria-label="Portfolio"
+          aria-current={grid.activeView === "portfolio" ? "page" : undefined}
+          title="Portfolio"
+          onClick={() => grid.setActiveView("portfolio")}
+        >
+          <span className="ic" aria-hidden>
+            🗂️
+          </span>
+          <small>Folio</small>
+        </button>
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "working" ? " on" : ""}`}
+          aria-label="Working"
+          aria-current={grid.activeView === "working" ? "page" : undefined}
+          title="Working"
+          onClick={() => grid.setActiveView("working")}
+        >
+          <span className="ic" aria-hidden>
+            🛠️
+          </span>
+          <small>Work</small>
+          {conversations.conversations.length > 0 && (
+            <span className="nu">{conversations.conversations.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "journal" ? " on" : ""}`}
+          aria-label="Journal"
+          aria-current={grid.activeView === "journal" ? "page" : undefined}
+          title="Journal"
+          onClick={() => grid.setActiveView("journal")}
+        >
+          <span className="ic" aria-hidden>
+            📓
+          </span>
+          <small>Log</small>
+        </button>
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "teams" ? " on" : ""}`}
+          aria-label="Teams"
+          aria-current={grid.activeView === "teams" ? "page" : undefined}
+          title="Teams"
+          onClick={() => grid.setActiveView("teams")}
+        >
+          <span className="ic" aria-hidden>
+            👥
+          </span>
+          <small>Team</small>
+        </button>
+        <div className="sep" />
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "settings" ? " on" : ""}`}
+          aria-label="Réglages"
+          aria-current={grid.activeView === "settings" ? "page" : undefined}
+          title="Réglages"
+          onClick={() => grid.setActiveView("settings")}
+        >
+          <span className="ic" aria-hidden>
+            ⚙️
+          </span>
+          <small>Réglage</small>
+        </button>
+      </nav>
 
       <div className="host">
         {grid.activeView === "portfolio" && (

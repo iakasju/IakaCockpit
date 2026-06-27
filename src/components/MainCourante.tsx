@@ -48,8 +48,13 @@ export function MainCourante(): JSX.Element {
   return (
     <aside className="mcleft" aria-label="Main courante">
       <div className="mchead">
-        <h2>Main courante</h2>
-        <div className="sub">3 canaux · adresse / geste / pensée</div>
+        <span className="eyebrow">Main courante</span>
+        <h2>Journal</h2>
+        <div className="sub">
+          Trois canaux tracés : <b>adresse</b> (humain ↔ agents), <b>geste</b>{" "}
+          (délégations machine), <b>pensée</b> (raisonnement). Lecture seule depuis
+          iakaboxlogs — le canal est porté par la couleur du nœud.
+        </div>
         <div className="chanfilters" role="group" aria-label="Filtres de canaux">
           {ALL_CANAUX.map((c) => (
             <button
