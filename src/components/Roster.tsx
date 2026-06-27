@@ -12,7 +12,7 @@
  * temps réel persistant (DEP-1). Aucun I/O ici (D8).
  */
 import { useState } from "react";
-import { DEMO_TEAM, teamBadge, type DemoTeamMember } from "../mock/demoTeam";
+import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
 import type { AvatarResolver } from "../theme/teamAvatar";
 
 export interface RosterProps {
@@ -85,8 +85,14 @@ export function Roster({
                   aria-hidden
                 />
                 {avatarUrl && <Avatar url={avatarUrl} alt={m.agent} />}
-                {/* Pastille [ROYAUME][Agent] CONSERVÉE (identité iakaframe, légende). */}
-                <span className="rbadge">{teamBadge(m)}</span>
+                {/* Direction A : NOM en clair + ROYAUME en label discret (petites
+                    capitales), au lieu de la pastille [ROYAUME][Agent] tronquée par
+                    l'étroitesse de la colonne. L'identité iakaframe reste portée par
+                    le royaume. */}
+                <span className="rmeta">
+                  <span className="rname">{m.agent}</span>
+                  <span className="rkingdom">{m.royaume}</span>
+                </span>
                 <span className="rstate">{status}</span>
               </button>
             </li>

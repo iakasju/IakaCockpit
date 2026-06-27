@@ -75,7 +75,9 @@ export const DEFAULT_SUPPORT: NotifySupport = "slack";
 
 /** Défauts documentés (appliqués si la clé est absente). */
 export const DEFAULT_UI: UiPrefs = {
-  navPos: "split",
+  // Direction A : rail d'icônes à GAUCHE par défaut (décision Stéphane). `right`
+  // bascule le rail à droite, `split` le garde à gauche — réglables en Réglages.
+  navPos: "left",
   density: "standard",
   shape: "round",
   fontFamily: "system",

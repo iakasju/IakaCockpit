@@ -779,17 +779,31 @@ button {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 26px;
+  gap: 10px;
+  padding: 14px 22px;
   background: var(--surf);
   border-bottom: 1px solid var(--surf-3);
 }
+/* Le titre ABSORBE le manque de place (shrink + ellipsis du chip runner) pour que
+   le toggle Chat|Shell et les boutons ne soient JAMAIS clipés (« Shell » entier),
+   même quand le bouton « Interrompre (esc) » apparaît en mode Shell. */
 .convtitle {
   display: flex;
   align-items: baseline;
   gap: 10px;
   min-width: 0;
+  flex: 1 1 auto;
   flex-wrap: wrap;
+}
+.convtitle .ct-runner {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Toggle + boutons : taille fixe, jamais compressés. */
+.modetoggle,
+.convhead > .btn.sm {
+  flex: 0 0 auto;
 }
 .convtitle .ct-nm {
   font-family: var(--font-display);
@@ -1020,9 +1034,12 @@ button {
 }
 
 /* ===== Roster (portraits team) ===== */
+/* min-height:0 + overflow-y:auto : la colonne défile et n'écrête JAMAIS un agent,
+   quelle que soit la hauteur de fenêtre (clip-proof — tout le casting visible). */
 .roster {
   width: 264px;
   flex: 0 0 264px;
+  min-height: 0;
   background: var(--bg);
   border-left: 1px solid var(--surf-2);
   overflow-y: auto;
@@ -1071,8 +1088,7 @@ button {
   height: 8px;
   border-radius: 50%;
   flex: none;
-  order: 3;
-  margin-left: auto;
+  order: 4;
   background: var(--text-3);
 }
 .rstatus.working {
@@ -1088,16 +1104,35 @@ button {
   border-radius: 11px;
   object-fit: cover;
   flex: none;
+  order: 1;
   background: var(--surf-2);
 }
-.rbadge {
+/* Nom en clair (display) + royaume en label discret (petites capitales). */
+.rmeta {
+  order: 2;
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+.rname {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 12.5px;
-  letter-spacing: 0.01em;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
   color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rkingdom {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1106,7 +1141,7 @@ button {
   font-size: 10.5px;
   color: var(--text-3);
   flex: none;
-  order: 2;
+  order: 3;
 }
 
 /* ===== Moteur « prochaine étape » IA (L3) ===== */
