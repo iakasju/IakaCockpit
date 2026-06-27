@@ -199,6 +199,36 @@ describe("SettingsView — vignettes & chef-runner", () => {
     ).toBeNull();
     expect(screen.queryByLabelText("Runner de aragorn")).toBeNull();
   });
+
+  it("L14 : la section Charte liste les 10 chartes iakagraph", () => {
+    const { container } = renderView({});
+    const cards = container.querySelectorAll(".themegrid .tcard");
+    expect(cards.length).toBe(10);
+    // Quelques chartes témoins (naonedge conservées + nouvelles iakagraph).
+    expect(screen.getByRole("button", { name: "NaonEdge dark" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "OS Windows" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Grimoire dark-fantasy" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Studio clair" })).toBeTruthy();
+  });
+
+  it("L14 : sélectionner une charte appelle setTheme avec son id (repeint l'app)", () => {
+    const setTheme = vi.fn(async () => {});
+    renderView({ settings: makeSettings({ setTheme }) });
+    fireEvent.click(screen.getByRole("button", { name: "OS Windows" }));
+    expect(setTheme).toHaveBeenCalledWith("os-windows");
+  });
+
+  it("L14 : la charte active porte l'état sélectionné (aria-pressed)", () => {
+    renderView({ settings: makeSettings({ theme: "cartoon-std" }) });
+    expect(
+      screen.getByRole("button", { name: "Cartoon std" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(
+      screen.getByRole("button", { name: "OS macOS" }).getAttribute("aria-pressed"),
+    ).toBe("false");
+  });
 });
 
 describe("SettingsView — sommaire du menu gauche (L12)", () => {

@@ -131,6 +131,19 @@ describe("useSettings — persistance (PO-2 / D4-bis)", () => {
     expect(dom.attrs["data-theme"]).toBe("naonedge-light");
   });
 
+  it("L14 : setTheme applique aussi une charte iakagraph non-naonedge (data-theme)", async () => {
+    const { api, store } = makeApi();
+    const dom = makeDom();
+    const { result } = renderHook(() => useSettings({ api, dom }));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => {
+      await result.current.setTheme("os-windows");
+    });
+    expect(api.configSet).toHaveBeenCalledWith("theme", "os-windows");
+    expect(store["theme"]).toBe("os-windows");
+    expect(dom.attrs["data-theme"]).toBe("os-windows");
+  });
+
   it("L9-A3 : setTeam persiste la team (configSet 'ui_team') et un remontage la relit", async () => {
     const { api, store } = makeApi();
     const dom1 = makeDom();

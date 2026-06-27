@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // L14 : ne traiter (et donc rendre lisible via ?inline) que le CSS des chartes
+    // généré ; le reste du CSS reste stubbé (rapide). Sert au test du CSS embarqué.
+    css: { include: [/chartes\.css/] },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
