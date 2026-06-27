@@ -20,7 +20,7 @@ import { useNextStep } from "./hooks/useNextStep";
 import { useDemoSeed } from "./hooks/useDemoSeed";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
-import { IakajournalView } from "./views/IakajournalView";
+import { JournalView } from "./views/JournalView";
 import { SettingsView } from "./views/SettingsView";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
@@ -199,10 +199,10 @@ export default function App(): JSX.Element {
           </button>
           <button
             type="button"
-            className={`navbtn${grid.activeView === "iakajournal" ? " active" : ""}`}
-            onClick={() => grid.setActiveView("iakajournal")}
+            className={`navbtn${grid.activeView === "journal" ? " active" : ""}`}
+            onClick={() => grid.setActiveView("journal")}
           >
-            Iakajournal
+            Journal
           </button>
           <button
             type="button"
@@ -252,7 +252,7 @@ export default function App(): JSX.Element {
             }
           />
         )}
-        {grid.activeView === "iakajournal" && <IakajournalView />}
+        {grid.activeView === "journal" && <JournalView />}
         {grid.activeView === "settings" && (
           <SettingsView
             settings={settings}

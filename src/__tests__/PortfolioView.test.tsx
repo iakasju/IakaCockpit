@@ -43,7 +43,7 @@ describe("PortfolioView — recentré sur le portefeuille (L12)", () => {
     expect(screen.getByText("alpha")).toBeTruthy();
   });
 
-  it("ne rend PLUS la main courante (sortie vers Iakajournal, L12)", () => {
+  it("ne rend PLUS la main courante (sortie vers Journal, L12)", () => {
     renderView();
     expect(screen.queryByRole("complementary", { name: "Main courante" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Main courante" })).toBeNull();

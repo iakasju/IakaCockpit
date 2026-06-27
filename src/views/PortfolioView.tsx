@@ -1,7 +1,7 @@
 /**
  * PortfolioView — vue Portfolio (D2). Présentationnel : grille de tuiles RÉELLE du
  * portefeuille. Reçoit l'état des hooks en props, aucun I/O ici. **L12** : la main
- * courante (iakaboxlogs, L4) a été sortie d'ici vers la vue dédiée `IakajournalView` ;
+ * courante (iakaboxlogs, L4) a été sortie d'ici vers la vue dédiée `JournalView` ;
  * Portfolio est recentré sur le portefeuille.
  */
 import type { Project } from "../api/backend";

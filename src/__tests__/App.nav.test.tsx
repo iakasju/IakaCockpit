@@ -16,15 +16,15 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn(() => Promise.resolve(null)),
 }));
 
-describe("App — nav vers Iakajournal (L12)", () => {
-  it("affiche la vue Iakajournal au clic du bouton de nav", () => {
+describe("App — nav vers Journal (L12)", () => {
+  it("affiche la vue Journal au clic du bouton de nav", () => {
     render(<App />);
     // Démarre sur Portfolio : pas encore de main courante visible.
     expect(screen.queryByRole("complementary", { name: "Main courante" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Iakajournal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Journal" }));
 
-    // La vue Iakajournal héberge la main courante (L4) en pleine page.
+    // La vue Journal héberge la main courante (L4) en pleine page.
     expect(
       screen.getByRole("complementary", { name: "Main courante" }),
     ).toBeTruthy();

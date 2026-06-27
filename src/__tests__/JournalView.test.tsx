@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { IakajournalView } from "../views/IakajournalView";
+import { JournalView } from "../views/JournalView";
 
 // L12 : la vue héberge `MainCourante` (L4), qui porte son hook `useMainCourante` →
 // `fetchMainCourante` (invoke). En test on garde l'invoke en attente perpétuelle :
@@ -9,15 +9,15 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => new Promise(() => {})),
 }));
 
-describe("IakajournalView — main courante en pleine page (L12)", () => {
+describe("JournalView — main courante en pleine page (L12)", () => {
   it("rend la main courante (3 canaux)", () => {
-    const { container } = render(<IakajournalView />);
+    const { container } = render(<JournalView />);
     // Le composant MainCourante est présent (titre + landmark).
     expect(
       screen.getByRole("complementary", { name: "Main courante" }),
     ).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Main courante" })).toBeTruthy();
     // La vue porte sa classe dédiée (pleine page).
-    expect(container.querySelector("section.iakajournal")).toBeTruthy();
+    expect(container.querySelector("section.journal")).toBeTruthy();
   });
 });
