@@ -6,11 +6,14 @@ import {
   parseAgentRunnerKind,
   isExecutableRunner,
   defaultTeamFromDemo,
+  teamFromCatalog,
+  ensureDefaultTeams,
   DEFAULT_TEAM_ID,
   TEAMS_KEYS,
   type Agent,
   type Team,
 } from "../hooks/useTeams";
+import { TEAM_CATALOG } from "../assets/teams/catalog";
 import type { Backend } from "../api/backend";
 
 /** Backend mock : un store config en mémoire (roundtrip configSet/configAll/Get). */
@@ -108,12 +111,81 @@ describe("useTeams — pures (parse / runner)", () => {
   });
 });
 
+describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefaultTeams)", () => {
+  it("le catalogue iakagraph expose 11 teams de 8 agents", () => {
+    expect(TEAM_CATALOG).toHaveLength(11);
+    for (const cat of TEAM_CATALOG) {
+      expect(cat.agents).toHaveLength(8);
+      // roleIndex = ordre (0..7).
+      cat.agents.forEach((a, i) => expect(a.roleIndex).toBe(i));
+    }
+  });
+
+  it("teamFromCatalog : coordinateur = roleIndex 1, runner claude-code, auto-casting, sans skill", () => {
+    const lotr = TEAM_CATALOG.find((c) => c.id === "lotr")!;
+    const team = teamFromCatalog(lotr);
+    expect(team.id).toBe("lotr");
+    expect(team.vignetteTeam).toBe("lotr"); // auto-casting
+    expect(team.agents).toHaveLength(8);
+    expect(team.agents.every((a) => a.runner === "claude-code")).toBe(true);
+    expect(team.agents.every((a) => a.skills.length === 0)).toBe(true);
+    // Coordinateur = agent à roleIndex 1 (slot coordination) = aragorn pour lotr.
+    const coord = team.agents.find((a) => a.id === team.coordinator)!;
+    expect(coord.roleIndex).toBe(1);
+    expect(coord.id).toBe("aragorn");
+    // name = slug, royaume = slug MAJUSCULE.
+    expect(team.agents[0].name).toBe(team.agents[0].id);
+    expect(team.agents[0].royaume).toBe(team.agents[0].id.toUpperCase());
+  });
+
+  it("teamFromCatalog : coordinateur avengers à roleIndex 1 = capamerica", () => {
+    const team = teamFromCatalog(TEAM_CATALOG.find((c) => c.id === "avengers")!);
+    expect(team.agents.find((a) => a.id === team.coordinator)?.roleIndex).toBe(1);
+    expect(team.coordinator).toBe("capamerica");
+  });
+
+  it("ensureDefaultTeams : depuis vide → iakaframe (tête) + 11 catalogue, changed=true", () => {
+    const { teams, changed } = ensureDefaultTeams([], "lotr");
+    expect(changed).toBe(true);
+    expect(teams).toHaveLength(12);
+    expect(teams[0].id).toBe(DEFAULT_TEAM_ID);
+    for (const cat of TEAM_CATALOG) {
+      expect(teams.some((t) => t.id === cat.id)).toBe(true);
+    }
+  });
+
+  it("ensureDefaultTeams : idempotent (2e passe → changed=false, pas de doublon)", () => {
+    const first = ensureDefaultTeams([], "lotr");
+    const second = ensureDefaultTeams(first.teams, "lotr");
+    expect(second.changed).toBe(false);
+    expect(second.teams).toHaveLength(12);
+    expect(second.teams).toBe(first.teams); // même référence (aucun ajout)
+  });
+
+  it("ensureDefaultTeams : non destructif — team éditée préservée, manquantes ajoutées", () => {
+    const edited: Team = { ...defaultTeamFromDemo("starfleet"), name: "Mon équipe" };
+    const { teams, changed } = ensureDefaultTeams([edited], "lotr");
+    expect(changed).toBe(true);
+    // iakaframe déjà présent (édité) → conservé tel quel, pas réécrit.
+    const iaka = teams.find((t) => t.id === DEFAULT_TEAM_ID)!;
+    expect(iaka.name).toBe("Mon équipe");
+    expect(iaka.vignetteTeam).toBe("starfleet");
+    // Les 11 teams catalogue ajoutées en plus.
+    expect(teams).toHaveLength(12);
+  });
+});
+
 describe("useTeams — bootstrap & chargement", () => {
-  it("A1 : config vide → bootstrap team par défaut + persiste `teams`", async () => {
+  it("A1/L15 : config vide → bootstrap iakaframe + 11 teams catalogue + persiste", async () => {
     const api = makeApi();
     const { result } = await mounted(api);
-    expect(result.current.teams).toHaveLength(1);
-    expect(result.current.teams[0].id).toBe(DEFAULT_TEAM_ID);
+    // iakaframe (graine) + 11 teams du catalogue iakagraph = 12.
+    expect(result.current.teams).toHaveLength(12);
+    expect(result.current.teams[0].id).toBe(DEFAULT_TEAM_ID); // iakaframe en tête
+    // Les teams catalogue sont présentes et sélectionnables.
+    for (const id of ["lotr", "avengers", "starfleet", "xmen"]) {
+      expect(result.current.teams.some((t) => t.id === id)).toBe(true);
+    }
     expect(api.configSet).toHaveBeenCalledWith(
       TEAMS_KEYS.teams,
       expect.any(String),
@@ -126,13 +198,17 @@ describe("useTeams — bootstrap & chargement", () => {
     expect(result.current.teams[0].vignetteTeam).toBe("avengers");
   });
 
-  it("teams déjà présentes → relues sans bootstrap", async () => {
+  it("team éditée préservée ; les 11 teams catalogue ajoutées (non destructif)", async () => {
     const team: Team = defaultTeamFromDemo("starfleet");
     team.name = "Mon équipe";
     const api = makeApi({ [TEAMS_KEYS.teams]: JSON.stringify([team]) });
     const { result } = await mounted(api);
+    // iakaframe édité conservé tel quel.
     expect(result.current.teams[0].name).toBe("Mon équipe");
     expect(result.current.teams[0].vignetteTeam).toBe("starfleet");
+    // + 11 teams catalogue ajoutées.
+    expect(result.current.teams).toHaveLength(12);
+    expect(result.current.teams.some((t) => t.id === "lotr")).toBe(true);
   });
 });
 
@@ -263,7 +339,8 @@ describe("useTeams — définition (CRUD + gardes)", () => {
     await act(async () => {
       await result.current.removeTeam(DEFAULT_TEAM_ID);
     });
-    expect(result.current.teams).toHaveLength(1);
+    // Suppression de la team par défaut refusée (iakaframe reste présente).
+    expect(result.current.teams.some((t) => t.id === DEFAULT_TEAM_ID)).toBe(true);
     // Avec 2 teams, supprimer la team par défaut reste refusé ; une autre est OK.
     const other: Team = { ...defaultTeamFromDemo("lotr"), id: "x2", name: "X2" };
     await act(async () => {

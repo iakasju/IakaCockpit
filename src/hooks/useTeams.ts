@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { backend, type Backend } from "../api/backend";
 import { DEMO_TEAM, skillsForAgent } from "../mock/demoTeam";
+import { TEAM_CATALOG, type CatalogTeam } from "../assets/teams/catalog";
 
 /**
  * Runner conceptuel d'un agent (PROJET § 0.2). **`claude-code` ET `codex` sont
@@ -213,6 +214,66 @@ export function defaultTeamFromDemo(vignetteTeam: string): Team {
   };
 }
 
+/**
+ * Construit une **team par défaut éditable** à partir d'une entrée du catalogue
+ * iakagraph (L15-B). Chaque agent : `id`/`name` = slug, `royaume` dérivé (slug
+ * MAJUSCULE), `roleIndex` = ordre teams.json, `runner:"claude-code"`, modèle vide,
+ * **aucune skill** (ces personas ne portent pas de skill-rôle iakaframe).
+ *
+ * `vignetteTeam` = la team elle-même (auto-casting : la team `lotr` affiche le
+ * casting `lotr`, embarqué pour toute charte). **Coordinateur = agent à `roleIndex 1`**
+ * (slot « coordination », convention cohérente avec iakaframe où aragorn=1) ; fallback
+ * `roleIndex 0` puis premier agent si la team a < 2 agents.
+ */
+export function teamFromCatalog(cat: CatalogTeam): Team {
+  const agents: Agent[] = cat.agents.map((a) => ({
+    id: a.slug,
+    name: a.slug,
+    royaume: a.slug.toUpperCase(),
+    roleIndex: a.roleIndex,
+    runner: "claude-code" as const,
+    model: "",
+    skills: [],
+  }));
+  const coord =
+    agents.find((a) => a.roleIndex === 1) ??
+    agents.find((a) => a.roleIndex === 0) ??
+    agents[0];
+  return {
+    id: cat.id,
+    name: cat.name,
+    vignetteTeam: cat.id,
+    coordinator: coord?.id ?? "",
+    agents,
+  };
+}
+
+/**
+ * Bootstrap **non destructif & idempotent** des teams par défaut (L15-B, calque la
+ * garde « créer si absent »). Garantit la présence de la team `iakaframe` (graine
+ * `DEMO_TEAM`) **puis** des 11 teams du catalogue iakagraph, **sans jamais réécrire**
+ * une team déjà présente (donc déjà éditée par l'utilisateur). Renvoie le tableau
+ * (existant + ajouts en queue) et un flag `changed` (→ persiste seulement si ajouts).
+ */
+export function ensureDefaultTeams(
+  existing: Team[],
+  vignetteTeam: string,
+): { teams: Team[]; changed: boolean } {
+  const ids = new Set(existing.map((t) => t.id));
+  const additions: Team[] = [];
+  if (!ids.has(DEFAULT_TEAM_ID)) {
+    additions.push(defaultTeamFromDemo(vignetteTeam));
+    ids.add(DEFAULT_TEAM_ID);
+  }
+  for (const cat of TEAM_CATALOG) {
+    if (ids.has(cat.id)) continue;
+    additions.push(teamFromCatalog(cat));
+    ids.add(cat.id);
+  }
+  if (additions.length === 0) return { teams: existing, changed: false };
+  return { teams: [...existing, ...additions], changed: true };
+}
+
 /** Index `projectId → teamId` extrait des clés `project_team:*` de la config. */
 function indexBindings(cfg: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
@@ -256,18 +317,21 @@ export function useTeams(deps: UseTeamsDeps = {}): UseTeams {
     } catch {
       cfg = {};
     }
-    let parsed = parseTeams(cfg[TEAMS_KEYS.teams]);
-    // Bootstrap (§ A1/A6) : aucune team lisible → graine la team par défaut et persiste.
-    if (parsed.length === 0) {
-      const seed = defaultTeamFromDemo(cfg[TEAMS_KEYS.uiTeam] ?? DEFAULT_VIGNETTE_TEAM);
-      parsed = [seed];
+    const parsed = parseTeams(cfg[TEAMS_KEYS.teams]);
+    // Bootstrap non destructif (§ A1/A6, L15-B) : garantit iakaframe + les 11 teams
+    // du catalogue (créer si absent), sans toucher les teams déjà présentes/éditées.
+    const { teams: bootstrapped, changed } = ensureDefaultTeams(
+      parsed,
+      cfg[TEAMS_KEYS.uiTeam] ?? DEFAULT_VIGNETTE_TEAM,
+    );
+    if (changed) {
       try {
-        await api.configSet(TEAMS_KEYS.teams, JSON.stringify(parsed));
+        await api.configSet(TEAMS_KEYS.teams, JSON.stringify(bootstrapped));
       } catch {
         /* hors Tauri / test sans backend : l'état mémoire suffit */
       }
     }
-    setTeams(parsed);
+    setTeams(bootstrapped);
     setBindings(indexBindings(cfg));
     const dft = cfg[TEAMS_KEYS.defaultTeam];
     setDefaultTeamId(dft && dft.trim().length > 0 ? dft : DEFAULT_TEAM_ID);

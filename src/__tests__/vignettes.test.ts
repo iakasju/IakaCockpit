@@ -55,27 +55,75 @@ describe("resolveVignette — mapping rôle→slug (L9-A)", () => {
     expect(resolveVignette("naonedge-dark", "", 2)).toBeNull();
   });
 
-  it("A2 fallback : team non embarquée → null", () => {
-    expect(resolveVignette("naonedge-dark", "xmen", 2)).toBeNull();
+  it("L15 : team thématique non embarquée (inexistante) → null", () => {
+    expect(resolveVignette("naonedge-dark", "klingons", 2)).toBeNull();
   });
 
-  it("A2 fallback : roleIndex inconnu (>4, hors DEMO_TEAM) → null", () => {
-    expect(resolveVignette("naonedge-dark", "lotr", 5)).toBeNull();
+  it("L15 : xmen désormais EMBARQUÉE (catalogue complet) → vignette", () => {
+    // L9 retournait null ; L15 embarque les 11 teams.
+    expect(resolveVignette("naonedge-dark", "xmen", 2)).toBeTruthy();
+    // roleIndex 5..7 désormais valides (8 rôles par team).
+    expect(resolveVignette("naonedge-dark", "lotr", 5)).toBeTruthy(); // boromir
+    expect(resolveVignette("naonedge-dark", "lotr", 7)).toBeTruthy(); // frodo
+  });
+
+  it("A2 fallback : roleIndex hors 0..7 → null", () => {
+    expect(resolveVignette("naonedge-dark", "lotr", 8)).toBeNull();
     expect(resolveVignette("naonedge-dark", "lotr", 99)).toBeNull();
   });
 
-  it("A2 fallback : charte non embarquée → null", () => {
+  it("L15 : nouvelles chartes embarquées (grimoire/os/cartoon/photoreal/studio)", () => {
+    expect(resolveVignette("grimoire-dark-fantasy", "lotr", 2)).toBeTruthy();
+    expect(resolveVignette("os-windows", "avengers", 3)).toBeTruthy();
+    expect(resolveVignette("os-macos", "starfleet", 0)).toBeTruthy();
+    expect(resolveVignette("cartoon-std", "norse", 1)).toBeTruthy();
+    expect(resolveVignette("photoreal-modern", "xmen", 4)).toBeTruthy();
+    expect(resolveVignette("studio-clair", "rebels", 5)).toBeTruthy();
+  });
+
+  it("A2 fallback : clé charte sans correspondance (grimoire-dark) → null", () => {
+    // La clé exacte est grimoire-dark-fantasy ; grimoire-dark n'existe pas.
     expect(resolveVignette("grimoire-dark", "lotr", 2)).toBeNull();
   });
 
-  it("embeddedTeams expose les 3 teams embarquées (C-1)", () => {
-    expect(embeddedTeams()).toEqual(["avengers", "lotr", "starfleet"]);
+  it("L15 : pseudo-team 'iakaframe' (casting natif) résolue (naonedge-dark)", () => {
+    // Ordre racine : 0=odin .. 2=gandalf .. 3=gimli.
+    expect(String(resolveVignette("naonedge-dark", "iakaframe", 0))).toContain(
+      "odin",
+    );
+    expect(String(resolveVignette("naonedge-dark", "iakaframe", 3))).toContain(
+      "gimli",
+    );
+    // studio-clair n'a pas le casting natif → fallback null.
+    expect(resolveVignette("studio-clair", "iakaframe", 0)).toBeNull();
   });
 
-  it("manifest : chaque team embarquée a bien 5 rôles (DEMO_TEAM)", () => {
+  it("embeddedTeams expose les 11 teams + 'iakaframe' (catalogue complet L15)", () => {
+    expect(embeddedTeams()).toEqual([
+      "autobots",
+      "avengers",
+      "dc-justice",
+      "defenders",
+      "harry-potter",
+      "iakaframe",
+      "lotr",
+      "norse",
+      "olympians",
+      "rebels",
+      "starfleet",
+      "xmen",
+    ]);
+  });
+
+  it("manifest : 10 chartes embarquées", () => {
+    expect(Object.keys(VIGNETTES)).toHaveLength(10);
+  });
+
+  it("manifest : chaque team THÉMATIQUE a bien 8 rôles (0..7)", () => {
     for (const charte of Object.keys(VIGNETTES)) {
       for (const team of Object.keys(VIGNETTES[charte])) {
-        expect(Object.keys(VIGNETTES[charte][team])).toHaveLength(5);
+        if (team === "iakaframe") continue; // casting natif (absent en studio-clair)
+        expect(Object.keys(VIGNETTES[charte][team])).toHaveLength(8);
       }
     }
   });
