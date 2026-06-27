@@ -56,6 +56,12 @@ export interface DemoSeedDeps {
    * `useWorkset.add`. Optionnel : injecté par `App` ; absent en test → no-op.
    */
   addToWorkset?: (projectId: string) => void;
+  /**
+   * Appelé après un seed effectif (L11) : `App` relit la config team (le seed Rust a
+   * posé `project_team:iaka-demo`) → la démo s'ouvre sans popup même au ré-accès.
+   * Optionnel ; absent en test → no-op.
+   */
+  onSeeded?: () => void;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
@@ -65,6 +71,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
     openConversation,
     refreshPortfolio,
     addToWorkset,
+    onSeeded,
   } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
@@ -78,6 +85,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   refreshRef.current = refreshPortfolio;
   const addWorkRef = useRef(addToWorkset);
   addWorkRef.current = addToWorkset;
+  const onSeededRef = useRef(onSeeded);
+  onSeededRef.current = onSeeded;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -94,6 +103,10 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
 
       // Flag off / prod (`seeded:false`) ou pas de dossier → on ne fait RIEN.
       if (!report.seeded || !report.demo_path) return;
+
+      // L11 : le seed Rust a (idempotemment) posé `project_team:iaka-demo` → on relit
+      // la config team pour que la liaison soit connue côté front (pas de popup).
+      onSeededRef.current?.();
 
       // Non-doublon (D7) : n'ouvre la conversation démo que si aucune n'est active.
       // L9-C.1 : on précharge l'historique de démo (chaîne de badges iakaframe).

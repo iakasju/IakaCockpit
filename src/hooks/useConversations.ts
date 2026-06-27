@@ -72,10 +72,12 @@ export interface Conversation {
 }
 
 /**
- * Interlocuteur RESPONSABLE par défaut (AR-1 / D3). En L8 la conversation vit dans
- * Working (contexte projet) → responsable concret = **Aragorn**. Le cas Odin
- * (portefeuille) est tracé : il s'activera quand une conversation portefeuille
- * existera (paramétrable via `openConversation`).
+ * Interlocuteur RESPONSABLE de **dernier recours** (repli). **L11** : l'autorité de
+ * l'interlocuteur par défaut est désormais le **coordinateur de la team du projet**,
+ * résolu par `App` (`useTeams.coordinatorOf`) et passé à `openConversation(agent)`.
+ * Cette constante ne subsiste que comme **repli** quand aucun coordinateur n'est fourni
+ * (ex. tests, conversation hors team). Le coordinateur de la team par défaut iakaframe
+ * est précisément `aragorn` → continuité avec L8/L10.
  */
 export const DEFAULT_RESPONSIBLE = "Aragorn";
 

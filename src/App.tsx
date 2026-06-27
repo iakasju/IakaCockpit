@@ -6,7 +6,7 @@
  * Aucun `invoke`/`listen` ici (ni nulle part hors `backend.ts`). Les vues sont
  * présentationnelles ; les seuls effets I/O passent par les hooks/façade.
  */
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
@@ -19,9 +19,11 @@ import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
 import { useDemoSeed } from "./hooks/useDemoSeed";
 import { PortfolioView } from "./views/PortfolioView";
-import { WorkingView } from "./views/WorkingView";
+import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { SettingsView } from "./views/SettingsView";
+import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
+import type { DemoTeamMember } from "./mock/demoTeam";
 import type { Project } from "./api/backend";
 import "./theme/tokens.css";
 import "./theme/app.css";
@@ -49,13 +51,16 @@ export default function App(): JSX.Element {
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
   // (inerte en prod) puis ouvre UNE conversation pour le projet démo (plus 5
-  // onglets) si aucune conversation active. Reste sur Portfolio (AR-4).
+  // onglets) si aucune conversation active. Reste sur Portfolio (AR-4). L11 : après
+  // le seed, on relit la config team (le seed a posé `project_team:iaka-demo` côté
+  // Rust → la démo s'ouvre sans popup même au ré-accès depuis la worklist).
   useDemoSeed({
     conversationsCount: conversations.conversations.length,
     openConversation: conversations.openConversation,
     refreshPortfolio: portfolio.refresh,
     // L9-B : le projet démo entre aussi dans le set de Work (idempotent).
     addToWorkset: workset.add,
+    onSeeded: () => void teams.reload(),
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
@@ -64,16 +69,81 @@ export default function App(): JSX.Element {
     [portfolio.projects, workset.ids],
   );
 
-  // Résolveur d'avatar (L9) : charte = thème app courant, team = ui_team.
-  // Passé en prop aux vues/composants présentationnels (pas d'accès config en bas).
-  const resolveAvatar = useMemo(
-    () => makeAvatarResolver(settings.theme, settings.team),
-    [settings.theme, settings.team],
+  // Popup de liaison projet↔team (L11) : projet en attente de choix de team.
+  const [pickerProject, setPickerProject] = useState<Project | null>(null);
+
+  // Team du projet ACTIF (L11) : pilote les vignettes ET le roster. Hors conversation
+  // active → team par défaut (`teamForProject("")` retombe sur le défaut).
+  const activeTeam = useMemo(
+    () => teams.teamForProject(conversations.active?.projectId ?? ""),
+    [teams, conversations.active],
   );
 
+  // Résolveur d'avatar (L9, reframé L11) : charte = thème app, casting + roster = team
+  // du projet ACTIF (plus la globale `ui_team`). Passé en prop aux présentationnels.
+  const resolveAvatar = useMemo(
+    () =>
+      makeAvatarResolver(
+        settings.theme,
+        activeTeam.vignetteTeam,
+        activeTeam.agents,
+      ),
+    [settings.theme, activeTeam],
+  );
+
+  // Roster du projet actif (L11) : agents de la team → membres `[ROYAUME][Agent]`.
+  const rosterMembers = useMemo<DemoTeamMember[]>(
+    () =>
+      activeTeam.agents.map((a) => ({
+        royaume: a.royaume,
+        agent: a.name,
+        roleIndex: a.roleIndex,
+      })),
+    [activeTeam],
+  );
+
+  // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
+  // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
+  const resolveRunner = useCallback(
+    (projectId: string): ResolvedRunner => {
+      const team = teams.teamForProject(projectId);
+      const coord = teams.coordinatorOf(team);
+      return {
+        kind: coord?.runner ?? "claude-code",
+        model: coord?.model ?? "",
+        coordinator: coord?.name ?? "—",
+      };
+    },
+    [teams],
+  );
+
+  // Ouvre la conversation d'un projet en routant vers le COORDINATEUR de sa team.
+  const openConversationFor = useCallback(
+    (project: Project, teamId?: string): void => {
+      const team = teamId
+        ? (teams.teams.find((t) => t.id === teamId) ??
+          teams.teamForProject(project.id))
+        : teams.teamForProject(project.id);
+      const coord = teams.coordinatorOf(team);
+      conversations.openConversation(
+        project.id,
+        project.id,
+        project.path,
+        coord?.name,
+      );
+      grid.setActiveView("working");
+    },
+    [teams, conversations, grid],
+  );
+
+  // Ouverture d'un projet : popup de liaison si pas de team liée (L11 § 5.2), sinon
+  // ouverture directe (interlocuteur = coordinateur de la team liée).
   const openProject = (project: Project): void => {
-    conversations.openConversation(project.id, project.id, project.path);
-    grid.setActiveView("working");
+    if (!teams.hasBinding(project.id)) {
+      setPickerProject(project);
+      return;
+    }
+    openConversationFor(project);
   };
 
   // Entrée partagée (L10b/§5.1) : la saisie chat ÉCHOTE (tour user) ET PILOTE le chef
@@ -162,6 +232,8 @@ export default function App(): JSX.Element {
             onSend={handleSend}
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
+            rosterMembers={rosterMembers}
+            resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>
               void settings.setHidePensee(!settings.hidePensee)
@@ -177,6 +249,32 @@ export default function App(): JSX.Element {
           />
         )}
       </div>
+
+      {/* Popup de liaison projet↔team (L11 § 5.2) — affiché si pas de liaison. */}
+      {pickerProject && (
+        <TeamPicker
+          projectLabel={pickerProject.id}
+          teams={teams.teams}
+          defaultTeamId={teams.defaultTeamId}
+          onConfirm={(teamId) => {
+            const project = pickerProject;
+            setPickerProject(null);
+            void teams
+              .bindProjectTeam(project.id, teamId)
+              .then(() => openConversationFor(project, teamId));
+          }}
+          onCancel={() => {
+            // N'écrit RIEN : ouvre avec la team par défaut ; le popup reviendra.
+            const project = pickerProject;
+            setPickerProject(null);
+            openConversationFor(project);
+          }}
+          onManageTeams={() => {
+            setPickerProject(null);
+            grid.setActiveView("settings");
+          }}
+        />
+      )}
     </main>
   );
 }

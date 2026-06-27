@@ -14,7 +14,7 @@
  * useNextStep ; les appels I/O passent par la façade. Aucun `invoke` ici.
  */
 import { useMemo, useState } from "react";
-import type { NextStep, Project } from "../api/backend";
+import type { ChefRunnerKind, NextStep, Project } from "../api/backend";
 import type {
   Conversation,
   ConvMode,
@@ -27,6 +27,30 @@ import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
 import type { AvatarResolver } from "../theme/teamAvatar";
+import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
+import type { DemoTeamMember } from "../mock/demoTeam";
+
+/**
+ * Mappe le runner CONCEPTUEL du coordinateur (4 valeurs) vers le `kind` PTY du
+ * terminal-source (L11/P3, frontière d'abstraction — calque `resolve_runner_spec`
+ * côté Rust). **Seul `claude-code` est exécutable** : il est le seul à atteindre ce
+ * mapping (la branche non exécutable affiche une bannière, jamais ce spawn). On NE
+ * code donc plus `runnerKind="claude-code"` en dur dans le JSX : la valeur DÉRIVE du
+ * coordinateur résolu.
+ */
+function ptyRunnerKindFor(kind: AgentRunnerKind): ChefRunnerKind {
+  return kind === "claude-code" ? "claude-code" : "shell";
+}
+
+/** Runner+modèle+coordinateur résolus pour une conversation (depuis sa team — L11). */
+export interface ResolvedRunner {
+  /** Runner conceptuel du coordinateur (4 valeurs, AR-2). */
+  kind: AgentRunnerKind;
+  /** Modèle du coordinateur (vide = défaut du runner). */
+  model: string;
+  /** Nom du coordinateur (affiché en convhead). */
+  coordinator: string;
+}
 
 export interface WorkingViewProps {
   worksetProjects: Project[];
@@ -52,6 +76,17 @@ export interface WorkingViewProps {
   onRequestNextStep: (path: string) => void;
   /** Résolveur d'avatar par nom d'agent (L9) — vignettes roster + chat. */
   resolveAvatar?: AvatarResolver;
+  /**
+   * Roster de la team du projet ACTIF (L11) — alimente le widget Roster. Absent →
+   * défaut `DEMO_TEAM` (secours / tests).
+   */
+  rosterMembers?: readonly DemoTeamMember[];
+  /**
+   * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
+   * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
+   * porte. Si le runner n'est pas exécutable → bannière honnête, pas de spawn.
+   */
+  resolveRunner: (projectId: string) => ResolvedRunner;
   /** Canal pensée masqué ? (L10b/P3, réglage global persisté). */
   hidePensee?: boolean;
   /** Bascule + persiste l'état du canal pensée (L10b/P3). */
@@ -73,6 +108,8 @@ export function WorkingView({
   onSend,
   onRequestNextStep,
   resolveAvatar,
+  rosterMembers,
+  resolveRunner,
   hidePensee,
   onToggleHidePensee,
 }: WorkingViewProps): JSX.Element {
@@ -90,6 +127,13 @@ export function WorkingView({
         : new Set<string>(),
     [active],
   );
+
+  // Runner+modèle+coordinateur de la conversation active (L11/P3) — pilote le
+  // terminal-source si exécutable, sinon bannière honnête.
+  const activeRunner = active ? resolveRunner(active.projectId) : null;
+  const activeExecutable = activeRunner
+    ? isExecutableRunner(activeRunner.kind)
+    : true;
 
   const draft = active ? (drafts[active.projectId] ?? "") : "";
   const setDraft = (projectId: string, value: string): void =>
@@ -163,6 +207,15 @@ export function WorkingView({
                 <span className="ct-agent" title="Interlocuteur courant">
                   {active.agent}
                 </span>
+                {activeRunner && (
+                  <span
+                    className="ct-runner"
+                    title="Coordinateur · runner · modèle (édition : Réglages → Teams & agents). Appliqué au prochain lancement."
+                  >
+                    {activeRunner.coordinator} · {activeRunner.kind} ·{" "}
+                    {activeRunner.model || "défaut"}
+                  </span>
+                )}
               </div>
               <div className="modetoggle" role="tablist" aria-label="Mode">
                 <button
@@ -227,6 +280,32 @@ export function WorkingView({
               {conversations.map((c) => {
                 const visible =
                   c.projectId === active.projectId && c.mode === "shell";
+                const runner = resolveRunner(c.projectId);
+                // RÈGLE D'EXÉCUTION HONNÊTE (L11 § 8) : le terminal-source réel n'est
+                // spawné QUE si le runner du coordinateur est claude-code. Sinon
+                // (ollama/litellm/codex) : aucun PTY, bannière honnête — définition
+                // conservée, zéro crash, aucune perte de la team.
+                if (!isExecutableRunner(runner.kind)) {
+                  return (
+                    <div
+                      key={c.ptySessionId}
+                      className="termwrap runner-banner-wrap"
+                      style={{ display: visible ? "block" : "none" }}
+                      aria-hidden={!visible}
+                    >
+                      <div className="runner-banner" role="status">
+                        <strong>Runner « {runner.kind} » défini, exécution non
+                        câblée.</strong>
+                        <br />
+                        Le coordinateur <strong>{runner.coordinator}</strong>
+                        {runner.model ? ` (modèle ${runner.model})` : ""} est défini
+                        sur un runner pas encore exécutable. Étape actuelle :
+                        claude-code (terminal-source). La définition est conservée ;
+                        adresse les agents en chat (<code>@persona</code>).
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div
                     key={c.ptySessionId}
@@ -238,12 +317,21 @@ export function WorkingView({
                       sessionId={c.ptySessionId}
                       cwd={c.cwd}
                       pty={pty}
-                      runnerKind="claude-code"
+                      runnerKind={ptyRunnerKindFor(runner.kind)}
+                      model={runner.model || undefined}
                     />
                   </div>
                 );
               })}
 
+              {active.mode === "chat" && !activeExecutable && activeRunner && (
+                <div className="runner-banner chat-banner" role="status">
+                  Runner « {activeRunner.kind} » du coordinateur{" "}
+                  <strong>{activeRunner.coordinator}</strong> non encore exécutable
+                  (étape : claude-code). La conversation reste ouverte ; la définition
+                  est conservée.
+                </div>
+              )}
               {active.mode === "chat" && (
                 <Chat
                   history={active.history}
@@ -278,6 +366,7 @@ export function WorkingView({
 
       {active && (
         <Roster
+          members={rosterMembers}
           currentAgent={active.agent}
           pending={active.pending}
           workingAgents={workingAgents}

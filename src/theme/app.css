@@ -1364,3 +1364,26 @@ button {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* ---------- L11 : runner du coordinateur (Working) ---------- */
+.convtitle .ct-runner {
+  font-size: 11px;
+  color: var(--text-3, #9a9a9a);
+  padding: 1px 8px;
+  border: 1px solid var(--line, #2a2a2a);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.runner-banner {
+  margin: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--accent, #c8a44e);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-2, #131313);
+  color: var(--text-2, #cfcfcf);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.runner-banner.chat-banner {
+  margin: 8px 12px 0;
+}
