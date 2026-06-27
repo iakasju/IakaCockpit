@@ -269,10 +269,16 @@ mod tests {
         // `teams`, `default_team` et toute liaison `project_team:<id>` doivent remonter
         // par config_all (lues par `useTeams`). Aucune ne matche le filtre secret.
         assert!(!is_secret(KEY_TEAMS), "teams ne doit pas être filtré");
-        assert!(!is_secret(KEY_DEFAULT_TEAM), "default_team ne doit pas être filtré");
+        assert!(
+            !is_secret(KEY_DEFAULT_TEAM),
+            "default_team ne doit pas être filtré"
+        );
         for pid in ["iaka-demo", "iakacockpit", "demo-1"] {
             let key = format!("{PREFIX_PROJECT_TEAM}{pid}");
-            assert!(!is_secret(&key), "{key} ne doit pas être filtré comme secret");
+            assert!(
+                !is_secret(&key),
+                "{key} ne doit pas être filtré comme secret"
+            );
         }
     }
 
