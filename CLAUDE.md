@@ -140,10 +140,16 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **recette réelle** sur CouchDB local Docker (harnais `docker/`) — a révélé+corrigé un bug Mango `no_usable_index`
       (tri sur clé d'index complète) ; candidate `v0.4.0-rc`. Différé tracé : volet machine « tracer les délégations »,
       filtre event/fiche jalon, temps réel `_changes`, corrélation projet.)*
-- [ ] **L5** — Traçage MACHINE des délégations (canal geste → iakaboxlogs)
+- [x] **L5** — Traçage MACHINE des délégations (canal geste → iakaboxlogs)
       → `specs/instructions/L5-tracage-machine-delegations.md`
-      *(**cadré (BROUILLON), À VALIDER par Stéphane — NON démarré**. Volet machine de la piste « tracer les
-      délégations » rattachée à L4 ; trace HUMAINE = chaîne de badges (déjà en place), trace MACHINE = iakaboxlogs.)*
+      *(**LIVRÉ, gate Legolas PASS** (2026-06-27). Volet machine de la piste « tracer les délégations » rattachée à
+      L4 ; trace HUMAINE = chaîne de badges (déjà en place), trace MACHINE = iakaboxlogs. **Hors dépôt Cockpit** :
+      vit dans `~/.claude/delegation-guard.mjs` (hook) + `iakaboxlogs` (commit `09e8693`). Une délégation `Task`/
+      `Agent` émet un doc `meta.canal:"geste"` qui atterrit en CouchDB (lu par L4/Journal). Fixés : émission
+      fire-and-forget + TDZ `EMIT_TIMEOUT_MS` → l'émission **livre** vraiment (doc prouvé en base). Hook **fail-open
+      triple-borné 1,5s** (jamais de blocage/pendaison d'une délégation), refus hors-roster (exit 2 + doc refused),
+      anti-bruit (sous-agents natifs), borne identité. Différés : MQTT non recetté (box .11 offline), idempotence
+      `_id` partielle, parité `.ps1` Windows.)*
 - [x] **L6** — Canal adresse externe (**SORTANT**) via n8n-passerelle unique
       → `specs/instructions/L6-canal-adresse-externe-n8n.md`
       *(implémenté, **gate Legolas PASS** — 93/93 front + 104/104 Rust (dont 12 `notify`), candidate `v0.5.0-rc` ;
@@ -277,11 +283,29 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       liaison silencieusement perdue pour projets au nom piégé). 268 front + 194 Rust verts, couverture
       77 % stmts. Dissout le différé (c) L10. Différés : runners réels par agent / orchestration multi-agent,
       exécution ollama/litellm/codex, allowlist/trust par agent, live-switch coordinateur.)*
-- [ ] **L12** — Iakajournal : sortir la main courante (L4) dans une **page dédiée** (4ᵉ vue)
-      *(**en file après v0.10.0, NON démarré**. Déplacer `MainCourante` (rendu aujourd'hui dans `PortfolioView`)
-      vers une nouvelle vue `IakajournalView` ; ajouter `iakajournal` à `useGridState` + entrée de nav ;
-      Portfolio se recentre sur le portefeuille. Réutilise le composant/hook L4 inchangés. Voir mémoire
-      `next-iakajournal-page-dediee`.)*
+- [x] **L12** — **Journal** : main courante (L4) dans une **page dédiée** (4ᵉ vue)
+      *(LIVRÉ, gate PASS, scellé **v0.11.0**. `MainCourante` sortie de `PortfolioView` → `JournalView` ;
+      `journal` ajouté à `useGridState` + nav ; Portfolio recentré. Renommé Iakajournal→Journal. Composant/hook
+      L4 réutilisés inchangés.)*
+- [x] **L13** — **Page Teams** : gestion teams/agents/skills en **vue dédiée** (5ᵉ vue)
+      *(LIVRÉ, gate PASS, scellé **v0.11.0**. `TeamsEditor` sorti de Réglages → `TeamsView` ; `teams` ajouté à
+      `useGridState` + nav ; menu Settings repassé à 9 sections (au passage : menu de gauche rendu fidèle aux
+      sections + fonctionnel, fin du double-`active`). `useTeams` reste l'autorité.)*
+- [x] **L14** — **Chartes iakagraph** : voir/appliquer les 10 chartes dans Réglages
+      *(LIVRÉ, gate PASS, scellé **v0.11.0**. `scripts/sync-chartes.sh` synchronise les `tokens.css` des 10
+      chartes via un **pont de 23 variables** (contrat app ← iakagraph) → `src/assets/chartes/chartes.css`
+      (`'self'`) + `manifest.ts` ; `SettingsView` liste les 10, sélection repeint l'app. naonedge dark/light
+      hand-written (défaut). CSP intacte. Hors lot tracé : **vignettes-par-charte / teams par défaut** (chaque
+      charte iakagraph a les vignettes de ~11 teams).)*
+- [x] **Runner Codex** — 2ᵉ **runner réel** (multi-runner concret)
+      *(LIVRÉ, gate PASS, scellé **v0.11.0** ; spike P0bis fait. `RunnerSpec` codex → TUI native `codex` (binaire
+      bundlé `/Applications/Codex.app/Contents/Resources/codex`) en PTY ; `codex.rs` tailer du **rollout JSONL**
+      `~/.codex/sessions/…` (jumeau du transcript Claude) avec mapping codex défensif ; refacto `tail_resolved`
+      partagée Claude/Codex (non-régression Claude prouvée au code). Bannière levée pour `codex`. Recette réelle :
+      session Codex (trust natif, rendu xterm, shapes gestes). Voir mémoire `spike-codex-runner-resultat`.)*
+- [ ] **(Horizon, non planifié)** **Vignettes-par-charte / teams par défaut** — aligner les teams par défaut
+      d'iakacockpit sur les ~11 teams iakagraph (chaque charte a leurs vignettes) ; faire suivre les vignettes à
+      la charte active. *(todo tracé, mémoire `iakagraph-chartes-vignettes-structure`.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web

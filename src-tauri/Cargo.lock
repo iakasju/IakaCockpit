@@ -1393,7 +1393,7 @@ dependencies = [
 
 [[package]]
 name = "iakacockpit"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "dirs 5.0.1",
  "keyring",
