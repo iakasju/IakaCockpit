@@ -234,23 +234,46 @@ impl TrustMode {
     }
 }
 
+/// D'où dérivent les **vues filtrées** (chat/gestes/…) du runner — point d'abstraction
+/// `ConversationSource` (§ 4.2) côté SPAWN. Détermine ce que `pty_runner_open` renvoie au
+/// front (chemin de transcript Claude vs rollout Codex découvert par cwd vs aucun).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ViewSource {
+    /// Claude Code : transcript JSONL `~/.claude/projects/<escaped>/<session_id>.jsonl`
+    /// (chemin DÉTERMINISTE, composé d'avance via `transcript_path`).
+    ClaudeTranscript,
+    /// Codex : rollout JSONL `~/.codex/sessions/…/rollout-<ts>-<thread_id>.jsonl` —
+    /// `thread_id` généré par Codex (PAS pré-fixable) → **découvert** par le tailer Codex
+    /// à partir du cwd (cf. `codex::discover_codex_rollout`) ; pas de chemin renvoyé ici.
+    CodexRollout,
+    /// Repli `shell` : aucune vue dérivée (pas de tailer).
+    None,
+}
+
 /// Spécification d'un chef-runner (point d'abstraction L10 : passer de 1 à N runners
 /// réels doit être une **extension**, pas une réécriture — PROJET § 2.3). `session_id`
-/// = `Some(uuid)` pour `claude-code` (clef transcript), `None` pour le repli `shell`.
+/// = `Some(uuid)` pour les runners conversationnels (clef d'événements / tailer),
+/// `None` pour le repli `shell`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RunnerSpec {
-    /// `"claude-code"` (défaut) ou `"shell"` (repli legacy = `default_shell()`).
+    /// `"claude-code"` (défaut), `"codex"`, ou `"shell"` (repli legacy = `default_shell()`).
     kind: String,
     /// Programme à lancer (résolu par OS — modèle `shell.rs`, jamais de chemin en dur).
     program: String,
     /// Arguments du programme.
     args: Vec<String>,
-    /// `--session-id` pré-généré (claude-code) ; `None` pour le repli `shell`.
+    /// Clef d'événements du runner conversationnel (`runner://event/{id}` + tailer).
+    /// `claude-code` : ce même id est AUSSI passé en `--session-id` (transcript déterministe).
+    /// `codex` : id d'événements seulement (PAS passé au binaire — Codex gère son thread_id).
+    /// `shell` : `None`.
     session_id: Option<String>,
-    /// Faut-il scrubber l'env `CLAUDE_CODE_*`/`CLAUDECODE` (claude-code uniquement).
+    /// Faut-il scrubber l'env `CLAUDE_CODE_*`/`CLAUDECODE` (claude-code uniquement — sinon le
+    /// `claude` enfant se croit nested et n'écrit aucun transcript). Codex/shell : `false`.
     scrub_env: bool,
-    /// Mode de trust du cwd (claude-code ; `Inherit` non pertinent pour le shell).
+    /// Mode de trust du cwd (claude-code ; `Inherit` non pertinent pour codex/shell).
     trust_mode: TrustMode,
+    /// D'où dérivent les vues (pilote le retour `transcript_path` de `pty_runner_open`).
+    view_source: ViewSource,
 }
 
 /// Compte rendu d'ouverture d'un chef-runner, renvoyé au front (D7, snake_case).
@@ -261,6 +284,11 @@ struct RunnerSpec {
 pub struct RunnerSession {
     pub session_id: String,
     pub transcript_path: String,
+    /// Horodatage du spawn (epoch **millisecondes**). Pour Codex, c'est la **borne basse de
+    /// récence** transmise au tailer (`codex_tail_start`) afin de découvrir le rollout du
+    /// run COURANT et pas celui d'un run précédent dans le même projet. Claude l'ignore
+    /// (transcript déterministe par `session_id`) ; le shell le renvoie aussi (inoffensif).
+    pub started_at_ms: u64,
 }
 
 /// Nom du binaire Claude Code par OS (modèle `shell.rs` : pas de chemin en dur, la
@@ -288,10 +316,47 @@ fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> 
     ]
 }
 
+/// Emplacement du binaire `codex` dans le **bundle de l'app desktop** Codex (macOS) — il
+/// n'est PAS sur le PATH (livré dans `Codex.app`). Résolu en priorité s'il existe.
+const CODEX_BUNDLE_PATH: &str = "/Applications/Codex.app/Contents/Resources/codex";
+
+/// Résout le programme `codex` à partir d'un prédicat d'existence du bundle (logique PURE,
+/// testable sans I/O ni dépendance machine) : sur macOS, le **chemin absolu du bundle** s'il
+/// existe ; sinon **fallback PATH** (`codex`, le spawn résoudra) — `codex.cmd` sur Windows.
+fn resolve_codex_program(bundle_exists: bool) -> String {
+    if cfg!(target_os = "macos") && bundle_exists {
+        CODEX_BUNDLE_PATH.to_string()
+    } else if cfg!(windows) {
+        "codex.cmd".to_string()
+    } else {
+        "codex".to_string()
+    }
+}
+
+/// Programme `codex` effectif (bundle macOS si présent → sinon PATH). Fait l'I/O d'existence
+/// puis délègue la décision à [`resolve_codex_program`] (pure).
+fn codex_program() -> String {
+    resolve_codex_program(Path::new(CODEX_BUNDLE_PATH).is_file())
+}
+
+/// Arguments du chef-runner `codex` (TUI native interactive — PAS de sous-commande `exec`,
+/// qui serait non-interactive). Sans prompt (l'utilisateur saisit dans la TUI). `-m <model>`
+/// uniquement si un modèle est fourni (sinon défaut Codex). **Aucun** `--dangerously-*`
+/// (pas de bypass de sandbox/approbation) : le trust se règle nativement dans la TUI.
+fn codex_args(model: &str) -> Vec<String> {
+    let m = model.trim();
+    if m.is_empty() {
+        Vec::new()
+    } else {
+        vec!["-m".to_string(), m.to_string()]
+    }
+}
+
 /// Construit la `RunnerSpec` d'un `kind`. `claude-code` → `claude` en TUI native avec
 /// `session_id` pré-généré, **modèle / allowlist / trust résolus depuis les réglages
-/// globaux** (L10b/P3) avec **fallback sur les constantes** si absents. `shell` → repli
-/// legacy `default_shell()` (login `-l` D10, sans session/scrub). Tout autre kind rejeté.
+/// globaux** (L10b/P3) avec **fallback sur les constantes** si absents. `codex` → `codex`
+/// en TUI native (binaire bundle/PATH, `-m` si modèle, env conservé, trust natif). `shell`
+/// → repli legacy `default_shell()` (login `-l` D10, sans session/scrub). Tout autre kind rejeté.
 fn resolve_runner_spec(
     kind: &str,
     model: Option<String>,
@@ -315,6 +380,24 @@ fn resolve_runner_spec(
                 session_id: Some(session_id.to_string()),
                 scrub_env: true,
                 trust_mode: TrustMode::from_config(trust_mode),
+                view_source: ViewSource::ClaudeTranscript,
+            })
+        }
+        "codex" => {
+            // Modèle = front uniquement (l'agent Codex porte son alias) ; on NE retombe PAS
+            // sur le réglage GLOBAL claude (`chef.model` est un alias Claude — hors sujet).
+            let model = model.unwrap_or_default();
+            Ok(RunnerSpec {
+                kind: kind.to_string(),
+                program: codex_program(),
+                args: codex_args(&model),
+                // Id d'événements/tailer — PAS passé au binaire (Codex gère son thread_id).
+                session_id: Some(session_id.to_string()),
+                // Codex garde son env (config/auth `~/.codex`) : aucun scrub.
+                scrub_env: false,
+                // Trust natif dans la TUI (prompt si projet non trusté) — aucun bypass.
+                trust_mode: TrustMode::Inherit,
+                view_source: ViewSource::CodexRollout,
             })
         }
         "shell" => {
@@ -326,6 +409,7 @@ fn resolve_runner_spec(
                 session_id: None,
                 scrub_env: false,
                 trust_mode: TrustMode::Inherit,
+                view_source: ViewSource::None,
             })
         }
         other => Err(format!("kind de chef-runner inconnu : {other}")),
@@ -409,16 +493,22 @@ fn should_scrub_env(key: &str) -> bool {
     key.starts_with("CLAUDE_CODE_") || matches!(key, "CLAUDECODE" | "CLAUDE_EFFORT" | "AI_AGENT")
 }
 
+/// Fixe `TERM=xterm-256color` pour que la TUI native (claude OU codex) se rende correctement
+/// (calque spike). Partagé par tous les runners conversationnels.
+fn set_tui_term(cmd: &mut CommandBuilder) {
+    cmd.env("TERM", "xterm-256color");
+}
+
 /// Applique le scrub d'env sur le `CommandBuilder` (qui hérite par défaut de l'env du
 /// process courant) : retire toute variable que [`should_scrub_env`] désigne. Fixe aussi
-/// `TERM=xterm-256color` pour que la TUI native se rende correctement (calque spike).
+/// `TERM` pour la TUI native (claude uniquement — codex conserve son env).
 fn apply_env_scrub(cmd: &mut CommandBuilder) {
     for (key, _) in std::env::vars_os() {
         if key.to_str().is_some_and(should_scrub_env) {
             cmd.env_remove(&key);
         }
     }
-    cmd.env("TERM", "xterm-256color");
+    set_tui_term(cmd);
 }
 
 /// Escaping du chemin de projet → nom de dossier de transcript. Règle RÉELLE de Claude
@@ -471,17 +561,28 @@ pub fn pty_runner_open(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<RunnerSession, String> {
-    // session_id pré-généré côté Rust AVANT le spawn (clef PTY <-> transcript).
+    // session_id pré-généré côté Rust AVANT le spawn (clef PTY <-> transcript/événements).
     let session_id = Uuid::new_v4().to_string();
+    // Horodatage du spawn (epoch ms) — borne basse de récence pour la découverte du rollout
+    // Codex (cf. RunnerSession::started_at_ms). Capté AVANT le spawn (gap-immune).
+    let started_at_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
 
     // Réglages GLOBAUX du chef-runner (L10b/P3) lus en config non sensible (best-effort).
     // Le `model` explicite (param front) PRIME sur le réglage ; chacun retombe sur la
-    // constante du module si absent (cf. `resolve_runner_spec`).
+    // constante du module si absent (cf. `resolve_runner_spec`). ⚠️ Le fallback `chef.model`
+    // est CLAUDE-centré (alias Claude) : on ne l'applique PAS à codex (modèle front-only).
     let chef: ChefSettings = crate::db::open(&app)
         .ok()
         .map(|conn| read_chef_settings(&conn))
         .unwrap_or_default();
-    let effective_model = model.or(chef.model);
+    let effective_model = if kind == "codex" {
+        model
+    } else {
+        model.or(chef.model)
+    };
     let spec = resolve_runner_spec(
         &kind,
         effective_model,
@@ -495,9 +596,12 @@ pub fn pty_runner_open(
     let mut cmd = CommandBuilder::new(&spec.program);
     cmd.args(&spec.args);
 
-    // Scrub env (claude-code) : sinon AUCUN transcript (gotcha dur du spike).
+    // Env : claude scrub `CLAUDE_CODE_*` (sinon AUCUN transcript — gotcha spike) + fixe TERM ;
+    // codex conserve son env (`~/.codex` config/auth) mais a besoin de TERM pour sa TUI.
     if spec.scrub_env {
         apply_env_scrub(&mut cmd);
+    } else if spec.view_source == ViewSource::CodexRollout {
+        set_tui_term(&mut cmd);
     }
 
     // cwd optionnel : validé sous le chapeau avant tout spawn (anti-évasion, D3).
@@ -511,10 +615,10 @@ pub fn pty_runner_open(
         None => None,
     };
 
-    // Mode de trust `Accept` (réglage global) : pré-acceptation idempotente du cwd dans
-    // `~/.claude.json` AVANT le spawn, pour que le dialogue ne bloque pas l'auto-lancement
-    // (risque (f)). `Inherit` (défaut) ne touche à rien (dialogue natif si besoin).
-    if spec.trust_mode == TrustMode::Accept {
+    // Mode de trust `Accept` (réglage global, **claude-code uniquement**) : pré-acceptation
+    // idempotente du cwd dans `~/.claude.json` AVANT le spawn, pour que le dialogue ne bloque
+    // pas l'auto-lancement (risque (f)). Codex a son propre trust (TUI native) → jamais ici.
+    if spec.trust_mode == TrustMode::Accept && spec.view_source == ViewSource::ClaudeTranscript {
         if let Some(cwd) = &validated_cwd {
             ensure_cwd_trusted(&home_dir(), &cwd.to_string_lossy());
         }
@@ -522,17 +626,23 @@ pub fn pty_runner_open(
 
     spawn_into_state(&app, &state, id, pair, cmd)?;
 
-    // Chemin de transcript prévu (claude-code + cwd connu) : renvoyé au front.
-    let transcript = match (&spec.session_id, &validated_cwd) {
-        (Some(sid), Some(path)) => transcript_path(&home_dir(), &path.to_string_lossy(), sid)
-            .to_string_lossy()
-            .into_owned(),
+    // Chemin de transcript renvoyé au front :
+    //   - claude-code + cwd connu → chemin DÉTERMINISTE `~/.claude/projects/…` ;
+    //   - codex → VIDE (rollout découvert plus tard par cwd via `codex_tail_start`) ;
+    //   - shell → VIDE (pas de tailer).
+    let transcript = match (spec.view_source, &spec.session_id, &validated_cwd) {
+        (ViewSource::ClaudeTranscript, Some(sid), Some(path)) => {
+            transcript_path(&home_dir(), &path.to_string_lossy(), sid)
+                .to_string_lossy()
+                .into_owned()
+        }
         _ => String::new(),
     };
 
     Ok(RunnerSession {
         session_id: spec.session_id.unwrap_or_default(),
         transcript_path: transcript,
+        started_at_ms,
     })
 }
 
@@ -732,6 +842,86 @@ mod tests {
     #[test]
     fn resolve_spec_rejette_un_kind_inconnu() {
         assert!(resolve_runner_spec("bidon", None, None, None, SID).is_err());
+    }
+
+    // ===================================================================
+    // Runner Codex réel — résolution binaire, args, spec
+    // ===================================================================
+
+    #[test]
+    fn resolve_codex_program_prend_le_bundle_macos_si_present() {
+        let p = resolve_codex_program(true);
+        if cfg!(target_os = "macos") {
+            // macOS + bundle présent → chemin absolu du bundle Codex.app.
+            assert_eq!(p, CODEX_BUNDLE_PATH);
+        } else if cfg!(windows) {
+            assert_eq!(p, "codex.cmd");
+        } else {
+            assert_eq!(p, "codex");
+        }
+    }
+
+    #[test]
+    fn resolve_codex_program_retombe_sur_le_path_sans_bundle() {
+        // Bundle absent (ou hors macOS) → fallback PATH (`codex` / `codex.cmd`).
+        let p = resolve_codex_program(false);
+        if cfg!(windows) {
+            assert_eq!(p, "codex.cmd");
+        } else {
+            assert_eq!(p, "codex");
+        }
+    }
+
+    #[test]
+    fn codex_args_vide_sans_modele() {
+        assert!(codex_args("").is_empty());
+        assert!(codex_args("   ").is_empty());
+    }
+
+    #[test]
+    fn codex_args_porte_le_modele_avec_dash_m() {
+        assert_eq!(codex_args("gpt-5-codex"), vec!["-m", "gpt-5-codex"]);
+    }
+
+    #[test]
+    fn codex_args_n_a_jamais_de_bypass_ni_de_subcommand_exec() {
+        // Garde anti-dérive : pas de bypass sandbox/approbation, pas de mode non-interactif.
+        let args = codex_args("m");
+        assert!(!args
+            .iter()
+            .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+        assert!(!args.iter().any(|a| a == "exec"));
+    }
+
+    #[test]
+    fn resolve_spec_codex_est_une_tui_native_sans_scrub_ni_trust_force() {
+        let spec =
+            resolve_runner_spec("codex", Some("gpt-5-codex".into()), None, None, SID).unwrap();
+        assert_eq!(spec.kind, "codex");
+        assert_eq!(spec.program, codex_program());
+        // Id d'événements présent (clef du tailer) MAIS pas passé en --session-id à codex.
+        assert_eq!(spec.session_id.as_deref(), Some(SID));
+        assert!(!spec.args.iter().any(|a| a == "--session-id"));
+        assert!(spec.args.iter().any(|a| a == "gpt-5-codex"));
+        // Codex garde son env (pas de scrub claude) et son trust natif (pas de pré-accept).
+        assert!(!spec.scrub_env);
+        assert_eq!(spec.trust_mode, TrustMode::Inherit);
+        assert_eq!(spec.view_source, ViewSource::CodexRollout);
+    }
+
+    #[test]
+    fn resolve_spec_codex_sans_modele_n_a_pas_de_dash_m() {
+        let spec = resolve_runner_spec("codex", None, None, None, SID).unwrap();
+        assert!(!spec.args.iter().any(|a| a == "-m"));
+        assert_eq!(spec.view_source, ViewSource::CodexRollout);
+    }
+
+    #[test]
+    fn claude_reste_la_source_transcript_deterministe() {
+        // Non-régression : la branche claude-code garde bien sa view_source transcript.
+        let spec = resolve_runner_spec("claude-code", None, None, None, SID).unwrap();
+        assert_eq!(spec.view_source, ViewSource::ClaudeTranscript);
+        assert!(spec.scrub_env);
     }
 
     // --- L10b/P3 : mode de trust + fusion de l'entrée ~/.claude.json ---

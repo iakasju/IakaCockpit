@@ -9,6 +9,7 @@
 //! propriétaire du schéma SQLite.
 
 pub mod ai;
+pub mod codex;
 pub mod config;
 pub mod db;
 pub mod git;
@@ -63,6 +64,7 @@ pub fn run() {
             terminal::pty_runner_open,
             transcript::transcript_tail_start,
             transcript::transcript_tail_stop,
+            codex::codex_tail_start,
             ai::next_step,
             ai::chat,
             ai::ai_set_key,

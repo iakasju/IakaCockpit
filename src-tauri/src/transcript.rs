@@ -100,7 +100,8 @@ pub trait ConversationSource {
 pub struct TranscriptSource;
 
 /// Longueur max d'un résumé d'entrée d'outil (borne défensive d'affichage).
-const TOOL_INPUT_MAX: usize = 200;
+/// `pub(crate)` : réutilisée par la source Codex (`codex.rs`) — même borne d'affichage.
+pub(crate) const TOOL_INPUT_MAX: usize = 200;
 
 /// Noms d'outils de **délégation à un sous-agent** (`subagent_type`). Le cadrage
 /// supposait `"Task"` ; le **run de confirmation LIVE (arbitrage #1)** a révélé que le
@@ -116,7 +117,9 @@ fn is_delegation_tool(name: &str) -> bool {
 }
 
 /// Résume une `Value` d'entrée d'outil en chaîne compacte tronquée (affichage).
-fn short_json(v: &Value) -> String {
+/// `pub(crate)` : réutilisée par la source Codex (`codex.rs`) pour résumer les entrées
+/// d'outils du rollout — même règle de troncature (cohérence d'affichage cross-runner).
+pub(crate) fn short_json(v: &Value) -> String {
     let s = match v {
         Value::String(s) => s.clone(),
         other => other.to_string(),
@@ -304,11 +307,14 @@ impl ConversationSource for TranscriptSource {
 
 /// Registre des tailers actifs : `session_id` → drapeau d'arrêt partagé. Permet de
 /// stopper un tailer (toggle/close de conversation) sans tuer le thread brutalement.
+/// Champ `pub(crate)` : le tailer Codex (`codex.rs`) partage CE registre, si bien que
+/// `transcript_tail_stop` arrête indifféremment un tailer Claude ou Codex.
 #[derive(Default)]
-pub struct TranscriptState(Mutex<HashMap<String, Arc<AtomicBool>>>);
+pub struct TranscriptState(pub(crate) Mutex<HashMap<String, Arc<AtomicBool>>>);
 
-/// Intervalle de poll (attente de création + tail incrémental).
-const POLL_INTERVAL: Duration = Duration::from_millis(150);
+/// Intervalle de poll (attente de création + tail incrémental). `pub(crate)` : la source
+/// Codex (`codex.rs`) réutilise le MÊME rythme pour attendre/découvrir son rollout.
+pub(crate) const POLL_INTERVAL: Duration = Duration::from_millis(150);
 
 /// Résout le transcript RÉELLEMENT présent pour une session, à partir du chemin ATTENDU
 /// (recomposé côté `terminal::escape_cwd`). Deux étages :
@@ -361,9 +367,8 @@ fn tail_file(
     path: &str,
     stop: &Arc<AtomicBool>,
     create_wait: Option<Duration>,
-    mut emit: impl FnMut(&RunnerEvent),
+    emit: impl FnMut(&RunnerEvent),
 ) {
-    let source = TranscriptSource;
     let expected = Path::new(path);
 
     // 1. Attente de création : bornée par `stop` (vie du runner), PAS par un plafond fixe
@@ -387,13 +392,31 @@ fn tail_file(
         }
     };
 
-    let file = match std::fs::File::open(&p) {
+    // 2. Tail incrémental partagé (cœur « held fd ») avec la source Claude Code.
+    tail_resolved(&p, stop, &TranscriptSource, emit);
+}
+
+/// Cœur de tail **résolu et source-agnostique** : un fichier JSONL DÉJÀ trouvé est tailé
+/// incrémentalement (held fd qui voit les `append`), chaque ligne complète (terminée par
+/// `\n`) traduite par `source` puis poussée dans `emit`. Réutilisé par DEUX runners sans
+/// duplication (R-codex) :
+///   - Claude Code (`tail_file` → [`TranscriptSource`]) : transcript `~/.claude/projects/…` ;
+///   - Codex (`codex::codex_tail_loop` → `codex::CodexSource`) : rollout `~/.codex/sessions/…`.
+///
+/// Seule l'ÉTAPE DE RÉSOLUTION (où trouver le fichier) diffère par runner ; le live-tail
+/// (gestion EOF/lignes partielles, arrêt par `stop`) est IDENTIQUE et factorisé ici.
+pub(crate) fn tail_resolved(
+    path: &Path,
+    stop: &Arc<AtomicBool>,
+    source: &dyn ConversationSource,
+    mut emit: impl FnMut(&RunnerEvent),
+) {
+    let file = match std::fs::File::open(path) {
         Ok(f) => f,
         Err(_) => return,
     };
     let mut reader = BufReader::new(file);
 
-    // 2. Tail incrémental avec gestion des lignes partielles.
     let mut pending = String::new();
     while !stop.load(Ordering::Relaxed) {
         let mut chunk = String::new();
