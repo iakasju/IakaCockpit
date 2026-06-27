@@ -140,8 +140,25 @@ pub fn ensure_root(conn: &Connection) -> rusqlite::Result<String> {
 /// restent accessibles une par une via `config_get`, jamais listées en bloc. En
 /// pratique aucun secret ne transite par la config (les secrets vont au keychain,
 /// L3) — ce filtre est une garde de cloisonnement.
+///
+/// **L11 — exemption du namespace `project_team:` (fail-safe préservé).** La liaison
+/// projet→team a une clé `project_team:<projectId>` où `projectId` = **nom de dossier
+/// contrôlé par l'utilisateur** (ex. `mon**key**-app`, `token-service`, `secret-santa`,
+/// `turn**key**`, `my-pass**word**s`). Sans exemption, le test sous-chaîne classerait
+/// ces liaisons « secrètes » → exclues de `config_all` → `useTeams` ne les relit jamais
+/// → le choix de team ne persiste pas (popup en boucle). On exempte donc **explicitement
+/// ce préfixe** AVANT le test sous-chaîne. C'est sûr par construction : la **valeur**
+/// d'une liaison est un **id de team** (non sensible, invariant § 3 — jamais de
+/// credential). L'exemption est **bornée à ce préfixe** et ne déclasse **aucune** autre
+/// clé : tout secret réel (ex. `litellm_api_key`, `*_token`, `*_password`) reste classé
+/// secret. Un faux négatif (secret qui fuit) reste impossible ici ; on ne corrige qu'un
+/// faux positif fonctionnel.
 fn is_secret(key: &str) -> bool {
     let k = key.to_lowercase();
+    // Exemption explicite (non secret par construction) : la liaison projet→team.
+    if k.starts_with(PREFIX_PROJECT_TEAM) {
+        return false;
+    }
     k.contains("token") || k.contains("key") || k.contains("secret") || k.contains("password")
 }
 
@@ -279,6 +296,71 @@ mod tests {
                 !is_secret(&key),
                 "{key} ne doit pas être filtré comme secret"
             );
+        }
+    }
+
+    #[test]
+    fn liaison_project_team_avec_id_utilisateur_piege_n_est_pas_secrete() {
+        // V1 : `projectId` = nom de dossier contrôlé par l'utilisateur ; un id contenant
+        // `key|token|secret|password` NE DOIT PAS faire classer la liaison « secrète »
+        // (sinon `config_all` l'exclut → `hasBinding` toujours faux → popup en boucle).
+        for pid in [
+            "monkey-app",    // contient "key"
+            "token-service", // contient "token"
+            "secret-santa",  // contient "secret"
+            "turnkey",       // contient "key"
+            "my-passwords",  // contient "password"
+            "KeyVault-Proj", // casse mixte + "key"
+        ] {
+            let key = format!("{PREFIX_PROJECT_TEAM}{pid}");
+            assert!(
+                !is_secret(&key),
+                "{key} (id utilisateur) ne doit PAS être classé secret"
+            );
+        }
+    }
+
+    #[test]
+    fn liaison_project_team_piege_remonte_bien_par_le_filtre_config_all() {
+        // Bout-en-bout du filtre `config_all` : une liaison à id piégé est ÉCRITE puis
+        // RELUE (présente dans le map filtré) → `useTeams` la voit, le choix persiste.
+        let conn = mem();
+        let key = format!("{PREFIX_PROJECT_TEAM}monkey-app");
+        set(&conn, &key, "iakaframe").unwrap();
+        // Un VRAI secret en parallèle pour prouver qu'il reste exclu.
+        set(&conn, "litellm_api_key", "sk-secret").unwrap();
+
+        let mut stmt = conn.prepare("SELECT key, value FROM config").unwrap();
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .unwrap();
+        let mut map = std::collections::HashMap::new();
+        for row in rows {
+            let (k, v) = row.unwrap();
+            if !is_secret(&k) {
+                map.insert(k, v);
+            }
+        }
+        // La liaison piégée remonte (relue par useTeams) ; le secret reste exclu.
+        assert_eq!(map.get(&key).map(String::as_str), Some("iakaframe"));
+        assert!(!map.contains_key("litellm_api_key"));
+    }
+
+    #[test]
+    fn vrais_secrets_restent_secrets_apres_exemption_project_team() {
+        // L'exemption est BORNÉE au préfixe `project_team:` : aucune autre clé secrète
+        // n'est déclassée (fail-safe préservé — un faux négatif serait inacceptable).
+        for k in [
+            "litellm_api_key",
+            "ai_api_key",
+            "n8n_webhook_token",
+            "couch_password",
+            "service_secret",
+            "some_token",
+            // Piège inverse : "project_team" ailleurs que le préfixe + motif secret.
+            "team_project_token",
+        ] {
+            assert!(is_secret(k), "{k} DOIT rester classé secret");
         }
     }
 
