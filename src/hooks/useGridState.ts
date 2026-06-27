@@ -1,17 +1,19 @@
 /**
- * useGridState — navigation des 3 vues (portfolio | working | settings).
+ * useGridState — navigation des 4 vues (portfolio | working | iakajournal | settings).
  *
  * « Grille / dock » du backlog, cadré par v7 (D1). **L8 (D1)** : la responsabilité
  * « onglets PTY » a été RETIRÉE de ce hook — elle est portée par `useConversations`
- * (un projet = une conversation). `useGridState` ne garde que la **navigation
- * 3-vues** (un hook par préoccupation, anti god-component — D8).
+ * (un projet = une conversation). **L12** : la main courante (iakaboxlogs, L4) sort
+ * de Portfolio dans sa propre vue `iakajournal` (Iakajournal). `useGridState` ne
+ * garde que la **navigation entre vues** (un hook par préoccupation, anti
+ * god-component — D8).
  *
  * État pur, séparé : aucun I/O ici. `App.tsx` consomme ce hook ; il ne détient pas
  * l'état lui-même.
  */
 import { useCallback, useState } from "react";
 
-export type ViewId = "portfolio" | "working" | "settings";
+export type ViewId = "portfolio" | "working" | "iakajournal" | "settings";
 
 export interface UseGridState {
   activeView: ViewId;

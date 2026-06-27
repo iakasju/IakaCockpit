@@ -197,6 +197,13 @@ button {
   flex-direction: column;
   overflow: hidden;
 }
+/* ===================== IAKAJOURNAL (L12) ===================== */
+/* La main courante (L4) sort de Portfolio dans sa propre vue, en pleine page :
+   la colonne `.mcleft` (360px dans Portfolio) occupe ici toute la largeur. */
+.iakajournal .mcleft {
+  width: 100%;
+  flex: 1 1 auto;
+}
 .mchead {
   padding: 20px 18px 12px;
 }
