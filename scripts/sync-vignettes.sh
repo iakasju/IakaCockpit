@@ -1,78 +1,125 @@
 #!/usr/bin/env bash
-# sync-vignettes.sh — copie le SOUS-ENSEMBLE de vignettes iakagraph utilisees par
-# la demo (L9) dans src/assets/vignettes/, puis genere le manifest TypeScript.
+# sync-vignettes.sh — copie le CATALOGUE COMPLET de vignettes iakagraph
+# (10 chartes x 11 teams x 8 roles + casting iakaframe racine) dans
+# src/assets/vignettes/, puis genere le manifest TypeScript (L15).
 #
 # N'invente rien : lit teams.json (l'ORDRE = mapping role->personnage, index 0..7)
-# et copie <team>/<slug>.png pour les ROLES du DEMO_TEAM (index 0..ROLE_COUNT-1).
+# et copie <team>/<slug>.png pour TOUS les roles de CHAQUE team. Ajoute en plus la
+# pseudo-team "iakaframe" depuis les 8 PNG de roles a la RACINE du dossier vignettes
+# (odin/aragorn/gandalf/gimli/legolas/helm/loki/nathalie = casting iakaframe natif).
 # Sert en 'self' (bundle Vite) -> CSP intacte, zero scope FS, 100% offline.
 #
-# Idempotent : recree proprement le dossier cible + le manifest a chaque run.
-# Les PNG sont COMMITES : un dev sans iakagraph n'a pas besoin de relancer ce
-# script ; il sert aux mises a jour (nouvelle team / nouvelle charte).
+# Idempotent : recree proprement les sous-arbres cibles + le manifest a chaque run.
+# Les PNG sont COMMITES (~952 / ~25 Mo) : un dev sans iakagraph n'a pas besoin de
+# relancer ce script ; il sert aux mises a jour (nouvelle team / nouvelle charte).
 #
 # Usage :
 #   scripts/sync-vignettes.sh
-#   IAKAGRAPH_ROOT=~/work/iakagraph TEAMS="lotr avengers starfleet" scripts/sync-vignettes.sh
+#   IAKAGRAPH_ROOT=~/work/iakagraph scripts/sync-vignettes.sh
+#   CHARTES="naonedge/dark naonedge/light" TEAMS="lotr avengers" scripts/sync-vignettes.sh
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IAKAGRAPH_ROOT="${IAKAGRAPH_ROOT:-$HOME/work/iakagraph}"
 TEAMS_JSON="${IAKAGRAPH_ROOT}/teams.json"
 
-# Charte app = naonedge ; variantes embarquees (cles app = "naonedge-<variante>").
-CHARTE="${CHARTE:-naonedge}"
-VARIANTS="${VARIANTS:-dark light}"
-# Teams embarquees (C-1 = 3 teams). Surchargables (ex. les 11) sans toucher le code.
-TEAMS="${TEAMS:-lotr avengers starfleet}"
-# Nombre de roles embarques (DEMO_TEAM = 5 : index 0..4).
-ROLE_COUNT="${ROLE_COUNT:-5}"
+# Chartes = paires "famille/variante" (path iakagraph) -> cle app "famille-variante"
+# (alignee sur src/assets/chartes/manifest.ts). Surchargable sans toucher le code.
+CHARTES="${CHARTES:-naonedge/dark naonedge/light grimoire/dark-fantasy os/windows os/ubuntu os/android os/macos cartoon/std photoreal/modern studio/clair}"
+
+# Teams embarquees : par defaut TOUTES les teams de teams.json (11). Surchargable.
+TEAMS="${TEAMS:-$(jq -r 'keys[]' "$TEAMS_JSON" 2>/dev/null | tr '\n' ' ')}"
+
+# Casting iakaframe natif (PNG a la RACINE des vignettes) : ORDRE = roles iakaframe
+# 0=portefeuille .. 7=doc (cf. specs/teams-casting.md). Pseudo-team "iakaframe".
+IAKAFRAME_SLUGS="odin aragorn gandalf gimli legolas helm loki nathalie"
 
 DEST="${HERE}/src/assets/vignettes"
 MANIFEST="${DEST}/manifest.ts"
+CATALOG="${HERE}/src/assets/teams/catalog.ts"
+
+# Nom lisible d'une team (libelle d'affichage). Defaut = id capitalise si absent.
+team_display_name() {
+  case "$1" in
+    avengers) echo "Avengers" ;;
+    xmen) echo "X-Men" ;;
+    lotr) echo "LOTR" ;;
+    norse) echo "Norse" ;;
+    dc-justice) echo "DC Justice" ;;
+    defenders) echo "Defenders" ;;
+    harry-potter) echo "Harry Potter" ;;
+    autobots) echo "Autobots" ;;
+    olympians) echo "Olympians" ;;
+    rebels) echo "Rebels" ;;
+    starfleet) echo "Starfleet" ;;
+    *) echo "$1" ;;
+  esac
+}
 
 command -v jq >/dev/null || { echo "ERREUR: jq requis"; exit 1; }
 [ -f "$TEAMS_JSON" ] || { echo "ERREUR: introuvable $TEAMS_JSON (IAKAGRAPH_ROOT?)"; exit 1; }
 
-echo "== sync-vignettes : charte=${CHARTE} variantes=[${VARIANTS}] teams=[${TEAMS}] roles=${ROLE_COUNT} =="
+echo "== sync-vignettes (L15) : chartes=[${CHARTES}] teams=[${TEAMS}] + iakaframe racine =="
 
-# Reset propre (idempotent) du sous-arbre des PNG copies (garde le .gitkeep eventuel).
-for v in $VARIANTS; do
-  rm -rf "${DEST:?}/${CHARTE}-${v}"
+# Reset propre (idempotent) : on efface les sous-arbres charte qu'on va reecrire.
+for entry in $CHARTES; do
+  charte_app="${entry%/*}-${entry#*/}"   # naonedge/dark -> naonedge-dark
+  rm -rf "${DEST:?}/${charte_app}"
 done
 
-# Recolte des lignes du manifest (charte-app, team, roleIndex, slug, chemin import).
+# Recolte des lignes du manifest (charte-app -> team -> roleIndex -> import).
 imports=""   # lignes `import vN from "./path";`
 entries=""   # corps de l'objet
 idx=0
 
-for v in $VARIANTS; do
-  charte_app="${CHARTE}-${v}"
-  src_dir="${IAKAGRAPH_ROOT}/theme/${CHARTE}/${v}/vignettes"
+# Copie un PNG source -> dest, emet l'import + la ligne de role. Retour: 0 si copie.
+emit_role() {
+  local src_png="$1" out_rel="$2" role="$3"
+  if [ ! -f "$src_png" ]; then
+    echo "  ! absent (ignore): ${src_png}"
+    return 1
+  fi
+  local out_abs="${DEST}/${out_rel}"
+  mkdir -p "$(dirname "$out_abs")"
+  cp "$src_png" "$out_abs"
+  local var="v${idx}"
+  imports="${imports}import ${var} from \"./${out_rel}\";"$'\n'
+  role_block="${role_block}      ${role}: ${var},"$'\n'
+  idx=$((idx+1))
+  return 0
+}
+
+for entry in $CHARTES; do
+  charte_app="${entry%/*}-${entry#*/}"
+  src_dir="${IAKAGRAPH_ROOT}/theme/${entry}/vignettes"
+  if [ ! -d "$src_dir" ]; then
+    echo "  ! charte absente (ignore): ${src_dir}"
+    continue
+  fi
   team_block=""
+
+  # --- Teams thematiques (teams.json) : roleIndex = ordre des slugs ---
   for team in $TEAMS; do
-    # Slugs ordonnes (= roles) de la team, tronques a ROLE_COUNT.
-    # (bash 3.2 macOS : pas de mapfile -> boucle while sur les lignes.)
     role_block=""
     role=0
+    # bash 3.2 macOS : pas de mapfile -> boucle while sur les lignes ordonnees.
     while IFS= read -r slug; do
-      src_png="${src_dir}/${team}/${slug}.png"
-      if [ ! -f "$src_png" ]; then
-        echo "  ! absent (ignore): ${src_png}"
-        role=$((role+1))
-        continue
-      fi
-      out_rel="${charte_app}/${team}/${slug}.png"
-      out_abs="${DEST}/${out_rel}"
-      mkdir -p "$(dirname "$out_abs")"
-      cp "$src_png" "$out_abs"
-      var="v${idx}"
-      imports="${imports}import ${var} from \"./${out_rel}\";"$'\n'
-      role_block="${role_block}      ${role}: ${var},"$'\n'
-      idx=$((idx+1))
+      [ -z "$slug" ] && { role=$((role+1)); continue; }
+      emit_role "${src_dir}/${team}/${slug}.png" "${charte_app}/${team}/${slug}.png" "$role" || true
       role=$((role+1))
-    done < <(jq -r --arg t "$team" '.[$t][].slug' "$TEAMS_JSON" | head -n "$ROLE_COUNT")
+    done < <(jq -r --arg t "$team" '.[$t][].slug' "$TEAMS_JSON")
     team_block="${team_block}    \"${team}\": {"$'\n'"${role_block}    },"$'\n'
   done
+
+  # --- Pseudo-team "iakaframe" : casting natif a la racine des vignettes ---
+  role_block=""
+  role=0
+  for slug in $IAKAFRAME_SLUGS; do
+    emit_role "${src_dir}/${slug}.png" "${charte_app}/iakaframe/${slug}.png" "$role" || true
+    role=$((role+1))
+  done
+  team_block="${team_block}    \"iakaframe\": {"$'\n'"${role_block}    },"$'\n'
+
   entries="${entries}  \"${charte_app}\": {"$'\n'"${team_block}  },"$'\n'
 done
 
@@ -81,9 +128,11 @@ done
   echo "/**"
   echo " * manifest.ts — GENERE par scripts/sync-vignettes.sh. NE PAS EDITER A LA MAIN."
   echo " *"
-  echo " * Mapping (charte-app -> team -> roleIndex 0..N-1 -> URL d'asset Vite servie en 'self')."
+  echo " * Mapping (charte-app -> team -> roleIndex 0..7 -> URL d'asset Vite servie en 'self')."
   echo " * L'ordre des roleIndex reflete teams.json (0=portefeuille, 1=coordination,"
-  echo " * 2=cadrage, 3=dev, 4=qualite...). Source: ${CHARTE} / [${VARIANTS}] / [${TEAMS}]."
+  echo " * 2=cadrage, 3=dev, 4=qualite, 5=production, 6=design, 7=doc)."
+  echo " * Teams : toutes celles de teams.json + pseudo-team 'iakaframe' (casting natif)."
+  echo " * Source: chartes=[${CHARTES}]."
   echo " */"
   printf '%s' "$imports"
   echo ""
@@ -98,3 +147,52 @@ done
 } > "$MANIFEST"
 
 echo "== ${idx} PNG copies, manifest genere : ${MANIFEST} =="
+
+# --- Catalogue des teams (donnees runtime pour le seed useTeams, L15-B) ---------
+# Source unique = teams.json. L'ordre des slugs = roleIndex (0..7). Commite, regenere
+# en meme temps que les vignettes (meme declencheur : nouvelle team / casting).
+mkdir -p "$(dirname "$CATALOG")"
+{
+  echo "/**"
+  echo " * catalog.ts — GENERE par scripts/sync-vignettes.sh. NE PAS EDITER A LA MAIN."
+  echo " *"
+  echo " * Catalogue des teams thematiques (source: iakagraph teams.json). Chaque team ="
+  echo " * liste ORDONNEE d'agents ; l'index = roleIndex (0=portefeuille .. 7=doc)."
+  echo " * Sert de GRAINE au bootstrap des teams par defaut (useTeams, L15-B). Aucun"
+  echo " * secret : seulement slug + roleIndex + libelle d'affichage."
+  echo " */"
+  echo "export interface CatalogAgent {"
+  echo "  /** Slug stable (= nom affiche par defaut). */"
+  echo "  slug: string;"
+  echo "  /** Index de role (0..7) = ordre dans teams.json. */"
+  echo "  roleIndex: number;"
+  echo "}"
+  echo ""
+  echo "export interface CatalogTeam {"
+  echo "  /** Cle stable (= cle teams.json, ex. \"lotr\"). Sert aussi de vignetteTeam. */"
+  echo "  id: string;"
+  echo "  /** Libelle d'affichage (ex. \"LOTR\"). */"
+  echo "  name: string;"
+  echo "  agents: CatalogAgent[];"
+  echo "}"
+  echo ""
+  echo "export const TEAM_CATALOG: readonly CatalogTeam[] = ["
+  for team in $TEAMS; do
+    name="$(team_display_name "$team")"
+    echo "  {"
+    echo "    id: \"${team}\","
+    echo "    name: \"${name}\","
+    echo "    agents: ["
+    role=0
+    while IFS= read -r slug; do
+      [ -z "$slug" ] && { role=$((role+1)); continue; }
+      echo "      { slug: \"${slug}\", roleIndex: ${role} },"
+      role=$((role+1))
+    done < <(jq -r --arg t "$team" '.[$t][].slug' "$TEAMS_JSON")
+    echo "    ],"
+    echo "  },"
+  done
+  echo "] as const;"
+} > "$CATALOG"
+
+echo "== catalogue teams genere : ${CATALOG} =="
