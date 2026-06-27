@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { StrictMode } from "react";
 import { renderHook } from "@testing-library/react";
 import { useRunnerViews } from "../hooks/useRunnerViews";
 import type { Backend, RunnerEvent } from "../api/backend";
@@ -154,8 +155,13 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
     expect(api.transcriptTailStart).toHaveBeenCalledTimes(1);
   });
 
-  it("arrête les tailers au démontage (anti-fuite)", () => {
-    const api = makeApi();
+  it("désabonne au démontage MAIS NE STOPPE PAS le tailer (il survit, calque usePty)", async () => {
+    const unlisten = vi.fn();
+    const api = {
+      transcriptTailStart: vi.fn(async () => {}),
+      transcriptTailStop: vi.fn(async () => {}),
+      onRunnerEvent: vi.fn(async () => unlisten),
+    } as unknown as Backend;
     const { unmount } = renderHook(() =>
       useRunnerViews({
         api,
@@ -166,7 +172,57 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
         appendTurn: vi.fn(),
       }),
     );
+    await flush(); // laisse l'abonnement s'enregistrer (unlistenRef peuplé).
     unmount();
-    expect(api.transcriptTailStop).toHaveBeenCalledWith("sid-1");
+    // Anti-fuite : le listener est désabonné…
+    expect(unlisten).toHaveBeenCalledTimes(1);
+    // …mais le tailer N'EST PAS stoppé (il survit au remontage, comme le PTY de usePty).
+    expect(api.transcriptTailStop).not.toHaveBeenCalled();
+  });
+
+  it("RÉGRESSION StrictMode : le double-invoke ré-abonne le listener et ne re-spawne pas le tailer (chat pas muet)", async () => {
+    // Bug réparé : avant, le démontage stoppait le tailer + désabonnait SANS retirer le
+    // sid de startedRef → au remontage tout était court-circuité, listener perdu. Sous un
+    // VRAI <StrictMode> (même instance, refs persistantes), l'effet est monté→démonté→
+    // remonté : le tailer ne doit PAS être re-démarré (startedRef survit) et le listener
+    // COURANT (post-remontage) doit recevoir les events.
+    const holder: { emit: ((e: RunnerEvent) => void) | null } = { emit: null };
+    const api = {
+      transcriptTailStart: vi.fn(async () => {}),
+      transcriptTailStop: vi.fn(async () => {}),
+      onRunnerEvent: vi.fn(async (_sid: string, cb: (e: RunnerEvent) => void) => {
+        holder.emit = cb; // dernier abonnement gagnant = listener COURANT.
+        return () => {};
+      }),
+    } as unknown as Backend;
+    const appendTurn = vi.fn();
+    renderHook(
+      () =>
+        useRunnerViews({
+          api,
+          conversations: [conv("p1", "pty-1")],
+          ptySessions: {
+            "pty-1": ptySession("pty-1", "sid-1", "/t/sid-1.jsonl"),
+          },
+          appendTurn,
+        }),
+      { wrapper: StrictMode },
+    );
+    await flush();
+
+    // Le tailer n'est PAS re-spawné malgré le double-invoke (startedRef survit → idempotent).
+    expect(api.transcriptTailStart).toHaveBeenCalledTimes(1);
+    // Le listener COURANT (post-remontage) reçoit bien les events → chat vivant.
+    holder.emit?.({
+      kind: "parole",
+      role: "assistant",
+      is_sidechain: false,
+      text: "après remontage",
+    });
+    expect(appendTurn).toHaveBeenCalledWith("p1", {
+      role: "assistant",
+      content: "après remontage",
+      kind: "parole",
+    });
   });
 });

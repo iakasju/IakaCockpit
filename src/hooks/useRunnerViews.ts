@@ -12,11 +12,18 @@
  * `onRunnerEvent`). Aucun parse de format ici (il vit côté Rust) : on ne fait que
  * router des events typés vers l'état conversation. Pas de god-component.
  *
- * Gardes :
- *   - démarrage **idempotent** par `runnerSessionId` (ref `startedRef`) → un re-render
- *     ne relance pas un tailer ni un abonnement ;
- *   - nettoyage au démontage : `transcriptTailStop` + désabonnement de chaque session
- *     (anti-fuite, calque `usePty`).
+ * Gardes (calque EXACT de `usePty`, R-L10b-1) :
+ *   - le **tailer** (thread Rust) est l'équivalent du PTY : il **SURVIT au remontage**
+ *     (StrictMode dev, navigation) — on ne l'arrête PAS au démontage. `startedRef` joue
+ *     le rôle de `spawnRef` : il garde le **démarrage** du tailer (idempotent ; côté Rust
+ *     `transcript_tail_start` est déjà no-op si actif) et n'est **pas vidé** au démontage ;
+ *   - l'**abonnement** est l'équivalent de `subscribe` : il est **toujours (re)lié** sur
+ *     chaque run pour les sessions actives (désabonne l'ancien, réabonne le courant) et
+ *     **désabonné au démontage** (anti-fuite). Ainsi, après un remontage, les events
+ *     repartent vers le listener COURANT — la survie ne repose plus sur une **course**
+ *     fragile `start` vs `stop` (bug réparé : avant, le démontage stoppait le tailer +
+ *     désabonnait SANS retirer le sid de `startedRef` → au remontage `startedRef.has(sid)`
+ *     court-circuitait tout → listener perdu, chat muet sauf coup de chance).
  */
 import { useEffect, useRef } from "react";
 import { backend, type Backend, type UnlistenFn } from "../api/backend";
@@ -52,48 +59,55 @@ export function useRunnerViews({
   const unlistenRef = useRef<Record<string, UnlistenFn>>({});
 
   useEffect(() => {
+    const unl = unlistenRef.current;
+
     for (const conv of convRef.current) {
       const sess = ptySessions[conv.ptySessionId];
       const sid = sess?.runnerSessionId;
       const path = sess?.transcriptPath;
       if (!sid || !path) continue; // pas (encore) de chef-runner / repli shell.
-      if (startedRef.current.has(sid)) continue; // déjà branché (idempotent).
-
-      startedRef.current.add(sid);
       const projectId = conv.projectId;
 
-      // S'ABONNER D'ABORD, démarrer le tailer ENSUITE (ordre voulu) : si le transcript
-      // existe déjà (réouverture), le tailer relit depuis le début et émet aussitôt — on
-      // ne veut perdre aucun event entre `start` et l'enregistrement du listener.
-      void api
+      // (Re)lie le listener sur CHAQUE run (rebind-safe, calque `usePty.subscribe`) :
+      // désabonne un binding antérieur pour ce sid puis réabonne → après un remontage,
+      // les events repartent vers le listener COURANT (jamais vers un disposé).
+      unl[sid]?.();
+      delete unl[sid];
+      const bind = api
         .onRunnerEvent(sid, (ev) => {
           const turn = runnerEventToTurn(ev);
           if (turn) appendRef.current(projectId, turn);
         })
         .then((unlisten) => {
-          unlistenRef.current[sid] = unlisten;
-          return api.transcriptTailStart(sid, path);
+          unl[sid] = unlisten;
         })
-        .catch(() => {
-          // Hors Tauri / abonnement ou démarrage impossible : on rouvre la porte pour
-          // un éventuel retry ultérieur.
-          startedRef.current.delete(sid);
-        });
+        .catch(() => {});
+
+      // Démarre le tailer UNE seule fois (il SURVIT au remontage ; côté Rust l'appel est
+      // idempotent). On enchaîne sur l'abonnement pour ne perdre aucun event du re-read
+      // initial (si le transcript existe déjà, le tailer émet aussitôt depuis le début).
+      if (!startedRef.current.has(sid)) {
+        startedRef.current.add(sid);
+        void bind
+          .then(() => api.transcriptTailStart(sid, path))
+          .catch(() => {
+            // Démarrage impossible (hors Tauri / erreur) : on rouvre la porte au retry.
+            startedRef.current.delete(sid);
+          });
+      }
     }
+
+    // Démontage (StrictMode dev / sortie d'app / changement d'`api`) : on DÉSABONNE
+    // seulement (anti-fuite). Le tailer SURVIT (calque `usePty` : le PTY n'est pas fermé
+    // au démontage) et `startedRef` n'est PAS vidé → pas de re-spawn de thread, juste un
+    // rebind du listener au remontage.
+    return () => {
+      for (const sid of Object.keys(unl)) {
+        unl[sid]?.();
+        delete unl[sid];
+      }
+    };
     // Dépend des sessions PTY (apparition d'un runnerSessionId) ; les conversations
     // sont lues via réf miroir pour ne pas réabonner à chaque changement d'historique.
   }, [api, ptySessions]);
-
-  // Filet anti-fuite : au démontage, arrête tous les tailers + désabonne.
-  useEffect(() => {
-    const started = startedRef.current;
-    const unl = unlistenRef.current;
-    const apiRef = api;
-    return () => {
-      for (const sid of started) {
-        void apiRef.transcriptTailStop(sid).catch(() => {});
-        unl[sid]?.();
-      }
-    };
-  }, [api]);
 }
