@@ -12,8 +12,10 @@ vi.mock("../components/PtyTerminal", () => ({
   ),
 }));
 
+import { render as rtlRender, fireEvent } from "@testing-library/react";
 import { WorkingView, type ResolvedRunner } from "../views/WorkingView";
 import type { Conversation } from "../hooks/useConversations";
+import type { DemoTeamMember } from "../mock/demoTeam";
 import type { UsePty } from "../hooks/usePty";
 
 afterEach(cleanup);
@@ -106,5 +108,62 @@ describe("WorkingView — runner du coordinateur (L11/P3)", () => {
     // L'indicateur du coordinateur est présent (édition via Réglages → Teams).
     const head = screen.getByText(/Aragorn · claude-code · opus/);
     expect(head).toBeTruthy();
+  });
+});
+
+describe("WorkingView — @agent borné à la team (L11/C2)", () => {
+  const ROSTER: DemoTeamMember[] = [
+    { royaume: "ACCUEIL", agent: "Aragorn", roleIndex: 1 },
+    { royaume: "CADRAGE", agent: "Gandalf", roleIndex: 2 },
+  ];
+
+  function renderChat(onSend: (p: string, a: string, c: string) => void) {
+    const c = conv({ mode: "chat" });
+    return rtlRender(
+      <WorkingView
+        worksetProjects={[]}
+        conversations={[c]}
+        active={c}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={onSend}
+        onRequestNextStep={() => {}}
+        rosterMembers={ROSTER}
+        resolveRunner={() => ({
+          kind: "claude-code",
+          model: "",
+          coordinator: "Aragorn",
+        })}
+      />,
+    );
+  }
+
+  it("@Gandalf (dans la team) → persona = Gandalf, contenu verbatim", () => {
+    const onSend = vi.fn();
+    renderChat(onSend);
+    const field = screen.getByLabelText("Saisie de message");
+    fireEvent.change(field, { target: { value: "@Gandalf : cadre ceci" } });
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    expect(onSend).toHaveBeenCalledWith("demo", "Gandalf", "@Gandalf : cadre ceci");
+  });
+
+  it("@Sauron (hors team) → PAS d'effet persona (reste l'agent courant), contenu verbatim", () => {
+    const onSend = vi.fn();
+    renderChat(onSend);
+    const field = screen.getByLabelText("Saisie de message");
+    fireEvent.change(field, { target: { value: "@Sauron : prends le pouvoir" } });
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    // persona inchangée (Aragorn = agent courant), contenu inchangé (verbatim).
+    expect(onSend).toHaveBeenCalledWith(
+      "demo",
+      "Aragorn",
+      "@Sauron : prends le pouvoir",
+    );
   });
 });

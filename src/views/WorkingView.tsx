@@ -28,7 +28,7 @@ import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
-import type { DemoTeamMember } from "../mock/demoTeam";
+import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
 
 /**
  * Mappe le runner CONCEPTUEL du coordinateur (4 valeurs) vers le `kind` PTY du
@@ -146,11 +146,19 @@ export function WorkingView({
     setDraft(active.projectId, mentionPrefix(agent));
   };
 
-  // Envoi : la persona courante = l'@agent en tête, sinon l'agent de la conv (D3).
+  // Un nom est-il un agent de la team du projet actif ? (borne le `@agent`, C2).
+  const inRoster = (name: string): boolean =>
+    (rosterMembers ?? DEMO_TEAM).some(
+      (m) => m.agent.toLowerCase() === name.toLowerCase(),
+    );
+
+  // Envoi (L11/C2) : la persona ne bascule QUE vers un agent présent dans la team du
+  // projet (`@agent` borné). Un `@inconnu` n'a PAS d'effet de persona — mais le contenu
+  // part VERBATIM au PTY du coordinateur (entrée partagée L10b inchangée).
   const sendActive = (content: string): void => {
     if (!active) return;
     const mentioned = parseMention(content);
-    const agent = mentioned ?? active.agent;
+    const agent = mentioned && inRoster(mentioned) ? mentioned : active.agent;
     onSend(active.projectId, agent, content);
     setDraft(active.projectId, "");
   };
