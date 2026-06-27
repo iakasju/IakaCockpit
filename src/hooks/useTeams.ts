@@ -249,11 +249,51 @@ export function teamFromCatalog(cat: CatalogTeam): Team {
 }
 
 /**
+ * Réconcilie le **casting canonique** de la team par défaut `iakaframe` (correctif
+ * terrain redesign-A) : si une team `iakaframe` persistée (config antérieure) a perdu
+ * des agents de la graine `DEMO_TEAM` (ex. Gandalf/CADRAGE absent → roster à 4), on
+ * **AJOUTE les agents manquants** (par id), sans jamais modifier/supprimer un agent
+ * existant ni changer le coordinateur. **Additif, idempotent, non destructif** : un
+ * agent retiré volontairement par l'utilisateur sur une AUTRE team n'est pas concerné
+ * (seule la team par défaut est complétée). Réordonne par `roleIndex` uniquement si on
+ * a ajouté quelque chose (garde la chaîne iakaframe lisible). Renvoie le tableau et un
+ * flag `changed`.
+ */
+export function reconcileDefaultTeamCasting(existing: Team[]): {
+  teams: Team[];
+  changed: boolean;
+} {
+  const idx = existing.findIndex((t) => t.id === DEFAULT_TEAM_ID);
+  if (idx < 0) return { teams: existing, changed: false };
+  const team = existing[idx];
+  const present = new Set(team.agents.map((a) => a.id));
+  const missing = DEMO_TEAM.filter((m) => !present.has(m.agent.toLowerCase()));
+  if (missing.length === 0) return { teams: existing, changed: false };
+  const added: Agent[] = missing.map((m) => ({
+    id: m.agent.toLowerCase(),
+    name: m.agent,
+    royaume: m.royaume,
+    roleIndex: m.roleIndex,
+    runner: "claude-code" as const,
+    model: "",
+    skills: skillsForAgent(m.agent),
+  }));
+  const agents = [...team.agents, ...added].sort(
+    (a, b) => a.roleIndex - b.roleIndex,
+  );
+  const next = [...existing];
+  next[idx] = { ...team, agents };
+  return { teams: next, changed: true };
+}
+
+/**
  * Bootstrap **non destructif & idempotent** des teams par défaut (L15-B, calque la
  * garde « créer si absent »). Garantit la présence de la team `iakaframe` (graine
  * `DEMO_TEAM`) **puis** des 11 teams du catalogue iakagraph, **sans jamais réécrire**
- * une team déjà présente (donc déjà éditée par l'utilisateur). Renvoie le tableau
- * (existant + ajouts en queue) et un flag `changed` (→ persiste seulement si ajouts).
+ * une team déjà présente (donc déjà éditée par l'utilisateur). Complète aussi le
+ * **casting canonique** de `iakaframe` si une config antérieure l'a laissé incomplet
+ * (correctif terrain redesign-A). Renvoie le tableau (existant + ajouts en queue) et
+ * un flag `changed` (→ persiste seulement si ajouts).
  */
 export function ensureDefaultTeams(
   existing: Team[],
@@ -270,8 +310,12 @@ export function ensureDefaultTeams(
     additions.push(teamFromCatalog(cat));
     ids.add(cat.id);
   }
-  if (additions.length === 0) return { teams: existing, changed: false };
-  return { teams: [...existing, ...additions], changed: true };
+  // Complète le casting canonique d'une team iakaframe DÉJÀ présente (stale).
+  const reconciled = reconcileDefaultTeamCasting([...existing, ...additions]);
+  if (additions.length === 0 && !reconciled.changed) {
+    return { teams: existing, changed: false };
+  }
+  return { teams: reconciled.teams, changed: true };
 }
 
 /** Index `projectId → teamId` extrait des clés `project_team:*` de la config. */

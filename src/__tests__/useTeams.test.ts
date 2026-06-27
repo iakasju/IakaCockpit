@@ -8,6 +8,7 @@ import {
   defaultTeamFromDemo,
   teamFromCatalog,
   ensureDefaultTeams,
+  reconcileDefaultTeamCasting,
   DEFAULT_TEAM_ID,
   TEAMS_KEYS,
   type Agent,
@@ -172,6 +173,38 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     expect(iaka.vignetteTeam).toBe("starfleet");
     // Les 11 teams catalogue ajoutées en plus.
     expect(teams).toHaveLength(12);
+  });
+
+  it("reconcileDefaultTeamCasting : team iakaframe stale (Gandalf manquant) → complétée, triée", () => {
+    // Simule une config antérieure où la team par défaut a perdu Gandalf (CADRAGE,
+    // roleIndex 2) → roster à 4 en réel. Coordinateur + agents existants conservés.
+    const full = defaultTeamFromDemo("lotr");
+    const stale: Team = {
+      ...full,
+      agents: full.agents.filter((a) => a.id !== "gandalf"),
+    };
+    expect(stale.agents).toHaveLength(4);
+    const { teams, changed } = reconcileDefaultTeamCasting([stale]);
+    expect(changed).toBe(true);
+    const iaka = teams.find((t) => t.id === DEFAULT_TEAM_ID)!;
+    // Casting canonique complet (5) ; Gandalf réinséré à sa place (roleIndex 2).
+    expect(iaka.agents).toHaveLength(5);
+    expect(iaka.agents.map((a) => a.id)).toEqual([
+      "odin",
+      "aragorn",
+      "gandalf",
+      "gimli",
+      "legolas",
+    ]);
+    // Non destructif : coordinateur inchangé.
+    expect(iaka.coordinator).toBe(stale.coordinator);
+  });
+
+  it("reconcileDefaultTeamCasting : casting complet → no-op (idempotent, même réf)", () => {
+    const complete = [defaultTeamFromDemo("lotr")];
+    const { teams, changed } = reconcileDefaultTeamCasting(complete);
+    expect(changed).toBe(false);
+    expect(teams).toBe(complete);
   });
 });
 
