@@ -61,6 +61,10 @@ export default function App(): JSX.Element {
     // L9-B : le projet démo entre aussi dans le set de Work (idempotent).
     addToWorkset: workset.add,
     onSeeded: () => void teams.reload(),
+    // L11 : route la conversation démo vers le coordinateur RÉSOLU de sa team (plus le
+    // littéral) — un changement de coordinateur de la team par défaut s'y reflète.
+    resolveCoordinator: (projectId) =>
+      teams.coordinatorOf(teams.teamForProject(projectId))?.name,
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).

@@ -65,6 +65,47 @@ describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
     await waitFor(() => expect(refreshPortfolio).toHaveBeenCalled());
   });
 
+  it("L11 : la conversation démo prend le coordinateur RÉSOLU (pas le littéral)", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    // La team par défaut a un coordinateur différent d'Aragorn → on doit le voir passer.
+    const resolveCoordinator = vi.fn(() => "Picard");
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        resolveCoordinator,
+      }),
+    );
+
+    await waitFor(() => expect(openConversation).toHaveBeenCalledTimes(1));
+    expect(resolveCoordinator).toHaveBeenCalledWith(DEMO_PROJECT_ID);
+    // L'interlocuteur (4e arg) = coordinateur résolu, surtout PAS le littéral "Aragorn".
+    expect(openConversation.mock.calls[0][3]).toBe("Picard");
+  });
+
+  it("L11 : sans resolveCoordinator → undefined (repli DEFAULT_RESPONSIBLE)", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+      }),
+    );
+
+    await waitFor(() => expect(openConversation).toHaveBeenCalledTimes(1));
+    expect(openConversation.mock.calls[0][3]).toBeUndefined();
+  });
+
   it("L9-B : seeded:true → ajoute iaka-demo au set de Work (idempotent côté add)", async () => {
     const api = makeApi(SEEDED);
     const openConversation = makeOpenConv();

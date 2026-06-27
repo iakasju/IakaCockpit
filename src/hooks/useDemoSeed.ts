@@ -62,6 +62,14 @@ export interface DemoSeedDeps {
    * Optionnel ; absent en test → no-op.
    */
   onSeeded?: () => void;
+  /**
+   * Résout le **coordinateur** de la team du projet (L11) — `App` le branche sur
+   * `coordinatorOf(teamForProject(projectId))`. La conversation démo est ainsi routée
+   * vers le coordinateur RÉSOLU de sa team (et non un littéral) : changer le
+   * coordinateur de la team par défaut redirige la démo. Optionnel ; absent → `undefined`
+   * (repli `DEFAULT_RESPONSIBLE` côté `useConversations`, rétro-compat).
+   */
+  resolveCoordinator?: (projectId: string) => string | undefined;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
@@ -72,6 +80,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
     refreshPortfolio,
     addToWorkset,
     onSeeded,
+    resolveCoordinator,
   } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
@@ -87,6 +96,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   addWorkRef.current = addToWorkset;
   const onSeededRef = useRef(onSeeded);
   onSeededRef.current = onSeeded;
+  const coordRef = useRef(resolveCoordinator);
+  coordRef.current = resolveCoordinator;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -111,11 +122,14 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
       // Non-doublon (D7) : n'ouvre la conversation démo que si aucune n'est active.
       // L9-C.1 : on précharge l'historique de démo (chaîne de badges iakaframe).
       if (countRef.current === 0) {
+        // L11 : interlocuteur = coordinateur RÉSOLU de la team du projet démo (plus le
+        // littéral « Aragorn »). `undefined` si non fourni (repli `DEFAULT_RESPONSIBLE`).
+        const coordinator = coordRef.current?.(DEMO_PROJECT_ID);
         openRef.current(
           DEMO_PROJECT_ID,
           DEMO_PROJECT_ID,
           report.demo_path,
-          undefined,
+          coordinator,
           [...DEMO_HISTORY],
         );
       }
