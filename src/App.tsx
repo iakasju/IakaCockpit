@@ -28,6 +28,9 @@ import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import type { Project } from "./api/backend";
 import "./theme/tokens.css";
+// Chartes iakagraph embarquees (L14) : un bloc data-theme par charte non-naonedge,
+// servi en 'self' via le bundle Vite (build-time) -> CSP intacte, zero inline runtime.
+import "./assets/chartes/chartes.css";
 import "./theme/app.css";
 
 export default function App(): JSX.Element {

@@ -1,0 +1,213 @@
+/* chartes.css — GENERE par scripts/sync-chartes.sh. NE PAS EDITER A LA MAIN.
+   Un bloc html[data-theme="<id>"] par charte iakagraph, traduit du contrat
+   iakagraph (--bg-primary...) vers le contrat de l'app (--bg...). Servi en
+   'self' (bundle Vite) -> CSP intacte, aucun inline-style runtime. */
+
+html[data-theme="grimoire-dark-fantasy"] {
+  --bg: #e7dcc0;
+  --surf: #efe6cf;
+  --surf-2: #c2b08a;
+  --surf-3: #d9c9a3;
+  --field: #d9c9a3;
+  --text: #1b2b34;
+  --text-2: #4a4031;
+  --text-3: #857a63;
+  --accent: #a84b2a;
+  --accent-2: #c56a3f;
+  --accent-rgb: 168,75,42;
+  --on-accent: #f3ead2;
+  --red: #9c2f23;
+  --green: #5b6e2a;
+  --blue: #34495e;
+  --orange: #b5651d;
+  --cyan: #3f7d7a;
+  --purple: #6b4a6b;
+  --r: 4px;
+  --r-lg: 8px;
+  --font-sans: "EB Garamond",Georgia,"Times New Roman",serif;
+  --font-serif: "Cinzel","EB Garamond",Georgia,serif;
+  --mono: "JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+
+html[data-theme="os-windows"] {
+  --bg: #f3f3f3;
+  --surf: #ffffff;
+  --surf-2: #e1e1e1;
+  --surf-3: #eaeaea;
+  --field: #eaeaea;
+  --text: #1b1b1b;
+  --text-2: #5d5d5d;
+  --text-3: #9a9a9a;
+  --accent: #0067c0;
+  --accent-2: #3b8eea;
+  --accent-rgb: 0,103,192;
+  --on-accent: #ffffff;
+  --red: #c42b1c;
+  --green: #0f7b0f;
+  --blue: #005fb8;
+  --orange: #ca5010;
+  --cyan: #038387;
+  --purple: #8764b8;
+  --r: 8px;
+  --r-lg: 12px;
+  --font-sans: "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-serif: "Georgia","Times New Roman",serif;
+  --mono: "Cascadia Code","Cascadia Mono",Consolas,monospace;
+}
+
+html[data-theme="os-ubuntu"] {
+  --bg: #fafafa;
+  --surf: #ffffff;
+  --surf-2: #e0e0e0;
+  --surf-3: #f2f2f2;
+  --field: #f2f2f2;
+  --text: #1d1d1d;
+  --text-2: #5e5e5e;
+  --text-3: #a0a0a0;
+  --accent: #e95420;
+  --accent-2: #f47e54;
+  --accent-rgb: 233,84,32;
+  --on-accent: #ffffff;
+  --red: #c7162b;
+  --green: #0e8420;
+  --blue: #0073e6;
+  --orange: #e95420;
+  --cyan: #007aa6;
+  --purple: #77216f;
+  --r: 6px;
+  --r-lg: 10px;
+  --font-sans: "Ubuntu",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif: "Ubuntu",Georgia,serif;
+  --mono: "Ubuntu Mono",ui-monospace,Consolas,monospace;
+}
+
+html[data-theme="os-android"] {
+  --bg: #fef7ff;
+  --surf: #ffffff;
+  --surf-2: #e7e0ec;
+  --surf-3: #f3edf7;
+  --field: #f3edf7;
+  --text: #1d1b20;
+  --text-2: #49454f;
+  --text-3: #79747e;
+  --accent: #6750a4;
+  --accent-2: #7f67be;
+  --accent-rgb: 103,80,164;
+  --on-accent: #ffffff;
+  --red: #b3261e;
+  --green: #146c2e;
+  --blue: #0b57d0;
+  --orange: #e8710a;
+  --cyan: #00696e;
+  --purple: #6750a4;
+  --r: 16px;
+  --r-lg: 24px;
+  --font-sans: "Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif: "Roboto Serif",Georgia,serif;
+  --mono: "Roboto Mono",ui-monospace,Consolas,monospace;
+}
+
+html[data-theme="os-macos"] {
+  --bg: #ececec;
+  --surf: #ffffff;
+  --surf-2: #d6d6d6;
+  --surf-3: #e3e3e3;
+  --field: #e3e3e3;
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --text-3: #a1a1a6;
+  --accent: #007aff;
+  --accent-2: #3897ff;
+  --accent-rgb: 0,122,255;
+  --on-accent: #ffffff;
+  --red: #ff3b30;
+  --green: #34c759;
+  --blue: #007aff;
+  --orange: #ff9500;
+  --cyan: #32ade6;
+  --purple: #af52de;
+  --r: 10px;
+  --r-lg: 16px;
+  --font-sans: "Inter","SF Pro Text",-apple-system,system-ui,sans-serif;
+  --font-serif: "New York","Georgia",serif;
+  --mono: "SF Mono","Menlo",ui-monospace,monospace;
+}
+
+html[data-theme="cartoon-std"] {
+  --bg: #fff7e6;
+  --surf: #ffffff;
+  --surf-2: #ffd98a;
+  --surf-3: #fff0c2;
+  --field: #fff0c2;
+  --text: #2b2b2b;
+  --text-2: #5a5a5a;
+  --text-3: #9a9384;
+  --accent: #ff5a5f;
+  --accent-2: #ffc400;
+  --accent-rgb: 255,90,95;
+  --on-accent: #ffffff;
+  --red: #ff4d4f;
+  --green: #2ecc71;
+  --blue: #4dabf7;
+  --orange: #ff922b;
+  --cyan: #22d3ee;
+  --purple: #9775fa;
+  --r: 18px;
+  --r-lg: 28px;
+  --font-sans: "Fredoka","Baloo 2",system-ui,sans-serif;
+  --font-serif: "Fredoka","Baloo 2",system-ui,sans-serif;
+  --mono: "JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+
+html[data-theme="photoreal-modern"] {
+  --bg: #f5f6f8;
+  --surf: #ffffff;
+  --surf-2: #e2e5ea;
+  --surf-3: #eceef1;
+  --field: #eceef1;
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
+  --accent-rgb: 79,70,229;
+  --on-accent: #ffffff;
+  --red: #ef4444;
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --orange: #f97316;
+  --cyan: #06b6d4;
+  --purple: #8b5cf6;
+  --r: 12px;
+  --r-lg: 18px;
+  --font-sans: "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif: "Newsreader",Georgia,serif;
+  --mono: "JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+
+html[data-theme="studio-clair"] {
+  --bg: #fbfbfc;
+  --surf: #ffffff;
+  --surf-2: #e7e8ec;
+  --surf-3: #f0f1f4;
+  --field: #f0f1f4;
+  --text: #16181d;
+  --text-2: #5b6270;
+  --text-3: #9aa0ad;
+  --accent: #5b5bd6;
+  --accent-2: #7a78ff;
+  --accent-rgb: 91,91,214;
+  --on-accent: #ffffff;
+  --red: #e5484d;
+  --green: #30a46c;
+  --blue: #3b82f6;
+  --orange: #f5a623;
+  --cyan: #12a594;
+  --purple: #8e4ec6;
+  --r: 13px;
+  --r-lg: 18px;
+  --font-sans: "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-serif: "Inter",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+

@@ -20,11 +20,10 @@ import type {
   Shape,
   UseSettings,
 } from "../hooks/useSettings";
-
-const THEMES: { id: string; name: string; sw: string[] }[] = [
-  { id: "naonedge-dark", name: "NaonEdge dark", sw: ["#0a0a0a", "#161616", "#c8a44e"] },
-  { id: "naonedge-light", name: "NaonEdge light", sw: ["#f4f2ec", "#ffffff", "#9a7521"] },
-];
+// Chartes embarquees (L14) : catalogue GENERE depuis iakagraph (10 chartes). Le
+// CSS associe (chartes.css) est importe au build dans App.tsx ; ici on ne lit que
+// le manifest (id + nom + swatches) pour peupler le sélecteur de charte.
+import { CHARTES } from "../assets/chartes/manifest";
 
 const NAV_POS: { id: NavPos; label: string }[] = [
   { id: "left", label: "gauche" },
@@ -341,7 +340,7 @@ export function SettingsView({
               <h2>Charte</h2>
             </div>
             <div className="themegrid">
-              {THEMES.map((t) => (
+              {CHARTES.map((t) => (
                 <button
                   key={t.id}
                   type="button"
@@ -350,7 +349,7 @@ export function SettingsView({
                   onClick={() => void settings.setTheme(t.id)}
                 >
                   <div className="swatch">
-                    {t.sw.map((c, i) => (
+                    {t.swatches.map((c, i) => (
                       <i key={i} style={{ background: c }} />
                     ))}
                   </div>
