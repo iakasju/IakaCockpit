@@ -32,14 +32,16 @@ import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
 
 /**
  * Mappe le runner CONCEPTUEL du coordinateur (4 valeurs) vers le `kind` PTY du
- * terminal-source (L11/P3, frontière d'abstraction — calque `resolve_runner_spec`
- * côté Rust). **Seul `claude-code` est exécutable** : il est le seul à atteindre ce
- * mapping (la branche non exécutable affiche une bannière, jamais ce spawn). On NE
- * code donc plus `runnerKind="claude-code"` en dur dans le JSX : la valeur DÉRIVE du
+ * terminal-source (frontière d'abstraction — calque `resolve_runner_spec` côté Rust).
+ * **`claude-code` ET `codex` sont exécutables** (TUI natives + tailer on-disk) : eux seuls
+ * atteignent ce mapping (les runners non câblés `ollama`/`litellm` affichent une bannière,
+ * jamais ce spawn). On NE code donc pas le kind en dur dans le JSX : il DÉRIVE du
  * coordinateur résolu.
  */
 function ptyRunnerKindFor(kind: AgentRunnerKind): ChefRunnerKind {
-  return kind === "claude-code" ? "claude-code" : "shell";
+  if (kind === "claude-code") return "claude-code";
+  if (kind === "codex") return "codex";
+  return "shell";
 }
 
 /** Runner+modèle+coordinateur résolus pour une conversation (depuis sa team — L11). */

@@ -57,6 +57,7 @@ import {
   onPtyClosed,
   transcriptTailStart,
   transcriptTailStop,
+  codexTailStart,
   onRunnerEvent,
 } from "../api/backend";
 import type { RunnerEvent } from "../api/backend";
@@ -254,6 +255,20 @@ describe("backend.ts (commandes métier L1)", () => {
     expect(args).not.toHaveProperty("transcript_path");
   });
 
+  it("codexTailStart invoque codex_tail_start avec des clés camelCase (sessionId + cwd + startedAtMs)", async () => {
+    await codexTailStart("sid-cx", "/home/u/work/proj", 1782566546000);
+    expect(invokeMock).toHaveBeenCalledWith("codex_tail_start", {
+      sessionId: "sid-cx",
+      cwd: "/home/u/work/proj",
+      startedAtMs: 1782566546000,
+    });
+    // Garde : AUCUNE clé snake_case (sinon Tauri v2 rejette → tailer Codex muet).
+    const calls = invokeMock.mock.calls;
+    const args = calls[calls.length - 1][1] as Record<string, unknown>;
+    expect(args).not.toHaveProperty("session_id");
+    expect(args).not.toHaveProperty("started_at_ms");
+  });
+
   it("transcriptTailStop invoque transcript_tail_stop avec la clé camelCase sessionId (L10b)", async () => {
     await transcriptTailStop("sid-1");
     expect(invokeMock).toHaveBeenCalledWith("transcript_tail_stop", {
@@ -307,6 +322,7 @@ describe("backend.ts (commandes métier L1)", () => {
       "ptyRunnerOpen",
       "transcriptTailStart",
       "transcriptTailStop",
+      "codexTailStart",
       "onPtyOutput",
       "onPtyClosed",
       "onRunnerEvent",

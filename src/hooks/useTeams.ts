@@ -25,9 +25,10 @@ import { backend, type Backend } from "../api/backend";
 import { DEMO_TEAM, skillsForAgent } from "../mock/demoTeam";
 
 /**
- * Runner conceptuel d'un agent (PROJET § 0.2). **Seul `claude-code` est EXÉCUTABLE**
- * en l'état (P3, terminal-source) ; `ollama`/`litellm`/`codex` sont **définissables**
- * (la définition est complète) mais non câblés ici (bannière honnête au lancement).
+ * Runner conceptuel d'un agent (PROJET § 0.2). **`claude-code` ET `codex` sont
+ * EXÉCUTABLES** (terminal-source : TUI native + tailer du transcript/rollout on-disk) ;
+ * `ollama`/`litellm` sont **définissables** (la définition est complète) mais non câblés
+ * ici (bannière honnête au lancement).
  */
 export type AgentRunnerKind = "claude-code" | "ollama" | "litellm" | "codex";
 
@@ -116,9 +117,10 @@ export function parseAgentRunnerKind(value: unknown): AgentRunnerKind {
     : "claude-code";
 }
 
-/** Un runner est-il EXÉCUTABLE en l'état (terminal-source réel) ? (P3). */
+/** Un runner est-il EXÉCUTABLE en l'état (terminal-source réel : TUI native + tailer
+ * on-disk) ? `claude-code` (L10) et `codex` (runner Codex réel). */
 export function isExecutableRunner(kind: AgentRunnerKind): boolean {
-  return kind === "claude-code";
+  return kind === "claude-code" || kind === "codex";
 }
 
 /** Parse défensif d'UN agent (record invalide → `null`, jamais d'exception). */

@@ -34,8 +34,15 @@ export interface UsePtySession {
    * shell legacy (`open`) ou un chef-runner `kind:"shell"`.
    */
   runnerSessionId?: string;
-  /** Chemin PRÉVU du transcript JSONL du chef-runner (L10a) — pour le tailer L10b. */
+  /** Chemin PRÉVU du transcript JSONL du chef-runner (L10a) — pour le tailer L10b
+   * (claude-code uniquement ; VIDE pour codex, dont le rollout est découvert par cwd). */
   transcriptPath?: string;
+  /** Kind du chef-runner ouvert — le tailer dérive QUEL tailer démarrer (claude vs codex). */
+  runnerKind?: ChefRunnerKind;
+  /** cwd du chef-runner — clef de découverte du rollout Codex (`codexTailStart`). */
+  cwd?: string;
+  /** Horodatage du spawn (epoch ms) — borne basse de récence pour la découverte Codex. */
+  startedAtMs?: number;
 }
 
 export interface OpenOptions {
@@ -199,6 +206,11 @@ export function usePty(api: Backend = backend): UsePty {
             closed: false,
             runnerSessionId: session.session_id,
             transcriptPath: session.transcript_path,
+            // Mémorisés pour que `useRunnerViews` dispatche le BON tailer (claude vs codex,
+            // qui se découvre par cwd) — clef de la vue dérivée du runner Codex.
+            runnerKind: kind,
+            cwd,
+            startedAtMs: session.started_at_ms,
           });
           return session;
         })();

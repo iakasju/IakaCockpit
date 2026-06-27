@@ -52,11 +52,11 @@ describe("useTeams — pures (parse / runner)", () => {
     expect(parseAgentRunnerKind(undefined)).toBe("claude-code");
   });
 
-  it("isExecutableRunner : seul claude-code est exécutable (P3)", () => {
+  it("isExecutableRunner : claude-code ET codex sont exécutables (terminal-source)", () => {
     expect(isExecutableRunner("claude-code")).toBe(true);
+    expect(isExecutableRunner("codex")).toBe(true);
     expect(isExecutableRunner("ollama")).toBe(false);
     expect(isExecutableRunner("litellm")).toBe(false);
-    expect(isExecutableRunner("codex")).toBe(false);
   });
 
   it("parseTeams défensif : absent/illisible/non-tableau → [] (A6)", () => {

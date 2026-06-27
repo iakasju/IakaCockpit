@@ -89,14 +89,15 @@ describe("WorkingView — runner du coordinateur (L11/P3)", () => {
     ).toContain("ollama");
   });
 
-  it("D3 : coordinateur codex → bannière (définition conservée, zéro crash)", () => {
+  it("D2 : coordinateur codex → PtyTerminal avec kind codex (runner Codex réel, exécutable)", () => {
     renderView(() => ({
       kind: "codex",
-      model: "",
+      model: "gpt-5-codex",
       coordinator: "Picard",
     }));
-    expect(screen.queryByTestId("pty")).toBeNull();
-    expect(screen.getAllByText(/codex/i).length).toBeGreaterThan(0);
+    const pty = screen.getByTestId("pty");
+    expect(pty.getAttribute("data-runner")).toBe("codex");
+    expect(pty.getAttribute("data-model")).toBe("gpt-5-codex");
   });
 
   it("convhead affiche coordinateur · runner · modèle", () => {

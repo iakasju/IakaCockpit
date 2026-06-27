@@ -12,6 +12,7 @@ function makeApi(
   return {
     transcriptTailStart: vi.fn(async () => {}),
     transcriptTailStop: vi.fn(async () => {}),
+    codexTailStart: vi.fn(async () => {}),
     onRunnerEvent: vi.fn(async (sid: string, cb: (e: RunnerEvent) => void) => {
       onEvent?.(sid, cb);
       return () => {};
@@ -63,6 +64,36 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
       "sid-1",
       "/t/sid-1.jsonl",
     );
+  });
+
+  it("dispatch CODEX : un runner codex démarre codexTailStart (par cwd + récence), PAS transcriptTailStart", async () => {
+    const api = makeApi();
+    const codexSession: UsePtySession = {
+      id: "pty-cx",
+      ready: true,
+      closed: false,
+      runnerSessionId: "sid-cx",
+      transcriptPath: "", // codex : pas de transcript déterministe (rollout découvert).
+      runnerKind: "codex",
+      cwd: "/root/p1",
+      startedAtMs: 1782566546000,
+    };
+    renderHook(() =>
+      useRunnerViews({
+        api,
+        conversations: [conv("p1", "pty-cx")],
+        ptySessions: { "pty-cx": codexSession },
+        appendTurn: vi.fn(),
+      }),
+    );
+    await flush();
+    expect(api.onRunnerEvent).toHaveBeenCalledWith("sid-cx", expect.any(Function));
+    expect(api.codexTailStart).toHaveBeenCalledWith(
+      "sid-cx",
+      "/root/p1",
+      1782566546000,
+    );
+    expect(api.transcriptTailStart).not.toHaveBeenCalled();
   });
 
   it("ne démarre RIEN tant que le runnerSessionId/transcriptPath sont absents (repli shell)", () => {

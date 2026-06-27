@@ -407,17 +407,24 @@ export function ptyClose(id: string): Promise<void> {
 // pré-généré côté Rust est renvoyé ici : clef qui reliera PTY ↔ transcript JSONL ↔
 // session (le tailer du transcript = L10b ; ici on ne fait que lancer + récupérer la clef).
 
-/** Type de chef-runner ouvert dans un PTY (L10a). `shell` = repli legacy. */
-export type ChefRunnerKind = "claude-code" | "shell";
+/**
+ * Type de chef-runner ouvert dans un PTY. `claude-code` (L10a) et `codex` (runner Codex
+ * réel) = TUI natives conversationnelles avec vues dérivées d'un transcript on-disk ;
+ * `shell` = repli legacy.
+ */
+export type ChefRunnerKind = "claude-code" | "codex" | "shell";
 
 /**
  * Miroir de `terminal::RunnerSession` (Rust, L10a). `session_id` = clef PTY ↔ transcript
  * ↔ session (consommée par le tailer L10b). `transcript_path` = chemin PRÉVU du transcript
- * JSONL (`~/.claude/projects/<escaped>/<session_id>.jsonl`). Vides pour le repli `shell`.
+ * JSONL Claude (`~/.claude/projects/<escaped>/<session_id>.jsonl`) — **VIDE pour codex**
+ * (le rollout est découvert par cwd) et pour le repli `shell`. `started_at_ms` = horodatage
+ * du spawn (borne basse de récence pour la découverte du rollout Codex ; ignoré par Claude).
  */
 export interface RunnerSession {
   session_id: string;
   transcript_path: string;
+  started_at_ms: number;
 }
 
 /**
@@ -509,6 +516,22 @@ export function transcriptTailStop(sessionId: string): Promise<void> {
   return call<void>("transcript_tail_stop", { sessionId });
 }
 
+/**
+ * Démarre le tailer du **rollout Codex** pour `sessionId` (clef d'événements renvoyée par
+ * `ptyRunnerOpen` kind=codex), en le DÉCOUVRANT par `cwd` (+ récence `startedAtMs` = borne
+ * basse pour ignorer un rollout d'un run précédent). Émet les MÊMES `RunnerEvent` sur
+ * `runner://event/{sessionId}` que Claude (vues homogènes). Idempotent côté Rust ; un `cwd`
+ * vide est un no-op. L'arrêt passe par `transcriptTailStop` (registre partagé). camelCase
+ * attendu par Tauri v2 (cf. `transcriptTailStart`).
+ */
+export function codexTailStart(
+  sessionId: string,
+  cwd: string,
+  startedAtMs: number,
+): Promise<void> {
+  return call<void>("codex_tail_start", { sessionId, cwd, startedAtMs });
+}
+
 // --- Abonnement aux événements PTY (DEP-5) ---
 //
 // Helpers d'abonnement aux événements émis par Rust. C'est le SEUL endroit
@@ -598,6 +621,7 @@ export const backend = {
   ptyRunnerOpen,
   transcriptTailStart,
   transcriptTailStop,
+  codexTailStart,
   onPtyOutput,
   onPtyClosed,
   onRunnerEvent,

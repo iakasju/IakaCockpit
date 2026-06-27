@@ -64,8 +64,20 @@ export function useRunnerViews({
     for (const conv of convRef.current) {
       const sess = ptySessions[conv.ptySessionId];
       const sid = sess?.runnerSessionId;
+      if (!sid) continue; // pas (encore) de chef-runner / repli shell.
+
+      // Dispatch « source de vues » par runner (frontière `ConversationSource`) : Codex se
+      // tail par DÉCOUVERTE du rollout (cwd + récence) ; Claude par chemin de transcript
+      // déterministe. `runnerKind` absent ⇒ comportement transcript (rétro-compatible).
+      const isCodex = sess?.runnerKind === "codex";
       const path = sess?.transcriptPath;
-      if (!sid || !path) continue; // pas (encore) de chef-runner / repli shell.
+      const cwd = sess?.cwd;
+      // Garde de démarrage : claude exige un transcriptPath ; codex exige un cwd.
+      if (isCodex ? !cwd : !path) continue;
+      const startTailer = (): Promise<void> =>
+        isCodex
+          ? api.codexTailStart(sid, cwd as string, sess?.startedAtMs ?? 0)
+          : api.transcriptTailStart(sid, path as string);
       const projectId = conv.projectId;
 
       // (Re)lie le listener sur CHAQUE run (rebind-safe, calque `usePty.subscribe`) :
@@ -89,7 +101,7 @@ export function useRunnerViews({
       if (!startedRef.current.has(sid)) {
         startedRef.current.add(sid);
         void bind
-          .then(() => api.transcriptTailStart(sid, path))
+          .then(() => startTailer())
           .catch(() => {
             // Démarrage impossible (hors Tauri / erreur) : on rouvre la porte au retry.
             startedRef.current.delete(sid);
