@@ -31,35 +31,46 @@ export function PortfolioView({
   return (
     <section className="view pf" aria-label="Portfolio">
       <div className="pfright">
-        <div className="rh">
-          <h1>Portfolio</h1>
-          <span className="sub">{root ?? "chapeau non résolu"}</span>
-        </div>
-        <div className="workset">
-          <b>Set de Work</b>
-          <span>{worksetCount} projet(s) sélectionné(s)</span>
-          {worksetCount > 0 && (
-            <button type="button" className="btn accent sm goto" onClick={onGotoWork}>
-              Ouvrir dans Working →
-            </button>
+        <div className="pfpad">
+          <div className="rh">
+            <span className="eyebrow">Portefeuille</span>
+            <h1>Portfolio</h1>
+            <span className="sub">{root ?? "chapeau non résolu"}</span>
+          </div>
+          <div className="workset">
+            <b>Set de Work</b>
+            <span>{worksetCount} projet(s) sélectionné(s)</span>
+            {worksetCount > 0 && (
+              <button
+                type="button"
+                className="btn accent sm goto"
+                onClick={onGotoWork}
+              >
+                Ouvrir dans Working →
+              </button>
+            )}
+          </div>
+
+          <div className="rowhead">
+            <h2>Sous le chapeau</h2>
+          </div>
+
+          {loading && <div className="pfstate">Scan du chapeau…</div>}
+          {error && <div className="pfstate err">Erreur de scan : {error}</div>}
+          {!loading && !error && projects.length === 0 && (
+            <div className="pfstate">Aucun projet sous le chapeau.</div>
           )}
-        </div>
 
-        {loading && <div className="pfstate">Scan du chapeau…</div>}
-        {error && <div className="pfstate err">Erreur de scan : {error}</div>}
-        {!loading && !error && projects.length === 0 && (
-          <div className="pfstate">Aucun projet sous le chapeau.</div>
-        )}
-
-        <div className="tilegrid">
-          {projects.map((p) => (
-            <Tile
-              key={p.id}
-              project={p}
-              inWork={worksetIds.has(p.id)}
-              onToggleWork={onToggleWork}
-            />
-          ))}
+          <div className="tilegrid">
+            {projects.map((p) => (
+              <Tile
+                key={p.id}
+                project={p}
+                inWork={worksetIds.has(p.id)}
+                onToggleWork={onToggleWork}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>

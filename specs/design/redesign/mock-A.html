@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="A">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock A — Command rail · studio-clair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== studio-clair tokens (palette CONSTANTE du lot) ===== */
+:root{
+  --bg:#fbfbfc; --card:#ffffff; --deep:#f0f1f4; --line:#e7e8ec; --line-soft:#eef0f3;
+  --ink:#16181d; --ink2:#5b6270; --ink3:#9aa0ad;
+  --acc:#5b5bd6; --acc-l:#7a78ff; --acc-rgb:91,91,214;
+  --red:#e5484d; --green:#30a46c; --blue:#3b82f6; --orange:#f5a623; --cyan:#12a594; --purple:#8e4ec6;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --text:"Inter",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--text);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
+  display:grid;grid-template-columns:76px 264px 1fr;height:100vh;overflow:hidden}
+
+/* ---- Rail icônes (remplace les onglets pilule) ---- */
+.rail{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;border-right:1px solid var(--line-soft)}
+.brand{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc-l));
+  display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:700;font-size:18px;margin-bottom:18px}
+.rail a{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:var(--ink3);
+  text-decoration:none;font-size:20px;position:relative;transition:.15s}
+.rail a span{position:absolute;bottom:5px;font-size:8.5px;letter-spacing:.04em;font-weight:600;text-transform:uppercase}
+.rail a:hover{background:var(--deep);color:var(--ink2)}
+.rail a.on{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.rail .sep{flex:1}
+
+/* ---- Panneau roster ---- */
+.roster{background:var(--bg);padding:24px 18px;display:flex;flex-direction:column;gap:4px;overflow:auto}
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.roster h2{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;margin:6px 0 2px}
+.roster .sub{font-size:12.5px;color:var(--ink2);margin-bottom:18px}
+.agent{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:14px;cursor:pointer;transition:.12s}
+.agent:hover{background:var(--card)}
+.agent.on{background:var(--card);box-shadow:0 2px 10px rgba(20,22,28,.05)}
+.agent img{width:40px;height:40px;border-radius:12px;object-fit:cover;background:var(--deep)}
+.agent .nm{font-family:var(--display);font-weight:600;font-size:14px}
+.agent .rl{font-size:11px;color:var(--ink3);letter-spacing:.02em}
+.dot{width:8px;height:8px;border-radius:50%;margin-left:auto;box-shadow:0 0 0 3px var(--bg)}
+.dot.work{background:var(--green)} .dot.idle{background:var(--ink3)} .dot.think{background:var(--orange)}
+
+/* ---- Espace conversation ---- */
+.work{display:flex;flex-direction:column;background:var(--card);border-left:1px solid var(--line-soft);overflow:hidden}
+.topbar{display:flex;align-items:center;gap:14px;padding:18px 28px;border-bottom:1px solid var(--line-soft)}
+.topbar .proj{font-family:var(--display);font-weight:600;font-size:16px}
+.chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--deep);color:var(--ink2)}
+.chip.live{background:rgba(48,164,108,.12);color:var(--green)}
+.spacer{flex:1}
+.iconbtn{width:34px;height:34px;border-radius:10px;border:0;background:var(--deep);color:var(--ink2);cursor:pointer;font-size:15px}
+
+.stream{flex:1;overflow:auto;padding:30px 28px;display:flex;flex-direction:column;gap:22px;max-width:820px;width:100%;margin:0 auto}
+.msg{display:flex;gap:14px;align-items:flex-start}
+.msg img{width:34px;height:34px;border-radius:10px;flex:none;object-fit:cover}
+.bubble .who{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bubble .who b{font-family:var(--display);font-size:13.5px;font-weight:600}
+.badge{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;text-transform:uppercase}
+.b-arag{background:rgba(59,130,246,.13);color:var(--blue)}
+.b-gand{background:rgba(142,78,198,.13);color:var(--purple)}
+.b-time{color:var(--ink3);font-size:11px;font-weight:500}
+.bubble p{font-size:14px;line-height:1.62;color:var(--ink);max-width:62ch}
+.bubble .deleg{margin-top:8px;font-size:12.5px;color:var(--ink2);background:var(--bg);border-radius:12px;padding:10px 14px;border-left:3px solid var(--acc)}
+
+/* ---- Composer + terminal drawer ---- */
+.composer{padding:16px 28px;border-top:1px solid var(--line-soft);display:flex;gap:12px;align-items:center}
+.composer input{flex:1;border:0;background:var(--deep);border-radius:14px;padding:13px 16px;font-family:var(--text);font-size:14px;color:var(--ink)}
+.composer input::placeholder{color:var(--ink3)}
+.send{border:0;background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff;font-family:var(--display);font-weight:600;
+  padding:0 20px;height:46px;border-radius:14px;cursor:pointer;font-size:14px}
+.term{background:#16181d;color:#cbd2dc;font-family:var(--mono);font-size:12px;line-height:1.6;padding:14px 28px;max-height:140px;overflow:auto}
+.term .pr{color:var(--cyan)} .term .ok{color:#7ee3b0}
+</style>
+</head>
+<body>
+  <nav class="rail">
+    <div class="brand">i</div>
+    <a class="on" title="Working">🛠️<span>Work</span></a>
+    <a title="Portfolio">🗂️<span>Folio</span></a>
+    <a title="Journal">📓<span>Log</span></a>
+    <a title="Teams">👥<span>Team</span></a>
+    <div class="sep"></div>
+    <a title="Réglages">⚙️<span>Réglage</span></a>
+  </nav>
+
+  <aside class="roster">
+    <div class="eyebrow">Conversation active</div>
+    <h2>iaka-demo</h2>
+    <div class="sub">Team iakaframe · 5 agents en ligne</div>
+    <div class="agent on">
+      <img src="assets/aragorn.png" alt="">
+      <div><div class="nm">Aragorn</div><div class="rl">Coordinateur · projet</div></div>
+      <span class="dot work"></span>
+    </div>
+    <div class="agent">
+      <img src="assets/gandalf.png" alt="">
+      <div><div class="nm">Gandalf</div><div class="rl">Analyse · specs</div></div>
+      <span class="dot think"></span>
+    </div>
+    <div class="agent">
+      <img src="assets/gimli.png" alt="">
+      <div><div class="nm">Gimli</div><div class="rl">Exécution · code</div></div>
+      <span class="dot idle"></span>
+    </div>
+    <div class="agent">
+      <img src="assets/legolas.png" alt="">
+      <div><div class="nm">Legolas</div><div class="rl">Qualité · gate</div></div>
+      <span class="dot idle"></span>
+    </div>
+    <div class="agent">
+      <img src="assets/frodo.png" alt="">
+      <div><div class="nm">Frodo</div><div class="rl">Porteur · livraison</div></div>
+      <span class="dot idle"></span>
+    </div>
+  </aside>
+
+  <main class="work">
+    <div class="topbar">
+      <span class="proj">Conversation · iaka-demo</span>
+      <span class="chip live">● terminal-source vivant</span>
+      <span class="spacer"></span>
+      <button class="iconbtn" title="esc">⎋</button>
+      <button class="iconbtn" title="terminal">▦</button>
+    </div>
+
+    <div class="stream">
+      <div class="msg">
+        <img src="assets/aragorn.png" alt="">
+        <div class="bubble">
+          <div class="who"><b>Aragorn</b><span class="badge b-arag">Royaume · projet</span><span class="b-time">10:28</span></div>
+          <p>Reçu le besoin de refonte visuelle. Je cadre, puis je délègue l'analyse des specs à Gandalf avant de lancer l'exécution.</p>
+          <div class="deleg">↳ délègue à <b>Gandalf</b> — « audit des écrans + hiérarchie de l'information »</div>
+        </div>
+      </div>
+      <div class="msg">
+        <img src="assets/gandalf.png" alt="">
+        <div class="bubble">
+          <div class="who"><b>Gandalf</b><span class="badge b-gand">Royaume · analyse</span><span class="b-time">10:31</span></div>
+          <p>Cadrage prêt. Le point dur n'est pas la charte mais la grammaire de mise en page : on empile des cartes bordées sans respiration. Je rends un plan en trois passes.</p>
+        </div>
+      </div>
+      <div class="msg">
+        <img src="assets/aragorn.png" alt="">
+        <div class="bubble">
+          <div class="who"><b>Aragorn</b><span class="badge b-arag">Royaume · projet</span><span class="b-time">10:33</span></div>
+          <p>Parfait. Gimli prend la passe 1 sur la nav. On garde le terminal comme source de vérité, le chat n'est qu'une vue.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <input placeholder="Écris à l'équipe… (@agent pour viser un membre)">
+      <button class="send">Envoyer</button>
+    </div>
+    <div class="term">
+      <div><span class="pr">aragorn@iaka-demo</span> ~ % claude --resume</div>
+      <div><span class="ok">✓</span> session transcript ouvert · 3 messages · 1 délégation</div>
+      <div><span class="pr">›</span> _</div>
+    </div>
+  </main>
+</body>
+</html>

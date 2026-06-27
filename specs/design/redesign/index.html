@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refonte IakaCockpit — 4 hypothèses · Loki</title>
+<style>
+ body{margin:0;background:#15161a;color:#e7e9ee;font-family:-apple-system,system-ui,sans-serif;line-height:1.5}
+ header{padding:40px 48px 18px;max-width:1180px;margin:0 auto}
+ h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+ .lead{color:#9aa0ad;font-size:15px;max-width:70ch}
+ .grid{max-width:1180px;margin:0 auto;padding:18px 48px 80px;display:grid;gap:46px}
+ .item h2{font-size:21px;margin:0 0 4px}
+ .item .pp{color:#c0c5cf;font-size:14px;margin:0 0 6px}
+ .item .meta{color:#7b818d;font-size:12.5px;font-family:ui-monospace,Menlo,monospace;margin-bottom:14px}
+ .item a.open{color:#7a78ff;text-decoration:none;font-size:13px}
+ figure{margin:0}
+ img{width:100%;border-radius:14px;border:1px solid #2a2c33;display:block;box-shadow:0 30px 60px -40px #000}
+ .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px;margin-right:6px}
+ .sc{background:#26263a;color:#9b9bf0} .new{background:#3a241a;color:#f0a47a}
+ .before{opacity:.62}
+ hr{border:0;border-top:1px solid #2a2c33;margin:10px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Refonte IakaCockpit — 4 hypothèses</h1>
+  <p class="lead">Studio Loki · 2026-06-27. Diagnostic : l'app n'est pas « moche », elle est <b>muette</b>
+  (pas de voix typo, pas de respiration, grammaire « admin bordé »). Quatre directions, très distinctes
+  en <b>ergonomie</b> ET en <b>look</b>. A·B·C en charte <b>studio-clair</b> ; D en charte <b>neuve « Ember »</b>.
+  Audit complet : <code>audit.md</code>. Chaque mock est un HTML autonome (clique « ouvrir »).</p>
+</header>
+<div class="grid">
+
+  <div class="item">
+    <h2><span class="tag sc">studio-clair</span>A — Rail de commande</h2>
+    <p class="pp">Parti-pris : <b>espace de travail unifié</b>. On supprime les onglets-pilule (rail d'icônes),
+    le projet/roster/chat/terminal cohabitent dans un seul écran. Typo géométrique <b>Space Grotesk</b> + Inter. Aéré, sans-bord.</p>
+    <div class="meta">vue : Working (roster + chat + terminal-source) · <a class="open" href="mock-A.html">ouvrir le mock ↗</a></div>
+    <figure><img src="captures/mock-A.png" alt="Mock A"></figure>
+  </div>
+
+  <div class="item">
+    <h2><span class="tag sc">studio-clair</span>B — Éditorial calme</h2>
+    <p class="pp">Parti-pris : <b>respiration maximale, magazine premium</b>. Nav en liens-texte (zéro caisson),
+    héros serif, colonne de lecture, Teams vu comme une <b>grille de casting</b> qu'on embrasse d'un coup. Display serif <b>Fraunces</b>.</p>
+    <div class="meta">vue : Teams (casting d'agents) · <a class="open" href="mock-B.html">ouvrir le mock ↗</a></div>
+    <figure><img src="captures/mock-B.png" alt="Mock B"></figure>
+  </div>
+
+  <div class="item">
+    <h2><span class="tag sc">studio-clair</span>C — Cockpit mono</h2>
+    <p class="pp">Parti-pris : <b>clavier-first, dense, terminal-source en HÉROS</b>. Palette ⌘K, bandeau de statut à LEDs,
+    le terminal occupe le centre (source de vérité) et le chat n'est qu'un <b>rail « vue dérivée du transcript »</b>. Tout en <b>JetBrains Mono</b>, panneaux plats.</p>
+    <div class="meta">vue : Working/console (incarne la vision terminal=source) · <a class="open" href="mock-C.html">ouvrir le mock ↗</a></div>
+    <figure><img src="captures/mock-C.png" alt="Mock C"></figure>
+  </div>
+
+  <div class="item">
+    <h2><span class="tag new">charte neuve · Ember</span>D — Identité propre</h2>
+    <p class="pp">Parti-pris : <b>donner un visage au produit</b>. Charte inventée « Ember » : papier chaud + encre + braise,
+    display grotesque <b>Bricolage</b>. Vue d'accueil chaleureuse (stats + cartes projets + CTA « reprendre »). Voir <code>mock-D-charte.md</code>.</p>
+    <div class="meta">vue : Accueil/Portfolio · charte Ember (#e0531d) · <a class="open" href="mock-D.html">ouvrir le mock ↗</a></div>
+    <figure><img src="captures/mock-D.png" alt="Mock D"></figure>
+  </div>
+
+  <hr>
+  <div class="item before">
+    <h2>Avant — l'existant (charte studio-clair)</h2>
+    <p class="pp">Pour comparaison : la grammaire actuelle « cartes bordées / formulaires pleine largeur / onglets pilule / une seule voix typo ».</p>
+    <div class="meta">captures réelles du front (Vite :3020)</div>
+    <figure style="margin-bottom:20px"><img src="captures/avant-teams-studio-clair.png" alt="avant Teams"></figure>
+    <figure><img src="captures/avant-reglages-studio-clair.png" alt="avant Réglages"></figure>
+  </div>
+
+</div>
+</body>
+</html>

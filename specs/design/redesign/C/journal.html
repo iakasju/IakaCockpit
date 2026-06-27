@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.body{display:flex;flex-direction:column}
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+.fbtn{font-size:12px;padding:5px 11px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.fbtn.on{background:var(--ink);color:var(--bg);border-color:transparent}
+.fbtn .led{width:6px;height:6px}
+.filter{flex:1;background:var(--deep);border:0;border-radius:7px;padding:7px 11px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.log{overflow:auto;flex:1;font-size:12.5px}
+.line{display:grid;grid-template-columns:64px 92px 220px 1fr;gap:0;align-items:baseline;padding:8px 16px;border-bottom:1px solid var(--line-soft)}
+.line:hover{background:var(--deep)}
+.line .ts{color:var(--ink3)}
+.line .cn{display:flex;align-items:center;gap:6px;font-weight:600}
+.cn.adresse{color:var(--blue)} .cn.geste{color:var(--acc)} .cn.pensee{color:var(--ink3)}
+.line .ax{color:var(--ink)} .line .ax .ar{color:var(--ink3)}
+.line .msg{color:var(--ink2);font-family:var(--text);font-size:13px;line-height:1.45}
+.line.pensee .msg{font-style:italic;color:var(--ink3)}
+.line .msg code{font-family:var(--mono);font-size:11.5px;background:var(--card);border:1px solid var(--line-soft);padding:0 5px;border-radius:5px;font-style:normal}
+.cnt{display:flex;gap:6px;padding:8px 16px;border-top:1px solid var(--line);background:var(--bg);color:var(--ink3);font-size:11.5px}
+</style></head>
+<body>
+<div class="cmd"><div class="logo">iaka<b>::</b>cockpit</div><div class="palette">⌘ rechercher projet, agent, commande… <kbd>⌘K</kbd></div><div class="tabs"><a>portfolio</a><a>working</a><a class="on">journal</a><a>teams</a><a>réglages</a></div></div>
+<div class="strip">
+  <div class="seg"><span class="led g"></span> iakaboxlogs · connecté</div>
+  <div class="seg"><span class="led b"></span> 3 canaux: adresse / geste / pensée</div>
+  <div class="seg"><span class="led i"></span> 1 248 entrées</div>
+  <div class="seg push">source ▸ POST /_find (lecture seule)</div>
+</div>
+<div class="body">
+  <div class="toolbar">
+    <button class="fbtn on">tous</button>
+    <button class="fbtn"><span class="led b"></span>adresse</button>
+    <button class="fbtn"><span class="led" style="background:var(--acc)"></span>geste</button>
+    <button class="fbtn"><span class="led i"></span>pensée</button>
+    <input class="filter" placeholder="filtrer  ex: agent:gandalf  proj:iaka-demo">
+  </div>
+  <div class="log">
+    <div class="line adresse"><span class="ts">10:42:07</span><span class="cn adresse"><span class="led b"></span>adresse</span><span class="ax">Stéphane <span class="ar">→</span> Aragorn</span><span class="msg"><b style="color:var(--ink)">iaka-demo</b> · Le site est trop vieux, trop lourd, pas assez aéré — lance la refonte avec Loki.</span></div>
+    <div class="line geste"><span class="ts">10:43:18</span><span class="cn geste"><span class="led" style="background:var(--acc)"></span>geste</span><span class="ax">Aragorn <span class="ar">⇄</span> Gandalf</span><span class="msg"><b style="color:var(--ink)">iaka-demo</b> · délégation <code>tool_use Agent</code> — « audit écrans + hiérarchie ».</span></div>
+    <div class="line pensee"><span class="ts">10:44:02</span><span class="cn pensee"><span class="led i"></span>pensée</span><span class="ax">Gandalf</span><span class="msg">le point dur n'est pas la charte mais la grammaire de mise en page ; trois passes.</span></div>
+    <div class="line geste"><span class="ts">10:48:55</span><span class="cn geste"><span class="led" style="background:var(--acc)"></span>geste</span><span class="ax">Gandalf <span class="ar">→</span> Aragorn</span><span class="msg"><b style="color:var(--ink)">iaka-demo</b> · rapport remonté · 1 délégation close · plan validé.</span></div>
+    <div class="line adresse"><span class="ts">10:51:30</span><span class="cn adresse"><span class="led b"></span>adresse</span><span class="ax">Aragorn <span class="ar">→</span> Stéphane</span><span class="msg"><b style="color:var(--ink)">iaka-demo</b> · audit prêt, 4 hypothèses de refonte rendues. Tu peux trancher.</span></div>
+    <div class="line pensee"><span class="ts">09:58:11</span><span class="cn pensee"><span class="led i"></span>pensée</span><span class="ax">Legolas</span><span class="msg">gate L10b : 234 front + 202 Rust verts, recette terrain OK.</span></div>
+    <div class="line geste"><span class="ts">09:40:09</span><span class="cn geste"><span class="led" style="background:var(--acc)"></span>geste</span><span class="ax">Aragorn <span class="ar">⇄</span> Legolas</span><span class="msg"><b style="color:var(--ink)">iakacockpit</b> · délégation <code>tool_use Agent</code> — « gate qualité L10 ».</span></div>
+    <div class="line adresse"><span class="ts">09:32:44</span><span class="cn adresse"><span class="led b"></span>adresse</span><span class="ax">Stéphane <span class="ar">→</span> Odin</span><span class="msg"><b style="color:var(--ink)">portefeuille</b> · point d'avancement de la semaine ?</span></div>
+  </div>
+  <div class="cnt"><span class="kbd">j/k</span> ligne · <span class="kbd">f</span> filtrer canal · <span class="kbd">↵</span> détail · <span class="kbd">g</span> aller à la fiche jalon</div>
+</div>
+</body></html>

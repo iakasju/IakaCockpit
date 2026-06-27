@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Réglages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.body{display:grid;grid-template-columns:220px 1fr}
+.tree{overflow:auto;border-right:1px solid var(--line)}
+.tgrp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:14px 14px 6px}
+.tree a{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:12.5px;color:var(--ink2);text-decoration:none}
+.tree a:hover{background:var(--deep)} .tree a.on{background:rgba(var(--acc-rgb),.1);color:var(--acc);font-weight:600;border-left:2px solid var(--acc);padding-left:12px}
+.tree a .led{width:6px;height:6px}
+.cfg{overflow:auto;padding:0}
+.cfghead{padding:14px 22px;border-bottom:1px solid var(--line);background:var(--bg)}
+.cfghead h1{font-size:17px;font-weight:700}.cfghead .p{font-size:12px;color:var(--ink3);font-family:var(--text);margin-top:3px}
+.group{border-bottom:1px solid var(--line-soft)}
+.gtitle{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:14px 22px 8px}
+.kvrow{display:grid;grid-template-columns:280px 1fr;align-items:center;padding:9px 22px;border-top:1px solid var(--line-soft)}
+.kvrow:hover{background:var(--deep)}
+.kvrow .k{color:var(--ink);font-size:12.5px}
+.kvrow .k small{display:block;color:var(--ink3);font-size:11px;font-family:var(--text);margin-top:2px}
+.val{font-size:12.5px;color:var(--ink2)}
+.val .field{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--ink);min-width:320px;display:inline-block}
+.seg{display:inline-flex;background:var(--deep);border-radius:7px;padding:2px}
+.seg span{padding:5px 11px;border-radius:5px;font-size:12px;color:var(--ink2);cursor:pointer}
+.seg span.on{background:var(--card);color:var(--ink);font-weight:600}
+.toggle{width:34px;height:19px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;display:inline-block}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.15s}
+.toggle.on{background:var(--green)}.toggle.on::after{left:17px}
+.secret{color:var(--ink3)}
+</style></head>
+<body>
+<div class="cmd"><div class="logo">iaka<b>::</b>cockpit</div><div class="palette">⌘ rechercher projet, agent, commande… <kbd>⌘K</kbd></div><div class="tabs"><a>portfolio</a><a>working</a><a>journal</a><a>teams</a><a class="on">réglages</a></div></div>
+<div class="strip">
+  <div class="seg"><span class="led g"></span> config: <b>sqlite</b> (non sensible)</div>
+  <div class="seg"><span class="led p"></span> secrets: keychain natif</div>
+  <div class="seg"><span class="led g"></span> CSP: stricte</div>
+  <div class="seg push">persisté · survit au redémarrage</div>
+</div>
+<div class="body">
+  <aside class="tree">
+    <div class="tgrp">apparence</div>
+    <a class="on">⬚ interface</a>
+    <a>⌨ police</a>
+    <a>◧ charte</a>
+    <div class="tgrp">opérationnel</div>
+    <a>⌥ cockpit</a>
+    <a>⚙ ia · litellm</a>
+    <a>⛨ sécurité d'exécution</a>
+    <a>≡ main courante</a>
+    <a>⇅ canal adresse · n8n</a>
+    <a>▤ services iakabox</a>
+  </aside>
+  <div class="cfg">
+    <div class="cfghead"><h1>interface</h1><div class="p">Apparence, forme et police. Clés persistées en config locale.</div></div>
+
+    <div class="group">
+      <div class="gtitle">disposition</div>
+      <div class="kvrow"><div class="k">nav.position<small>emplacement de la navigation</small></div><div class="val"><div class="seg"><span class="on">top-cmd</span><span>rail</span><span>split</span></div></div></div>
+      <div class="kvrow"><div class="k">ui.density<small>espacement des vues</small></div><div class="val"><div class="seg"><span class="on">compact</span><span>standard</span><span>confort</span></div></div></div>
+      <div class="kvrow"><div class="k">ui.shape<small>coins</small></div><div class="val"><div class="seg"><span class="on">net</span><span>arrondi</span></div></div></div>
+    </div>
+
+    <div class="group">
+      <div class="gtitle">police</div>
+      <div class="kvrow"><div class="k">font.family<small>famille principale</small></div><div class="val"><div class="seg"><span class="on">mono</span><span>système</span><span>serif</span></div></div></div>
+      <div class="kvrow"><div class="k">font.mono<small>jeu monospace</small></div><div class="val"><span class="field">JetBrains Mono</span></div></div>
+      <div class="kvrow"><div class="k">font.scale<small>échelle</small></div><div class="val"><span class="field" style="min-width:80px">1.00</span></div></div>
+    </div>
+
+    <div class="group">
+      <div class="gtitle">ia · litellm</div>
+      <div class="kvrow"><div class="k">ai.endpoint<small>openai-compat, un seul</small></div><div class="val"><span class="field">http://localhost:11434/v1</span></div></div>
+      <div class="kvrow"><div class="k">ai.model<small>source des paroles</small></div><div class="val"><span class="field" style="min-width:200px">llama3.1:8b</span></div></div>
+      <div class="kvrow"><div class="k">ai.api_key<small>keychain (write-only)</small></div><div class="val secret">•••••••••••• <span class="tag">keychain</span></div></div>
+    </div>
+
+    <div class="group">
+      <div class="gtitle">sécurité d'exécution</div>
+      <div class="kvrow"><div class="k">runner.allowlist<small>outils autorisés</small></div><div class="val"><span class="field" style="min-width:260px">Read, Glob, Grep, Bash</span></div></div>
+      <div class="kvrow"><div class="k">runner.require_trust<small>pré-requis trust du dossier</small></div><div class="val"><span class="toggle on"></span></div></div>
+      <div class="kvrow"><div class="k">runner.show_thinking<small>canal pensée visible</small></div><div class="val"><span class="toggle on"></span></div></div>
+    </div>
+  </div>
+</div>
+</body></html>

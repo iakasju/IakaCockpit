@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Working</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.body{display:grid;grid-template-columns:220px 1fr 300px}
+.sess{font-size:12px;padding:9px 14px;border-bottom:1px solid var(--line-soft);cursor:pointer;display:flex;gap:8px;align-items:center}
+.sess:hover{background:var(--deep)}
+.sess.on{background:rgba(var(--acc-rgb),.08);border-left:2px solid var(--acc);padding-left:12px}
+.sess .nm{color:var(--ink)} .sess .id{color:var(--ink3);margin-left:auto;font-size:10.5px}
+.term-hero{display:flex;flex-direction:column;background:#14161b;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.tbar{display:flex;gap:1px;background:#0e1014;padding:6px 6px 0;font-size:11.5px}
+.tbar .t{padding:6px 13px;color:#8b93a1;background:#181b21;border-radius:7px 7px 0 0;cursor:pointer}
+.tbar .t.on{background:#14161b;color:#e6ebf2}
+.tbody{flex:1;overflow:auto;padding:16px 18px;font-size:12.5px;line-height:1.65;color:#c3cbd6}
+.tbody .pr{color:var(--cyan)} .tbody .ok{color:#7ee3b0} .tbody .wn{color:#ffcf70} .tbody .dim{color:#6b7484} .tbody .ag{color:#9b8cff}
+.tin{border-top:1px solid #262a32;padding:11px 18px;font-size:12.5px;color:#7ee3b0;display:flex;gap:8px}
+.cur{width:7px;height:15px;background:#7ee3b0;display:inline-block;animation:bl 1s steps(2) infinite}@keyframes bl{50%{opacity:0}}
+.cmsg{padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+.cmsg .hd{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.cmsg img{width:22px;height:22px;border-radius:6px;object-fit:cover}
+.cmsg .nm{font-size:11.5px;font-weight:600}
+.cmsg p{font-size:12.5px;line-height:1.55;color:var(--ink2);font-family:var(--text)}
+.cmsg.geste{background:rgba(var(--acc-rgb),.05)}.cmsg.geste p{color:var(--acc);font-family:var(--mono);font-size:11.5px}
+.foot{margin-top:auto;border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:8px}
+.foot input{flex:1;border:1px solid var(--line);background:var(--card);border-radius:7px;padding:8px 10px;font-family:var(--text);font-size:12.5px}
+.foot button{border:0;background:var(--acc);color:#fff;border-radius:7px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer}
+</style></head>
+<body>
+<div class="cmd"><div class="logo">iaka<b>::</b>cockpit</div><div class="palette">⌘ rechercher projet, agent, commande… <kbd>⌘K</kbd></div><div class="tabs"><a>portfolio</a><a class="on">working</a><a>journal</a><a>teams</a><a>réglages</a></div></div>
+<div class="strip">
+  <div class="seg"><span class="led g"></span> session <b>iaka-demo</b></div>
+  <div class="seg"><span class="led g"></span> runner claude-code · TUI native</div>
+  <div class="seg"><span class="led o"></span> 1 délégation active</div>
+  <div class="seg"><span class="led b"></span> allowlist: Read,Glob,Grep,Bash</div>
+  <div class="seg push">transcript ▸ ~/.claude/projects/iaka-demo/9f3a.jsonl</div>
+</div>
+<div class="body">
+  <div class="panel">
+    <div class="phead">Sessions · set de Work</div>
+    <div class="sess on"><span class="led g"></span><span class="nm">iaka-demo</span><span class="id">9f3a</span></div>
+    <div class="sess"><span class="led i"></span><span class="nm">iakacockpit</span><span class="id">idle</span></div>
+    <div class="sess"><span class="led i"></span><span class="nm">iakagraph</span><span class="id">idle</span></div>
+    <div class="phead" style="margin-top:6px">Roster · iakaframe</div>
+    <div class="sess"><span class="led g"></span><span class="nm">aragorn</span><span class="id">coord</span></div>
+    <div class="sess"><span class="led o"></span><span class="nm">gandalf</span><span class="id">think</span></div>
+    <div class="sess"><span class="led i"></span><span class="nm">gimli</span><span class="id">idle</span></div>
+    <div class="sess"><span class="led i"></span><span class="nm">legolas</span><span class="id">idle</span></div>
+    <div class="sess"><span class="led i"></span><span class="nm">frodo</span><span class="id">idle</span></div>
+  </div>
+  <div class="term-hero">
+    <div class="tbar"><div class="t on">● aragorn — terminal-source</div><div class="t">gandalf</div><div class="t">+</div></div>
+    <div class="tbody">
+      <div><span class="dim">~/work/iaka-demo</span> <span class="pr">aragorn</span> % claude --resume 9f3a</div>
+      <div class="ok">✓ session restaurée · transcript en écriture · réflexes TUI actifs (⇧⇥ / esc)</div>
+      <div>&nbsp;</div>
+      <div><span class="ag">aragorn ▸</span> Je cadre la refonte. Le terminal est la source ; le chat à droite n'en est que la vue « parole ».</div>
+      <div><span class="ag">aragorn ▸</span> <span class="dim">tool_use</span> <span class="wn">Agent</span> → gandalf : « audit écrans + hiérarchie »</div>
+      <div class="dim">  ↳ sidechain ouverte · gandalf hérite du cwd · allowlist Read,Glob,Grep,Bash</div>
+      <div><span class="ag">gandalf ▸</span> Le point dur n'est pas la charte mais la grammaire de mise en page.</div>
+      <div class="ok">✓ rapport remonté au coordinateur · 1 délégation close</div>
+      <div>&nbsp;</div>
+      <div><span class="wn">esc</span> pour interrompre · <span class="wn">⇧⇥</span> pour le mode plan</div>
+    </div>
+    <div class="tin">aragorn % <span class="cur"></span></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;border-left:1px solid var(--line)">
+    <div class="phead">Parole · vue dérivée du transcript</div>
+    <div class="cmsg"><div class="hd"><img src="../assets/aragorn.png"><span class="nm">aragorn</span><span class="tag b">PROJET</span></div><p>Je cadre la refonte. Le terminal est la source ; le chat n'en est que la vue.</p></div>
+    <div class="cmsg geste"><div class="hd"><span class="nm" style="color:var(--acc)">⇄ geste</span></div><p>aragorn → gandalf · délégation « audit écrans + hiérarchie »</p></div>
+    <div class="cmsg"><div class="hd"><img src="../assets/gandalf.png"><span class="nm">gandalf</span><span class="tag" style="background:rgba(142,78,198,.14);color:var(--purple)">ANALYSE</span></div><p>Le point dur n'est pas la charte mais la grammaire de mise en page : on empile des cartes bordées sans respiration.</p></div>
+    <div class="foot"><input placeholder="message ou @agent…"><button>↵</button></div>
+  </div>
+</div>
+</body></html>

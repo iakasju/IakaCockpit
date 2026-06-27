@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr" data-mock="B">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock B — Éditorial calme · studio-clair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfbfc; --card:#ffffff; --deep:#f0f1f4; --line:#e7e8ec; --line-soft:#eef0f3;
+  --ink:#16181d; --ink2:#5b6270; --ink3:#9aa0ad;
+  --acc:#5b5bd6; --acc-l:#7a78ff; --acc-rgb:91,91,214;
+  --green:#30a46c; --orange:#f5a623; --blue:#3b82f6; --purple:#8e4ec6;
+  --display:"Fraunces",Georgia,serif;
+  --text:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--text);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+
+/* ---- Nav minimale (liens texte, AUCUN caisson) ---- */
+header{display:flex;align-items:center;gap:42px;padding:26px 56px;max-width:1180px;margin:0 auto}
+.logo{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:-.01em}
+.logo em{font-style:italic;color:var(--acc)}
+nav{display:flex;gap:30px;margin-left:8px}
+nav a{font-size:14px;color:var(--ink2);text-decoration:none;padding-bottom:3px;border-bottom:2px solid transparent;transition:.15s}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--ink);border-color:var(--acc);font-weight:500}
+header .right{margin-left:auto;display:flex;gap:14px;align-items:center}
+.pill{font-size:12px;color:var(--ink2);background:var(--deep);padding:6px 13px;border-radius:99px}
+
+/* ---- Colonne de lecture + héros éditorial ---- */
+.wrap{max-width:1180px;margin:0 auto;padding:30px 56px 80px}
+.hero{margin:24px 0 56px;max-width:760px}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);margin-bottom:16px}
+.hero h1{font-family:var(--display);font-weight:600;font-size:52px;line-height:1.04;letter-spacing:-.02em}
+.hero h1 em{font-style:italic;color:var(--ink2)}
+.hero p{font-size:17px;line-height:1.7;color:var(--ink2);margin-top:20px;max-width:60ch}
+
+.row{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 26px}
+.row h2{font-family:var(--display);font-weight:600;font-size:27px;letter-spacing:-.01em}
+.row a{font-size:13.5px;color:var(--acc);text-decoration:none}
+
+/* ---- Grille de casting (Teams vue d'un coup) ---- */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.cast{background:var(--card);border-radius:22px;padding:26px;box-shadow:0 1px 0 var(--line-soft),0 18px 40px -28px rgba(20,22,28,.25);transition:.2s}
+.cast:hover{transform:translateY(-3px);box-shadow:0 1px 0 var(--line-soft),0 26px 50px -28px rgba(20,22,28,.32)}
+.cast img{width:74px;height:74px;border-radius:20px;object-fit:cover;background:var(--deep);margin-bottom:18px}
+.cast h3{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.cast .role{font-size:13px;color:var(--ink2);margin:3px 0 16px}
+.cast .meta{display:flex;flex-direction:column;gap:9px;border-top:1px solid var(--line-soft);padding-top:16px}
+.cast .meta div{display:flex;justify-content:space-between;font-size:12.5px}
+.cast .meta .k{color:var(--ink3)} .cast .meta .v{color:var(--ink);font-weight:500}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;margin-top:14px}
+.status::before{content:"";width:7px;height:7px;border-radius:50%}
+.status.work{color:var(--green)} .status.work::before{background:var(--green)}
+.status.think{color:var(--orange)} .status.think::before{background:var(--orange)}
+.status.idle{color:var(--ink3)} .status.idle::before{background:var(--ink3)}
+.lead{outline:2px solid rgba(var(--acc-rgb),.5);outline-offset:-2px}
+.tag{position:relative}
+.taglabel{position:absolute;top:-11px;left:26px;background:var(--acc);color:#fff;font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:7px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">iaka<em>·</em>cockpit</div>
+    <nav>
+      <a>Portfolio</a>
+      <a>Working</a>
+      <a>Journal</a>
+      <a class="on">Teams</a>
+    </nav>
+    <div class="right">
+      <span class="pill">Charte · studio-clair</span>
+      <span class="pill">⚙︎ Réglages</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="kicker">Teams &amp; casting</div>
+      <h1>Compose ton équipage,<br><em>puis laisse-le opérer.</em></h1>
+      <p>Chaque agent a un runner, un modèle et des compétences. Désigne un coordinateur ; les changements s'appliquent au prochain lancement de la conversation.</p>
+    </div>
+
+    <div class="row">
+      <h2>Team iakaframe</h2>
+      <a>12 teams définies · changer →</a>
+    </div>
+
+    <div class="grid">
+      <div class="cast lead tag">
+        <span class="taglabel">Coordinateur</span>
+        <img src="assets/aragorn.png" alt="">
+        <h3>Aragorn</h3>
+        <div class="role">Chef de projet · pilote le terminal-source</div>
+        <div class="meta">
+          <div><span class="k">Royaume</span><span class="v">Projet</span></div>
+          <div><span class="k">Runner</span><span class="v">Claude Code</span></div>
+          <div><span class="k">Modèle</span><span class="v">défaut runner</span></div>
+        </div>
+        <span class="status work">au travail</span>
+      </div>
+
+      <div class="cast">
+        <img src="assets/gandalf.png" alt="">
+        <h3>Gandalf</h3>
+        <div class="role">Analyse · rédige les specs</div>
+        <div class="meta">
+          <div><span class="k">Royaume</span><span class="v">Analyse</span></div>
+          <div><span class="k">Runner</span><span class="v">Claude Code</span></div>
+          <div><span class="k">Skills</span><span class="v">iakaframe-gandalf</span></div>
+        </div>
+        <span class="status think">réfléchit</span>
+      </div>
+
+      <div class="cast">
+        <img src="assets/gimli.png" alt="">
+        <h3>Gimli</h3>
+        <div class="role">Exécution · code &amp; build</div>
+        <div class="meta">
+          <div><span class="k">Royaume</span><span class="v">Exécution</span></div>
+          <div><span class="k">Runner</span><span class="v">Claude Code</span></div>
+          <div><span class="k">Skills</span><span class="v">iakaframe-gimli</span></div>
+        </div>
+        <span class="status idle">en attente</span>
+      </div>
+
+      <div class="cast">
+        <img src="assets/legolas.png" alt="">
+        <h3>Legolas</h3>
+        <div class="role">Qualité · gate &amp; tests</div>
+        <div class="meta">
+          <div><span class="k">Royaume</span><span class="v">Qualité</span></div>
+          <div><span class="k">Runner</span><span class="v">Claude Code</span></div>
+          <div><span class="k">Skills</span><span class="v">iakaframe-legolas</span></div>
+        </div>
+        <span class="status idle">en attente</span>
+      </div>
+
+      <div class="cast">
+        <img src="assets/frodo.png" alt="">
+        <h3>Frodo</h3>
+        <div class="role">Porteur · livraison</div>
+        <div class="meta">
+          <div><span class="k">Royaume</span><span class="v">Livraison</span></div>
+          <div><span class="k">Runner</span><span class="v">Shell</span></div>
+          <div><span class="k">Skills</span><span class="v">iakaframe-frodo</span></div>
+        </div>
+        <span class="status idle">en attente</span>
+      </div>
+
+      <div class="cast" style="display:grid;place-items:center;text-align:center;border:2px dashed var(--line);box-shadow:none;background:transparent;color:var(--ink3)">
+        <div>
+          <div style="font-size:30px;font-weight:300;margin-bottom:8px">+</div>
+          <div style="font-size:14px;font-family:var(--display)">Ajouter un agent</div>
+          <div style="font-size:12px;margin-top:4px">au casting de la team</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

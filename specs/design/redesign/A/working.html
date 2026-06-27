@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Working</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.work{display:grid;grid-template-columns:264px 1fr;height:100vh;overflow:hidden}
+.roster{padding:24px 18px;display:flex;flex-direction:column;gap:4px;overflow:auto;border-right:1px solid var(--line-soft)}
+.roster h2{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.01em;margin:6px 0 2px}
+.roster .s{font-size:12.5px;color:var(--ink2);margin-bottom:16px}
+.agent{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:14px;cursor:pointer;transition:.12s}
+.agent:hover{background:var(--card)} .agent.on{background:var(--card);box-shadow:0 2px 10px rgba(20,22,28,.05)}
+.agent img{width:38px;height:38px;border-radius:11px;object-fit:cover;background:var(--deep)}
+.agent .nm{font-family:var(--display);font-weight:600;font-size:13.5px}.agent .rl{font-size:11px;color:var(--ink3)}
+.agent .dot{margin-left:auto}
+.conv{display:flex;flex-direction:column;background:var(--card);overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 26px;border-bottom:1px solid var(--line-soft)}
+.topbar .pj{font-family:var(--display);font-weight:600;font-size:15px}
+.spacer{flex:1}.ib{width:32px;height:32px;border-radius:10px;border:0;background:var(--deep);color:var(--ink2);cursor:pointer}
+.stream{flex:1;overflow:auto;padding:26px;display:flex;flex-direction:column;gap:20px;max-width:780px;width:100%;margin:0 auto}
+.msg{display:flex;gap:13px;align-items:flex-start}.msg img{width:32px;height:32px;border-radius:10px;flex:none;object-fit:cover}
+.who{display:flex;align-items:center;gap:8px;margin-bottom:5px}.who b{font-family:var(--display);font-size:13px;font-weight:600}
+.badge{font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;text-transform:uppercase}
+.b-arag{background:rgba(59,130,246,.13);color:var(--blue)}.b-gand{background:rgba(142,78,198,.13);color:var(--purple)}.b-gim{background:rgba(48,164,108,.13);color:var(--green)}
+.t{color:var(--ink3);font-size:11px}
+.bub p{font-size:14px;line-height:1.6;color:var(--ink);max-width:60ch}
+.deleg{margin-top:8px;font-size:12.5px;color:var(--ink2);background:var(--bg);border-radius:12px;padding:10px 13px;border-left:3px solid var(--acc)}
+.composer{padding:14px 26px;border-top:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
+.composer input{flex:1;border:0;background:var(--deep);border-radius:13px;padding:12px 15px;font-family:var(--text);font-size:14px;color:var(--ink)}
+.send{border:0;background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff;font-family:var(--display);font-weight:600;padding:0 18px;height:44px;border-radius:13px;cursor:pointer}
+.term{background:#16181d;color:#cbd2dc;font-family:var(--mono);font-size:12px;line-height:1.6;padding:12px 26px;max-height:120px;overflow:auto}
+.term .pr{color:var(--cyan)}.term .ok{color:#7ee3b0}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a title="Portfolio">🗂️<small>Folio</small></a>
+  <a class="on" title="Working">🛠️<small>Work</small></a>
+  <a title="Journal">📓<small>Log</small></a>
+  <a title="Teams">👥<small>Team</small></a>
+  <div class="sep"></div>
+  <a title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="work">
+  <aside class="roster">
+    <div class="eb">Conversation active</div>
+    <h2>iaka-demo</h2><div class="s">Team iakaframe · 5 agents</div>
+    <div class="agent on"><img src="../assets/aragorn.png"><div><div class="nm">Aragorn</div><div class="rl">Coordinateur · projet</div></div><span class="dot g"></span></div>
+    <div class="agent"><img src="../assets/gandalf.png"><div><div class="nm">Gandalf</div><div class="rl">Analyse · specs</div></div><span class="dot o"></span></div>
+    <div class="agent"><img src="../assets/gimli.png"><div><div class="nm">Gimli</div><div class="rl">Exécution · code</div></div><span class="dot i"></span></div>
+    <div class="agent"><img src="../assets/legolas.png"><div><div class="nm">Legolas</div><div class="rl">Qualité · gate</div></div><span class="dot i"></span></div>
+    <div class="agent"><img src="../assets/frodo.png"><div><div class="nm">Frodo</div><div class="rl">Porteur · livraison</div></div><span class="dot i"></span></div>
+  </aside>
+  <main class="conv">
+    <div class="topbar"><span class="pj">Conversation · iaka-demo</span><span class="chip live">● terminal-source vivant</span><span class="spacer"></span><button class="ib" title="esc">⎋</button><button class="ib" title="terminal">▦</button></div>
+    <div class="stream">
+      <div class="msg"><img src="../assets/aragorn.png"><div class="bub"><div class="who"><b>Aragorn</b><span class="badge b-arag">Projet</span><span class="t">10:28</span></div><p>Reçu le besoin de refonte visuelle. Je cadre, puis je délègue l'analyse des specs à Gandalf avant de lancer l'exécution.</p><div class="deleg">↳ délègue à <b>Gandalf</b> — « audit des écrans + hiérarchie de l'information »</div></div></div>
+      <div class="msg"><img src="../assets/gandalf.png"><div class="bub"><div class="who"><b>Gandalf</b><span class="badge b-gand">Analyse</span><span class="t">10:31</span></div><p>Cadrage prêt. Le point dur n'est pas la charte mais la grammaire de mise en page : on empile des cartes bordées sans respiration. Je rends un plan en trois passes.</p></div></div>
+      <div class="msg"><img src="../assets/gimli.png"><div class="bub"><div class="who"><b>Gimli</b><span class="badge b-gim">Exécution</span><span class="t">10:34</span></div><p>Je prends la passe 1 sur la navigation. Rail d'icônes en place, je retire les onglets-pilule et je passe les sections en sans-bord.</p></div></div>
+    </div>
+    <div class="composer"><input placeholder="Écris à l'équipe… (@agent pour viser un membre)"><button class="send">Envoyer</button></div>
+    <div class="term"><div><span class="pr">aragorn@iaka-demo</span> ~ % claude --resume</div><div><span class="ok">✓</span> transcript ouvert · 3 messages · 1 délégation</div><div><span class="pr">›</span> _</div></div>
+  </main>
+</div>
+</body></html>

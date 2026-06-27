@@ -1,18 +1,19 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Roster } from "../components/Roster";
-import { DEMO_TEAM, teamBadge } from "../mock/demoTeam";
+import { DEMO_TEAM } from "../mock/demoTeam";
 
 afterEach(cleanup);
 
 describe("Roster — widget team (L8/D6)", () => {
-  it("rend les 5 agents en pastilles [ROYAUME][Agent]", () => {
+  it("rend les 5 agents : nom en clair + royaume en label discret (direction A)", () => {
     render(<Roster currentAgent="Aragorn" pending={false} onPick={() => {}} />);
     expect(DEMO_TEAM).toHaveLength(5);
     for (const m of DEMO_TEAM) {
-      expect(screen.getByText(teamBadge(m))).toBeTruthy();
-      // Royaume en MAJUSCULE dans la pastille.
-      expect(teamBadge(m)).toContain(`[${m.royaume}]`);
+      // Nom de l'agent en clair (plus de pastille [ROYAUME][Agent] tronquée).
+      expect(screen.getByText(m.agent)).toBeTruthy();
+      // Royaume présent en label discret, toujours en MAJUSCULE.
+      expect(screen.getByText(m.royaume)).toBeTruthy();
       expect(m.royaume).toBe(m.royaume.toUpperCase());
     }
   });
@@ -89,9 +90,10 @@ describe("Roster — widget team (L8/D6)", () => {
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(DEMO_TEAM.length);
     expect(screen.getByAltText("Gandalf")).toBeTruthy();
-    // La pastille [ROYAUME][Agent] reste présente (identité iakaframe).
+    // Nom + royaume restent présents (identité iakaframe), vignette en plus.
     for (const m of DEMO_TEAM) {
-      expect(screen.getByText(teamBadge(m))).toBeTruthy();
+      expect(screen.getByText(m.agent)).toBeTruthy();
+      expect(screen.getByText(m.royaume)).toBeTruthy();
     }
   });
 
@@ -106,7 +108,7 @@ describe("Roster — widget team (L8/D6)", () => {
       />,
     );
     expect(screen.queryAllByRole("img")).toHaveLength(0);
-    expect(screen.getByText(teamBadge(DEMO_TEAM[0]))).toBeTruthy();
+    expect(screen.getByText(DEMO_TEAM[0].agent)).toBeTruthy();
   });
 
   it("L9-A2 fallback : sans resolveAvatar (L8) → aucune image", () => {
@@ -130,6 +132,6 @@ describe("Roster — widget team (L8/D6)", () => {
     fireEvent.error(imgs[0]);
     expect(screen.getAllByRole("img")).toHaveLength(DEMO_TEAM.length - 1);
     // La pastille reste.
-    expect(screen.getByText(teamBadge(DEMO_TEAM[0]))).toBeTruthy();
+    expect(screen.getByText(DEMO_TEAM[0].agent)).toBeTruthy();
   });
 });

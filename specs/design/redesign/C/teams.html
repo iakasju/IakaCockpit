@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Teams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.body{display:flex;flex-direction:column}
+.toolbar{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+.kv{font-size:12px;color:var(--ink3)}.kv b{color:var(--ink);font-weight:600}
+.sel{background:var(--deep);border:0;border-radius:7px;padding:6px 11px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:9px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+tbody tr:hover{background:var(--deep)}
+.ag{display:flex;align-items:center;gap:9px}
+.ag img{width:28px;height:28px;border-radius:7px;object-fit:cover;background:var(--deep)}
+.ag .nm{font-weight:600;color:var(--ink)}
+.cell{background:transparent;border:1px solid transparent;border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:12px;color:var(--ink2);cursor:text}
+tr:hover .cell{border-color:var(--line);background:var(--card)}
+.skills{color:var(--acc)}
+.crown{color:#c98a17}
+.rolesel{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.rolesel.m{background:var(--deep);color:var(--ink2)}
+.cnt{display:flex;gap:6px;padding:8px 16px;border-top:1px solid var(--line);background:var(--bg);color:var(--ink3);font-size:11.5px}
+</style></head>
+<body>
+<div class="cmd"><div class="logo">iaka<b>::</b>cockpit</div><div class="palette">⌘ rechercher projet, agent, commande… <kbd>⌘K</kbd></div><div class="tabs"><a>portfolio</a><a>working</a><a>journal</a><a class="on">teams</a><a>réglages</a></div></div>
+<div class="strip">
+  <div class="seg"><span class="led g"></span> 12 teams · <b>iakaframe</b> active</div>
+  <div class="seg"><span class="led p"></span> coordinateur: <b>aragorn</b></div>
+  <div class="seg"><span class="led b"></span> casting visuel: lotr</div>
+  <div class="seg push">appliqué au prochain lancement</div>
+</div>
+<div class="body">
+  <div class="toolbar">
+    <span class="kv">team <select class="sel"><option>iakaframe · défaut</option></select></span>
+    <span class="kv">coordinateur <select class="sel"><option>aragorn</option></select></span>
+    <span class="kv">casting <select class="sel"><option>LOTR</option></select></span>
+    <span style="flex:1"></span>
+    <button class="btn">+ team</button><button class="btn acc">+ agent</button>
+  </div>
+  <div style="overflow:auto;flex:1">
+  <table>
+    <thead><tr><th>agent</th><th>royaume</th><th>runner</th><th>modèle</th><th>skills (csv)</th><th>rôle</th><th>statut</th></tr></thead>
+    <tbody>
+      <tr><td><div class="ag"><img src="../assets/aragorn.png"><span class="nm">aragorn</span> <span class="crown">👑</span></div></td><td><span class="cell">Projet</span></td><td><span class="cell">claude-code</span></td><td><span class="cell">défaut runner</span></td><td><span class="cell skills">iakaframe-aragorn, iakaframe-odin</span></td><td><span class="rolesel">coordinateur</span></td><td><span class="tag g">● en ligne</span></td></tr>
+      <tr><td><div class="ag"><img src="../assets/gandalf.png"><span class="nm">gandalf</span></div></td><td><span class="cell">Analyse</span></td><td><span class="cell">claude-code</span></td><td><span class="cell">défaut runner</span></td><td><span class="cell skills">iakaframe-gandalf</span></td><td><span class="rolesel m">membre</span></td><td><span class="tag o">● réfléchit</span></td></tr>
+      <tr><td><div class="ag"><img src="../assets/gimli.png"><span class="nm">gimli</span></div></td><td><span class="cell">Exécution</span></td><td><span class="cell">claude-code</span></td><td><span class="cell">défaut runner</span></td><td><span class="cell skills">iakaframe-gimli</span></td><td><span class="rolesel m">membre</span></td><td><span class="tag">○ en attente</span></td></tr>
+      <tr><td><div class="ag"><img src="../assets/legolas.png"><span class="nm">legolas</span></div></td><td><span class="cell">Qualité</span></td><td><span class="cell">claude-code</span></td><td><span class="cell">défaut runner</span></td><td><span class="cell skills">iakaframe-legolas</span></td><td><span class="rolesel m">membre</span></td><td><span class="tag">○ en attente</span></td></tr>
+      <tr><td><div class="ag"><img src="../assets/frodo.png"><span class="nm">frodo</span></div></td><td><span class="cell">Livraison</span></td><td><span class="cell">shell</span></td><td><span class="cell">—</span></td><td><span class="cell skills">iakaframe-frodo</span></td><td><span class="rolesel m">membre</span></td><td><span class="tag">○ en attente</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="cnt"><span class="kbd">↑↓</span> agent · <span class="kbd">↵</span> éditer la cellule · <span class="kbd">c</span> désigner coordinateur · <span class="kbd">⌫</span> retirer du casting</div>
+</div>
+</body></html>

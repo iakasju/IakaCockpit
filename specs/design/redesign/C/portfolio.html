@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.body{display:flex;flex-direction:column}
+.toolbar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+.toolbar .grow{flex:1}
+.filter{background:var(--deep);border:0;border-radius:7px;padding:7px 11px;font-family:var(--mono);font-size:12px;color:var(--ink);min-width:240px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+  padding:9px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+tbody td{padding:11px 16px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tbody tr:hover{background:var(--deep)}
+.nm{font-weight:600;color:var(--ink)}
+.pth{color:var(--ink3)}
+.toggle{width:34px;height:19px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;display:inline-block}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.15s}
+.toggle.on{background:var(--green)}.toggle.on::after{left:17px}
+.branch{color:var(--ink2)}
+.mod{color:var(--orange)}
+.cnt{display:flex;gap:6px;padding:8px 16px;border-top:1px solid var(--line);background:var(--bg);color:var(--ink3);font-size:11.5px}
+</style></head>
+<body>
+<div class="cmd"><div class="logo">iaka<b>::</b>cockpit</div><div class="palette">⌘ rechercher projet, agent, commande… <kbd>⌘K</kbd></div><div class="tabs"><a class="on">portfolio</a><a>working</a><a>journal</a><a>teams</a><a>réglages</a></div></div>
+<div class="strip">
+  <div class="seg"><span class="led g"></span> chapeau <b>~/work</b></div>
+  <div class="seg"><span class="led b"></span> 10 dépôts détectés</div>
+  <div class="seg"><span class="led g"></span> set de Work: <b>3</b></div>
+  <div class="seg push">scan ▸ git::capture · 0.4s</div>
+</div>
+<div class="body">
+  <div class="toolbar">
+    <button class="btn acc">⟳ rescan</button>
+    <button class="btn">+ import</button>
+    <input class="filter" placeholder="filtrer  ex: stack:rust  state:dirty">
+    <span class="grow"></span>
+    <span style="color:var(--ink3);font-size:11.5px">tri: <b style="color:var(--ink)">activité ↓</b></span>
+  </div>
+  <div style="overflow:auto;flex:1">
+  <table>
+    <thead><tr><th></th><th>projet</th><th>chemin</th><th>branche</th><th>état</th><th>stack</th><th>activité</th><th>set de Work</th></tr></thead>
+    <tbody>
+      <tr><td><span class="led g"></span></td><td class="nm">iaka-demo</td><td class="pth">~/work/iaka-demo</td><td class="branch">main</td><td>propre · 14c</td><td><span class="tag">git</span></td><td>en cours</td><td><span class="toggle on"></span></td></tr>
+      <tr><td><span class="led i"></span></td><td class="nm">iakacockpit</td><td class="pth">~/work/IakaCockpit</td><td class="branch">main</td><td>propre · 467c</td><td><span class="tag b">rust</span> <span class="tag acc">react</span></td><td>2j</td><td><span class="toggle on"></span></td></tr>
+      <tr><td><span class="led i"></span></td><td class="nm">iakagraph</td><td class="pth">~/work/iakagraph</td><td class="branch">main</td><td>propre</td><td><span class="tag">design</span></td><td>3j</td><td><span class="toggle on"></span></td></tr>
+      <tr><td><span class="led i"></span></td><td class="nm">iakabox</td><td class="pth">~/work/iakabox</td><td class="branch">main</td><td>propre</td><td><span class="tag">docker</span></td><td>5j</td><td><span class="toggle"></span></td></tr>
+      <tr><td><span class="led i"></span></td><td class="nm">iakaframe</td><td class="pth">~/work/iakaframe</td><td class="branch">main</td><td>propre</td><td><span class="tag">skills</span></td><td>1j</td><td><span class="toggle"></span></td></tr>
+      <tr><td><span class="led o"></span></td><td class="nm">iaka-notify</td><td class="pth">~/work/iaka-notify</td><td class="branch">main</td><td class="mod">3 modifiés</td><td><span class="tag">n8n</span></td><td>4h</td><td><span class="toggle"></span></td></tr>
+      <tr><td><span class="led i"></span></td><td class="nm">litellm-stack</td><td class="pth">~/work/litellm-stack</td><td class="branch">main</td><td>propre</td><td><span class="tag">proxy</span></td><td>8j</td><td><span class="toggle"></span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="cnt"><span class="kbd">↑↓</span> naviguer · <span class="kbd">space</span> set de Work · <span class="kbd">↵</span> ouvrir la conversation · <span class="kbd">/</span> filtrer</div>
+</div>
+</body></html>

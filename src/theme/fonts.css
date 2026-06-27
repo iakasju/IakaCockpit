@@ -1,0 +1,31 @@
+/**
+ * fonts.css — polices BUNDLÉES (direction A « Rail de commande »).
+ *
+ * Les woff2 sont COMMITÉS dans src/assets/fonts/ et servis en 'self' via le bundle
+ * Vite (build-time). AUCUNE origine distante (pas de fonts.googleapis.com /
+ * fonts.gstatic.com) : la CSP stricte (default-src 'self') reste intacte, l'app
+ * fonctionne hors-ligne.
+ *
+ * - Space Grotesk (OFL 1.1) = voix DISPLAY (titres, eyebrows, nombres).
+ * - Inter (OFL 1.1)        = voix TEXTE (corps de lecture neutre).
+ *
+ * Variable fonts (un fichier = toutes les graisses) ; sous-ensemble latin
+ * (U+0000-00FF), couvre les accents français (é è à ç …). font-display: swap pour
+ * éviter le FOIT (la stack système prend le relais le temps du chargement local).
+ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-variable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../assets/fonts/space-grotesk-latin-variable.woff2") format("woff2");
+}

@@ -1,0 +1,49 @@
+/* ============================================================
+   DIRECTION C — « Cockpit mono »  ·  charte studio-clair
+   Grammaire CONSTANTE des 5 pages : barre de commande ⌘K +
+   bandeau de statut à LEDs + panneaux PLATS (zéro ombre),
+   JetBrains Mono partout, dense, clavier-first.
+   ============================================================ */
+:root{
+  --bg:#fbfbfc; --card:#ffffff; --deep:#f0f1f4; --line:#e7e8ec; --line-soft:#eef0f3;
+  --ink:#16181d; --ink2:#5b6270; --ink3:#9aa0ad;
+  --acc:#5b5bd6; --acc-l:#7a78ff; --acc-rgb:91,91,214;
+  --red:#e5484d; --green:#30a46c; --blue:#3b82f6; --orange:#f5a623; --cyan:#12a594; --purple:#8e4ec6;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --text:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--mono);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
+  display:grid;grid-template-rows:46px 30px 1fr;height:100vh;overflow:hidden;font-size:13px}
+
+/* ---- Barre de commande (constante) ---- */
+.cmd{display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--card)}
+.cmd .logo{font-weight:700;font-size:14px;letter-spacing:-.02em}.cmd .logo b{color:var(--acc)}
+.palette{flex:1;max-width:520px;display:flex;align-items:center;gap:8px;background:var(--deep);border-radius:8px;padding:7px 12px;color:var(--ink3);font-size:12px}
+.palette kbd{margin-left:auto;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--ink2)}
+.cmd .tabs{display:flex;gap:2px;font-size:12px}
+.cmd .tabs a{padding:5px 11px;border-radius:7px;color:var(--ink2);text-decoration:none}
+.cmd .tabs a.on{background:rgba(var(--acc-rgb),.12);color:var(--acc);font-weight:600}
+
+/* ---- Bandeau de statut (constant) ---- */
+.strip{display:flex;align-items:center;background:var(--deep);font-size:11.5px;color:var(--ink2);border-bottom:1px solid var(--line)}
+.strip .seg{padding:0 14px;height:30px;display:flex;align-items:center;gap:7px;border-right:1px solid var(--line)}
+.strip .seg b{color:var(--ink)}
+.strip .push{margin-left:auto;border-right:0;border-left:1px solid var(--line);color:var(--ink3)}
+.led{width:7px;height:7px;border-radius:2px;flex:none}
+.led.g{background:var(--green)} .led.o{background:var(--orange)} .led.b{background:var(--blue)} .led.r{background:var(--red)} .led.i{background:var(--ink3)} .led.p{background:var(--purple)}
+
+/* ---- Primitives denses ---- */
+.body{overflow:hidden}
+.phead{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);
+  padding:10px 14px;border-bottom:1px solid var(--line-soft);background:var(--bg);position:sticky;top:0}
+.panel{overflow:auto;border-right:1px solid var(--line)}
+.panel:last-child{border-right:0}
+a{color:var(--acc);text-decoration:none}
+.kbd{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px;color:var(--ink2)}
+.btn{font-family:var(--mono);font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer}
+.btn.acc{background:var(--acc);color:#fff;border-color:transparent}
+.tag{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:var(--deep);color:var(--ink2)}
+.tag.acc{background:rgba(var(--acc-rgb),.13);color:var(--acc)} .tag.g{background:rgba(48,164,108,.13);color:var(--green)}
+.tag.o{background:rgba(245,166,35,.16);color:#9a6a04} .tag.b{background:rgba(59,130,246,.14);color:var(--blue)}

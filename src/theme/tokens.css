@@ -70,12 +70,16 @@ html[data-theme="naonedge-light"] {
 }
 
 /* --- Réglages dérivés (police, forme, échelle) — pilotés par useSettings --- */
+/* Direction A : voix DISPLAY = Space Grotesk (bundlée, charte-indépendante) ;
+   voix TEXTE = --font-sans de la charte (studio-clair = Inter bundlée). */
 :root {
   --fscale: 1;
-  --font-display: var(--font-sans);
+  --font-grotesk: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-grotesk);
 }
+/* « système » (défaut) : display = Space Grotesk, texte = --font-sans de la charte. */
 html[data-font="system"] {
-  --font-display: var(--font-sans);
+  --font-display: var(--font-grotesk);
 }
 html[data-font="serif"] {
   --font-display: var(--font-serif);
