@@ -231,3 +231,61 @@ describe("SettingsView — vignettes & chef-runner", () => {
     expect(screen.getByLabelText("Runner de aragorn")).toBeTruthy();
   });
 });
+
+describe("SettingsView — sommaire du menu gauche (L12)", () => {
+  // Le menu DOIT refléter les sections RÉELLES du panneau (les <h2>), chacune
+  // ayant une cible `id` dans le DOM. On vérifie l'exactitude (item ↔ section) et
+  // que cliquer un item active l'item ET cible la bonne section.
+  const EXPECTED = [
+    { item: "Interface", id: "set-interface" },
+    { item: "Police", id: "set-police" },
+    { item: "Charte", id: "set-charte" },
+    { item: "Cockpit", id: "set-cockpit" },
+    { item: "IA (LiteLLM)", id: "set-ia" },
+    { item: "Teams & agents", id: "set-teams" },
+    { item: "Sécurité d'exécution", id: "set-securite" },
+    { item: "Main courante", id: "set-maincourante" },
+    { item: "Canal adresse (n8n)", id: "set-adresse" },
+    { item: "Services iakabox", id: "set-services" },
+  ];
+
+  // Libellé visible d'un item : le nœud texte après l'icône (`<span/>{label}`).
+  const labelOf = (b: Element): string => b.lastChild?.textContent?.trim() ?? "";
+
+  it("liste exactement les sections réelles, chacune avec sa cible dans le DOM", () => {
+    const { container } = renderView({});
+    const nav = screen.getByRole("navigation", { name: "Sections réglages" });
+    const items = Array.from(nav.querySelectorAll("button.seti")).map(labelOf);
+    // Plus aucun item décoratif « Généraux »/« Cockpit » seul : 10 sections réelles.
+    expect(items).toEqual(EXPECTED.map((e) => e.item));
+    // Chaque item a une section-cible présente dans le panneau.
+    for (const e of EXPECTED) {
+      expect(container.querySelector(`#${e.id}`)).toBeTruthy();
+    }
+  });
+
+  it("un seul item actif au départ (premier), pas de double-active sur les panneaux", () => {
+    const { container } = renderView({});
+    const actives = container.querySelectorAll("button.seti.active");
+    expect(actives.length).toBe(1);
+    expect(labelOf(actives[0])).toBe("Interface");
+    // Les anciens panneaux ne portent plus la classe `active` (double-active corrigé).
+    expect(container.querySelectorAll(".setpanel.active").length).toBe(0);
+  });
+
+  it("cliquer un item l'active (et défile vers sa section)", () => {
+    const scrollSpy = vi.fn();
+    // jsdom n'implémente pas scrollIntoView : on le stube pour vérifier la cible.
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollSpy,
+    });
+    const { container } = renderView({});
+
+    fireEvent.click(screen.getByRole("button", { name: /Main courante/ }));
+    const actives = container.querySelectorAll("button.seti.active");
+    expect(actives.length).toBe(1);
+    expect(labelOf(actives[0])).toBe("Main courante");
+    expect(scrollSpy).toHaveBeenCalled();
+  });
+});

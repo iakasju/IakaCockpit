@@ -1157,6 +1157,16 @@ button {
   padding: 22px 24px;
   margin-bottom: 18px;
 }
+/* Sommaire Réglages (L12) : décale l'ancre de scroll pour ne pas coller au bord
+   haut du conteneur défilant `.setmain`. Vaut pour les sections (.block) ciblées
+   et le wrapper d'ancre (ex. Teams & agents). */
+.setmain .block,
+.setmain .anchor {
+  scroll-margin-top: 18px;
+}
+.setgroup {
+  margin-bottom: 6px;
+}
 .block .bt {
   display: flex;
   align-items: center;

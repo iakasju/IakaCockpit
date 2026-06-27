@@ -76,6 +76,42 @@ const TRUST_MODES: { id: ChefTrustMode; label: string }[] = [
   { id: "accept", label: "acceptation" },
 ];
 
+/**
+ * Sommaire (TOC) du menu gauche (L12 — retour terrain) : reflète les sections
+ * RÉELLES du panneau, dans l'ordre, regroupées par thème. Chaque entrée pointe vers
+ * l'`id` de sa section ; cliquer défile jusqu'à elle (`scrollIntoView`) et l'active.
+ * SOURCE UNIQUE : ajouter une section = une entrée ici + l'`id` correspondant sur le
+ * `.block` dans le JSX (sinon le clic n'a pas de cible). Fini les items décoratifs.
+ */
+interface SettingsSection {
+  id: string;
+  label: string;
+  icon: string;
+}
+const SETTINGS_GROUPS: { label: string; items: SettingsSection[] }[] = [
+  {
+    label: "Généraux",
+    items: [
+      { id: "set-interface", label: "Interface", icon: "🧭" },
+      { id: "set-police", label: "Police", icon: "🔤" },
+      { id: "set-charte", label: "Charte", icon: "🎨" },
+    ],
+  },
+  {
+    label: "Cockpit / opérationnel",
+    items: [
+      { id: "set-cockpit", label: "Cockpit", icon: "🎩" },
+      { id: "set-ia", label: "IA (LiteLLM)", icon: "🧠" },
+      { id: "set-teams", label: "Teams & agents", icon: "👥" },
+      { id: "set-securite", label: "Sécurité d'exécution", icon: "🤖" },
+      { id: "set-maincourante", label: "Main courante", icon: "📓" },
+      { id: "set-adresse", label: "Canal adresse (n8n)", icon: "📣" },
+      { id: "set-services", label: "Services iakabox", icon: "📡" },
+    ],
+  },
+];
+const FIRST_SECTION_ID = SETTINGS_GROUPS[0].items[0].id;
+
 export interface SettingsViewProps {
   settings: UseSettings;
   /** Autorité des teams/agents (L11) — alimente l'éditeur « Teams & agents ». */
@@ -135,6 +171,16 @@ export function SettingsView({
   const [n8nTesting, setN8nTesting] = useState<boolean>(false);
   const [chefToolsDraft, setChefToolsDraft] = useState<string>("");
 
+  // Section active du sommaire (L12) : pilote l'état actif du menu gauche. Le clic
+  // défile jusqu'à la section et la marque active. Aucun I/O — pure navigation DOM.
+  const [activeSection, setActiveSection] = useState<string>(FIRST_SECTION_ID);
+  const gotoSection = (id: string): void => {
+    setActiveSection(id);
+    const el =
+      typeof document !== "undefined" ? document.getElementById(id) : null;
+    el?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  };
+
   // Pré-remplit les brouillons à la première valeur chargée.
   const rootValue = rootDraft || settings.root || "";
   const endpointValue =
@@ -181,25 +227,35 @@ export function SettingsView({
   return (
     <section className="view st" aria-label="Réglages">
       <nav className="setnav" aria-label="Sections réglages">
-        <h3>Réglages</h3>
-        <div className="seti active">
-          <span className="e">🎛</span>Généraux
-        </div>
-        <div className="seti">
-          <span className="e">🎩</span>Cockpit
-        </div>
+        {SETTINGS_GROUPS.map((group) => (
+          <div key={group.label} className="setgroup">
+            <h3>{group.label}</h3>
+            {group.items.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`seti${activeSection === s.id ? " active" : ""}`}
+                aria-current={activeSection === s.id ? "true" : undefined}
+                onClick={() => gotoSection(s.id)}
+              >
+                <span className="e">{s.icon}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        ))}
       </nav>
 
       <div className="setmain">
         {/* ---------- GÉNÉRAUX (persistés) ---------- */}
-        <div className="setpanel active">
+        <div className="setpanel">
           <h1>Réglages généraux</h1>
           <p className="lead">
             Interface, forme, police et charte. Ces préférences sont persistées
             (elles survivent au redémarrage).
           </p>
 
-          <div className="block">
+          <div className="block" id="set-interface">
             <div className="bt">
               <span className="e">🧭</span>
               <h2>Interface</h2>
@@ -245,7 +301,7 @@ export function SettingsView({
             </div>
           </div>
 
-          <div className="block">
+          <div className="block" id="set-police">
             <div className="bt">
               <span className="e">🔤</span>
               <h2>Police</h2>
@@ -285,7 +341,7 @@ export function SettingsView({
             </div>
           </div>
 
-          <div className="block">
+          <div className="block" id="set-charte">
             <div className="bt">
               <span className="e">🎨</span>
               <h2>Charte</h2>
@@ -337,8 +393,8 @@ export function SettingsView({
         </div>
 
         {/* ---------- COCKPIT MINIMAL ---------- */}
-        <div className="setpanel active">
-          <div className="block">
+        <div className="setpanel">
+          <div className="block" id="set-cockpit">
             <div className="bt">
               <span className="e">🎩</span>
               <h2>Cockpit</h2>
@@ -367,6 +423,13 @@ export function SettingsView({
                   Appliquer & re-scanner
                 </button>
               </div>
+            </div>
+          </div>
+
+          <div className="block" id="set-ia">
+            <div className="bt">
+              <span className="e">🧠</span>
+              <h2>IA (LiteLLM)</h2>
             </div>
 
             <div className="fieldrow">
@@ -458,9 +521,11 @@ export function SettingsView({
           </div>
 
           {/* ---------- TEAMS & AGENTS (L11 : runner+modèle+skills PAR AGENT) ---------- */}
-          <TeamsEditor teams={teams} />
+          <div id="set-teams" className="anchor">
+            <TeamsEditor teams={teams} />
+          </div>
 
-          <div className="block">
+          <div className="block" id="set-securite">
             <div className="bt">
               <span className="e">🤖</span>
               <h2>Sécurité d'exécution du chef-runner</h2>
@@ -543,7 +608,7 @@ export function SettingsView({
             </div>
           </div>
 
-          <div className="block">
+          <div className="block" id="set-maincourante">
             <div className="bt">
               <span className="e">📓</span>
               <h2>Main courante (iakaboxlogs)</h2>
@@ -648,7 +713,7 @@ export function SettingsView({
             </div>
           </div>
 
-          <div className="block">
+          <div className="block" id="set-adresse">
             <div className="bt">
               <span className="e">📣</span>
               <h2>Canal adresse externe (n8n)</h2>
@@ -778,7 +843,7 @@ export function SettingsView({
             )}
           </div>
 
-          <div className="block">
+          <div className="block" id="set-services">
             <div className="bt">
               <span className="e">📡</span>
               <h2>Services iakabox</h2>
