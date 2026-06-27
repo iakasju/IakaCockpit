@@ -17,7 +17,6 @@ pub mod notify;
 pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
-pub mod runner;
 pub mod secrets;
 pub mod seed;
 pub mod services;
@@ -36,7 +35,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(terminal::TermState::default())
-        .manage(runner::RunnerState::default())
         .manage(transcript::TranscriptState::default())
         .setup(|app| {
             // Garantit une racine de chapeau persistée dès le premier boot
@@ -65,10 +63,6 @@ pub fn run() {
             terminal::pty_runner_open,
             transcript::transcript_tail_start,
             transcript::transcript_tail_stop,
-            runner::runner_open,
-            runner::runner_write,
-            runner::runner_interrupt,
-            runner::runner_close,
             ai::next_step,
             ai::chat,
             ai::ai_set_key,

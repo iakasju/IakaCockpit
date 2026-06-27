@@ -55,13 +55,6 @@ import {
   ptyRunnerOpen,
   onPtyOutput,
   onPtyClosed,
-  runnerOpen,
-  runnerWrite,
-  runnerInterrupt,
-  runnerClose,
-  onRunnerRaw,
-  onRunnerStderr,
-  onRunnerClosed,
   transcriptTailStart,
   transcriptTailStop,
   onRunnerEvent,
@@ -595,114 +588,6 @@ describe("backend.ts (abonnement PTY — DEP-5, seul point qui écoute)", () => 
     await onPtyClosed("t1", cb);
     expect(listenMock).toHaveBeenCalledWith(
       "pty://closed/t1",
-      expect.any(Function),
-    );
-    const handler = listenMock.mock.calls[0][1] as (e: {
-      payload: void;
-    }) => void;
-    handler({ payload: undefined });
-    expect(cb).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("backend.ts (chef-runner PIPES — L10 P1)", () => {
-  beforeEach(() => {
-    invokeMock.mockReset();
-    invokeMock.mockResolvedValue(undefined);
-  });
-
-  it("runnerOpen invoque runner_open avec id/kind/model/cwd", async () => {
-    await runnerOpen("s1", "claude-code", "claude-haiku-4-5", "/home/u/work/p");
-    expect(invokeMock).toHaveBeenCalledWith("runner_open", {
-      id: "s1",
-      kind: "claude-code",
-      model: "claude-haiku-4-5",
-      cwd: "/home/u/work/p",
-    });
-  });
-
-  it("runnerOpen tolère model/cwd absents", async () => {
-    await runnerOpen("s2", "claude-code");
-    expect(invokeMock).toHaveBeenCalledWith("runner_open", {
-      id: "s2",
-      kind: "claude-code",
-      model: undefined,
-      cwd: undefined,
-    });
-  });
-
-  it("runnerWrite invoque runner_write avec id et text (un tour)", async () => {
-    await runnerWrite("s1", "Liste les fichiers");
-    expect(invokeMock).toHaveBeenCalledWith("runner_write", {
-      id: "s1",
-      text: "Liste les fichiers",
-    });
-  });
-
-  it("runnerInterrupt invoque runner_interrupt avec id (= esc)", async () => {
-    await runnerInterrupt("s1");
-    expect(invokeMock).toHaveBeenCalledWith("runner_interrupt", { id: "s1" });
-  });
-
-  it("runnerClose invoque runner_close avec id", async () => {
-    await runnerClose("s1");
-    expect(invokeMock).toHaveBeenCalledWith("runner_close", { id: "s1" });
-  });
-
-  it("la façade expose les commandes et abonnements runner", () => {
-    for (const fn of [
-      "runnerOpen",
-      "runnerWrite",
-      "runnerInterrupt",
-      "runnerClose",
-      "onRunnerRaw",
-      "onRunnerStderr",
-      "onRunnerClosed",
-    ] as const) {
-      expect(typeof backend[fn]).toBe("function");
-    }
-  });
-});
-
-describe("backend.ts (abonnement runner — L10, seul point qui écoute)", () => {
-  beforeEach(() => {
-    listenMock.mockReset();
-    listenMock.mockResolvedValue(() => undefined);
-  });
-
-  it("onRunnerRaw écoute runner://raw/{id} et mappe le payload", async () => {
-    const cb = vi.fn();
-    await onRunnerRaw("s1", cb);
-    expect(listenMock).toHaveBeenCalledWith(
-      "runner://raw/s1",
-      expect.any(Function),
-    );
-    const handler = listenMock.mock.calls[0][1] as (e: {
-      payload: string;
-    }) => void;
-    handler({ payload: '{"type":"assistant"}' });
-    expect(cb).toHaveBeenCalledWith('{"type":"assistant"}');
-  });
-
-  it("onRunnerStderr écoute runner://stderr/{id}", async () => {
-    const cb = vi.fn();
-    await onRunnerStderr("s1", cb);
-    expect(listenMock).toHaveBeenCalledWith(
-      "runner://stderr/s1",
-      expect.any(Function),
-    );
-    const handler = listenMock.mock.calls[0][1] as (e: {
-      payload: string;
-    }) => void;
-    handler({ payload: "warning: ..." });
-    expect(cb).toHaveBeenCalledWith("warning: ...");
-  });
-
-  it("onRunnerClosed écoute runner://closed/{id}", async () => {
-    const cb = vi.fn();
-    await onRunnerClosed("s1", cb);
-    expect(listenMock).toHaveBeenCalledWith(
-      "runner://closed/s1",
       expect.any(Function),
     );
     const handler = listenMock.mock.calls[0][1] as (e: {
