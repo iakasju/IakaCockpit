@@ -261,6 +261,27 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       réel ?) ; (d) **Stop hook `identity-guard`** se déclenche sur le chef (hérité de `~/.claude` global) — à
       neutraliser ou assumer ; (e) `isSidechain:true` non reconfirmé en TUI interactive (mappé/testé sur
       fixtures). Voir mémoires `runner-natif-tail-transcript`, `transcript-delegation-agent-tool`.)*
+- [x] **L11** — Teams & agents (définition de premier rang) + liaison projet↔team
+      → `specs/instructions/L11-teams-agents-definition.md`
+      *(implémenté, **revue de version complète PASS** (2026-06-27), **candidate `v0.10.0`** ; doc qualité
+      `docs/qualite/v0.10.0.md`. Remplace le cadre FAUX `L11-runner-par-slot-team-projet.md` (rejeté par
+      Stéphane). La **TEAM = objet de premier rang** ; agent = persona + **runner + modèle + skills** ;
+      définition team/agents dans Settings (`TeamsEditor`) livrée EN ENTIER ; liaison `project_team:<id>` +
+      popup `TeamPicker` (défaut = dernière team / 1ʳᵉ fois = team n°1 ; annulation = team par défaut ; pas
+      d'invalidation) ; conversation routée au **coordinateur** ; `@agent` borné à la team ; de-hardcodage
+      runner (coordinateur → `pty_runner_open`, **Rust inchangé**) ; **exécution staged honnête** (coordinateur
+      `claude-code` réel, bannière pour ollama/litellm/codex définis-mais-non-câblés). `DEMO_TEAM` = team par
+      défaut éditable ; seed `project_team:iaka-demo`. Arbitrages AR-1..7 + gate tranchés par Stéphane. Org :
+      **Gandalf retiré, le chef de projet (coordinateur) gère cadrage + coordination**. Correctifs d'appoint :
+      `a30bf29` (démo → coordinateur résolu), `50f410a` (V1 `is_secret` robuste au namespace `project_team:` —
+      liaison silencieusement perdue pour projets au nom piégé). 268 front + 194 Rust verts, couverture
+      77 % stmts. Dissout le différé (c) L10. Différés : runners réels par agent / orchestration multi-agent,
+      exécution ollama/litellm/codex, allowlist/trust par agent, live-switch coordinateur.)*
+- [ ] **L12** — Iakajournal : sortir la main courante (L4) dans une **page dédiée** (4ᵉ vue)
+      *(**en file après v0.10.0, NON démarré**. Déplacer `MainCourante` (rendu aujourd'hui dans `PortfolioView`)
+      vers une nouvelle vue `IakajournalView` ; ajouter `iakajournal` à `useGridState` + entrée de nav ;
+      Portfolio se recentre sur le portefeuille. Réutilise le composant/hook L4 inchangés. Voir mémoire
+      `next-iakajournal-page-dediee`.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
