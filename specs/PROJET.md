@@ -94,7 +94,7 @@
 | Dimension | **ÉTAPE ACTUELLE** (fidèle à la cible, livrable) | **CIBLE** (à tenir, ne pas perdre) |
 |---|---|---|
 | **Orchestration** | **HYBRIDE** : le **chef = un VRAI runner** (défaut **Claude Code** = lancer le CLI `claude` dans le PTY du projet) ; **la team = des PERSONAS** que le chef incarne. | **Runners RÉELS par agent** (multi-runner / multi-modèle), **câblés un par un** : chaque agent de la team tourne sur son propre runner+modèle. |
-| **Settings** | **GLOBAUX** au cockpit ; l'IHM **propose un set par défaut** : runner **Claude Code** + la **team iakaframe connue** (odin / aragorn / gandalf / gimli / legolas…). | **PER-PROJET** : team + runner/model **par agent**, réglés projet par projet. |
+| **Settings** | **DÉFINITION PAR AGENT** (L11) : team + agents définis dans les Settings, **runner + modèle + skills réglés agent par agent**, team liée au projet, coordinateur désigné. **MAIS UN SEUL runner TOURNE réellement** = le **coordinateur** (Claude Code dans le PTY) ; les autres agents = **personas** joignables en @, leur runner défini n'est pas encore spawné. | **EXÉCUTION : runners RÉELS par agent** (multi-runner / multi-modèle), câblés un par un — chaque agent tourne sur son propre runner+modèle. |
 | **Skills** | Skills iakaframe **de la base** (rôles connus), tels quels. | **Skills / compétences MODIFIABLES** → définir des **frames modifiés** (phase 2). |
 | **Couche vue** | **Réutilise l'existant déjà construit** : bulles chat, vignettes thémées (L9), personas, trace par-tour. | Idem enrichie (avatars, statuts vivants). |
 | **Graph de délégation / jalons** | (Hors étape actuelle.) | **Volet de CRÉATION du graph de délégation / jalons** de la méthode : construire/éditer le **workflow de la team**, + **variantes** de graph/jalons, + autres features autour du travail **inter-agents**. |
@@ -335,7 +335,7 @@ La **suite admin complète** est **différée** (hors socle). Tracée pour mémo
 | **Admin projets** | Ajouter/retirer un projet du chapeau, brancher Forgejo | Horizon |
 | **Admin team / agents** | Roster des royaumes/agents, qui est armé | Horizon |
 | **Admin agent** + **admin par prompt** | Fiche agent + champ prompt éditant `agent.md` (§ 4.1) | Horizon |
-| **Settings PAR AGENT** (runner + modèle + skills) | Régler **par agent** son **runner** (ollama/litellm/claude code/chatgpt…), son **modèle**, ses **skills** (§ 0.2) | **CIBLE** (étape actuelle : settings **globaux** + **set par défaut** : runner Claude Code + team iakaframe — § 0.4) |
+| **Settings PAR AGENT** (runner + modèle + skills) | Régler **par agent** son **runner** (ollama/litellm/claude code/chatgpt…), son **modèle**, ses **skills** (§ 0.2) | **ÉTAPE ACTUELLE pour la DÉFINITION** (L11 : runner + modèle + skills réglés par agent dans les Settings, team liée au projet) ; **CIBLE pour l'EXÉCUTION** (un seul runner tourne = le coordinateur Claude Code ; runners réels par agent = à câbler) — § 0.4 |
 | **Admin skills** (skills MODIFIABLES → frames) | Inventaire/activation **et modification** des skills pour définir des **frames modifiés** (phase 2, § 0.4) | **CIBLE** (horizon) |
 | **Volet GRAPH de délégation / jalons** | **Créer/éditer le workflow** de la team (graph de délégation + jalons de la méthode) + **variantes** ; features autour du travail **inter-agents** (§ 0.4) | **CIBLE** (horizon) |
 | **Admin tools (MCP)** | **Lien vers Obot** (pas de manager maison) | Horizon (différé) |

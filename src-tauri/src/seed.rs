@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use tauri::AppHandle;
 
-use crate::config::{self, KEY_LITELLM_ENDPOINT};
+use crate::config::{self, DEFAULT_TEAM_ID, KEY_LITELLM_ENDPOINT, PREFIX_PROJECT_TEAM};
 use crate::db;
 use crate::git;
 use crate::paths::resolve_hat_root;
@@ -193,6 +193,14 @@ fn init_git_repo(demo: &Path) {
     );
 }
 
+/// Clé de liaison projet→team du projet de démo (`project_team:iaka-demo`). La démo est
+/// reliée à la **team par défaut** (`DEFAULT_TEAM_ID`) → elle s'ouvre **sans popup**
+/// `TeamPicker` (L11 § 5.6). Le seed ne sérialise PAS le JSON `teams` (la graine reste
+/// front, source unique de la définition) : il ne pose que la **liaison** (string).
+fn demo_project_team_key() -> String {
+    format!("{PREFIX_PROJECT_TEAM}{DEMO_DIR_NAME}")
+}
+
 /// Seede les clés config NON sensibles **absentes** (D2/D4). Renvoie la liste des
 /// clés réellement posées ce run. Une clé déjà renseignée par l'utilisateur n'est
 /// **ni relue ni remplacée**. Logique pure testable sur une base mémoire.
@@ -204,6 +212,12 @@ fn seed_config(conn: &rusqlite::Connection) -> rusqlite::Result<Vec<String>> {
             config::set(conn, key, value)?;
             set_keys.push(key.to_string());
         }
+    }
+    // L11 : liaison projet→team du projet démo (créer si absent, jamais d'écrasement).
+    let pt_key = demo_project_team_key();
+    if is_blank(&config::get(conn, &pt_key)?) {
+        config::set(conn, &pt_key, DEFAULT_TEAM_ID)?;
+        set_keys.push(pt_key);
     }
     Ok(set_keys)
 }
@@ -289,8 +303,9 @@ mod tests {
     fn seed_config_pose_les_cles_absentes_aux_valeurs_attendues() {
         let conn = mem();
         let set = seed_config(&conn).unwrap();
-        // Toutes les cibles sont absentes au départ → toutes posées.
-        assert_eq!(set.len(), demo_config_targets().len());
+        // Toutes les cibles config + la liaison projet→team (L11) sont absentes au
+        // départ → toutes posées (cibles + 1 liaison).
+        assert_eq!(set.len(), demo_config_targets().len() + 1);
         // Valeurs exactes (AR-2 : Ollama hôte :11434, modèle llama3.1:8b).
         assert_eq!(
             config::get(&conn, KEY_LITELLM_ENDPOINT).unwrap(),
@@ -318,6 +333,50 @@ mod tests {
         assert_eq!(
             config::get(&conn, KEY_LITELLM_ENDPOINT).unwrap(),
             Some("http://mon-endpoint:9999/v1".to_string())
+        );
+    }
+
+    // --- L11 : liaison projet→team du projet démo ---
+
+    #[test]
+    fn seed_config_pose_la_liaison_projet_team_demo() {
+        let conn = mem();
+        let set = seed_config(&conn).unwrap();
+        let pt_key = demo_project_team_key();
+        assert_eq!(pt_key, "project_team:iaka-demo");
+        assert!(set.contains(&pt_key));
+        // La démo est reliée à la team par défaut → ouverture sans popup (E1).
+        assert_eq!(
+            config::get(&conn, &pt_key).unwrap(),
+            Some(DEFAULT_TEAM_ID.to_string())
+        );
+    }
+
+    #[test]
+    fn seed_config_n_ecrase_pas_une_liaison_projet_team_existante() {
+        let conn = mem();
+        let pt_key = demo_project_team_key();
+        // L'utilisateur a déjà relié la démo à une autre team.
+        config::set(&conn, &pt_key, "mon-equipe").unwrap();
+        let set = seed_config(&conn).unwrap();
+        assert!(!set.contains(&pt_key), "liaison existante non re-posée");
+        assert_eq!(
+            config::get(&conn, &pt_key).unwrap(),
+            Some("mon-equipe".to_string())
+        );
+    }
+
+    #[test]
+    fn liaison_projet_team_demo_est_non_sensible() {
+        // Garde de cloisonnement : la clé project_team:iaka-demo doit remonter par
+        // config_all (lue par useTeams) → ne matche aucun motif secret.
+        let k = demo_project_team_key().to_lowercase();
+        assert!(
+            !(k.contains("token")
+                || k.contains("key")
+                || k.contains("secret")
+                || k.contains("password")),
+            "la liaison projet→team doit rester non sensible"
         );
     }
 

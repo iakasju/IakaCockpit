@@ -22,6 +22,26 @@ pub const KEY_LITELLM_ENDPOINT: &str = "litellm_endpoint";
 /// Projets importés hors racine (bouton + de Working) : tableau JSON de chemins.
 pub const KEY_EXTRA_PROJECTS: &str = "extra_projects";
 
+// --- Teams & agents — définition de premier rang (L11) — config NON sensible -----
+//
+// La TEAM est une entité de données (roster d'agents : persona + runner + modèle +
+// skills + coordinateur), sérialisée **JSON** côté front sous la clé `teams` (AR-5 :
+// zéro nouvelle commande Tauri, on réutilise `config_get/set/all`). Aucune de ces clés
+// ne matche `token|key|secret|password` → toutes remontent par `config_all`. INVARIANT
+// (L11 § 3) : le JSON `teams` ne contient AUCUN secret (runner = kind, modèle = alias,
+// skills = ids) ; les credentials de runner restent au keychain.
+
+/// Tableau JSON des `Team` (définition complète : agents, runner/modèle/skills,
+/// coordinateur, casting visuel). Bootstrap côté front (`useTeams`) si absent.
+pub const KEY_TEAMS: &str = "teams";
+/// Id de la **dernière team utilisée** (graine de pré-sélection du popup `TeamPicker`).
+pub const KEY_DEFAULT_TEAM: &str = "default_team";
+/// Préfixe de la liaison **par projet** → `project_team:<projectId>` = id de team.
+pub const PREFIX_PROJECT_TEAM: &str = "project_team:";
+/// Id de la team par défaut (miroir TS `DEFAULT_TEAM_ID`). Posée par le seed démo en
+/// liaison `project_team:iaka-demo` et bootstrappée côté front.
+pub const DEFAULT_TEAM_ID: &str = "iakaframe";
+
 // --- Réglages GLOBAUX du chef-runner (L10b/P3) — config NON sensible -----------
 //
 // Set par défaut du cockpit (PER-PROJET = cible, hors L10). Aucune de ces clés ne
@@ -240,6 +260,30 @@ mod tests {
         for k in [KEY_ROOT, KEY_THEME, KEY_LITELLM_ENDPOINT, "widget_layout"] {
             assert!(!is_secret(k), "{k} ne devrait pas être secret");
         }
+    }
+
+    // --- L11 : teams & agents (définition non sensible) ---
+
+    #[test]
+    fn cles_teams_ne_sont_pas_secretes() {
+        // `teams`, `default_team` et toute liaison `project_team:<id>` doivent remonter
+        // par config_all (lues par `useTeams`). Aucune ne matche le filtre secret.
+        assert!(!is_secret(KEY_TEAMS), "teams ne doit pas être filtré");
+        assert!(!is_secret(KEY_DEFAULT_TEAM), "default_team ne doit pas être filtré");
+        for pid in ["iaka-demo", "iakacockpit", "demo-1"] {
+            let key = format!("{PREFIX_PROJECT_TEAM}{pid}");
+            assert!(!is_secret(&key), "{key} ne doit pas être filtré comme secret");
+        }
+    }
+
+    #[test]
+    fn teams_json_roundtrip_en_config() {
+        // La team est une chaîne JSON opaque côté Rust (parse côté front) : on vérifie
+        // juste le roundtrip clé/valeur (aucun secret, aucun traitement Rust du JSON).
+        let conn = mem();
+        let json = r#"[{"id":"iakaframe","name":"iakaframe","agents":[]}]"#;
+        set(&conn, KEY_TEAMS, json).unwrap();
+        assert_eq!(get(&conn, KEY_TEAMS).unwrap(), Some(json.to_string()));
     }
 
     // --- L10b/P3 : réglages globaux du chef-runner (non sensibles) ---
