@@ -421,13 +421,21 @@ fn apply_env_scrub(cmd: &mut CommandBuilder) {
     cmd.env("TERM", "xterm-256color");
 }
 
-/// Escaping du chemin de projet → nom de dossier de transcript, CONFIRMÉ par le spike
-/// L10b : chemin **absolu**, chaque `/` **ET** `.` remplacé par `-`
-/// (ex. `/Users/sjupin/work/iaka-demo` → `-Users-sjupin-work-iaka-demo`). *(Windows :
-/// règle à confirmer au tailer L10b ; macOS/Linux = prouvé.)*
+/// Escaping du chemin de projet → nom de dossier de transcript. Règle RÉELLE de Claude
+/// Code, confirmée empiriquement (recette Legolas) : chemin **absolu**, chaque caractère
+/// **non alphanumérique ASCII** (`[^A-Za-z0-9]`) remplacé **un-pour-un** par `-` ; la
+/// **casse est conservée**. Donc `/`, `.`, **`_`**, espace, accent… → `-`
+/// (ex. `/Users/sjupin/work/iaka_probe underscore`
+/// → `-Users-sjupin-work-iaka-probe-underscore`).
+///
+/// ⚠️ Ne surtout PAS restreindre à `/` et `.` (ancien bug L10) : un `_`/espace/accent dans
+/// le chapeau ferait pointer `transcript_path` vers un dossier JAMAIS créé → le tailer
+/// attendrait indéfiniment → **chat muet à vie pour ce projet, sans erreur**. Le filet de
+/// `transcript::resolve_transcript` (recherche par `session_id`) couvre en plus toute
+/// dérive future de cette règle. *(Windows : règle à confirmer ; macOS/Linux = prouvé.)*
 fn escape_cwd(cwd: &str) -> String {
     cwd.chars()
-        .map(|c| if c == '/' || c == '.' { '-' } else { c })
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
         .collect()
 }
 
@@ -813,8 +821,8 @@ mod tests {
     }
 
     #[test]
-    fn escape_cwd_remplace_slash_et_point_par_tiret() {
-        // Règle confirmée par observation du vrai fichier (spike L10b).
+    fn escape_cwd_remplace_tout_non_alphanumerique_par_tiret() {
+        // Règle RÉELLE de Claude Code (`[^A-Za-z0-9]` → `-`), casse conservée.
         assert_eq!(
             escape_cwd("/Users/sjupin/work/iaka-demo"),
             "-Users-sjupin-work-iaka-demo"
@@ -825,6 +833,23 @@ mod tests {
         );
         // Un point dans un segment est AUSSI remplacé.
         assert_eq!(escape_cwd("/home/u/work/my.app"), "-home-u-work-my-app");
+    }
+
+    #[test]
+    fn escape_cwd_remplace_underscore_espace_et_accent() {
+        // RÉGRESSION B1 (« chat muet » latent) : l'ancienne règle ne remplaçait que `/`
+        // et `.`, laissant `_`/espace/accent intacts → `transcript_path` pointait vers un
+        // dossier inexistant → tailer en attente infinie. Preuve LIVE (Legolas) : un runner
+        // lancé dans `…/iaka_probe_underscore` écrit dans `…-iaka-probe-underscore`.
+        assert_eq!(
+            escape_cwd("/Users/sjupin/work/iaka_probe_underscore"),
+            "-Users-sjupin-work-iaka-probe-underscore"
+        );
+        // Espace (dossier « my project ») et tréma/accent : tous → `-`, un-pour-un.
+        assert_eq!(escape_cwd("/Users/u/my project"), "-Users-u-my-project");
+        assert_eq!(escape_cwd("/home/u/projét"), "-home-u-proj-t");
+        // Chiffres et casse conservés tels quels.
+        assert_eq!(escape_cwd("/v2/Repo3"), "-v2-Repo3");
     }
 
     #[test]

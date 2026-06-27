@@ -30,7 +30,7 @@
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -310,6 +310,34 @@ pub struct TranscriptState(Mutex<HashMap<String, Arc<AtomicBool>>>);
 /// Intervalle de poll (attente de création + tail incrémental).
 const POLL_INTERVAL: Duration = Duration::from_millis(150);
 
+/// Résout le transcript RÉELLEMENT présent pour une session, à partir du chemin ATTENDU
+/// (recomposé côté `terminal::escape_cwd`). Deux étages :
+///   1. **Chemin attendu** : si `expected` existe, on le retourne (cas nominal — la règle
+///      d'escaping est correcte).
+///   2. **Filet de robustesse** (B1) : si l'escaping de Claude Code différait de notre règle
+///      `escape_cwd` (cas historique `_`/espace, ou évolution future de CC), le **dossier**
+///      recomposé ne contiendrait jamais le fichier → on cherche alors `<session_id>.jsonl`
+///      (= le **nom de fichier**, dérivé de `expected`, qui est une **clef unique**) sous
+///      N'IMPORTE QUEL sous-dossier de `projects/`. Le tailer reste piloté par `path` : on
+///      ne change AUCUNE signature, on ne fait que résoudre le bon fichier sur disque.
+///
+/// Retourne le chemin existant, ou `None` si rien n'est (encore) là.
+fn resolve_transcript(expected: &Path) -> Option<PathBuf> {
+    if expected.is_file() {
+        return Some(expected.to_path_buf());
+    }
+    let file_name = expected.file_name()?;
+    // `<home>/.claude/projects/<escaped>/<sid>.jsonl` → on remonte au dossier `projects/`.
+    let projects_dir = expected.parent()?.parent()?;
+    for entry in std::fs::read_dir(projects_dir).ok()?.flatten() {
+        let candidate = entry.path().join(file_name);
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
 /// Cœur du tail, ISOLÉ du transport (AppHandle) pour être TESTABLE (R-L10b-2) : attend
 /// la création du fichier, puis lit incrémentalement les lignes COMPLÈTES (terminées
 /// par `\n`), mappe chaque record et **pousse chaque event dans `emit`**. Lit depuis le
@@ -336,12 +364,20 @@ fn tail_file(
     mut emit: impl FnMut(&RunnerEvent),
 ) {
     let source = TranscriptSource;
-    let p = Path::new(path);
+    let expected = Path::new(path);
 
     // 1. Attente de création : bornée par `stop` (vie du runner), PAS par un plafond fixe
-    //    trop court (le délai spawn→fichier est piloté par l'utilisateur — cf. doc).
+    //    trop court (le délai spawn→fichier est piloté par l'utilisateur — cf. doc). On
+    //    RÉSOUT le transcript réel (chemin attendu, sinon filet par `session_id`) — ainsi
+    //    une dérive de l'escaping (`_`/espace) ne condamne plus le projet au chat muet.
     let mut waited = Duration::ZERO;
-    while !stop.load(Ordering::Relaxed) && !p.exists() {
+    let p = loop {
+        if stop.load(Ordering::Relaxed) {
+            return;
+        }
+        if let Some(found) = resolve_transcript(expected) {
+            break found;
+        }
         std::thread::sleep(POLL_INTERVAL);
         if let Some(max) = create_wait {
             waited += POLL_INTERVAL;
@@ -349,12 +385,9 @@ fn tail_file(
                 return; // plafond explicite (tests) atteint.
             }
         }
-    }
-    if stop.load(Ordering::Relaxed) {
-        return;
-    }
+    };
 
-    let file = match std::fs::File::open(p) {
+    let file = match std::fs::File::open(&p) {
         Ok(f) => f,
         Err(_) => return,
     };
@@ -905,5 +938,67 @@ mod tests {
             paroles.contains(&"second apres EOF"),
             "ligne ajoutée APRÈS le 1ᵉʳ EOF émise aussi (held fd) : {paroles:?}"
         );
+    }
+
+    // --- Filet de robustesse B1 : `resolve_transcript` retrouve le fichier par session_id ---
+
+    /// Crée une arène `projects/` temporaire UNIQUE pour les tests de `resolve_transcript`.
+    fn unique_projects_dir() -> std::path::PathBuf {
+        use std::sync::atomic::AtomicU64;
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let n = SEQ.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "iaka-projects-{}-{}-{n}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn resolve_transcript_retourne_le_chemin_attendu_quand_il_existe() {
+        let projects = unique_projects_dir();
+        let escaped = projects.join("-Users-u-work-demo");
+        std::fs::create_dir_all(&escaped).unwrap();
+        let expected = escaped.join("sid-abc.jsonl");
+        std::fs::File::create(&expected).unwrap();
+
+        assert_eq!(resolve_transcript(&expected), Some(expected.clone()));
+        let _ = std::fs::remove_dir_all(&projects);
+    }
+
+    #[test]
+    fn resolve_transcript_retrouve_le_fichier_sous_un_dossier_mal_escape() {
+        // RÉGRESSION B1 : le chemin ATTENDU (recomposé avec une règle erronée laissant les
+        // `_`) n'existe pas, MAIS le vrai fichier `<sid>.jsonl` est sous le dossier
+        // RÉELLEMENT créé par Claude Code (`_` → `-`). Le filet doit le retrouver par
+        // son nom (clef unique), évitant le « chat muet à vie ».
+        let projects = unique_projects_dir();
+        // Dossier RÉEL de CC (underscores transformés en tirets).
+        let real_dir = projects.join("-Users-u-work-iaka-probe-underscore");
+        std::fs::create_dir_all(&real_dir).unwrap();
+        let real_file = real_dir.join("sid-xyz.jsonl");
+        std::fs::File::create(&real_file).unwrap();
+
+        // Chemin ATTENDU buggé (underscores conservés) : le dossier n'existe pas.
+        let wrong_expected = projects
+            .join("-Users-u-work-iaka_probe_underscore")
+            .join("sid-xyz.jsonl");
+        assert!(!wrong_expected.exists());
+
+        assert_eq!(resolve_transcript(&wrong_expected), Some(real_file));
+        let _ = std::fs::remove_dir_all(&projects);
+    }
+
+    #[test]
+    fn resolve_transcript_rend_none_tant_que_rien_nexiste() {
+        let projects = unique_projects_dir();
+        let expected = projects.join("-absent").join("sid-none.jsonl");
+        assert_eq!(resolve_transcript(&expected), None);
+        let _ = std::fs::remove_dir_all(&projects);
     }
 }
