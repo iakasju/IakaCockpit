@@ -82,7 +82,10 @@ export const DEFAULT_UI: UiPrefs = {
   fontScale: 100,
 };
 
-export const DEFAULT_THEME = "naonedge-dark";
+// Direction A (redesign) : charte par défaut = studio-clair (clair, aéré, accent
+// indigo). Les 10 chartes restent sélectionnables ; la grammaire A est
+// charte-indépendante (marche sous toutes via les tokens).
+export const DEFAULT_THEME = "studio-clair";
 
 /**
  * Team de vignettes par défaut (L9). `lotr` = casting historique iakaframe
