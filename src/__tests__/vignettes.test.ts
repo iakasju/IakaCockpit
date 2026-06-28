@@ -127,4 +127,18 @@ describe("resolveVignette — mapping rôle→slug (L9-A)", () => {
       }
     }
   });
+
+  it("re-sync WebP : toutes les vignettes embarquées sont des .webp (256px)", () => {
+    let count = 0;
+    for (const charte of Object.keys(VIGNETTES)) {
+      for (const team of Object.keys(VIGNETTES[charte])) {
+        for (const url of Object.values(VIGNETTES[charte][team])) {
+          expect(String(url)).toMatch(/\.webp(\?.*)?$/);
+          count++;
+        }
+      }
+    }
+    // Catalogue complet conservé (≈ 952 entrées, identique au jeu PNG remplacé).
+    expect(count).toBeGreaterThan(900);
+  });
 });

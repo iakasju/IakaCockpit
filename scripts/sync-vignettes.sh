@@ -3,14 +3,17 @@
 # (10 chartes x 11 teams x 8 roles + casting iakaframe racine) dans
 # src/assets/vignettes/, puis genere le manifest TypeScript (L15).
 #
+# SOURCE = jeu WebP 256px (vignettes-256-webp) : ~7,6 Mo embarques au lieu des
+# ~118 Mo de PNG pleine reso. Structure identique (seule l'extension change .webp).
+#
 # N'invente rien : lit teams.json (l'ORDRE = mapping role->personnage, index 0..7)
-# et copie <team>/<slug>.png pour TOUS les roles de CHAQUE team. Ajoute en plus la
-# pseudo-team "iakaframe" depuis les 8 PNG de roles a la RACINE du dossier vignettes
+# et copie <team>/<slug>.webp pour TOUS les roles de CHAQUE team. Ajoute en plus la
+# pseudo-team "iakaframe" depuis les 8 WebP de roles a la RACINE du dossier source
 # (odin/aragorn/gandalf/gimli/legolas/helm/loki/nathalie = casting iakaframe natif).
 # Sert en 'self' (bundle Vite) -> CSP intacte, zero scope FS, 100% offline.
 #
 # Idempotent : recree proprement les sous-arbres cibles + le manifest a chaque run.
-# Les PNG sont COMMITES (~952 / ~25 Mo) : un dev sans iakagraph n'a pas besoin de
+# Les WebP sont COMMITES (~952 / ~7,6 Mo) : un dev sans iakagraph n'a pas besoin de
 # relancer ce script ; il sert aux mises a jour (nouvelle team / nouvelle charte).
 #
 # Usage :
@@ -72,16 +75,16 @@ imports=""   # lignes `import vN from "./path";`
 entries=""   # corps de l'objet
 idx=0
 
-# Copie un PNG source -> dest, emet l'import + la ligne de role. Retour: 0 si copie.
+# Copie un WebP source -> dest, emet l'import + la ligne de role. Retour: 0 si copie.
 emit_role() {
-  local src_png="$1" out_rel="$2" role="$3"
-  if [ ! -f "$src_png" ]; then
-    echo "  ! absent (ignore): ${src_png}"
+  local src_img="$1" out_rel="$2" role="$3"
+  if [ ! -f "$src_img" ]; then
+    echo "  ! absent (ignore): ${src_img}"
     return 1
   fi
   local out_abs="${DEST}/${out_rel}"
   mkdir -p "$(dirname "$out_abs")"
-  cp "$src_png" "$out_abs"
+  cp "$src_img" "$out_abs"
   local var="v${idx}"
   imports="${imports}import ${var} from \"./${out_rel}\";"$'\n'
   role_block="${role_block}      ${role}: ${var},"$'\n'
@@ -91,7 +94,7 @@ emit_role() {
 
 for entry in $CHARTES; do
   charte_app="${entry%/*}-${entry#*/}"
-  src_dir="${IAKAGRAPH_ROOT}/theme/${entry}/vignettes"
+  src_dir="${IAKAGRAPH_ROOT}/theme/${entry}/vignettes-256-webp"
   if [ ! -d "$src_dir" ]; then
     echo "  ! charte absente (ignore): ${src_dir}"
     continue
@@ -105,7 +108,7 @@ for entry in $CHARTES; do
     # bash 3.2 macOS : pas de mapfile -> boucle while sur les lignes ordonnees.
     while IFS= read -r slug; do
       [ -z "$slug" ] && { role=$((role+1)); continue; }
-      emit_role "${src_dir}/${team}/${slug}.png" "${charte_app}/${team}/${slug}.png" "$role" || true
+      emit_role "${src_dir}/${team}/${slug}.webp" "${charte_app}/${team}/${slug}.webp" "$role" || true
       role=$((role+1))
     done < <(jq -r --arg t "$team" '.[$t][].slug' "$TEAMS_JSON")
     team_block="${team_block}    \"${team}\": {"$'\n'"${role_block}    },"$'\n'
@@ -115,7 +118,7 @@ for entry in $CHARTES; do
   role_block=""
   role=0
   for slug in $IAKAFRAME_SLUGS; do
-    emit_role "${src_dir}/${slug}.png" "${charte_app}/iakaframe/${slug}.png" "$role" || true
+    emit_role "${src_dir}/${slug}.webp" "${charte_app}/iakaframe/${slug}.webp" "$role" || true
     role=$((role+1))
   done
   team_block="${team_block}    \"iakaframe\": {"$'\n'"${role_block}    },"$'\n'
@@ -146,7 +149,7 @@ done
   echo "};"
 } > "$MANIFEST"
 
-echo "== ${idx} PNG copies, manifest genere : ${MANIFEST} =="
+echo "== ${idx} WebP copies, manifest genere : ${MANIFEST} =="
 
 # --- Catalogue des teams (donnees runtime pour le seed useTeams, L15-B) ---------
 # Source unique = teams.json. L'ordre des slugs = roleIndex (0..7). Commite, regenere
