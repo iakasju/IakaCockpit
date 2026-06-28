@@ -6,10 +6,10 @@
 export const fr = {
   nav: {
     ariaLabel: "Navigation principale",
-    portfolio: "Portfolio",
-    working: "Working",
+    portfolio: "Portefeuille",
+    working: "Travail",
     journal: "Journal",
-    teams: "Teams",
+    teams: "Équipes",
     settings: "Réglages",
   },
 
@@ -55,7 +55,7 @@ export const fr = {
   },
 
   working: {
-    ariaLabel: "Working",
+    ariaLabel: "Travail",
     worksetTitle: "Set de Work",
     worksetCount: "{{count}} projet(s)",
     importAria: "Importer un projet (dossier existant)",
@@ -145,10 +145,10 @@ export const fr = {
   },
 
   teams: {
-    ariaLabel: "Teams",
-    editorAria: "Teams & agents",
+    ariaLabel: "Équipes",
+    editorAria: "Équipes & agents",
     eyebrow: "Casting",
-    title: "Teams & agents",
+    title: "Équipes & agents",
     lead: "Choisis l'agent à gauche, règle son <0>runner</0>, son <1>modèle</1> et ses <2>skills</2> à droite, puis désigne le <3>coordinateur</3> (chef de projet). Les changements s'appliquent au <4>prochain lancement</4> de la conversation (pas de re-spawn à chaud).",
     teamLabel: "Team",
     teamSelectAria: "Team à éditer",

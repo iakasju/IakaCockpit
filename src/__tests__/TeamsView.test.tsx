@@ -35,7 +35,7 @@ describe("TeamsView — éditeur teams/agents en pleine page (L13)", () => {
     const { container } = render(<TeamsView teams={makeTeams()} />);
     // L'éditeur L11 est rendu (heading + édition par agent).
     expect(
-      screen.getByRole("heading", { name: "Teams & agents" }),
+      screen.getByRole("heading", { name: "Équipes & agents" }),
     ).toBeTruthy();
     expect(screen.getByLabelText("Runner de aragorn")).toBeTruthy();
     // La vue porte sa classe dédiée (pleine page).

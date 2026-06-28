@@ -36,14 +36,14 @@ describe("App — nav vers Teams (L13)", () => {
     render(<App />);
     // Démarre sur Portfolio : l'éditeur teams n'est pas visible.
     expect(
-      screen.queryByRole("heading", { name: "Teams & agents" }),
+      screen.queryByRole("heading", { name: "Équipes & agents" }),
     ).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Teams" }));
+    fireEvent.click(screen.getByRole("button", { name: "Équipes" }));
 
     // La vue Teams héberge l'éditeur teams/agents (L11) en pleine page.
     expect(
-      screen.getByRole("heading", { name: "Teams & agents" }),
+      screen.getByRole("heading", { name: "Équipes & agents" }),
     ).toBeTruthy();
   });
 });
