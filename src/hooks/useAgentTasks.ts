@@ -85,6 +85,13 @@ export interface UseAgentTasks {
   tasks: Record<string, AgentTask[]>;
   /** Intègre un `RunnerEvent` dans les tâches du projet (via `reduceAgentTasks`). */
   ingest: (projectId: string, ev: RunnerEvent) => void;
+  /**
+   * Précharge des tâches pour un projet (vitrine démo, L-taches). **Idempotent et
+   * non destructif** : ne sème QUE si le projet n'a encore aucune tâche → ne JAMAIS
+   * écraser des tâches LIVE déjà accumulées (vraies conversations). Borné côté appelant
+   * par le flag dev (`useDemoSeed`) au seul projet `iaka-demo`.
+   */
+  seed: (projectId: string, initial: readonly AgentTask[]) => void;
   /** Liste (stable) des tâches d'un projet ; `[]` si aucune. */
   tasksFor: (projectId: string) => readonly AgentTask[];
 }
@@ -101,10 +108,21 @@ export function useAgentTasks(): UseAgentTasks {
     });
   }, []);
 
+  const seed = useCallback(
+    (projectId: string, initial: readonly AgentTask[]): void => {
+      setTasks((prev) => {
+        // Non destructif : si des tâches existent déjà (live ou seed antérieur), no-op.
+        if ((prev[projectId]?.length ?? 0) > 0) return prev;
+        return { ...prev, [projectId]: initial.slice() };
+      });
+    },
+    [],
+  );
+
   const tasksFor = useCallback(
     (projectId: string): readonly AgentTask[] => tasks[projectId] ?? EMPTY,
     [tasks],
   );
 
-  return { tasks, ingest, tasksFor };
+  return { tasks, ingest, seed, tasksFor };
 }

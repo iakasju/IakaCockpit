@@ -139,4 +139,33 @@ describe("useAgentTasks — accumulation par projet", () => {
     });
     expect(result.current.tasksFor("p")[0].status).toBe("done");
   });
+
+  it("seed précharge des tâches de démo pour un projet (vitrine), isolation préservée", () => {
+    const { result } = renderHook(() => useAgentTasks());
+    const demo: AgentTask[] = [
+      { id: "d1", agent: "Gandalf", description: "Audit", status: "running" },
+      { id: "d2", agent: "Gimli", description: "Porter", status: "done" },
+    ];
+    act(() => result.current.seed("iaka-demo", demo));
+    expect(result.current.tasksFor("iaka-demo")).toHaveLength(2);
+    expect(result.current.tasksFor("autre")).toHaveLength(0);
+  });
+
+  it("seed est NON destructif : ne remplace pas des tâches LIVE déjà présentes", () => {
+    const { result } = renderHook(() => useAgentTasks());
+    act(() => {
+      result.current.ingest(
+        "p",
+        ev({ kind: "delegation", tool_use_id: "live1", agent: "real", text: "live" }),
+      );
+    });
+    act(() =>
+      result.current.seed("p", [
+        { id: "d1", agent: "Mock", description: "mock", status: "done" },
+      ]),
+    );
+    const out = result.current.tasksFor("p");
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe("live1");
+  });
 });

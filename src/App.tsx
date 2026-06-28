@@ -91,6 +91,9 @@ export default function App(): JSX.Element {
     // littéral) — un changement de coordinateur de la team par défaut s'y reflète.
     resolveCoordinator: (projectId) =>
       teams.coordinatorOf(teams.teamForProject(projectId))?.name,
+    // L-taches : précharge les délégations de démo dans le panneau « Tâches en cours »
+    // (vitrine) pour le seul `iaka-demo`. Démo-only (gardé par le flag dev du seed).
+    seedTasks: agentTasks.seed,
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
