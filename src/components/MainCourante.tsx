@@ -8,17 +8,24 @@
  * configurée), affiche un bandeau explicite et retombe sur le mock (jamais de crash).
  */
 import { useMemo, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ALL_CANAUX, filterFeed, type Canal } from "../mock/feed";
 import { useMainCourante } from "../hooks/useMainCourante";
 
-const CANAL_LABEL: Record<Canal, string> = {
-  adresse: "adresse",
-  geste: "geste",
-  pensee: "pensée",
-  agent: "agent",
-};
+/** Libellé i18n d'un canal. */
+function canalLabel(c: Canal, t: TFunction): string {
+  const key = {
+    adresse: "journal.canalAdresse",
+    geste: "journal.canalGeste",
+    pensee: "journal.canalPensee",
+    agent: "journal.canalAgent",
+  }[c];
+  return t(key);
+}
 
 export function MainCourante(): JSX.Element {
+  const { t } = useTranslation();
   const mc = useMainCourante();
 
   // Aucun canal coché = tout visible (filtre OFF, UX testée — feed.test.ts).
@@ -46,18 +53,20 @@ export function MainCourante(): JSX.Element {
   );
 
   return (
-    <aside className="mcleft" aria-label="Main courante">
+    <aside className="mcleft" aria-label={t("journal.ariaLabel")}>
       <div className="mchead">
-        <span className="eyebrow">Main courante</span>
-        <h2>Journal</h2>
+        <span className="eyebrow">{t("journal.eyebrow")}</span>
+        <h2>{t("journal.title")}</h2>
         <div className="sub">
-          Trois canaux tracés : <b>adresse</b> (humain ↔ agents), <b>geste</b>{" "}
-          (délégations machine), <b>pensée</b> (raisonnement). Lecture seule depuis
-          iakaboxlogs — le canal est porté par la couleur du nœud.
+          <Trans i18nKey="journal.sub" components={[<b />, <b />, <b />]} />
         </div>
         {/* Direction A : UNE rangée — [Tous] [● adresse] [● geste] [● pensée] [● agent]
             + recherche en flex-grow. Le canal est porté par la couleur du point. */}
-        <div className="chanfilters" role="group" aria-label="Filtres de canaux">
+        <div
+          className="chanfilters"
+          role="group"
+          aria-label={t("journal.filtersAria")}
+        >
           <button
             type="button"
             className="cf"
@@ -65,7 +74,7 @@ export function MainCourante(): JSX.Element {
             aria-pressed={active.size === 0}
             onClick={() => setActive(new Set())}
           >
-            Tous
+            {t("journal.filterAll")}
           </button>
           {ALL_CANAUX.map((c) => (
             <button
@@ -77,36 +86,38 @@ export function MainCourante(): JSX.Element {
               onClick={() => toggle(c)}
             >
               <span className={`cfdot ${c}`} aria-hidden />
-              {CANAL_LABEL[c]}
+              {canalLabel(c, t)}
             </button>
           ))}
           <input
             className="cfsearch"
             type="text"
-            placeholder="filtrer par agent, projet…"
+            placeholder={t("journal.searchPlaceholder")}
             value={agentDraft}
             onChange={(e) => setAgentDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") applyAgent();
             }}
-            aria-label="Filtre par agent"
+            aria-label={t("journal.searchAria")}
           />
         </div>
       </div>
 
       {mc.degraded && (
         <div className="mcnote degraded" role="status">
-          <b>Mode dégradé</b> — iakaboxlogs injoignable, affichage de données
-          simulées.
-          {mc.error ? <span className="why"> ({mc.error})</span> : null}
+          <b>{t("journal.degradedStrong")}</b>
+          {t("journal.degraded")}
+          {mc.error ? (
+            <span className="why">{t("journal.degradedWhy", { error: mc.error })}</span>
+          ) : null}
         </div>
       )}
 
-      {mc.loading && <div className="mcnote">Chargement de la main courante…</div>}
+      {mc.loading && <div className="mcnote">{t("journal.loading")}</div>}
 
       <div className="feed">
         {!mc.loading && events.length === 0 && (
-          <div className="mcnote">Aucun événement.</div>
+          <div className="mcnote">{t("journal.empty")}</div>
         )}
         {events.map((e) => (
           <div key={e.id} className={`ev ${e.canal}`}>

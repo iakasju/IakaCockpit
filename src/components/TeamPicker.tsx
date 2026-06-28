@@ -12,6 +12,7 @@
  * Aucune origine/iframe/portal externe (CSP stricte intacte) — simple overlay DOM.
  */
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { Team } from "../hooks/useTeams";
 
 export interface TeamPickerProps {
@@ -37,9 +38,10 @@ export function TeamPicker({
   onCancel,
   onManageTeams,
 }: TeamPickerProps): JSX.Element {
+  const { t } = useTranslation();
   // Pré-sélection : dernière team utilisée si elle existe, sinon la 1ʳᵉ de la liste.
   const initial =
-    teams.find((t) => t.id === defaultTeamId)?.id ?? teams[0]?.id ?? "";
+    teams.find((tm) => tm.id === defaultTeamId)?.id ?? teams[0]?.id ?? "";
   const [selected, setSelected] = useState<string>(initial);
 
   return (
@@ -55,38 +57,41 @@ export function TeamPicker({
         className="modal-card teampicker"
         role="dialog"
         aria-modal="true"
-        aria-label={`Relier ${projectLabel} à une team`}
+        aria-label={t("teamPicker.dialogAria", { project: projectLabel })}
       >
         <h2 className="modal-title">
-          Relier <em>{projectLabel}</em> à une team
+          <Trans
+            i18nKey="teamPicker.title"
+            values={{ project: projectLabel }}
+            components={[<em />]}
+          />
         </h2>
         <p className="modal-lead">
-          Choisis la team qui pilotera ce projet. Son <strong>coordinateur</strong>
-          {" "}sera l'interlocuteur de la conversation.
+          <Trans i18nKey="teamPicker.lead" components={[<strong />]} />
         </p>
 
         <select
           className="field"
           size={Math.min(Math.max(teams.length, 3), 8)}
-          aria-label="Teams disponibles"
+          aria-label={t("teamPicker.listAria")}
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
         >
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-              {t.id === defaultTeamId ? " · dernière utilisée" : ""}
+          {teams.map((tm) => (
+            <option key={tm.id} value={tm.id}>
+              {tm.name}
+              {tm.id === defaultTeamId ? t("teamPicker.lastUsedSuffix") : ""}
             </option>
           ))}
         </select>
 
         <div className="modal-actions">
           <button type="button" className="btn sm" onClick={onManageTeams}>
-            Gérer / créer les teams…
+            {t("teamPicker.manage")}
           </button>
           <span className="spc" style={{ flex: 1 }} />
           <button type="button" className="btn sm" onClick={onCancel}>
-            Annuler
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -94,7 +99,7 @@ export function TeamPicker({
             disabled={selected.length === 0}
             onClick={() => onConfirm(selected)}
           >
-            Confirmer
+            {t("common.confirm")}
           </button>
         </div>
       </div>
