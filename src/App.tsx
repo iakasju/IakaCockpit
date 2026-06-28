@@ -296,7 +296,9 @@ export default function App(): JSX.Element {
           />
         )}
         {grid.activeView === "journal" && <JournalView />}
-        {grid.activeView === "teams" && <TeamsView teams={teams} />}
+        {grid.activeView === "teams" && (
+          <TeamsView teams={teams} theme={settings.theme} />
+        )}
         {grid.activeView === "settings" && (
           <SettingsView
             settings={settings}

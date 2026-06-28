@@ -30,10 +30,16 @@ function makeTeams(overrides: Partial<UseTeams> = {}): UseTeams {
   };
 }
 
-describe("TeamsEditor — définition team/agents (L11)", () => {
+/** Direction A : sélectionne un agent dans la liste pour ouvrir sa FICHE. */
+function selectAgent(id: string): void {
+  fireEvent.click(document.querySelector(`[data-agent="${id}"]`)!);
+}
+
+describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
   it("régler le runner d'un agent appelle upsertAgent avec le nouveau runner", () => {
     const upsertAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
+    selectAgent("gimli");
     const select = screen.getByLabelText("Runner de gimli") as HTMLSelectElement;
     // Les 4 runners sont sélectionnables (AR-2).
     const values = Array.from(select.querySelectorAll("option")).map((o) => o.value);
@@ -51,6 +57,7 @@ describe("TeamsEditor — définition team/agents (L11)", () => {
   it("éditer le modèle (onBlur) appelle upsertAgent", () => {
     const upsertAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
+    selectAgent("gimli");
     const field = screen.getByLabelText("Modèle de gimli") as HTMLInputElement;
     fireEvent.change(field, { target: { value: "qwen2.5-coder" } });
     fireEvent.blur(field);
@@ -63,6 +70,7 @@ describe("TeamsEditor — définition team/agents (L11)", () => {
   it("éditer les skills (CSV onBlur) appelle upsertAgent avec la liste parsée", () => {
     const upsertAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
+    selectAgent("gimli");
     const field = screen.getByLabelText("Skills de gimli") as HTMLInputElement;
     fireEvent.change(field, { target: { value: "iakaframe-gimli, iakaframe-dev" } });
     fireEvent.blur(field);
@@ -85,17 +93,22 @@ describe("TeamsEditor — définition team/agents (L11)", () => {
 
   it("retirer le coordinateur est désactivé (garde)", () => {
     render(<TeamsEditor teams={makeTeams()} />);
-    // Aragorn = coordinateur par défaut → son bouton « Retirer » est désactivé.
-    const card = document.querySelector('[data-agent="aragorn"]')!;
-    const removeBtn = card.querySelector("button") as HTMLButtonElement;
+    // Aragorn = coordinateur → fiche montrée par défaut, son « Retirer du casting » désactivé.
+    selectAgent("aragorn");
+    const removeBtn = screen.getByRole("button", {
+      name: "Retirer du casting",
+    }) as HTMLButtonElement;
     expect(removeBtn.disabled).toBe(true);
   });
 
   it("retirer un agent ≠ coordinateur appelle removeAgent", () => {
     const removeAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ removeAgent })} />);
-    const card = document.querySelector('[data-agent="gandalf"]')!;
-    const removeBtn = card.querySelector("button") as HTMLButtonElement;
+    // Ouvre la fiche de Gandalf (≠ coordinateur) puis retire-le.
+    selectAgent("gandalf");
+    const removeBtn = screen.getByRole("button", {
+      name: "Retirer du casting",
+    }) as HTMLButtonElement;
     expect(removeBtn.disabled).toBe(false);
     fireEvent.click(removeBtn);
     expect(removeAgent).toHaveBeenCalledWith(DEFAULT_TEAM_ID, "gandalf");
@@ -119,7 +132,7 @@ describe("TeamsEditor — définition team/agents (L11)", () => {
     fireEvent.change(screen.getByLabelText("Nom du nouvel agent"), {
       target: { value: "Boromir" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Ajouter" }));
+    fireEvent.click(screen.getByRole("button", { name: "+ Ajouter un agent" }));
     expect(upsertAgent).toHaveBeenCalledWith(
       DEFAULT_TEAM_ID,
       expect.objectContaining({ id: "boromir", name: "Boromir", runner: "claude-code" }),

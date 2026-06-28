@@ -11,13 +11,15 @@ import { TeamsEditor } from "../components/TeamsEditor";
 export interface TeamsViewProps {
   /** Autorité des teams/agents (L11) — alimente l'éditeur « Teams & agents ». */
   teams: UseTeams;
+  /** Charte active (L14) — résout les vignettes liste/fiche selon le casting édité. */
+  theme?: string;
 }
 
-export function TeamsView({ teams }: TeamsViewProps): JSX.Element {
+export function TeamsView({ teams, theme }: TeamsViewProps): JSX.Element {
   return (
     <section className="view teams" aria-label="Teams">
       <div className="teamsmain">
-        <TeamsEditor teams={teams} />
+        <TeamsEditor teams={teams} theme={theme} />
       </div>
     </section>
   );
