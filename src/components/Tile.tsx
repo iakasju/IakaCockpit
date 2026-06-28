@@ -2,6 +2,8 @@
  * Tile — tuile de projet (Portfolio). Présentationnel : reçoit le `Project` réel
  * (scanPortfolio) + callbacks. Aucun I/O.
  */
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { Project } from "../api/backend";
 
 export interface TileProps {
@@ -11,13 +13,13 @@ export interface TileProps {
   onToggleWork: (projectId: string) => void;
 }
 
-/** Libellé court de l'état git pour la métadonnée mono. */
-function gitLabel(p: Project): { cls: string; text: string } {
-  if (!p.is_git) return { cls: "dirty", text: "hors git" };
-  if (p.dirty) return { cls: "dirty", text: "dirty" };
+/** Libellé court de l'état git (i18n) ; symboles ↑/↓ + nombre bruts (données). */
+function gitLabel(p: Project, t: TFunction): { cls: string; text: string } {
+  if (!p.is_git) return { cls: "dirty", text: t("tile.gitNone") };
+  if (p.dirty) return { cls: "dirty", text: t("tile.gitDirty") };
   if (p.ahead > 0) return { cls: "ahead", text: `↑${p.ahead}` };
   if (p.behind > 0) return { cls: "ahead", text: `↓${p.behind}` };
-  return { cls: "clean", text: "clean" };
+  return { cls: "clean", text: t("tile.gitClean") };
 }
 
 function statusDotClass(p: Project): string {
@@ -26,7 +28,8 @@ function statusDotClass(p: Project): string {
 }
 
 export function Tile({ project, inWork, onToggleWork }: TileProps): JSX.Element {
-  const git = gitLabel(project);
+  const { t } = useTranslation();
+  const git = gitLabel(project, t);
   return (
     <article className={`tile${inWork ? " inwork" : ""}`}>
       <div className="th">
@@ -47,7 +50,7 @@ export function Tile({ project, inWork, onToggleWork }: TileProps): JSX.Element 
           type="button"
           className="addwork"
           aria-label={
-            inWork ? "Retirer du set de Work" : "Ajouter au set de Work"
+            inWork ? t("tile.removeFromWorkAria") : t("tile.addToWorkAria")
           }
           aria-pressed={inWork}
           onClick={() => onToggleWork(project.id)}
@@ -55,7 +58,7 @@ export function Tile({ project, inWork, onToggleWork }: TileProps): JSX.Element 
           {inWork ? "−" : "+"}
         </button>
         <span style={{ fontFamily: "var(--mono)", fontSize: 10.5, color: "var(--text-3)" }}>
-          {inWork ? "dans le set de Work" : "ajouter au Work"}
+          {inWork ? t("tile.inWork") : t("tile.addToWork")}
         </span>
       </div>
     </article>

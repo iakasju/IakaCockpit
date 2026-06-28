@@ -4,6 +4,7 @@
  * courante (iakaboxlogs, L4) a été sortie d'ici vers la vue dédiée `JournalView` ;
  * Portfolio est recentré sur le portefeuille.
  */
+import { useTranslation } from "react-i18next";
 import type { Project } from "../api/backend";
 import { Tile } from "../components/Tile";
 
@@ -28,37 +29,42 @@ export function PortfolioView({
   onToggleWork,
   onGotoWork,
 }: PortfolioViewProps): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <section className="view pf" aria-label="Portfolio">
+    <section className="view pf" aria-label={t("portfolio.ariaLabel")}>
       <div className="pfright">
         <div className="pfpad">
           <div className="rh">
-            <span className="eyebrow">Portefeuille</span>
-            <h1>Portfolio</h1>
-            <span className="sub">{root ?? "chapeau non résolu"}</span>
+            <span className="eyebrow">{t("portfolio.eyebrow")}</span>
+            <h1>{t("portfolio.title")}</h1>
+            <span className="sub">{root ?? t("portfolio.rootUnresolved")}</span>
           </div>
           <div className="workset">
-            <b>Set de Work</b>
-            <span>{worksetCount} projet(s) sélectionné(s)</span>
+            <b>{t("portfolio.worksetLabel")}</b>
+            <span>{t("portfolio.worksetCount", { count: worksetCount })}</span>
             {worksetCount > 0 && (
               <button
                 type="button"
                 className="btn accent sm goto"
                 onClick={onGotoWork}
               >
-                Ouvrir dans Working →
+                {t("portfolio.openInWorking")}
               </button>
             )}
           </div>
 
           <div className="rowhead">
-            <h2>Sous le chapeau</h2>
+            <h2>{t("portfolio.underHat")}</h2>
           </div>
 
-          {loading && <div className="pfstate">Scan du chapeau…</div>}
-          {error && <div className="pfstate err">Erreur de scan : {error}</div>}
+          {loading && <div className="pfstate">{t("portfolio.scanning")}</div>}
+          {error && (
+            <div className="pfstate err">
+              {t("portfolio.scanError", { error })}
+            </div>
+          )}
           {!loading && !error && projects.length === 0 && (
-            <div className="pfstate">Aucun projet sous le chapeau.</div>
+            <div className="pfstate">{t("portfolio.empty")}</div>
           )}
 
           <div className="tilegrid">

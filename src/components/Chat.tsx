@@ -10,16 +10,21 @@
  * Aucun I/O ici (D8) : l'appel `chat` vit dans `useConversations`/la façade.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { ChatTurn, ChatTurnKind } from "../hooks/useConversations";
 import type { AvatarResolver } from "../theme/teamAvatar";
 
 /** Étiquette courte d'une vue dérivée (geste/délégation/activité/pensée), L10b. */
-const EV_LABEL: Record<Exclude<ChatTurnKind, "parole">, string> = {
-  geste: "⚙ geste",
-  delegation: "➜ délègue",
-  activite: "✓ activité",
-  pensee: "🜂 pensée",
-};
+function evLabel(kind: Exclude<ChatTurnKind, "parole">, t: TFunction): string {
+  const key = {
+    geste: "chat.evGeste",
+    delegation: "chat.evDelegation",
+    activite: "chat.evActivite",
+    pensee: "chat.evPensee",
+  }[kind];
+  return t(key);
+}
 
 export interface ChatProps {
   /** Historique multi-tours (mémoire MVP). */
@@ -83,6 +88,7 @@ export function Chat({
   hidePensee: hidePenseeProp,
   onToggleHidePensee,
 }: ChatProps): JSX.Element {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   // Pensée masquable (canal § 5 PROJET) — masquée par défaut (réduit le bruit).
   // Contrôlé si le parent fournit `hidePensee` (+ toggle persisté) ; sinon état interne.
@@ -96,7 +102,7 @@ export function Chat({
 
   // Présence d'au moins une pensée → afficher le bouton de masquage.
   const hasPensee = useMemo(
-    () => history.some((t) => t.kind === "pensee"),
+    () => history.some((turn) => turn.kind === "pensee"),
     [history],
   );
 
@@ -113,7 +119,7 @@ export function Chat({
   };
 
   return (
-    <div className="chat" aria-label="Conversation">
+    <div className="chat" aria-label={t("chat.ariaLabel")}>
       {(onInterrupt || hasPensee) && (
         <div className="chatbar">
           {hasPensee && (
@@ -123,29 +129,24 @@ export function Chat({
               aria-pressed={!hidePensee}
               onClick={togglePensee}
             >
-              {hidePensee ? "Afficher la pensée" : "Masquer la pensée"}
+              {hidePensee ? t("chat.showThought") : t("chat.hideThought")}
             </button>
           )}
           {onInterrupt && (
             <button
               type="button"
               className="btn xs"
-              title="Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)"
+              title={t("chat.interruptTitle")}
               onClick={onInterrupt}
             >
-              Interrompre (esc)
+              {t("chat.interrupt")}
             </button>
           )}
         </div>
       )}
       <div className="chatlog" ref={scrollRef}>
         {history.length === 0 && !pending && (
-          <div className="chatempty">
-            Discute avec <strong>{agent}</strong> à propos de ce projet (contexte :
-            specs + état des lieux + git). Clique un agent du roster pour t'adresser
-            directement à lui. Sans endpoint IA configuré, une réponse mockée est
-            renvoyée.
-          </div>
+          <div className="chatempty">{t("chat.empty", { agent })}</div>
         )}
         {history.map((turn, i) => {
           const kind = turn.kind ?? "parole";
@@ -158,7 +159,7 @@ export function Chat({
             return (
               <div key={i} className={`evline ev-${kind}`}>
                 <span className="evtag" aria-hidden>
-                  {EV_LABEL[kind]}
+                  {evLabel(kind, t)}
                 </span>
                 {evAgent && <span className="evagent">{evAgent}</span>}
                 <span className="evtext">{turn.content}</span>
@@ -220,10 +221,10 @@ export function Chat({
         <textarea
           className="chatfield"
           rows={1}
-          placeholder={`Message à ${agent}…`}
+          placeholder={t("chat.placeholder", { agent })}
           value={draft}
           disabled={pending}
-          aria-label="Saisie de message"
+          aria-label={t("chat.inputAria")}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => {
             // Entrée = envoyer ; Maj+Entrée = nouvelle ligne.
@@ -238,7 +239,7 @@ export function Chat({
           className="btn accent sm"
           disabled={pending || draft.trim().length === 0}
         >
-          Envoyer
+          {t("chat.send")}
         </button>
       </form>
     </div>

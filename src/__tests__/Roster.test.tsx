@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Roster } from "../components/Roster";
 import { DEMO_TEAM } from "../mock/demoTeam";
-import { isCanonicalRole } from "../theme/roles";
+import { isCanonicalRole, roleLabel } from "../theme/roles";
 
 afterEach(cleanup);
 
@@ -13,9 +13,9 @@ describe("Roster — widget team (L8/D6)", () => {
     for (const m of DEMO_TEAM) {
       // Nom de l'agent en clair (plus de pastille [ROYAUME][Agent] tronquée).
       expect(screen.getByText(m.agent)).toBeTruthy();
-      // Royaume = clé de rôle canonique, présente en label discret.
-      expect(screen.getByText(m.royaume)).toBeTruthy();
+      // Rôle affiché = libellé traduit (i18n `roles.*` ; FR en test = label canonique).
       expect(isCanonicalRole(m.royaume)).toBe(true);
+      expect(screen.getByText(roleLabel(m.royaume))).toBeTruthy();
     }
   });
 
@@ -91,10 +91,10 @@ describe("Roster — widget team (L8/D6)", () => {
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(DEMO_TEAM.length);
     expect(screen.getByAltText("Gandalf")).toBeTruthy();
-    // Nom + royaume restent présents (identité iakaframe), vignette en plus.
+    // Nom + rôle (libellé traduit) restent présents (identité iakaframe), vignette en plus.
     for (const m of DEMO_TEAM) {
       expect(screen.getByText(m.agent)).toBeTruthy();
-      expect(screen.getByText(m.royaume)).toBeTruthy();
+      expect(screen.getByText(roleLabel(m.royaume))).toBeTruthy();
     }
   });
 

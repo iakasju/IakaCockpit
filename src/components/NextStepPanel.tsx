@@ -7,6 +7,7 @@
  *
  * Une suggestion par demande (L3) : pas de thread persistant (→ L4).
  */
+import { useTranslation } from "react-i18next";
 import type { NextStep } from "../api/backend";
 
 export interface NextStepPanelProps {
@@ -25,11 +26,12 @@ export function NextStepPanel({
   error,
   onRequest,
 }: NextStepPanelProps): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <div className="nextstep" aria-label="Moteur prochaine étape">
+    <div className="nextstep" aria-label={t("nextStep.ariaLabel")}>
       <div className="nshead">
         <div className="nstitle">
-          Prochaine étape
+          {t("nextStep.title")}
           <span className="nssub"> · {projectId}</span>
         </div>
         <button
@@ -38,7 +40,7 @@ export function NextStepPanel({
           onClick={onRequest}
           disabled={loading}
         >
-          {loading ? "Analyse en cours…" : "Proposer la prochaine étape"}
+          {loading ? t("nextStep.analyzing") : t("nextStep.request")}
         </button>
       </div>
 
@@ -50,11 +52,7 @@ export function NextStepPanel({
         )}
 
         {!error && !result && !loading && (
-          <div className="nsempty">
-            Demande au moteur IA la prochaine étape concrète sur ce projet
-            (contexte : specs + état des lieux + git). Sans endpoint configuré, une
-            suggestion mockée est renvoyée.
-          </div>
+          <div className="nsempty">{t("nextStep.empty")}</div>
         )}
 
         {result && (
@@ -64,12 +62,17 @@ export function NextStepPanel({
               <span
                 className={`nsprov${result.provider === "mock" ? " mock" : ""}`}
               >
-                {result.provider === "mock" ? "mock (simulé)" : result.provider}
+                {result.provider === "mock"
+                  ? t("nextStep.providerMock")
+                  : result.provider}
               </span>
               {result.model && <span className="nsmodel">{result.model}</span>}
               {(result.tokens_in != null || result.tokens_out != null) && (
                 <span className="nstokens">
-                  {result.tokens_in ?? "?"} → {result.tokens_out ?? "?"} tok
+                  {t("nextStep.tokens", {
+                    in: result.tokens_in ?? "?",
+                    out: result.tokens_out ?? "?",
+                  })}
                 </span>
               )}
             </div>

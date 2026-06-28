@@ -14,6 +14,7 @@
  * useNextStep ; les appels I/O passent par la façade. Aucun `invoke` ici.
  */
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ChefRunnerKind, NextStep, Project } from "../api/backend";
 import type {
   Conversation,
@@ -115,6 +116,7 @@ export function WorkingView({
   hidePensee,
   onToggleHidePensee,
 }: WorkingViewProps): JSX.Element {
+  const { t } = useTranslation();
   // Saisie par conversation (préfixe @agent au clic roster, D6).
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
@@ -166,29 +168,30 @@ export function WorkingView({
   };
 
   return (
-    <section className="view wk" aria-label="Working">
+    <section className="view wk" aria-label={t("working.ariaLabel")}>
       <aside className="worklist">
         <div className="wlhead">
           <div className="mid">
-            <div className="nm">Set de Work</div>
-            <div className="sub">{worksetProjects.length} projet(s)</div>
+            <div className="nm">{t("working.worksetTitle")}</div>
+            <div className="sub">
+              {t("working.worksetCount", { count: worksetProjects.length })}
+            </div>
           </div>
           <button
             type="button"
             className="addbtn"
-            aria-label="Importer un projet (dossier existant)"
-            title="Importer un projet existant…"
+            aria-label={t("working.importAria")}
+            title={t("working.importTitle")}
             onClick={onAddProject}
           >
             +
           </button>
         </div>
         <div className="wlscroll">
-          <div className="wlbl">Projets sélectionnés</div>
+          <div className="wlbl">{t("working.selectedProjects")}</div>
           {worksetProjects.length === 0 && (
             <div className="wlbl" style={{ color: "var(--text-3)" }}>
-              Aucun projet. Importe un dossier existant via le bouton + ci-dessus,
-              ou ajoute des projets depuis Portfolio.
+              {t("working.emptyList")}
             </div>
           )}
           {worksetProjects.map((p) => (
@@ -214,20 +217,21 @@ export function WorkingView({
             <div className="convhead">
               <div className="convtitle">
                 <span className="ct-nm">{active.title}</span>
-                <span className="ct-agent" title="Interlocuteur courant">
+                <span className="ct-agent" title={t("working.interlocutorTitle")}>
                   {active.agent}
                 </span>
                 {activeRunner && (
-                  <span
-                    className="ct-runner"
-                    title="Coordinateur · runner · modèle (édition : Réglages → Teams & agents). Appliqué au prochain lancement."
-                  >
+                  <span className="ct-runner" title={t("working.runnerTitle")}>
                     {activeRunner.coordinator} · {activeRunner.kind} ·{" "}
-                    {activeRunner.model || "défaut"}
+                    {activeRunner.model || t("working.runnerModelDefault")}
                   </span>
                 )}
               </div>
-              <div className="modetoggle" role="tablist" aria-label="Mode">
+              <div
+                className="modetoggle"
+                role="tablist"
+                aria-label={t("working.modeAria")}
+              >
                 <button
                   type="button"
                   role="tab"
@@ -235,7 +239,7 @@ export function WorkingView({
                   className={`seg${active.mode === "chat" ? " active" : ""}`}
                   onClick={() => onSetMode(active.projectId, "chat")}
                 >
-                  Chat
+                  {t("working.chat")}
                 </button>
                 <button
                   type="button"
@@ -244,17 +248,17 @@ export function WorkingView({
                   className={`seg${active.mode === "shell" ? " active" : ""}`}
                   onClick={() => onSetMode(active.projectId, "shell")}
                 >
-                  Shell
+                  {t("working.shell")}
                 </button>
               </div>
               {active.mode === "shell" && (
                 <button
                   type="button"
                   className="btn sm"
-                  title="Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)"
+                  title={t("working.interruptTitle")}
                   onClick={() => void pty.write(active.ptySessionId, "\x1b")}
                 >
-                  Interrompre (esc)
+                  {t("working.interrupt")}
                 </button>
               )}
               <button
@@ -263,7 +267,7 @@ export function WorkingView({
                 aria-pressed={showNextStep}
                 onClick={() => setShowNextStep((v) => !v)}
               >
-                Prochaine étape
+                {t("working.nextStep")}
               </button>
             </div>
 
@@ -304,14 +308,21 @@ export function WorkingView({
                       aria-hidden={!visible}
                     >
                       <div className="runner-banner" role="status">
-                        <strong>Runner « {runner.kind} » défini, exécution non
-                        câblée.</strong>
+                        <strong>
+                          {t("working.bannerNotWiredStrong", {
+                            kind: runner.kind,
+                          })}
+                        </strong>
                         <br />
-                        Le coordinateur <strong>{runner.coordinator}</strong>
-                        {runner.model ? ` (modèle ${runner.model})` : ""} est défini
-                        sur un runner pas encore exécutable. Étape actuelle :
-                        claude-code (terminal-source). La définition est conservée ;
-                        adresse les agents en chat (<code>@persona</code>).
+                        {t("working.bannerNotWiredCoord")}{" "}
+                        <strong>{runner.coordinator}</strong>
+                        {runner.model
+                          ? t("working.bannerNotWiredModel", {
+                              model: runner.model,
+                            })
+                          : ""}{" "}
+                        {t("working.bannerNotWiredRest")}
+                        <code>@persona</code>).
                       </div>
                     </div>
                   );
@@ -336,10 +347,10 @@ export function WorkingView({
 
               {active.mode === "chat" && !activeExecutable && activeRunner && (
                 <div className="runner-banner chat-banner" role="status">
-                  Runner « {activeRunner.kind} » du coordinateur{" "}
-                  <strong>{activeRunner.coordinator}</strong> non encore exécutable
-                  (étape : claude-code). La conversation reste ouverte ; la définition
-                  est conservée.
+                  {t("working.bannerChat", {
+                    kind: activeRunner.kind,
+                    coordinator: activeRunner.coordinator,
+                  })}
                 </div>
               )}
               {active.mode === "chat" && (
@@ -367,9 +378,9 @@ export function WorkingView({
         ) : (
           <div className="workempty">
             <span className="e">💬</span>
-            Aucune conversation ouverte.
+            {t("working.emptyConv")}
             <br />
-            Choisis un projet du set de Work pour ouvrir sa conversation.
+            {t("working.emptyConvHint")}
           </div>
         )}
       </div>
