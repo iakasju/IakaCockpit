@@ -303,6 +303,18 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `~/.codex/sessions/…` (jumeau du transcript Claude) avec mapping codex défensif ; refacto `tail_resolved`
       partagée Claude/Codex (non-régression Claude prouvée au code). Bannière levée pour `codex`. Recette réelle :
       session Codex (trust natif, rendu xterm, shapes gestes). Voir mémoire `spike-codex-runner-resultat`.)*
+- [x] **v0.12.0 — Refonte UI direction A + i18n + 7 rôles + panneau Tâches** (jalon design/produit)
+      *(LIVRÉ, **revue de version PASS** (2026-06-28), candidate `v0.12.0` ; doc qualité `docs/qualite/v0.12.0.md`.
+      Bundle : (1) **Refonte UI direction A** (mock Loki) — rail texte (Portefeuille/Travail/Journal/Équipes/
+      Réglages), grammaire **sans-bord/aérée**, police **Space Grotesk+Inter bundlées** (`'self'`), **défaut
+      studio-clair**, Réglages sans emojis ; Page **Teams liste+fiche** ; (2) **Vignettes WebP 256px** (118 Mo PNG
+      → ~9,6 Mo, re-sync iakagraph) ; (3) **7 rôles canoniques** (portefeuille…doc, `roles.ts`) + team iakaframe
+      par défaut **7 agents** + champ rôle = menu ; (4) **i18n react-i18next FR/EN** (sélecteur Réglages, deps
+      bundlées zéro-distant, parité fr/en testée) + rail FR cohérent ; (5) **Panneau « Tâches en cours »**
+      (Working droite, délégations live du transcript `tool_use_id`→running/done, garde L10 PtyTerminal non
+      démonté) + vitrine démo. 332 front + 217 Rust verts (Rust **non touché**), couverture 83,6 %. Org : Gandalf
+      retiré, chef de projet = cadrage+coordination. Différés : aria-label webhook, noms de chartes i18n, **purge
+      historique git 118 Mo avant push**, recette EN + Codex réel + panneau en délégation réelle.)*
 - [ ] **(Horizon, non planifié)** **Vignettes-par-charte / teams par défaut** — aligner les teams par défaut
       d'iakacockpit sur les ~11 teams iakagraph (chaque charte a leurs vignettes) ; faire suivre les vignettes à
       la charte active. *(todo tracé, mémoire `iakagraph-chartes-vignettes-structure`.)*

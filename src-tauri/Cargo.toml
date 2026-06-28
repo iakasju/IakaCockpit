@@ -1,6 +1,6 @@
 [package]
 name = "iakacockpit"
-version = "0.11.0"
+version = "0.12.0"
 description = "IakaCockpit - cockpit chapeau-rooted de l'ecosysteme iakaProject"
 authors = ["Stephane / iakateam"]
 edition = "2021"
