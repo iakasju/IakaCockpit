@@ -94,6 +94,14 @@ export const en: Resources = {
     addressTitle: "Address {{agent}} (@{{agent}})",
   },
 
+  tasks: {
+    ariaLabel: "Running tasks",
+    title: "Running tasks",
+    empty: "No running task",
+    statusRunning: "running",
+    statusDone: "done",
+  },
+
   chat: {
     ariaLabel: "Conversation",
     showThought: "Show thinking",

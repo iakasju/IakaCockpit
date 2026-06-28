@@ -14,6 +14,7 @@ import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
 import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
+import { useAgentTasks } from "./hooks/useAgentTasks";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -56,14 +57,22 @@ export default function App(): JSX.Element {
     if (i18n.language !== settings.lang) void i18n.changeLanguage(settings.lang);
   }, [settings.lang]);
 
+  // Tâches/délégations en cours (panneau « Tâches en cours », Working/colonne droite).
+  // Accumule les `RunnerEvent` bruts (besoin du `tool_use_id`, perdu en `ChatTurn`) par
+  // projet : `delegation` → tâche running, `activite` du même id → done. La collecte vit
+  // dans le hook (pas de god-component) ; le panneau ne reçoit que la liste.
+  const agentTasks = useAgentTasks();
+
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
   // conversations (runner://event → ChatTurn). Démarré dès qu'un runnerSessionId
   // apparaît dans une session PTY. Le parse vit côté Rust (CSP) ; ici on ne route que
-  // des events typés vers l'état conversation.
+  // des events typés vers l'état conversation. `onEvent` est l'observateur ADDITIF des
+  // events bruts (tool_use_id préservé) pour le panneau « Tâches en cours ».
   useRunnerViews({
     conversations: conversations.conversations,
     ptySessions: pty.sessions,
     appendTurn: conversations.appendTurn,
+    onEvent: agentTasks.ingest,
   });
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
@@ -274,6 +283,11 @@ export default function App(): JSX.Element {
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
             rosterMembers={rosterMembers}
+            tasks={
+              conversations.active
+                ? agentTasks.tasksFor(conversations.active.projectId)
+                : []
+            }
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

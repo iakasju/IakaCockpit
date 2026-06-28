@@ -94,6 +94,14 @@ export const fr = {
     addressTitle: "S'adresser à {{agent}} (@{{agent}})",
   },
 
+  tasks: {
+    ariaLabel: "Tâches en cours",
+    title: "Tâches en cours",
+    empty: "Aucune tâche en cours",
+    statusRunning: "en cours",
+    statusDone: "terminé",
+  },
+
   chat: {
     ariaLabel: "Conversation",
     showThought: "Afficher la pensée",

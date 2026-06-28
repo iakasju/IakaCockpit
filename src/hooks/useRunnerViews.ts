@@ -26,7 +26,12 @@
  *     court-circuitait tout → listener perdu, chat muet sauf coup de chance).
  */
 import { useEffect, useRef } from "react";
-import { backend, type Backend, type UnlistenFn } from "../api/backend";
+import {
+  backend,
+  type Backend,
+  type RunnerEvent,
+  type UnlistenFn,
+} from "../api/backend";
 import type { ChatTurn, Conversation } from "./useConversations";
 import { runnerEventToTurn } from "./runnerView";
 import type { UsePtySession } from "./usePty";
@@ -40,6 +45,12 @@ export interface UseRunnerViewsDeps {
   ptySessions: Record<string, UsePtySession>;
   /** Ajoute un tour dérivé à la conversation (`useConversations.appendTurn`). */
   appendTurn: (projectId: string, turn: ChatTurn) => void;
+  /**
+   * Observateur ADDITIF des `RunnerEvent` bruts (par `projectId`), AVANT projection en
+   * `ChatTurn` — sert au panneau « Tâches en cours » (`useAgentTasks.ingest`) qui a
+   * besoin du `tool_use_id` (perdu dans `ChatTurn`). N'altère PAS le chat-vue. Optionnel.
+   */
+  onEvent?: (projectId: string, ev: RunnerEvent) => void;
 }
 
 export function useRunnerViews({
@@ -47,12 +58,15 @@ export function useRunnerViews({
   conversations,
   ptySessions,
   appendTurn,
+  onEvent,
 }: UseRunnerViewsDeps): void {
   // Réfs miroir : lire les valeurs courantes sans réabonner (callbacks stables).
   const convRef = useRef(conversations);
   convRef.current = conversations;
   const appendRef = useRef(appendTurn);
   appendRef.current = appendTurn;
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
 
   // Tailers démarrés (par runnerSessionId) + leurs désabonnements (anti-doublon/fuite).
   const startedRef = useRef<Set<string>>(new Set());
@@ -87,6 +101,8 @@ export function useRunnerViews({
       delete unl[sid];
       const bind = api
         .onRunnerEvent(sid, (ev) => {
+          // Observateur additif (tâches) AVANT projection chat — garde le tool_use_id.
+          onEventRef.current?.(projectId, ev);
           const turn = runnerEventToTurn(ev);
           if (turn) appendRef.current(projectId, turn);
         })

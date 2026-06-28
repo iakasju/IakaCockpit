@@ -27,6 +27,8 @@ import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
+import { TasksPanel } from "../components/TasksPanel";
+import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
 import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
@@ -85,6 +87,12 @@ export interface WorkingViewProps {
    */
   rosterMembers?: readonly DemoTeamMember[];
   /**
+   * Tâches/délégations en cours de la conversation ACTIVE (panneau « Tâches en cours »,
+   * sous le Roster). Accumulées par `useAgentTasks` depuis les `RunnerEvent` du tailer.
+   * Absent → panneau vide (état normal en démo : conversation mockée).
+   */
+  tasks?: readonly AgentTask[];
+  /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
    * porte. Si le runner n'est pas exécutable → bannière honnête, pas de spawn.
@@ -112,6 +120,7 @@ export function WorkingView({
   onRequestNextStep,
   resolveAvatar,
   rosterMembers,
+  tasks,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -386,14 +395,22 @@ export function WorkingView({
       </div>
 
       {active && (
-        <Roster
-          members={rosterMembers}
-          currentAgent={active.agent}
-          pending={active.pending}
-          workingAgents={workingAgents}
-          onPick={pickAgent}
-          resolveAvatar={resolveAvatar}
-        />
+        <aside className="wkright">
+          <Roster
+            members={rosterMembers}
+            currentAgent={active.agent}
+            pending={active.pending}
+            workingAgents={workingAgents}
+            onPick={pickAgent}
+            resolveAvatar={resolveAvatar}
+          />
+          {/*
+            Panneau « Tâches en cours » (façon Claude Code) SOUS le Roster : les
+            délégations live dérivées du transcript (useAgentTasks). Présentationnel ;
+            la collecte (tool_use_id, appariement running→done) vit dans le hook.
+          */}
+          <TasksPanel tasks={tasks ?? []} resolveAvatar={resolveAvatar} />
+        </aside>
       )}
     </section>
   );
