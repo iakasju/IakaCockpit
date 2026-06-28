@@ -33,11 +33,11 @@ export const fr = {
   portfolio: {
     ariaLabel: "Portfolio",
     eyebrow: "Portefeuille",
-    title: "Portfolio",
+    title: "Portefeuille",
     rootUnresolved: "chapeau non résolu",
     worksetLabel: "Set de Work",
     worksetCount: "{{count}} projet(s) sélectionné(s)",
-    openInWorking: "Ouvrir dans Working →",
+    openInWorking: "Ouvrir dans Travail →",
     underHat: "Sous le chapeau",
     scanning: "Scan du chapeau…",
     scanError: "Erreur de scan : {{error}}",
