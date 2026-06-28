@@ -27,7 +27,7 @@ import {
 } from "../hooks/useTeams";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
 import { makeAvatarResolver } from "../theme/teamAvatar";
-import { AGENT_ROLES, isCanonicalRole, roleLabel } from "../theme/roles";
+import { AGENT_ROLES, isCanonicalRole } from "../theme/roles";
 
 /** Libellé i18n d'un runner (les 4 sont sélectionnables — AR-2). */
 function runnerLabel(k: AgentRunnerKind, t: TFunction): string {
@@ -357,7 +357,7 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     <span className="arowkingdom">
                       {a.royaume
                         ? isCanonicalRole(a.royaume)
-                          ? roleLabel(a.royaume)
+                          ? t(`roles.${a.royaume.toLowerCase()}`)
                           : a.royaume
                         : "—"}
                     </span>
