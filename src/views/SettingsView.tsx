@@ -8,6 +8,8 @@
  * DOM). Aucun I/O direct dans la vue.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Lang } from "../i18n";
 import { notifyUser } from "../api/backend";
 import type { NotifySupport, ServiceStatus } from "../api/backend";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
@@ -147,6 +149,11 @@ export function SettingsView({
   onRescan,
   onNotify = notifyUser,
 }: SettingsViewProps): JSX.Element {
+  const { t } = useTranslation();
+  const LANGS: { id: Lang; label: string }[] = [
+    { id: "fr", label: t("settings.langFr") },
+    { id: "en", label: t("settings.langEn") },
+  ];
   const [rootDraft, setRootDraft] = useState<string>("");
   const [endpointDraft, setEndpointDraft] = useState<string>("");
   const [modelDraft, setModelDraft] = useState<string>("");
@@ -286,6 +293,19 @@ export function SettingsView({
                   options={SHAPE}
                   value={settings.ui.shape}
                   onChange={(v) => void settings.setUiPref("shape", v)}
+                />
+              </div>
+            </div>
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">{t("settings.langLabel")}</div>
+                <div className="d">{t("settings.langDesc")}</div>
+              </div>
+              <div className="ctl">
+                <Seg
+                  options={LANGS}
+                  value={settings.lang}
+                  onChange={(v) => void settings.setLang(v)}
                 />
               </div>
             </div>
