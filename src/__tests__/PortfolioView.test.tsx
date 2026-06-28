@@ -39,7 +39,7 @@ function renderView() {
 describe("PortfolioView — recentré sur le portefeuille (L12)", () => {
   it("rend le portefeuille (titre + tuiles)", () => {
     renderView();
-    expect(screen.getByRole("heading", { name: "Portfolio" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Portefeuille" })).toBeTruthy();
     expect(screen.getByText("alpha")).toBeTruthy();
   });
 

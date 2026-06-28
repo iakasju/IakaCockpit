@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+// i18n initialisé AVANT le rendu (FR par défaut ; App applique `ui_lang`).
+import "./i18n";
 
 // Thème par défaut posé tôt (NaonEdge dark, mode B) pour éviter un flash avant
 // que `useSettings` ne relise la préférence persistée et la réapplique.

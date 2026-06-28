@@ -17,6 +17,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { backend, type Backend, type NotifySupport } from "../api/backend";
+import { DEFAULT_LANG, parseLang, type Lang } from "../i18n";
 
 export type NavPos = "left" | "right" | "split";
 export type Density = "comfort" | "standard" | "compact";
@@ -52,6 +53,8 @@ export const CONFIG_KEYS = {
   shape: "ui_shape",
   fontFamily: "ui_font_family",
   fontScale: "ui_font_scale",
+  /** Langue de l'interface (i18n, FR défaut). */
+  lang: "ui_lang",
   theme: "theme",
   /** Team de vignettes thémées (L9, façade ; `none` = pastilles texte seules). */
   team: "ui_team",
@@ -132,6 +135,8 @@ export interface UseSettings {
   /** Un token de webhook n8n est-il enregistré au keychain ? (présence seule, L6). */
   n8nTokenSet: boolean;
   theme: string;
+  /** Langue de l'interface (i18n, FR défaut). App applique `changeLanguage`. */
+  lang: Lang;
   /** Team de vignettes active (L9). `none` = pastilles texte seules. */
   team: string;
   /** Runner du chef-conversation (L10b/P3 ; `claude-code` seul branché en L10). */
@@ -164,6 +169,8 @@ export interface UseSettings {
   /** Écrit (vide = retire) le token du webhook n8n au keychain ; met à jour `n8nTokenSet` (L6). */
   setN8nToken: (value: string) => Promise<void>;
   setTheme: (id: string) => Promise<void>;
+  /** Persiste la langue de l'interface (i18n, config non sensible ui_lang). */
+  setLang: (lng: Lang) => Promise<void>;
   /** Persiste la team de vignettes (L9, config non sensible ui_team). */
   setTeam: (team: string) => Promise<void>;
   /** Persiste le runner du chef (L10b/P3, config non sensible). */
@@ -262,6 +269,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
 
   const [root, setRootState] = useState<string | null>(null);
   const [theme, setThemeState] = useState<string>(DEFAULT_THEME);
+  const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
   const [team, setTeamState] = useState<string>(DEFAULT_TEAM);
   const [litellmEndpoint, setLitellmState] = useState<string>("");
   const [litellmModel, setLitellmModelState] = useState<string>("");
@@ -328,6 +336,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       const nextTeam = cfg[CONFIG_KEYS.team] || DEFAULT_TEAM;
       setUi(nextUi);
       setThemeState(nextTheme);
+      setLangState(parseLang(cfg[CONFIG_KEYS.lang]));
       setTeamState(nextTeam);
       setLitellmState(cfg[CONFIG_KEYS.litellmEndpoint] ?? "");
       setLitellmModelState(cfg[CONFIG_KEYS.litellmModel] ?? "");
@@ -449,6 +458,15 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
     [api, ui],
   );
 
+  const setLang = useCallback(
+    async (lng: Lang): Promise<void> => {
+      // Config non sensible (ui_lang) ; App applique `i18n.changeLanguage(lang)`.
+      await api.configSet(CONFIG_KEYS.lang, lng);
+      setLangState(lng);
+    },
+    [api],
+  );
+
   const setTeam = useCallback(
     async (next: string): Promise<void> => {
       // Config non sensible (ui_team) ; pas d'application DOM (le rendu lit `team`).
@@ -534,6 +552,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nActiveSupport,
       n8nTokenSet,
       theme,
+      lang,
       team,
       chefRunnerKind,
       chefModel,
@@ -553,6 +572,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nActiveSupport,
       setN8nToken,
       setTheme,
+      setLang,
       setTeam,
       setChefRunnerKind,
       setChefModel,
@@ -573,6 +593,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       n8nActiveSupport,
       n8nTokenSet,
       theme,
+      lang,
       team,
       chefRunnerKind,
       chefModel,
@@ -592,6 +613,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
       setN8nActiveSupport,
       setN8nToken,
       setTheme,
+      setLang,
       setTeam,
       setChefRunnerKind,
       setChefModel,

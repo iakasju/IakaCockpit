@@ -15,6 +15,8 @@
  * local de l'agent affiché. Champs texte persistés **onBlur** ; structure à l'action.
  */
 import { useMemo, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   AGENT_RUNNER_KINDS,
   isExecutableRunner,
@@ -25,28 +27,20 @@ import {
 } from "../hooks/useTeams";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
 import { makeAvatarResolver } from "../theme/teamAvatar";
-import { AGENT_ROLES, isCanonicalRole, roleLabel } from "../theme/roles";
+import { AGENT_ROLES, isCanonicalRole } from "../theme/roles";
 
-/** Libellés lisibles des runners (les 4 sont sélectionnables — AR-2). */
-const RUNNER_LABELS: Record<AgentRunnerKind, string> = {
-  "claude-code": "Claude Code (TUI native)",
-  ollama: "Ollama",
-  litellm: "LiteLLM",
-  codex: "Codex",
-};
+/** Libellé i18n d'un runner (les 4 sont sélectionnables — AR-2). */
+function runnerLabel(k: AgentRunnerKind, t: TFunction): string {
+  return t(`teams.runnerLabels.${k}`);
+}
 
-/** Libellés des castings de vignettes (calque SettingsView L9). */
-const TEAM_LABELS: Record<string, string> = {
-  none: "Aucune (pastilles)",
-  lotr: "LOTR",
-  avengers: "Avengers",
-  starfleet: "Starfleet",
-};
+/** Castings de vignettes embarqués (ids) ; libellés résolus en i18n au rendu. */
+const CASTING_IDS: string[] = [TEAM_NONE, ...embeddedTeams()];
 
-const CASTING_OPTIONS: { id: string; label: string }[] = [
-  { id: TEAM_NONE, label: TEAM_LABELS[TEAM_NONE] },
-  ...embeddedTeams().map((t) => ({ id: t, label: TEAM_LABELS[t] ?? t })),
-];
+/** Libellé i18n d'un casting (fallback = l'id si pas de libellé dédié). */
+function castingLabel(id: string, t: TFunction): string {
+  return t(`teams.castingLabels.${id}`, { defaultValue: id });
+}
 
 /** Slugifie un libellé en id stable (création de team/agent). */
 function slugify(s: string): string {
@@ -108,6 +102,7 @@ function AgentAvatar({
 }
 
 export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // État local de sélection de l'agent affiché dans la FICHE (direction A).
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -115,7 +110,7 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
   const [newAgentName, setNewAgentName] = useState<string>("");
 
   const selected: Team | null =
-    teams.teams.find((t) => t.id === selectedId) ?? teams.teams[0] ?? null;
+    teams.teams.find((tm) => tm.id === selectedId) ?? teams.teams[0] ?? null;
 
   // Agent affiché : sélection locale si valide, sinon repli sur le coordinateur puis
   // le 1er agent (→ la FICHE du coordinateur est montrée par défaut au montage).
@@ -146,7 +141,7 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
     const name = newTeamName.trim();
     if (name.length === 0) return;
     const id = slugify(name);
-    if (teams.teams.some((t) => t.id === id)) return;
+    if (teams.teams.some((tm) => tm.id === id)) return;
     void teams.upsertTeam({
       id,
       name,
@@ -199,47 +194,55 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
     !!selectedAgent && !!selected && selectedAgent.id === selected.coordinator;
 
   return (
-    <div className="block teamseditor" aria-label="Teams & agents">
-      <span className="eyebrow">Casting</span>
+    <div className="block teamseditor" aria-label={t("teams.editorAria")}>
+      <span className="eyebrow">{t("teams.eyebrow")}</span>
       <div className="bt">
         <span className="e">👥</span>
-        <h2>Teams &amp; agents</h2>
+        <h2>{t("teams.title")}</h2>
       </div>
       <p className="lead">
-        Choisis l'agent à gauche, règle son <strong>runner</strong>, son{" "}
-        <strong>modèle</strong> et ses <strong>skills</strong> à droite, puis désigne le{" "}
-        <strong>coordinateur</strong> (chef de projet). Les changements s'appliquent au{" "}
-        <strong>prochain lancement</strong> de la conversation (pas de re-spawn à chaud).
+        <Trans
+          i18nKey="teams.lead"
+          components={[
+            <strong />,
+            <strong />,
+            <strong />,
+            <strong />,
+            <strong />,
+          ]}
+        />
       </p>
 
       {/* Barre du haut : sélecteurs + création / suppression de team */}
       <div className="teamhead">
         <label className="tsel">
-          <span className="tsel-lab">Team</span>
+          <span className="tsel-lab">{t("teams.teamLabel")}</span>
           <select
             className="field"
             value={selected?.id ?? ""}
-            aria-label="Team à éditer"
+            aria-label={t("teams.teamSelectAria")}
             onChange={(e) => {
               setSelectedId(e.target.value);
               setSelectedAgentId(null);
             }}
           >
-            {teams.teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.id === teams.defaultTeamId ? " · par défaut" : ""}
+            {teams.teams.map((tm) => (
+              <option key={tm.id} value={tm.id}>
+                {tm.name}
+                {tm.id === teams.defaultTeamId
+                  ? t("teams.teamDefaultSuffix")
+                  : ""}
               </option>
             ))}
           </select>
         </label>
 
         <label className="tsel">
-          <span className="tsel-lab">Coordinateur</span>
+          <span className="tsel-lab">{t("teams.coordinatorLabel")}</span>
           <select
             className="field"
             value={selected?.coordinator ?? ""}
-            aria-label="Coordinateur de la team"
+            aria-label={t("teams.coordinatorAria")}
             disabled={!selected || selected.agents.length === 0}
             onChange={(e) =>
               selected && void teams.setCoordinator(selected.id, e.target.value)
@@ -254,17 +257,17 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
         </label>
 
         <label className="tsel">
-          <span className="tsel-lab">Casting visuel</span>
+          <span className="tsel-lab">{t("teams.castingLabel")}</span>
           <select
             className="field"
             value={selected?.vignetteTeam ?? TEAM_NONE}
-            aria-label="Casting visuel de la team"
+            aria-label={t("teams.castingAria")}
             disabled={!selected}
             onChange={(e) => patchTeam({ vignetteTeam: e.target.value })}
           >
-            {CASTING_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
+            {CASTING_IDS.map((id) => (
+              <option key={id} value={id}>
+                {castingLabel(id, t)}
               </option>
             ))}
           </select>
@@ -272,13 +275,13 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
 
         {selected && (
           <label className="tsel">
-            <span className="tsel-lab">Nom de la team</span>
+            <span className="tsel-lab">{t("teams.teamNameLabel")}</span>
             <input
               key={`name-${selected.id}`}
               className="field"
               type="text"
               defaultValue={selected.name}
-              aria-label="Nom de la team"
+              aria-label={t("teams.teamNameAria")}
               onBlur={(e) => {
                 const v = e.target.value.trim();
                 if (v.length > 0 && v !== selected.name) patchTeam({ name: v });
@@ -291,18 +294,18 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
           <input
             className="field"
             type="text"
-            placeholder="nouvelle team"
+            placeholder={t("teams.newTeamPlaceholder")}
             value={newTeamName}
-            aria-label="Nom de la nouvelle team"
+            aria-label={t("teams.newTeamAria")}
             onChange={(e) => setNewTeamName(e.target.value)}
           />
           <button type="button" className="btn accent sm" onClick={createTeam}>
-            Créer
+            {t("common.create")}
           </button>
           <button
             type="button"
             className="btn ghost sm"
-            title="Supprimer cette team"
+            title={t("teams.removeTeamTitle")}
             disabled={
               !selected ||
               selected.id === teams.defaultTeamId ||
@@ -310,28 +313,26 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
             }
             onClick={() => selected && void teams.removeTeam(selected.id)}
           >
-            Supprimer la team
+            {t("teams.removeTeam")}
           </button>
         </div>
       </div>
 
       {coordinator && !isExecutableRunner(coordinator.runner) && (
         <div className="svcrow" role="status" aria-live="polite">
-          ⚠️ Le coordinateur <strong>{coordinator.name}</strong> est sur le runner{" "}
-          <code>{coordinator.runner}</code> : il ne pilotera pas encore le
-          terminal-source (étape actuelle : claude-code). La définition est
-          conservée.
+          {t("teams.coordWarning", {
+            name: coordinator.name,
+            runner: coordinator.runner,
+          })}
         </div>
       )}
 
       {selected && (
         <div className="split">
           {/* Gauche : liste des agents (avatar + nom + royaume + 👑) */}
-          <div className="agentlist" aria-label="Roster d'agents">
+          <div className="agentlist" aria-label={t("teams.rosterAria")}>
             {selected.agents.length === 0 && (
-              <div className="agentlist-empty">
-                Aucun agent. Ajoute un agent ci-dessous.
-              </div>
+              <div className="agentlist-empty">{t("teams.emptyAgents")}</div>
             )}
             {selected.agents.map((a) => {
               const isCoord = a.id === selected.coordinator;
@@ -343,7 +344,7 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                   className={`arow${isSel ? " on" : ""}`}
                   data-agent={a.id}
                   aria-pressed={isSel}
-                  aria-label={`Sélectionner ${a.name}`}
+                  aria-label={t("teams.selectAgentAria", { name: a.name })}
                   onClick={() => setSelectedAgentId(a.id)}
                 >
                   <AgentAvatar
@@ -353,10 +354,20 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                   />
                   <span className="arowmeta">
                     <span className="arowname">{a.name}</span>
-                    <span className="arowkingdom">{a.royaume || "—"}</span>
+                    <span className="arowkingdom">
+                      {a.royaume
+                        ? isCanonicalRole(a.royaume)
+                          ? t(`roles.${a.royaume.toLowerCase()}`)
+                          : a.royaume
+                        : "—"}
+                    </span>
                   </span>
                   {isCoord && (
-                    <span className="crown" title="Coordinateur" aria-hidden>
+                    <span
+                      className="crown"
+                      title={t("teams.coordinatorTag")}
+                      aria-hidden
+                    >
                       👑
                     </span>
                   )}
@@ -368,13 +379,13 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
               <input
                 className="field"
                 type="text"
-                placeholder="nom de l'agent"
+                placeholder={t("teams.newAgentPlaceholder")}
                 value={newAgentName}
-                aria-label="Nom du nouvel agent"
+                aria-label={t("teams.newAgentAria")}
                 onChange={(e) => setNewAgentName(e.target.value)}
               />
               <button type="button" className="btn ghost sm" onClick={addAgent}>
-                + Ajouter un agent
+                {t("teams.addAgent")}
               </button>
             </div>
           </div>
@@ -392,28 +403,30 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                   <div>
                     <h3>{selectedAgent.name}</h3>
                     <div className="ehead-r">
-                      Rôle{" "}
+                      {t("teams.fieldRoleHeader")}{" "}
                       <strong>
                         {selectedAgent.royaume
-                          ? roleLabel(selectedAgent.royaume)
+                          ? isCanonicalRole(selectedAgent.royaume)
+                            ? t(`roles.${selectedAgent.royaume.toLowerCase()}`)
+                            : selectedAgent.royaume
                           : "—"}
                       </strong>
-                      {selAgentIsCoord
-                        ? " · coordinateur — pilote le terminal-source"
-                        : ""}
+                      {selAgentIsCoord ? t("teams.coordinatorPilots") : ""}
                     </div>
                   </div>
                 </div>
 
                 <div className="agentgrid">
                   <label className="agentf">
-                    <span>Nom</span>
+                    <span>{t("teams.fieldName")}</span>
                     <input
                       key={`an-${selectedAgent.id}`}
                       className="field"
                       type="text"
                       defaultValue={selectedAgent.name}
-                      aria-label={`Nom de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldNameAria", {
+                        id: selectedAgent.id,
+                      })}
                       onBlur={(e) => {
                         const v = e.target.value.trim();
                         if (v.length > 0 && v !== selectedAgent.name)
@@ -422,11 +435,13 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     />
                   </label>
                   <label className="agentf">
-                    <span>Rôle</span>
+                    <span>{t("teams.fieldRole")}</span>
                     <select
                       className="field"
                       value={selectedAgent.royaume}
-                      aria-label={`Rôle de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldRoleAria", {
+                        id: selectedAgent.id,
+                      })}
                       onChange={(e) =>
                         patchAgent(selectedAgent, { royaume: e.target.value })
                       }
@@ -436,25 +451,29 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                       {selectedAgent.royaume !== "" &&
                         !isCanonicalRole(selectedAgent.royaume) && (
                           <option value={selectedAgent.royaume}>
-                            {selectedAgent.royaume} (hors liste)
+                            {t("teams.fieldRoleOutOfList", {
+                              value: selectedAgent.royaume,
+                            })}
                           </option>
                         )}
                       {AGENT_ROLES.map((r) => (
                         <option key={r.key} value={r.key}>
-                          {r.label}
+                          {t(`roles.${r.key}`)}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label className="agentf">
-                    <span>roleIndex</span>
+                    <span>{t("teams.fieldRoleIndex")}</span>
                     <input
                       key={`ri-${selectedAgent.id}`}
                       className="field"
                       type="number"
                       min={0}
                       defaultValue={selectedAgent.roleIndex}
-                      aria-label={`roleIndex de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldRoleIndexAria", {
+                        id: selectedAgent.id,
+                      })}
                       onBlur={(e) => {
                         const v = Number(e.target.value);
                         if (Number.isFinite(v) && v !== selectedAgent.roleIndex)
@@ -463,11 +482,13 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     />
                   </label>
                   <label className="agentf">
-                    <span>Runner</span>
+                    <span>{t("teams.fieldRunner")}</span>
                     <select
                       className="field"
                       value={selectedAgent.runner}
-                      aria-label={`Runner de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldRunnerAria", {
+                        id: selectedAgent.id,
+                      })}
                       onChange={(e) =>
                         patchAgent(selectedAgent, {
                           runner: e.target.value as AgentRunnerKind,
@@ -476,21 +497,25 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     >
                       {AGENT_RUNNER_KINDS.map((k) => (
                         <option key={k} value={k}>
-                          {RUNNER_LABELS[k]}
-                          {isExecutableRunner(k) ? "" : " — définissable"}
+                          {runnerLabel(k, t)}
+                          {isExecutableRunner(k)
+                            ? ""
+                            : t("teams.runnerDefinable")}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label className="agentf">
-                    <span>Modèle</span>
+                    <span>{t("teams.fieldModel")}</span>
                     <input
                       key={`am-${selectedAgent.id}`}
                       className="field"
                       type="text"
-                      placeholder="(défaut du runner)"
+                      placeholder={t("teams.fieldModelPlaceholder")}
                       defaultValue={selectedAgent.model}
-                      aria-label={`Modèle de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldModelAria", {
+                        id: selectedAgent.id,
+                      })}
                       onBlur={(e) => {
                         const v = e.target.value.trim();
                         if (v !== selectedAgent.model)
@@ -499,14 +524,16 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     />
                   </label>
                   <label className="agentf wide">
-                    <span>Skills (CSV)</span>
+                    <span>{t("teams.fieldSkills")}</span>
                     <input
                       key={`as-${selectedAgent.id}`}
                       className="field"
                       type="text"
-                      placeholder="iakaframe-cadrage, …"
+                      placeholder={t("teams.fieldSkillsPlaceholder")}
                       defaultValue={selectedAgent.skills.join(", ")}
-                      aria-label={`Skills de ${selectedAgent.id}`}
+                      aria-label={t("teams.fieldSkillsAria", {
+                        id: selectedAgent.id,
+                      })}
                       onBlur={(e) => {
                         const next = parseSkillsCsv(e.target.value);
                         if (next.join(",") !== selectedAgent.skills.join(","))
@@ -522,8 +549,8 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     className="btn ghost sm"
                     title={
                       selAgentIsCoord
-                        ? "Désigne d'abord un autre coordinateur"
-                        : "Retirer cet agent du casting"
+                        ? t("teams.removeCoordHint")
+                        : t("teams.removeFromCastingTitle")
                     }
                     disabled={selAgentIsCoord}
                     onClick={() => {
@@ -531,14 +558,12 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                       setSelectedAgentId(null);
                     }}
                   >
-                    Retirer du casting
+                    {t("teams.removeFromCasting")}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="editor-empty">
-                Sélectionne un agent dans la liste, ou ajoute-en un.
-              </div>
+              <div className="editor-empty">{t("teams.selectAgentPrompt")}</div>
             )}
           </div>
         </div>

@@ -21,6 +21,7 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     n8nActiveSupport: "slack",
     n8nTokenSet: false,
     theme: "naonedge-dark",
+    lang: "fr",
     team: "lotr",
     chefRunnerKind: "claude-code",
     chefModel: "",
@@ -40,6 +41,7 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
     setN8nActiveSupport: noop,
     setN8nToken: noop,
     setTheme: noop,
+    setLang: noop,
     setTeam: noop,
     setChefRunnerKind: noop,
     setChefModel: noop,
@@ -195,7 +197,7 @@ describe("SettingsView — vignettes & chef-runner", () => {
   it("L13 : l'éditeur « Teams & agents » n'est PLUS dans Réglages (sorti vers la vue Teams)", () => {
     renderView({});
     expect(
-      screen.queryByRole("heading", { name: "Teams & agents" }),
+      screen.queryByRole("heading", { name: "Équipes & agents" }),
     ).toBeNull();
     expect(screen.queryByLabelText("Runner de aragorn")).toBeNull();
   });

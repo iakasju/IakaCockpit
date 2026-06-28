@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { render, screen, fireEvent, within, cleanup } from "@testing-library/react";
+import i18n from "../i18n";
 import { TeamsEditor } from "../components/TeamsEditor";
 import {
   defaultTeamFromDemo,
@@ -199,5 +200,58 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     render(<TeamsEditor teams={makeTeams()} />);
     const del = screen.getByRole("button", { name: "Supprimer la team" });
     expect((del as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe("TeamsEditor — rendu EN (aucun menu/select mélangé FR/EN)", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("en");
+  });
+  afterAll(async () => {
+    await i18n.changeLanguage("fr");
+    cleanup();
+  });
+
+  it("le role-select rend les 7 rôles traduits en EN (aucun libellé FR résiduel)", () => {
+    render(<TeamsEditor teams={makeTeams()} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Role of gimli") as HTMLSelectElement;
+    const labels = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.textContent,
+    );
+    // Libellés EN attendus, dans l'ordre roleIndex (fabrication → "Build", etc.).
+    expect(labels).toEqual([
+      "Portfolio",
+      "Coordination",
+      "Architecture",
+      "Build",
+      "Testing",
+      "Design",
+      "Docs",
+    ]);
+    // Aucun libellé FR distinctif ne doit subsister dans le menu.
+    expect(labels).not.toContain("Fabrication");
+    expect(labels).not.toContain("Graphisme");
+  });
+
+  it("le runner-select rend les libellés EN + suffixe « definable » (pas « définissable »)", () => {
+    render(<TeamsEditor teams={makeTeams()} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Runner of gimli") as HTMLSelectElement;
+    const labels = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.textContent,
+    );
+    expect(labels[0]).toBe("Claude Code (native TUI)");
+    // Suffixe EN sur les runners non exécutables (ollama/litellm/codex).
+    expect(labels.some((l) => l?.includes(" — definable"))).toBe(true);
+    expect(labels.some((l) => l?.includes("définissable"))).toBe(false);
+  });
+
+  it("le rail d'agents traduit le rôle en EN (cohérent avec la fiche — plus de mélange)", () => {
+    render(<TeamsEditor teams={makeTeams()} />);
+    // Gimli = fabrication → le rail doit afficher « Build » (EN), pas « Fabrication ».
+    const row = document.querySelector('[data-agent="gimli"]') as HTMLElement;
+    expect(within(row).getByText("Build")).toBeTruthy();
+    expect(within(row).queryByText("Fabrication")).toBeNull();
   });
 });

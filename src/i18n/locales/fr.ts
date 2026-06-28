@@ -1,0 +1,387 @@
+/**
+ * fr.ts — ressources FR (langue par défaut). Chaînes d'UI verbatim (état actuel).
+ * Un seul namespace `translation`. NE PAS y mettre de données (noms d'agents/teams,
+ * chemins, contenu de conversation mockée) : seulement des libellés d'interface.
+ */
+export const fr = {
+  nav: {
+    ariaLabel: "Navigation principale",
+    portfolio: "Portefeuille",
+    working: "Travail",
+    journal: "Journal",
+    teams: "Équipes",
+    settings: "Réglages",
+  },
+
+  common: {
+    save: "Enregistrer",
+    cancel: "Annuler",
+    confirm: "Confirmer",
+    create: "Créer",
+  },
+
+  roles: {
+    portefeuille: "Portefeuille",
+    coordination: "Coordination",
+    architecture: "Architecture",
+    fabrication: "Fabrication",
+    tests: "Tests",
+    graphisme: "Graphisme",
+    doc: "Doc",
+  },
+
+  portfolio: {
+    ariaLabel: "Portfolio",
+    eyebrow: "Portefeuille",
+    title: "Portefeuille",
+    rootUnresolved: "chapeau non résolu",
+    worksetLabel: "Set de Work",
+    worksetCount: "{{count}} projet(s) sélectionné(s)",
+    openInWorking: "Ouvrir dans Travail →",
+    underHat: "Sous le chapeau",
+    scanning: "Scan du chapeau…",
+    scanError: "Erreur de scan : {{error}}",
+    empty: "Aucun projet sous le chapeau.",
+  },
+
+  tile: {
+    addToWorkAria: "Ajouter au set de Work",
+    removeFromWorkAria: "Retirer du set de Work",
+    inWork: "dans le set de Work",
+    addToWork: "ajouter au Work",
+    gitNone: "hors git",
+    gitDirty: "dirty",
+    gitClean: "clean",
+  },
+
+  working: {
+    ariaLabel: "Travail",
+    worksetTitle: "Set de Work",
+    worksetCount: "{{count}} projet(s)",
+    importAria: "Importer un projet (dossier existant)",
+    importTitle: "Importer un projet existant…",
+    selectedProjects: "Projets sélectionnés",
+    emptyList:
+      "Aucun projet. Importe un dossier existant via le bouton + ci-dessus, ou ajoute des projets depuis Portfolio.",
+    interlocutorTitle: "Interlocuteur courant",
+    runnerTitle:
+      "Coordinateur · runner · modèle (édition : Réglages → Teams & agents). Appliqué au prochain lancement.",
+    runnerModelDefault: "défaut",
+    modeAria: "Mode",
+    chat: "Chat",
+    shell: "Shell",
+    interrupt: "Interrompre (esc)",
+    interruptTitle:
+      "Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)",
+    nextStep: "Prochaine étape",
+    bannerNotWiredStrong: "Runner « {{kind}} » défini, exécution non câblée.",
+    bannerNotWiredCoord: "Le coordinateur",
+    bannerNotWiredModel: " (modèle {{model}})",
+    bannerNotWiredRest:
+      "est défini sur un runner pas encore exécutable. Étape actuelle : claude-code (terminal-source). La définition est conservée ; adresse les agents en chat (",
+    bannerChat:
+      "Runner « {{kind}} » du coordinateur {{coordinator}} non encore exécutable (étape : claude-code). La conversation reste ouverte ; la définition est conservée.",
+    emptyConv: "Aucune conversation ouverte.",
+    emptyConvHint:
+      "Choisis un projet du set de Work pour ouvrir sa conversation.",
+  },
+
+  roster: {
+    ariaLabel: "Team iakaframe",
+    head: "Team",
+    statusWorking: "travaille",
+    statusIdle: "attend",
+    addressTitle: "S'adresser à {{agent}} (@{{agent}})",
+  },
+
+  tasks: {
+    ariaLabel: "Tâches en cours",
+    title: "Tâches en cours",
+    empty: "Aucune tâche en cours",
+    statusRunning: "en cours",
+    statusDone: "terminé",
+  },
+
+  chat: {
+    ariaLabel: "Conversation",
+    showThought: "Afficher la pensée",
+    hideThought: "Masquer la pensée",
+    interrupt: "Interrompre (esc)",
+    interruptTitle:
+      "Envoyer esc au chef-runner (interruption — l'esc natif de la TUI marche aussi)",
+    empty:
+      "Discute avec {{agent}} à propos de ce projet (contexte : specs + état des lieux + git). Clique un agent du roster pour t'adresser directement à lui. Sans endpoint IA configuré, une réponse mockée est renvoyée.",
+    inputAria: "Saisie de message",
+    placeholder: "Message à {{agent}}…",
+    send: "Envoyer",
+    evGeste: "⚙ geste",
+    evDelegation: "➜ délègue",
+    evActivite: "✓ activité",
+    evPensee: "🜂 pensée",
+  },
+
+  nextStep: {
+    ariaLabel: "Moteur prochaine étape",
+    title: "Prochaine étape",
+    analyzing: "Analyse en cours…",
+    request: "Proposer la prochaine étape",
+    empty:
+      "Demande au moteur IA la prochaine étape concrète sur ce projet (contexte : specs + état des lieux + git). Sans endpoint configuré, une suggestion mockée est renvoyée.",
+    providerMock: "mock (simulé)",
+    tokens: "{{in}} → {{out}} tok",
+  },
+
+  journal: {
+    ariaLabel: "Main courante",
+    eyebrow: "Main courante",
+    title: "Journal",
+    sub: "Trois canaux tracés : <0>adresse</0> (humain ↔ agents), <1>geste</1> (délégations machine), <2>pensée</2> (raisonnement). Lecture seule depuis iakaboxlogs — le canal est porté par la couleur du nœud.",
+    filtersAria: "Filtres de canaux",
+    filterAll: "Tous",
+    canalAdresse: "adresse",
+    canalGeste: "geste",
+    canalPensee: "pensée",
+    canalAgent: "agent",
+    searchPlaceholder: "filtrer par agent, projet…",
+    searchAria: "Filtre par agent",
+    degradedStrong: "Mode dégradé",
+    degraded:
+      " — iakaboxlogs injoignable, affichage de données simulées.",
+    degradedWhy: " ({{error}})",
+    loading: "Chargement de la main courante…",
+    empty: "Aucun événement.",
+  },
+
+  teams: {
+    ariaLabel: "Équipes",
+    editorAria: "Équipes & agents",
+    eyebrow: "Casting",
+    title: "Équipes & agents",
+    lead: "Choisis l'agent à gauche, règle son <0>runner</0>, son <1>modèle</1> et ses <2>skills</2> à droite, puis désigne le <3>coordinateur</3> (chef de projet). Les changements s'appliquent au <4>prochain lancement</4> de la conversation (pas de re-spawn à chaud).",
+    teamLabel: "Team",
+    teamSelectAria: "Team à éditer",
+    teamDefaultSuffix: " · par défaut",
+    coordinatorLabel: "Coordinateur",
+    coordinatorAria: "Coordinateur de la team",
+    castingLabel: "Casting visuel",
+    castingAria: "Casting visuel de la team",
+    teamNameLabel: "Nom de la team",
+    teamNameAria: "Nom de la team",
+    newTeamPlaceholder: "nouvelle team",
+    newTeamAria: "Nom de la nouvelle team",
+    removeTeam: "Supprimer la team",
+    removeTeamTitle: "Supprimer cette team",
+    coordWarning:
+      "⚠️ Le coordinateur {{name}} est sur le runner {{runner}} : il ne pilotera pas encore le terminal-source (étape actuelle : claude-code). La définition est conservée.",
+    rosterAria: "Roster d'agents",
+    emptyAgents: "Aucun agent. Ajoute un agent ci-dessous.",
+    selectAgentAria: "Sélectionner {{name}}",
+    coordinatorTag: "Coordinateur",
+    newAgentPlaceholder: "nom de l'agent",
+    newAgentAria: "Nom du nouvel agent",
+    addAgent: "+ Ajouter un agent",
+    fieldName: "Nom",
+    fieldRole: "Rôle",
+    fieldRoleOutOfList: "{{value}} (hors liste)",
+    fieldRoleAria: "Rôle de {{id}}",
+    fieldRoleHeader: "Rôle",
+    coordinatorPilots: " · coordinateur — pilote le terminal-source",
+    fieldRoleIndex: "roleIndex",
+    fieldRoleIndexAria: "roleIndex de {{id}}",
+    fieldRunner: "Runner",
+    fieldRunnerAria: "Runner de {{id}}",
+    runnerDefinable: " — définissable",
+    fieldModel: "Modèle",
+    fieldModelPlaceholder: "(défaut du runner)",
+    fieldModelAria: "Modèle de {{id}}",
+    fieldSkills: "Skills (CSV)",
+    fieldSkillsPlaceholder: "iakaframe-cadrage, …",
+    fieldSkillsAria: "Skills de {{id}}",
+    fieldNameAria: "Nom de {{id}}",
+    removeFromCasting: "Retirer du casting",
+    removeFromCastingTitle: "Retirer cet agent du casting",
+    removeCoordHint: "Désigne d'abord un autre coordinateur",
+    selectAgentPrompt: "Sélectionne un agent dans la liste, ou ajoute-en un.",
+    runnerLabels: {
+      "claude-code": "Claude Code (TUI native)",
+      ollama: "Ollama",
+      litellm: "LiteLLM",
+      codex: "Codex",
+    },
+    castingLabels: {
+      none: "Aucune (pastilles)",
+      lotr: "LOTR",
+      avengers: "Avengers",
+      starfleet: "Starfleet",
+    },
+  },
+
+  teamPicker: {
+    dialogAria: "Relier {{project}} à une team",
+    title: "Relier <0>{{project}}</0> à une team",
+    lead: "Choisis la team qui pilotera ce projet. Son <0>coordinateur</0> sera l'interlocuteur de la conversation.",
+    listAria: "Teams disponibles",
+    lastUsedSuffix: " · dernière utilisée",
+    manage: "Gérer / créer les teams…",
+  },
+
+  settings: {
+    ariaLabel: "Réglages",
+    navAria: "Sections réglages",
+    groupGeneral: "Généraux",
+    groupOps: "Cockpit / opérationnel",
+    sectionInterface: "Interface",
+    sectionFont: "Police",
+    sectionCharte: "Charte",
+    sectionCockpit: "Cockpit",
+    sectionAi: "IA (LiteLLM)",
+    sectionSecurity: "Sécurité d'exécution",
+    sectionJournal: "Main courante",
+    sectionAddress: "Canal adresse (n8n)",
+    sectionServices: "Services iakabox",
+
+    generalTitle: "Réglages généraux",
+    generalLead:
+      "Interface, forme, police et charte. Ces préférences sont persistées (elles survivent au redémarrage).",
+
+    interfaceTitle: "Interface",
+    navPosLabel: "Position de la navigation",
+    navPosDesc: "left / split / right",
+    navPosLeft: "gauche",
+    navPosSplit: "centrée",
+    navPosRight: "droite",
+    densityLabel: "Densité",
+    densityDesc: "espacement des vues",
+    densityComfort: "confort",
+    densityStandard: "standard",
+    densityCompact: "compact",
+    shapeLabel: "Forme",
+    shapeDesc: "coins arrondis ou carrés",
+    shapeRound: "arrondi",
+    shapeSquare: "carré",
+    langLabel: "Langue",
+    langDesc: "français / anglais",
+    langFr: "Français",
+    langEn: "English",
+    langAria: "Langue de l'interface",
+
+    fontTitle: "Police",
+    fontFamilyLabel: "Famille",
+    fontFamilyDesc: "système / serif / mono",
+    fontSystem: "système",
+    fontSerif: "serif",
+    fontMono: "mono",
+    fontScaleLabel: "Échelle",
+    fontScaleValue: "{{scale}}%",
+    fontScaleAria: "Échelle de police",
+
+    charteTitle: "Charte",
+    teamVignettesLabel: "Team (vignettes)",
+    teamVignettesDesc:
+      "Incarne la team : un casting (univers) qui peuple les rôles. Les vignettes suivent la charte active. « Aucune » = pastilles texte.",
+    teamVignettesAria: "Team de vignettes",
+
+    cockpitTitle: "Cockpit",
+    rootLabel: "Chapeau (racine)",
+    rootDesc: "dossier scanné par le portfolio",
+    rootAria: "Racine du chapeau",
+    rootApply: "Appliquer & re-scanner",
+
+    aiTitle: "IA (LiteLLM)",
+    aiEndpointLabel: "Endpoint IA (OpenAI-compat — LiteLLM recommandé)",
+    aiEndpointDesc:
+      "URL non sensible. Cible au choix : LiteLLM LAN, Ollama localhost/LAN (http://localhost:11434/v1), ou cloud OpenAI-compat. Vide → mode mock (suggestions simulées).",
+    aiEndpointAria: "Endpoint IA",
+    aiModelLabel: "Modèle",
+    aiModelDesc:
+      "Nom/alias transmis tel quel à l'endpoint (alias LiteLLM, modèle Ollama, ou modèle cloud).",
+    aiModelAria: "Modèle IA",
+    aiKeyLabel: "Clé IA (facultative)",
+    aiKeyDescPrefix:
+      "Stockée au keychain (jamais affichée). Facultative — inutile pour un Ollama local. ",
+    aiKeySet: "Clé enregistrée ✓",
+    aiKeyUnset: "Aucune clé",
+    aiKeyPlaceholder: "sk-… (laisser vide pour retirer)",
+    aiKeyAria: "Clé IA",
+
+    securityTitle: "Sécurité d'exécution du chef-runner",
+    securityLead:
+      "Le coordinateur de la team possède la conversation (terminal-source) ; le chat en est la vue filtrée. Le <0>runner et le modèle</0> se règlent désormais <1>par agent</1> (page « Teams »). Ces réglages-ci restent <2>GLOBAUX</2> (politique de sécurité d'exécution, lue à l'ouverture d'une conversation).",
+    allowlistLabel: "Outils autorisés (allowlist)",
+    allowlistDescPrefix: " (CSV). Jamais de bypass global. ⚠️ N'a d'effet que sur un workspace trusté (cf. trust ci-dessous). Vide → défaut (",
+    allowlistAria: "Allowlist d'outils du chef-runner",
+    trustLabel: "Trust du cwd",
+    trustDesc:
+      "héritage : confiance héritée d'un dossier parent trusté, sinon dialogue natif dans le terminal. acceptation : pré-accepte le cwd (idempotent) pour que le dialogue ne bloque pas l'auto-lancement.",
+    trustInherit: "héritage",
+    trustAccept: "acceptation",
+    thoughtLabel: "Canal pensée",
+    thoughtDesc:
+      "Masque par défaut le canal « pensée » (thinking) dans le chat (réduit le bruit). Réglable aussi depuis la barre du chat.",
+    thoughtHidden: "masquée",
+    thoughtShown: "visible",
+
+    journalTitle: "Main courante (iakaboxlogs)",
+    couchUrlLabel: "URL CouchDB",
+    couchUrlDesc:
+      "Base de la main courante 3-canaux (lecture seule). Non sensible. Vide → mode dégradé (données simulées).",
+    couchUrlAria: "URL CouchDB",
+    couchDbLabel: "Base CouchDB",
+    couchDbDesc: "Nom de la base (défaut : conversations).",
+    couchDbAria: "Base CouchDB",
+    couchCredsLabel: "Identifiants CouchDB",
+    couchCredsDescPrefix:
+      "Stockés au keychain (jamais affichés). Mot de passe vide → retire les identifiants. ",
+    couchCredsSet: "Identifiants enregistrés ✓",
+    couchCredsUnset: "Aucun identifiant",
+    couchUserPlaceholder: "utilisateur (admin)",
+    couchUserAria: "Utilisateur CouchDB",
+    couchPassPlaceholder: "mot de passe (vide pour retirer)",
+    couchPassAria: "Mot de passe CouchDB",
+
+    addressTitle: "Canal adresse externe (n8n)",
+    addressLead:
+      "Émet les messages du canal « adresse » vers UN webhook n8n, qui route vers le support actif. Aucun secret de support (Discord/Slack/MQTT) ne vit dans le Cockpit : ils restent dans n8n.",
+    n8nUrlLabel: "URL du webhook n8n",
+    n8nUrlDesc:
+      "Production URL du workflow n8n (Active). Non sensible. Vide → mode mock (aucun POST réel).",
+    n8nUrlAria: "URL du webhook n8n",
+    n8nSupportLabel: "Support actif",
+    n8nSupportDesc:
+      "Choisi côté Cockpit (passé dans le payload) ; n8n route dessus.",
+    n8nTokenLabel: "Token du webhook (facultatif)",
+    n8nTokenDescPrefix: "En-tête ",
+    n8nTokenDescSuffix:
+      " si le webhook n8n est protégé (Header Auth). Stocké au keychain (jamais affiché). Vide → retire. ",
+    n8nTokenSet: "Token enregistré ✓",
+    n8nTokenUnset: "Aucun token",
+    n8nTokenPlaceholder: "token (laisser vide pour retirer)",
+    n8nTokenAria: "Token du webhook n8n",
+    n8nTestLabel: "Tester l'envoi",
+    n8nTestDesc:
+      "Émet un message sur le canal adresse via n8n (cible optionnelle : canal/salon/topic). Affiche l'ack ou l'erreur.",
+    n8nCiblePlaceholder: "cible (optionnelle : #iakaframe, topic…)",
+    n8nCibleAria: "Cible du message",
+    n8nMsgPlaceholder: "message de test",
+    n8nMsgAria: "Message de test",
+    n8nTestSending: "Envoi…",
+    n8nTestSend: "Tester l'envoi",
+    n8nResultMock:
+      "Mock : payload construit, aucun POST réel (URL webhook vide ou flag dev).",
+    n8nResultOk:
+      "Pris en charge par n8n (provider {{provider}}, HTTP {{status}}).",
+    n8nResultFail: "Échec : {{error}}",
+
+    servicesTitle: "Services iakabox",
+    servicesEmpty: "Aucun service (hors box ou non sondé).",
+    serviceUnreachable: "injoignable",
+    serviceLatency: "{{ms}} ms",
+    serviceLatencyUnknown: "? ms",
+
+    supportSlack: "Slack",
+    supportDiscord: "Discord",
+    supportMqtt: "MQTT",
+  },
+};
+
+export type Resources = typeof fr;

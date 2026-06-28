@@ -5,6 +5,7 @@
  * et la transmet à `TeamsEditor`. Aucun I/O direct ici — la persistance reste portée
  * par le hook `useTeams` (façade unique, D7).
  */
+import { useTranslation } from "react-i18next";
 import type { UseTeams } from "../hooks/useTeams";
 import { TeamsEditor } from "../components/TeamsEditor";
 
@@ -16,8 +17,9 @@ export interface TeamsViewProps {
 }
 
 export function TeamsView({ teams, theme }: TeamsViewProps): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <section className="view teams" aria-label="Teams">
+    <section className="view teams" aria-label={t("teams.ariaLabel")}>
       <div className="teamsmain">
         <TeamsEditor teams={teams} theme={theme} />
       </div>

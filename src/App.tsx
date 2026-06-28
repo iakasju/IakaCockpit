@@ -6,12 +6,15 @@
  * Aucun `invoke`/`listen` ici (ni nulle part hors `backend.ts`). Les vues sont
  * présentationnelles ; les seuls effets I/O passent par les hooks/façade.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "./i18n";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
 import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
+import { useAgentTasks } from "./hooks/useAgentTasks";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -37,6 +40,7 @@ import "./assets/chartes/chartes.css";
 import "./theme/app.css";
 
 export default function App(): JSX.Element {
+  const { t } = useTranslation();
   const portfolio = usePortfolio();
   const grid = useGridState();
   const conversations = useConversations();
@@ -47,14 +51,28 @@ export default function App(): JSX.Element {
   const services = useServices();
   const nextStep = useNextStep();
 
+  // i18n : applique la langue persistée (ui_lang) au runtime i18next. `useSettings`
+  // reste libre d'i18n (séparation) ; ici on synchronise le moteur sur l'état.
+  useEffect(() => {
+    if (i18n.language !== settings.lang) void i18n.changeLanguage(settings.lang);
+  }, [settings.lang]);
+
+  // Tâches/délégations en cours (panneau « Tâches en cours », Working/colonne droite).
+  // Accumule les `RunnerEvent` bruts (besoin du `tool_use_id`, perdu en `ChatTurn`) par
+  // projet : `delegation` → tâche running, `activite` du même id → done. La collecte vit
+  // dans le hook (pas de god-component) ; le panneau ne reçoit que la liste.
+  const agentTasks = useAgentTasks();
+
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
   // conversations (runner://event → ChatTurn). Démarré dès qu'un runnerSessionId
   // apparaît dans une session PTY. Le parse vit côté Rust (CSP) ; ici on ne route que
-  // des events typés vers l'état conversation.
+  // des events typés vers l'état conversation. `onEvent` est l'observateur ADDITIF des
+  // events bruts (tool_use_id préservé) pour le panneau « Tâches en cours ».
   useRunnerViews({
     conversations: conversations.conversations,
     ptySessions: pty.sessions,
     appendTurn: conversations.appendTurn,
+    onEvent: agentTasks.ingest,
   });
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
@@ -73,6 +91,9 @@ export default function App(): JSX.Element {
     // littéral) — un changement de coordinateur de la team par défaut s'y reflète.
     resolveCoordinator: (projectId) =>
       teams.coordinatorOf(teams.teamForProject(projectId))?.name,
+    // L-taches : précharge les délégations de démo dans le panneau « Tâches en cours »
+    // (vitrine) pour le seul `iaka-demo`. Démo-only (gardé par le flag dev du seed).
+    seedTasks: agentTasks.seed,
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
@@ -184,7 +205,7 @@ export default function App(): JSX.Element {
           d'onglets-pilule. La nav reste pilotée par useGridState (ViewId inchangé) ;
           seul le RENDU du sélecteur change. Décision Stéphane : libellés texte (rail
           nettoyé de ses icônes), seul Réglages garde une icône. */}
-      <nav className="rail rail-text" aria-label="Navigation principale">
+      <nav className="rail rail-text" aria-label={t("nav.ariaLabel")}>
         <div className="brand" aria-hidden>
           i
         </div>
@@ -194,16 +215,16 @@ export default function App(): JSX.Element {
           aria-current={grid.activeView === "portfolio" ? "page" : undefined}
           onClick={() => grid.setActiveView("portfolio")}
         >
-          <span className="rlabel">Portfolio</span>
+          <span className="rlabel">{t("nav.portfolio")}</span>
         </button>
         <button
           type="button"
           className={`railitem${grid.activeView === "working" ? " on" : ""}`}
-          aria-label="Working"
+          aria-label={t("nav.working")}
           aria-current={grid.activeView === "working" ? "page" : undefined}
           onClick={() => grid.setActiveView("working")}
         >
-          <span className="rlabel">Working</span>
+          <span className="rlabel">{t("nav.working")}</span>
           {conversations.conversations.length > 0 && (
             <span className="nu">{conversations.conversations.length}</span>
           )}
@@ -214,7 +235,7 @@ export default function App(): JSX.Element {
           aria-current={grid.activeView === "journal" ? "page" : undefined}
           onClick={() => grid.setActiveView("journal")}
         >
-          <span className="rlabel">Journal</span>
+          <span className="rlabel">{t("nav.journal")}</span>
         </button>
         <button
           type="button"
@@ -222,20 +243,16 @@ export default function App(): JSX.Element {
           aria-current={grid.activeView === "teams" ? "page" : undefined}
           onClick={() => grid.setActiveView("teams")}
         >
-          <span className="rlabel">Teams</span>
+          <span className="rlabel">{t("nav.teams")}</span>
         </button>
         <div className="sep" />
         <button
           type="button"
-          className={`railitem railitem-icon${grid.activeView === "settings" ? " on" : ""}`}
-          aria-label="Réglages"
+          className={`railitem${grid.activeView === "settings" ? " on" : ""}`}
           aria-current={grid.activeView === "settings" ? "page" : undefined}
-          title="Réglages"
           onClick={() => grid.setActiveView("settings")}
         >
-          <span className="ic" aria-hidden>
-            ⚙️
-          </span>
+          <span className="rlabel">{t("nav.settings")}</span>
         </button>
       </nav>
 
@@ -269,6 +286,11 @@ export default function App(): JSX.Element {
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
             rosterMembers={rosterMembers}
+            tasks={
+              conversations.active
+                ? agentTasks.tasksFor(conversations.active.projectId)
+                : []
+            }
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

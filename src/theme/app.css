@@ -1111,12 +1111,19 @@ button {
 /* ===== Roster (portraits team) ===== */
 /* min-height:0 + overflow-y:auto : la colonne défile et n'écrête JAMAIS un agent,
    quelle que soit la hauteur de fenêtre (clip-proof — tout le casting visible). */
-.roster {
+/* Colonne droite de Working : Roster (haut, scrollable) + Tâches en cours (bas). */
+.wkright {
   width: 264px;
   flex: 0 0 264px;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   border-left: 1px solid var(--surf-2);
+}
+.roster {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px 18px;
 }
@@ -1217,6 +1224,131 @@ button {
   color: var(--text-3);
   flex: none;
   order: 3;
+}
+
+/* ===== Panneau « Tâches en cours » (Working, colonne droite, sous Roster) ===== */
+.tasks {
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: 45%;
+  overflow-y: auto;
+  border-top: 1px solid var(--surf-2);
+  padding: 18px 18px 20px;
+}
+.taskshead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 8px 12px;
+}
+.taskscount {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text);
+  background: color-mix(in srgb, var(--green) 22%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.tasksempty {
+  font-size: 11.5px;
+  color: var(--text-3);
+  padding: 4px 8px;
+}
+.taskslist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.taskitem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: transparent;
+  transition: 0.12s;
+}
+.taskitem:hover {
+  background: var(--surf);
+}
+.tavatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  object-fit: cover;
+  flex: none;
+  background: var(--surf-2);
+}
+.tavatar.ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.taskmeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.taskagent {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.taskdesc {
+  font-size: 11px;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tstatus {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.tstatus.done {
+  color: var(--green);
+}
+.tstatus.running {
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  background: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent);
+  animation: tpulse 1.4s ease-in-out infinite;
+}
+@keyframes tpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 /* ===== Moteur « prochaine étape » IA (L3) ===== */

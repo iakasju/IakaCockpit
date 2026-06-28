@@ -12,8 +12,10 @@
  * temps réel persistant (DEP-1). Aucun I/O ici (D8).
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
 import type { AvatarResolver } from "../theme/teamAvatar";
+import { isCanonicalRole } from "../theme/roles";
 
 export interface RosterProps {
   /** Agents affichés (défaut = DEMO_TEAM, AR-3). */
@@ -59,9 +61,10 @@ export function Roster({
   onPick,
   resolveAvatar,
 }: RosterProps): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <aside className="roster" aria-label="Team iakaframe">
-      <div className="rosterhead">Team</div>
+    <aside className="roster" aria-label={t("roster.ariaLabel")}>
+      <div className="rosterhead">{t("roster.head")}</div>
       <ul className="rosterlist">
         {members.map((m) => {
           const isCurrent = m.agent.toLowerCase() === currentAgent.toLowerCase();
@@ -69,7 +72,13 @@ export function Roster({
           const working = workingAgents
             ? workingAgents.has(m.agent.toLowerCase())
             : isCurrent && pending;
-          const status = working ? "travaille" : "attend";
+          const status = working
+            ? t("roster.statusWorking")
+            : t("roster.statusIdle");
+          // Rôle traduit s'il est canonique (`roles.*`) ; sinon valeur brute (teams L15).
+          const roleText = isCanonicalRole(m.royaume)
+            ? t(`roles.${m.royaume.toLowerCase()}`)
+            : m.royaume;
           const avatarUrl = resolveAvatar?.(m.agent) ?? null;
           return (
             <li key={m.agent}>
@@ -77,7 +86,7 @@ export function Roster({
                 type="button"
                 className={`rosteritem${isCurrent ? " current" : ""}`}
                 aria-pressed={isCurrent}
-                title={`S'adresser à ${m.agent} (@${m.agent})`}
+                title={t("roster.addressTitle", { agent: m.agent })}
                 onClick={() => onPick(m.agent)}
               >
                 <span
@@ -85,13 +94,11 @@ export function Roster({
                   aria-hidden
                 />
                 {avatarUrl && <Avatar url={avatarUrl} alt={m.agent} />}
-                {/* Direction A : NOM en clair + ROYAUME en label discret (petites
-                    capitales), au lieu de la pastille [ROYAUME][Agent] tronquée par
-                    l'étroitesse de la colonne. L'identité iakaframe reste portée par
-                    le royaume. */}
+                {/* Direction A : NOM en clair + RÔLE en label discret (petites
+                    capitales), au lieu de la pastille [ROYAUME][Agent]. */}
                 <span className="rmeta">
                   <span className="rname">{m.agent}</span>
-                  <span className="rkingdom">{m.royaume}</span>
+                  <span className="rkingdom">{roleText}</span>
                 </span>
                 <span className="rstate">{status}</span>
               </button>

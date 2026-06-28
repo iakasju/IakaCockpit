@@ -2,8 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useDemoSeed, DEMO_PROJECT_ID } from "../hooks/useDemoSeed";
 import { DEMO_HISTORY } from "../mock/demoConversation";
+import { DEMO_TASKS } from "../mock/demoTasks";
 import type { Backend, SeedReport } from "../api/backend";
 import type { ChatTurn } from "../hooks/useConversations";
+import type { AgentTask } from "../hooks/useAgentTasks";
 
 const SEEDED: SeedReport = {
   seeded: true,
@@ -190,6 +192,52 @@ describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
     await Promise.resolve();
     expect(openConversation).not.toHaveBeenCalled();
     expect(refreshPortfolio).not.toHaveBeenCalled();
+  });
+
+  it("L-taches : seeded:true → précharge les tâches de démo (vitrine) pour iaka-demo", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const seedTasks = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        seedTasks,
+      }),
+    );
+
+    await waitFor(() => expect(seedTasks).toHaveBeenCalledTimes(1));
+    const [projectId, tasks] = seedTasks.mock.calls[0];
+    expect(projectId).toBe(DEMO_PROJECT_ID);
+    expect(tasks).toEqual(DEMO_TASKS);
+    // Mélange de statuts (vitrine cohérente) : au moins un running ET un done.
+    expect(tasks.some((t: AgentTask) => t.status === "running")).toBe(true);
+    expect(tasks.some((t: AgentTask) => t.status === "done")).toBe(true);
+  });
+
+  it("L-taches : seeded:false (prod) → ne précharge AUCUNE tâche", async () => {
+    const api = makeApi(INERT);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const seedTasks = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        seedTasks,
+      }),
+    );
+
+    await waitFor(() => expect(api.seedDemo).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(seedTasks).not.toHaveBeenCalled();
   });
 
   it("seeded:true mais une conversation déjà active (>0) → n'ouvre PAS (non-doublon)", async () => {

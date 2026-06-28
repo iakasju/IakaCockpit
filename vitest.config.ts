@@ -6,6 +6,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    // Init i18next en FR avant chaque suite (les libellés FR rendent comme en prod).
+    setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     // L14 : ne traiter (et donc rendre lisible via ?inline) que le CSS des chartes
     // généré ; le reste du CSS reste stubbé (rapide). Sert au test du CSS embarqué.

@@ -27,7 +27,9 @@
 import { useEffect, useRef } from "react";
 import { backend, type Backend } from "../api/backend";
 import type { ChatTurn } from "./useConversations";
+import type { AgentTask } from "./useAgentTasks";
 import { DEMO_HISTORY } from "../mock/demoConversation";
+import { DEMO_TASKS } from "../mock/demoTasks";
 
 /** Id/libellé logique de la conversation démo (projet `iaka-demo`). */
 export const DEMO_PROJECT_ID = "iaka-demo";
@@ -70,6 +72,13 @@ export interface DemoSeedDeps {
    * (repli `DEFAULT_RESPONSIBLE` côté `useConversations`, rétro-compat).
    */
   resolveCoordinator?: (projectId: string) => string | undefined;
+  /**
+   * Précharge des tâches/délégations de DÉMO dans le panneau « Tâches en cours »
+   * (vitrine, L-taches) — `App` branche `useAgentTasks.seed`. Démo-only : appelé
+   * UNIQUEMENT dans le bloc seed effectif (flag dev `seeded:true`), pour le seul
+   * `iaka-demo`. Optionnel ; absent en test → no-op.
+   */
+  seedTasks?: (projectId: string, initial: readonly AgentTask[]) => void;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
@@ -81,6 +90,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
     addToWorkset,
     onSeeded,
     resolveCoordinator,
+    seedTasks,
   } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
@@ -98,6 +108,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   onSeededRef.current = onSeeded;
   const coordRef = useRef(resolveCoordinator);
   coordRef.current = resolveCoordinator;
+  const seedTasksRef = useRef(seedTasks);
+  seedTasksRef.current = seedTasks;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -133,6 +145,11 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
           [...DEMO_HISTORY],
         );
       }
+
+      // Vitrine du panneau « Tâches en cours » (L-taches) : précharge des délégations
+      // de démo pour le SEUL projet `iaka-demo`. Démo-only (dans ce bloc `seeded:true`),
+      // non destructif (`seed` no-op si des tâches live existent déjà).
+      seedTasksRef.current?.(DEMO_PROJECT_ID, DEMO_TASKS);
 
       // L9-B : le projet démo entre dans le set de Work (idempotent, non destructif).
       // Borné par le flag dev (`seeded:true`) → inerte en prod. Reste sur Portfolio (AR-4).
