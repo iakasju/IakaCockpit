@@ -54,6 +54,51 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     );
   });
 
+  it("le rôle est un menu des 7 rôles canoniques ; le changer appelle upsertAgent", () => {
+    const upsertAgent = vi.fn(async () => {});
+    render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Rôle de gimli") as HTMLSelectElement;
+    const values = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.value,
+    );
+    // Les 7 rôles canoniques, dans l'ordre roleIndex.
+    expect(values).toEqual([
+      "portefeuille",
+      "coordination",
+      "architecture",
+      "fabrication",
+      "tests",
+      "graphisme",
+      "doc",
+    ]);
+    // Gimli = fabrication par défaut.
+    expect(select.value).toBe("fabrication");
+    fireEvent.change(select, { target: { value: "doc" } });
+    expect(upsertAgent).toHaveBeenCalledWith(
+      DEFAULT_TEAM_ID,
+      expect.objectContaining({ id: "gimli", royaume: "doc" }),
+    );
+  });
+
+  it("rôle hors-liste (team L15) : valeur courante conservée comme option (tolérant)", () => {
+    const team: Team = defaultTeamFromDemo("lotr");
+    // Force un royaume dérivé hors des 7 rôles (cas teams catalogue L15).
+    team.agents = team.agents.map((a) =>
+      a.id === "gimli" ? { ...a, royaume: "GALADRIEL" } : a,
+    );
+    render(<TeamsEditor teams={makeTeams({ teams: [team] })} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Rôle de gimli") as HTMLSelectElement;
+    const values = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.value,
+    );
+    // La valeur hors-liste est présente (jamais perdue) + les 7 canoniques.
+    expect(values).toContain("GALADRIEL");
+    expect(values).toHaveLength(8);
+    expect(select.value).toBe("GALADRIEL");
+  });
+
   it("éditer le modèle (onBlur) appelle upsertAgent", () => {
     const upsertAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);

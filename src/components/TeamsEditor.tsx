@@ -25,6 +25,7 @@ import {
 } from "../hooks/useTeams";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
 import { makeAvatarResolver } from "../theme/teamAvatar";
+import { AGENT_ROLES, isCanonicalRole, roleLabel } from "../theme/roles";
 
 /** Libellés lisibles des runners (les 4 sont sélectionnables — AR-2). */
 const RUNNER_LABELS: Record<AgentRunnerKind, string> = {
@@ -391,8 +392,12 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                   <div>
                     <h3>{selectedAgent.name}</h3>
                     <div className="ehead-r">
-                      Royaume{" "}
-                      <strong>{selectedAgent.royaume || "—"}</strong>
+                      Rôle{" "}
+                      <strong>
+                        {selectedAgent.royaume
+                          ? roleLabel(selectedAgent.royaume)
+                          : "—"}
+                      </strong>
                       {selAgentIsCoord
                         ? " · coordinateur — pilote le terminal-source"
                         : ""}
@@ -417,19 +422,29 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     />
                   </label>
                   <label className="agentf">
-                    <span>Royaume</span>
-                    <input
-                      key={`ar-${selectedAgent.id}`}
+                    <span>Rôle</span>
+                    <select
                       className="field"
-                      type="text"
-                      defaultValue={selectedAgent.royaume}
-                      aria-label={`Royaume de ${selectedAgent.id}`}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim().toUpperCase();
-                        if (v !== selectedAgent.royaume)
-                          patchAgent(selectedAgent, { royaume: v });
-                      }}
-                    />
+                      value={selectedAgent.royaume}
+                      aria-label={`Rôle de ${selectedAgent.id}`}
+                      onChange={(e) =>
+                        patchAgent(selectedAgent, { royaume: e.target.value })
+                      }
+                    >
+                      {/* Tolérant : une valeur hors des 7 rôles (teams L15 à
+                          royaumes dérivés) reste sélectionnée, jamais perdue. */}
+                      {selectedAgent.royaume !== "" &&
+                        !isCanonicalRole(selectedAgent.royaume) && (
+                          <option value={selectedAgent.royaume}>
+                            {selectedAgent.royaume} (hors liste)
+                          </option>
+                        )}
+                      {AGENT_ROLES.map((r) => (
+                        <option key={r.key} value={r.key}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="agentf">
                     <span>roleIndex</span>
