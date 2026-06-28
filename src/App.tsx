@@ -179,39 +179,31 @@ export default function App(): JSX.Element {
 
   return (
     <main className="app-shell" data-navpos={settings.ui.navPos}>
-      {/* Direction A : rail d'icônes vertical (FOLIO / WORK / LOG / TEAM + Réglages
-          en pied) — REMPLACE la barre d'onglets-pilule. La nav reste pilotée par
-          useGridState (ViewId inchangé) ; seul le RENDU du sélecteur change. Les
-          libellés accessibles (aria-label) gardent les noms pleins. */}
-      <nav className="rail" aria-label="Navigation principale">
+      {/* Direction A : rail de navigation vertical (Portfolio / Working / Journal /
+          Teams en TEXTE + Réglages en icône ⚙, en pied) — REMPLACE la barre
+          d'onglets-pilule. La nav reste pilotée par useGridState (ViewId inchangé) ;
+          seul le RENDU du sélecteur change. Décision Stéphane : libellés texte (rail
+          nettoyé de ses icônes), seul Réglages garde une icône. */}
+      <nav className="rail rail-text" aria-label="Navigation principale">
         <div className="brand" aria-hidden>
           i
         </div>
         <button
           type="button"
           className={`railitem${grid.activeView === "portfolio" ? " on" : ""}`}
-          aria-label="Portfolio"
           aria-current={grid.activeView === "portfolio" ? "page" : undefined}
-          title="Portfolio"
           onClick={() => grid.setActiveView("portfolio")}
         >
-          <span className="ic" aria-hidden>
-            🗂️
-          </span>
-          <small>Folio</small>
+          <span className="rlabel">Portfolio</span>
         </button>
         <button
           type="button"
           className={`railitem${grid.activeView === "working" ? " on" : ""}`}
           aria-label="Working"
           aria-current={grid.activeView === "working" ? "page" : undefined}
-          title="Working"
           onClick={() => grid.setActiveView("working")}
         >
-          <span className="ic" aria-hidden>
-            🛠️
-          </span>
-          <small>Work</small>
+          <span className="rlabel">Working</span>
           {conversations.conversations.length > 0 && (
             <span className="nu">{conversations.conversations.length}</span>
           )}
@@ -219,33 +211,23 @@ export default function App(): JSX.Element {
         <button
           type="button"
           className={`railitem${grid.activeView === "journal" ? " on" : ""}`}
-          aria-label="Journal"
           aria-current={grid.activeView === "journal" ? "page" : undefined}
-          title="Journal"
           onClick={() => grid.setActiveView("journal")}
         >
-          <span className="ic" aria-hidden>
-            📓
-          </span>
-          <small>Log</small>
+          <span className="rlabel">Journal</span>
         </button>
         <button
           type="button"
           className={`railitem${grid.activeView === "teams" ? " on" : ""}`}
-          aria-label="Teams"
           aria-current={grid.activeView === "teams" ? "page" : undefined}
-          title="Teams"
           onClick={() => grid.setActiveView("teams")}
         >
-          <span className="ic" aria-hidden>
-            👥
-          </span>
-          <small>Team</small>
+          <span className="rlabel">Teams</span>
         </button>
         <div className="sep" />
         <button
           type="button"
-          className={`railitem${grid.activeView === "settings" ? " on" : ""}`}
+          className={`railitem railitem-icon${grid.activeView === "settings" ? " on" : ""}`}
           aria-label="Réglages"
           aria-current={grid.activeView === "settings" ? "page" : undefined}
           title="Réglages"
@@ -254,7 +236,6 @@ export default function App(): JSX.Element {
           <span className="ic" aria-hidden>
             ⚙️
           </span>
-          <small>Réglage</small>
         </button>
       </nav>
 

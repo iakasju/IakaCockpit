@@ -149,6 +149,54 @@ button {
   flex: 1;
 }
 
+/* ---- Variante TEXTE (décision Stéphane) : libellés au lieu d'icônes, sauf
+   Réglages (⚙). Rail élargi pour que le texte tienne proprement à l'horizontale. ---- */
+.rail-text {
+  flex-basis: 148px;
+  width: 148px;
+  align-items: stretch;
+  padding: 18px 12px;
+  gap: 4px;
+}
+.rail-text .brand {
+  align-self: center;
+}
+.rail-text .railitem {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: var(--text-2);
+}
+.rail-text .railitem.railitem-icon {
+  justify-content: center;
+  padding: 11px;
+}
+.rail-text .railitem-icon .ic {
+  font-size: 19px;
+}
+.rlabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.rail-text .railitem.on {
+  font-weight: 700;
+}
+/* Badge compteur (Working) : inline à droite du libellé, plus en pastille flottante. */
+.rail-text .railitem .nu {
+  position: static;
+  margin-left: auto;
+}
+
 /* ---------- HOST / VUE ---------- */
 .host {
   flex: 1;
