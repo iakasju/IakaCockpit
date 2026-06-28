@@ -55,7 +55,18 @@ export function MainCourante(): JSX.Element {
           (délégations machine), <b>pensée</b> (raisonnement). Lecture seule depuis
           iakaboxlogs — le canal est porté par la couleur du nœud.
         </div>
+        {/* Direction A : UNE rangée — [Tous] [● adresse] [● geste] [● pensée] [● agent]
+            + recherche en flex-grow. Le canal est porté par la couleur du point. */}
         <div className="chanfilters" role="group" aria-label="Filtres de canaux">
+          <button
+            type="button"
+            className="cf"
+            data-on={active.size === 0 ? "1" : "0"}
+            aria-pressed={active.size === 0}
+            onClick={() => setActive(new Set())}
+          >
+            Tous
+          </button>
           {ALL_CANAUX.map((c) => (
             <button
               key={c}
@@ -65,15 +76,14 @@ export function MainCourante(): JSX.Element {
               aria-pressed={active.has(c)}
               onClick={() => toggle(c)}
             >
+              <span className={`cfdot ${c}`} aria-hidden />
               {CANAL_LABEL[c]}
             </button>
           ))}
-        </div>
-        <div className="agentfilter">
           <input
-            className="field sm"
+            className="cfsearch"
             type="text"
-            placeholder="filtrer par agent…"
+            placeholder="filtrer par agent, projet…"
             value={agentDraft}
             onChange={(e) => setAgentDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -81,14 +91,6 @@ export function MainCourante(): JSX.Element {
             }}
             aria-label="Filtre par agent"
           />
-          <button
-            type="button"
-            className="btn sm"
-            onClick={applyAgent}
-            disabled={mc.loading}
-          >
-            Filtrer
-          </button>
         </div>
       </div>
 
