@@ -1,28 +1,30 @@
 /**
  * demoTeam — TEAM iakaframe (mise en scène + **GRAINE de la team par défaut** L11).
  *
- * `DEMO_TEAM` = les **5 agents** de la team (AR-3) couvrant dispatch → cadrage →
- * dev → qualité. Royaume en MAJUSCULE. Facile à étendre (5→8).
+ * `DEMO_TEAM` = les **7 agents** de la team, **un par rôle canonique** (`AGENT_ROLES`,
+ * décision Stéphane) : portefeuille→Odin, coordination→Aragorn, architecture→Gandalf,
+ * fabrication→Gimli, tests→Legolas, graphisme→Loki, doc→Nathalie. Le `royaume` porte
+ * la clé de rôle (la fonction), distincte du nom (persona).
  *
  * L7 : alimentait les **onglets** PTY au boot de démo. **L8 (D6/D7)** : `DEMO_TEAM`
- * alimente le **widget roster** (pastilles `[ROYAUME][Agent]` + statut attend/travaille,
- * clic → `@agent`). **L11** : `DEMO_TEAM` n'est plus un mock figé — il devient la
- * **graine** de la team par défaut éditable (`useTeams` la convertit en `Team` si la
- * clé config `teams` est vide). Il reste un défaut de secours pour le roster hors team.
+ * alimente le **widget roster** (statut attend/travaille, clic → `@agent`). **L11** :
+ * `DEMO_TEAM` n'est plus un mock figé — il devient la **graine** de la team par défaut
+ * éditable (`useTeams` la convertit en `Team` si la clé config `teams` est vide). Il
+ * reste un défaut de secours pour le roster hors team.
  *
  * Les helpers `teamTabTitle`/`teamTabProjectId` sont CONSERVÉS (compat, encore
- * utilisés par les tests team) mais ne servent plus à ouvrir 5 onglets en L8.
+ * utilisés par les tests team) mais ne servent plus à ouvrir des onglets en L8.
  */
+import { AGENT_ROLES } from "../theme/roles";
 
 /**
- * Une entrée team : royaume (MAJUSCULE) + nom d'agent + `roleIndex` (L9).
+ * Une entrée team : royaume (= CLÉ DE RÔLE canonique) + nom d'agent + `roleIndex`.
  *
- * `roleIndex` = index du RÔLE iakagraph (clé invariante de `teams.json`,
- * `~/work/iakagraph/specs/teams-casting.md`) : 0=portefeuille, 1=coordination,
- * 2=cadrage, 3=dev, 4=qualité, 5=production, 6=design, 7=doc. Sert à piquer le
- * bon slug dans la team choisie (résolveur de vignette). Les libellés `royaume`
- * d'affichage (B-1 : `ACCUEIL` etc.) sont CONSERVÉS — pas de bascule vers les
- * libellés de rôle iakagraph.
+ * `royaume` porte la **clé de rôle** (`AGENT_ROLES` : portefeuille, coordination,
+ * architecture, fabrication, tests, graphisme, doc) — le rôle est la FONCTION,
+ * distincte du nom (persona). `roleIndex` = position du rôle (0..6), clé invariante
+ * qui pioche le slug du casting (résolveur de vignette). L'affichage uppercase le
+ * royaume (badge) ou prend le libellé du rôle (menu).
  */
 export interface DemoTeamMember {
   royaume: string;
@@ -31,30 +33,32 @@ export interface DemoTeamMember {
 }
 
 /**
- * Les 5 agents team de la démo (ordre = chaîne iakaframe). Constante figée :
- * le périmètre L7 est exactement ces 5 (AR-1). `roleIndex` mappe vers teams.json.
+ * La team iakaframe par défaut : **7 agents, un par rôle canonique** (décision
+ * Stéphane). Ordre = `roleIndex` 0..6 ; `royaume` = clé du rôle (AGENT_ROLES).
+ * Coordinateur par défaut = Aragorn (coordination, roleIndex 1).
  */
 export const DEMO_TEAM: readonly DemoTeamMember[] = [
-  { royaume: "PORTEFEUILLE", agent: "Odin", roleIndex: 0 },
-  { royaume: "ACCUEIL", agent: "Aragorn", roleIndex: 1 },
-  { royaume: "CADRAGE", agent: "Gandalf", roleIndex: 2 },
-  { royaume: "DEV", agent: "Gimli", roleIndex: 3 },
-  { royaume: "QUALITÉ", agent: "Legolas", roleIndex: 4 },
+  { royaume: AGENT_ROLES[0].key, agent: "Odin", roleIndex: 0 }, // portefeuille
+  { royaume: AGENT_ROLES[1].key, agent: "Aragorn", roleIndex: 1 }, // coordination
+  { royaume: AGENT_ROLES[2].key, agent: "Gandalf", roleIndex: 2 }, // architecture
+  { royaume: AGENT_ROLES[3].key, agent: "Gimli", roleIndex: 3 }, // fabrication
+  { royaume: AGENT_ROLES[4].key, agent: "Legolas", roleIndex: 4 }, // tests
+  { royaume: AGENT_ROLES[5].key, agent: "Loki", roleIndex: 5 }, // graphisme
+  { royaume: AGENT_ROLES[6].key, agent: "Nathalie", roleIndex: 6 }, // doc
 ] as const;
 
 /**
- * Skills (ids de skill-rôles iakaframe) par agent connu (AR-1, L11). Sert à peupler
- * `agent.skills` lors du bootstrap de la team par défaut. `gandalf` → `iakaframe-cadrage`
- * (skill de cadrage) ; `odin` → `iakaframe-odin` ; les autres → `iakaframe-<nom>`. Un
- * agent hors de cette table reçoit `[]` (agent créé / inconnu).
+ * Skills (ids de skill-rôles iakaframe) par agent connu. Sert à peupler
+ * `agent.skills` lors du bootstrap de la team par défaut. Un agent hors de cette
+ * table reçoit `[]`. `gimli` = `[]` (pas de skill-rôle dédié — fabrication générique).
  */
 export const SKILL_BY_AGENT: Readonly<Record<string, string[]>> = {
   odin: ["iakaframe-odin"],
   aragorn: ["iakaframe-aragorn"],
   gandalf: ["iakaframe-cadrage"],
-  gimli: ["iakaframe-gimli"],
-  legolas: ["iakaframe-legolas"],
-  loki: ["iakaframe-loki"],
+  gimli: [],
+  legolas: ["iakaframe-qualite"],
+  loki: ["iakaframe-naonedge"],
   nathalie: ["iakaframe-nathalie"],
   helm: ["iakaframe-helm"],
 };
@@ -64,9 +68,10 @@ export function skillsForAgent(name: string): string[] {
   return [...(SKILL_BY_AGENT[name.toLowerCase()] ?? [])];
 }
 
-/** Pastille `[ROYAUME][Agent]` (royaume MAJUSCULE) d'un membre team (roster L8). */
+/** Pastille `[ROYAUME][Agent]` (royaume MAJUSCULE) d'un membre team (roster L8).
+ * Le royaume stocke la clé de rôle (minuscule) → on uppercase pour le badge. */
 export function teamBadge(member: DemoTeamMember): string {
-  return `[${member.royaume}][${member.agent}]`;
+  return `[${member.royaume.toUpperCase()}][${member.agent}]`;
 }
 
 /** Titre d'onglet `[ROYAUME][Agent]` (royaume MAJUSCULE) pour un membre team. */

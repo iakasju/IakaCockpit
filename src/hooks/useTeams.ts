@@ -193,8 +193,8 @@ export function parseTeams(json: string | undefined): Team[] {
 
 /**
  * Construit la **team par défaut éditable** (graine, § 5.6) à partir de `DEMO_TEAM` :
- * id/nom `iakaframe`, casting `vignetteTeam`, coordinateur `aragorn`, 5 agents en
- * `runner:"claude-code"`, modèle vide, skills connus (AR-1).
+ * id/nom `iakaframe`, casting `vignetteTeam`, coordinateur `aragorn`, **7 agents** (un
+ * par rôle canonique) en `runner:"claude-code"`, modèle vide, skills connus.
  */
 export function defaultTeamFromDemo(vignetteTeam: string): Team {
   return {
@@ -249,15 +249,13 @@ export function teamFromCatalog(cat: CatalogTeam): Team {
 }
 
 /**
- * Réconcilie le **casting canonique** de la team par défaut `iakaframe` (correctif
- * terrain redesign-A) : si une team `iakaframe` persistée (config antérieure) a perdu
- * des agents de la graine `DEMO_TEAM` (ex. Gandalf/CADRAGE absent → roster à 4), on
- * **AJOUTE les agents manquants** (par id), sans jamais modifier/supprimer un agent
- * existant ni changer le coordinateur. **Additif, idempotent, non destructif** : un
- * agent retiré volontairement par l'utilisateur sur une AUTRE team n'est pas concerné
- * (seule la team par défaut est complétée). Réordonne par `roleIndex` uniquement si on
- * a ajouté quelque chose (garde la chaîne iakaframe lisible). Renvoie le tableau et un
- * flag `changed`.
+ * Réconcilie le **casting canonique** de la team par défaut `iakaframe` : si une team
+ * `iakaframe` persistée (config antérieure) a perdu des agents de la graine `DEMO_TEAM`
+ * (ex. team à 5 d'avant le modèle 7-rôles → **Loki/graphisme + Nathalie/doc** manquants),
+ * on **AJOUTE les agents manquants** (par id), sans jamais modifier/supprimer un agent
+ * existant ni changer le coordinateur. **Additif, idempotent, non destructif** : ne
+ * touche QUE la team par défaut (pas les 11 teams L15 ni une team éditée). Réordonne par
+ * `roleIndex` uniquement si on a ajouté quelque chose. Renvoie le tableau + flag `changed`.
  */
 export function reconcileDefaultTeamCasting(existing: Team[]): {
   teams: Team[];

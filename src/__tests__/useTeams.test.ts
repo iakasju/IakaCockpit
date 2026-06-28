@@ -100,15 +100,30 @@ describe("useTeams — pures (parse / runner)", () => {
     expect(parseTeams(json)[0].coordinator).toBe("premier");
   });
 
-  it("defaultTeamFromDemo : 5 agents, coord aragorn, claude-code, skills connus", () => {
+  it("defaultTeamFromDemo : 7 agents (un par rôle), coord aragorn, claude-code, skills connus", () => {
     const t = defaultTeamFromDemo("lotr");
     expect(t.id).toBe(DEFAULT_TEAM_ID);
     expect(t.vignetteTeam).toBe("lotr");
     expect(t.coordinator).toBe("aragorn");
-    expect(t.agents).toHaveLength(5);
+    expect(t.agents).toHaveLength(7);
+    expect(t.agents.map((a) => a.id)).toEqual([
+      "odin",
+      "aragorn",
+      "gandalf",
+      "gimli",
+      "legolas",
+      "loki",
+      "nathalie",
+    ]);
     expect(t.agents.every((a) => a.runner === "claude-code")).toBe(true);
-    const gandalf = t.agents.find((a) => a.id === "gandalf");
-    expect(gandalf?.skills).toEqual(["iakaframe-cadrage"]);
+    // Royaume = clé de rôle ; coordinateur (aragorn) à roleIndex 1 (coordination).
+    expect(t.agents.find((a) => a.id === "aragorn")?.royaume).toBe("coordination");
+    expect(t.agents.find((a) => a.id === "gandalf")?.skills).toEqual([
+      "iakaframe-cadrage",
+    ]);
+    expect(t.agents.find((a) => a.id === "loki")?.skills).toEqual([
+      "iakaframe-naonedge",
+    ]);
   });
 });
 
@@ -175,26 +190,29 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     expect(teams).toHaveLength(12);
   });
 
-  it("reconcileDefaultTeamCasting : team iakaframe stale (Gandalf manquant) → complétée, triée", () => {
-    // Simule une config antérieure où la team par défaut a perdu Gandalf (CADRAGE,
-    // roleIndex 2) → roster à 4 en réel. Coordinateur + agents existants conservés.
-    const full = defaultTeamFromDemo("lotr");
+  it("reconcileDefaultTeamCasting : team iakaframe stale (à 5, modèle 7-rôles) → complétée à 7, triée", () => {
+    // Simule une config antérieure à 5 agents (avant Loki/graphisme + Nathalie/doc).
+    const full = defaultTeamFromDemo("lotr"); // 7 agents
     const stale: Team = {
       ...full,
-      agents: full.agents.filter((a) => a.id !== "gandalf"),
+      agents: full.agents.filter(
+        (a) => a.id !== "loki" && a.id !== "nathalie",
+      ),
     };
-    expect(stale.agents).toHaveLength(4);
+    expect(stale.agents).toHaveLength(5);
     const { teams, changed } = reconcileDefaultTeamCasting([stale]);
     expect(changed).toBe(true);
     const iaka = teams.find((t) => t.id === DEFAULT_TEAM_ID)!;
-    // Casting canonique complet (5) ; Gandalf réinséré à sa place (roleIndex 2).
-    expect(iaka.agents).toHaveLength(5);
+    // Casting canonique complet (7) ; Loki/Nathalie ajoutés à leur place (roleIndex 5/6).
+    expect(iaka.agents).toHaveLength(7);
     expect(iaka.agents.map((a) => a.id)).toEqual([
       "odin",
       "aragorn",
       "gandalf",
       "gimli",
       "legolas",
+      "loki",
+      "nathalie",
     ]);
     // Non destructif : coordinateur inchangé.
     expect(iaka.coordinator).toBe(stale.coordinator);

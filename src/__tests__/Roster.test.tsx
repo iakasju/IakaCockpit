@@ -2,19 +2,20 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Roster } from "../components/Roster";
 import { DEMO_TEAM } from "../mock/demoTeam";
+import { isCanonicalRole } from "../theme/roles";
 
 afterEach(cleanup);
 
 describe("Roster — widget team (L8/D6)", () => {
-  it("rend les 5 agents : nom en clair + royaume en label discret (direction A)", () => {
+  it("rend les 7 agents : nom en clair + rôle en label discret (direction A)", () => {
     render(<Roster currentAgent="Aragorn" pending={false} onPick={() => {}} />);
-    expect(DEMO_TEAM).toHaveLength(5);
+    expect(DEMO_TEAM).toHaveLength(7);
     for (const m of DEMO_TEAM) {
       // Nom de l'agent en clair (plus de pastille [ROYAUME][Agent] tronquée).
       expect(screen.getByText(m.agent)).toBeTruthy();
-      // Royaume présent en label discret, toujours en MAJUSCULE.
+      // Royaume = clé de rôle canonique, présente en label discret.
       expect(screen.getByText(m.royaume)).toBeTruthy();
-      expect(m.royaume).toBe(m.royaume.toUpperCase());
+      expect(isCanonicalRole(m.royaume)).toBe(true);
     }
   });
 
@@ -24,12 +25,12 @@ describe("Roster — widget team (L8/D6)", () => {
     );
     // Aucun « travaille » tant que pas pending.
     expect(screen.queryByText("travaille")).toBeNull();
-    expect(screen.getAllByText("attend")).toHaveLength(5);
+    expect(screen.getAllByText("attend")).toHaveLength(7);
 
     rerender(<Roster currentAgent="Gimli" pending onPick={() => {}} />);
     // Seul l'agent courant « travaille ».
     expect(screen.getAllByText("travaille")).toHaveLength(1);
-    expect(screen.getAllByText("attend")).toHaveLength(4);
+    expect(screen.getAllByText("attend")).toHaveLength(6);
   });
 
   it("L10b/P3 : workingAgents (transcript) prime — un délégué « travaille » même hors courant", () => {

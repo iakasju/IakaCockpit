@@ -86,14 +86,22 @@ describe("resolveVignette — mapping rôle→slug (L9-A)", () => {
     expect(resolveVignette("grimoire-dark", "lotr", 2)).toBeNull();
   });
 
-  it("L15 : pseudo-team 'iakaframe' (casting natif) résolue (naonedge-dark)", () => {
-    // Ordre racine : 0=odin .. 2=gandalf .. 3=gimli.
+  it("pseudo-team 'iakaframe' = 7 rôles canoniques (odin..nathalie), naonedge-dark", () => {
+    // Casting racine aligné sur les 7 rôles : 0=odin 2=gandalf 3=gimli 5=loki 6=nathalie.
     expect(String(resolveVignette("naonedge-dark", "iakaframe", 0))).toContain(
       "odin",
     );
     expect(String(resolveVignette("naonedge-dark", "iakaframe", 3))).toContain(
       "gimli",
     );
+    expect(String(resolveVignette("naonedge-dark", "iakaframe", 5))).toContain(
+      "loki",
+    );
+    expect(String(resolveVignette("naonedge-dark", "iakaframe", 6))).toContain(
+      "nathalie",
+    );
+    // helm n'est plus dans le casting iakaframe (hors des 7 rôles) ; roleIndex 7 → null.
+    expect(resolveVignette("naonedge-dark", "iakaframe", 7)).toBeNull();
     // studio-clair n'a pas le casting natif → fallback null.
     expect(resolveVignette("studio-clair", "iakaframe", 0)).toBeNull();
   });

@@ -33,9 +33,11 @@ CHARTES="${CHARTES:-naonedge/dark naonedge/light grimoire/dark-fantasy os/window
 # Teams embarquees : par defaut TOUTES les teams de teams.json (11). Surchargable.
 TEAMS="${TEAMS:-$(jq -r 'keys[]' "$TEAMS_JSON" 2>/dev/null | tr '\n' ' ')}"
 
-# Casting iakaframe natif (PNG a la RACINE des vignettes) : ORDRE = roles iakaframe
-# 0=portefeuille .. 7=doc (cf. specs/teams-casting.md). Pseudo-team "iakaframe".
-IAKAFRAME_SLUGS="odin aragorn gandalf gimli legolas helm loki nathalie"
+# Casting iakaframe natif (WebP a la RACINE des vignettes) : ORDRE = les 7 ROLES
+# canoniques (src/theme/roles.ts) : 0=portefeuille(odin) 1=coordination(aragorn)
+# 2=architecture(gandalf) 3=fabrication(gimli) 4=tests(legolas) 5=graphisme(loki)
+# 6=doc(nathalie). Pseudo-team "iakaframe". (helm = squad prod, hors des 7 roles.)
+IAKAFRAME_SLUGS="odin aragorn gandalf gimli legolas loki nathalie"
 
 DEST="${HERE}/src/assets/vignettes"
 MANIFEST="${DEST}/manifest.ts"
