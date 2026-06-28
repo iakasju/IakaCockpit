@@ -247,7 +247,8 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     { item: "Services iakabox", id: "set-services" },
   ];
 
-  // Libellé visible d'un item : le nœud texte après l'icône (`<span/>{label}`).
+  // Libellé visible d'un item : le nœud texte du bouton (sommaire en texte seul,
+  // emojis décoratifs retirés).
   const labelOf = (b: Element): string => b.lastChild?.textContent?.trim() ?? "";
 
   it("liste exactement les sections réelles, chacune avec sa cible dans le DOM", () => {

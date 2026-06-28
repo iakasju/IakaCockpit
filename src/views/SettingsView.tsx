@@ -83,26 +83,25 @@ const TRUST_MODES: { id: ChefTrustMode; label: string }[] = [
 interface SettingsSection {
   id: string;
   label: string;
-  icon: string;
 }
 const SETTINGS_GROUPS: { label: string; items: SettingsSection[] }[] = [
   {
     label: "Généraux",
     items: [
-      { id: "set-interface", label: "Interface", icon: "🧭" },
-      { id: "set-police", label: "Police", icon: "🔤" },
-      { id: "set-charte", label: "Charte", icon: "🎨" },
+      { id: "set-interface", label: "Interface" },
+      { id: "set-police", label: "Police" },
+      { id: "set-charte", label: "Charte" },
     ],
   },
   {
     label: "Cockpit / opérationnel",
     items: [
-      { id: "set-cockpit", label: "Cockpit", icon: "🎩" },
-      { id: "set-ia", label: "IA (LiteLLM)", icon: "🧠" },
-      { id: "set-securite", label: "Sécurité d'exécution", icon: "🤖" },
-      { id: "set-maincourante", label: "Main courante", icon: "📓" },
-      { id: "set-adresse", label: "Canal adresse (n8n)", icon: "📣" },
-      { id: "set-services", label: "Services iakabox", icon: "📡" },
+      { id: "set-cockpit", label: "Cockpit" },
+      { id: "set-ia", label: "IA (LiteLLM)" },
+      { id: "set-securite", label: "Sécurité d'exécution" },
+      { id: "set-maincourante", label: "Main courante" },
+      { id: "set-adresse", label: "Canal adresse (n8n)" },
+      { id: "set-services", label: "Services iakabox" },
     ],
   },
 ];
@@ -231,7 +230,6 @@ export function SettingsView({
                 aria-current={activeSection === s.id ? "true" : undefined}
                 onClick={() => gotoSection(s.id)}
               >
-                <span className="e">{s.icon}</span>
                 {s.label}
               </button>
             ))}
@@ -250,7 +248,6 @@ export function SettingsView({
 
           <div className="block" id="set-interface">
             <div className="bt">
-              <span className="e">🧭</span>
               <h2>Interface</h2>
             </div>
             <div className="fieldrow">
@@ -296,7 +293,6 @@ export function SettingsView({
 
           <div className="block" id="set-police">
             <div className="bt">
-              <span className="e">🔤</span>
               <h2>Police</h2>
             </div>
             <div className="fieldrow">
@@ -336,7 +332,6 @@ export function SettingsView({
 
           <div className="block" id="set-charte">
             <div className="bt">
-              <span className="e">🎨</span>
               <h2>Charte</h2>
             </div>
             <div className="themegrid">
@@ -389,7 +384,6 @@ export function SettingsView({
         <div className="setpanel">
           <div className="block" id="set-cockpit">
             <div className="bt">
-              <span className="e">🎩</span>
               <h2>Cockpit</h2>
             </div>
 
@@ -421,7 +415,6 @@ export function SettingsView({
 
           <div className="block" id="set-ia">
             <div className="bt">
-              <span className="e">🧠</span>
               <h2>IA (LiteLLM)</h2>
             </div>
 
@@ -516,7 +509,6 @@ export function SettingsView({
           {/* TEAMS & AGENTS : sortis dans la vue dédiée « Teams » (L13). */}
           <div className="block" id="set-securite">
             <div className="bt">
-              <span className="e">🤖</span>
               <h2>Sécurité d'exécution du chef-runner</h2>
             </div>
             <p className="lead">
@@ -599,7 +591,6 @@ export function SettingsView({
 
           <div className="block" id="set-maincourante">
             <div className="bt">
-              <span className="e">📓</span>
               <h2>Main courante (iakaboxlogs)</h2>
             </div>
 
@@ -704,7 +695,6 @@ export function SettingsView({
 
           <div className="block" id="set-adresse">
             <div className="bt">
-              <span className="e">📣</span>
               <h2>Canal adresse externe (n8n)</h2>
             </div>
             <p className="lead">
@@ -834,7 +824,6 @@ export function SettingsView({
 
           <div className="block" id="set-services">
             <div className="bt">
-              <span className="e">📡</span>
               <h2>Services iakabox</h2>
             </div>
             {services.length === 0 && (
