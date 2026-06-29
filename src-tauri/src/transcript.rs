@@ -53,6 +53,9 @@ pub enum EventKind {
     Activite,
     /// `thinking` → réflexion interne (canal **masquable**, § 5 PROJET).
     Pensee,
+    /// `message.usage` d'un tour assistant → économie du tour (L18 #5). `text` porte
+    /// `"{input_total}/{output}"` (tokens). Hors chat ; consommé par le HUD économie.
+    Economie,
 }
 
 /// Event de vue typé homogène émis vers le front (`runner://event/{session_id}`).
@@ -263,7 +266,7 @@ fn map_value(o: &Value) -> Vec<RunnerEvent> {
         .map(str::to_string);
 
     let content = o.get("message").and_then(|m| m.get("content"));
-    match content {
+    let mut events = match content {
         // Contenu textuel direct (prompt utilisateur tapé) → parole.
         Some(Value::String(s)) => {
             let txt = s.trim();
@@ -279,7 +282,7 @@ fn map_value(o: &Value) -> Vec<RunnerEvent> {
                     tool_name: None,
                     tool_use_id: None,
                     tool_input: None,
-                    ts,
+                    ts: ts.clone(),
                 }]
             }
         }
@@ -289,7 +292,41 @@ fn map_value(o: &Value) -> Vec<RunnerEvent> {
             .filter_map(|blk| map_block(t, is_sidechain, &ts, blk))
             .collect(),
         _ => Vec::new(),
+    };
+
+    // Économie du tour (L18 #5) : un message ASSISTANT porte `message.usage`. On émet UN
+    // event `Economie` par tour (en plus des paroles/gestes) — `text = "{input}/{output}"`.
+    if t == "assistant" {
+        if let Some(usage) = o.get("message").and_then(|m| m.get("usage")) {
+            if let Some(ev) = economie_event(usage, is_sidechain, &ts) {
+                events.push(ev);
+            }
+        }
     }
+    events
+}
+
+/// Construit l'event `Economie` depuis `message.usage` (défensif). `input` = tokens
+/// d'entrée + caches (création + lecture) ; `output` = `output_tokens`. `None` si tout
+/// est absent/nul (rien à tracer).
+fn economie_event(usage: &Value, is_sidechain: bool, ts: &Option<String>) -> Option<RunnerEvent> {
+    let n = |k: &str| usage.get(k).and_then(Value::as_u64).unwrap_or(0);
+    let input = n("input_tokens") + n("cache_creation_input_tokens") + n("cache_read_input_tokens");
+    let output = n("output_tokens");
+    if input == 0 && output == 0 {
+        return None;
+    }
+    Some(RunnerEvent {
+        kind: EventKind::Economie,
+        role: "assistant".to_string(),
+        is_sidechain,
+        agent: None,
+        text: Some(format!("{input}/{output}")),
+        tool_name: None,
+        tool_use_id: None,
+        tool_input: None,
+        ts: ts.clone(),
+    })
 }
 
 impl ConversationSource for TranscriptSource {
@@ -534,6 +571,30 @@ mod tests {
     #[test]
     fn record_sans_type_est_ignore() {
         assert!(src().map_record(r#"{"foo":"bar"}"#).is_empty());
+    }
+
+    #[test]
+    fn assistant_usage_emet_un_event_economie() {
+        // L18 #5 : `message.usage` → 1 event Economie ; input = in + caches, output = out.
+        let evs = src().map_record(
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"ok"}],"usage":{"input_tokens":100,"cache_creation_input_tokens":30,"cache_read_input_tokens":20,"output_tokens":7}}}"#,
+        );
+        let eco: Vec<_> = evs
+            .iter()
+            .filter(|e| e.kind == EventKind::Economie)
+            .collect();
+        assert_eq!(eco.len(), 1, "un event economie par tour : {evs:?}");
+        assert_eq!(eco[0].text.as_deref(), Some("150/7"));
+        // La parole reste présente (l'economie s'AJOUTE, ne remplace pas).
+        assert!(evs.iter().any(|e| e.kind == EventKind::Parole));
+    }
+
+    #[test]
+    fn assistant_sans_usage_pas_d_economie() {
+        let evs = src().map_record(
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"ok"}]}}"#,
+        );
+        assert!(evs.iter().all(|e| e.kind != EventKind::Economie));
     }
 
     // --- Parole (user tapé / assistant text) ---
