@@ -19,6 +19,13 @@ export const en: Resources = {
     used: "{{pct}}% of context",
   },
 
+  effects: {
+    ariaLabel: "File effects",
+    title: "File effects",
+    count: "{{count}} file(s)",
+    empty: "No file touched.",
+  },
+
   economy: {
     ariaLabel: "Turn economy",
     title: "Economy",

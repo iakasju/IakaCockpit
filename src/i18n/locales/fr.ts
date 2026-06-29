@@ -18,6 +18,13 @@ export const fr = {
     used: "{{pct}} % du contexte",
   },
 
+  effects: {
+    ariaLabel: "Effets fichiers",
+    title: "Effets fichiers",
+    count: "{{count}} fichier(s)",
+    empty: "Aucun fichier touché.",
+  },
+
   economy: {
     ariaLabel: "Économie du tour",
     title: "Économie",

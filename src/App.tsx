@@ -16,6 +16,7 @@ import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useAgentTasks } from "./hooks/useAgentTasks";
 import { useEconomy } from "./hooks/useEconomy";
+import { useEffects, sortedEffects } from "./hooks/useEffects";
 import { usePlan } from "./hooks/usePlan";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
@@ -66,15 +67,19 @@ export default function App(): JSX.Element {
   const agentTasks = useAgentTasks();
   // Économie du tour (L18 #5) : accumule les events `kind:"economie"` du tailer par projet.
   const economy = useEconomy();
+  // Effets fichiers (L18 #7) : accumule les gestes d'édition (Edit/Write…) par projet.
+  const effects = useEffects();
 
   // Observateur ADDITIF combiné des events bruts : panneau Tâches (délégations) + HUD
-  // économie (tokens). Stable (les deux `ingest` le sont) → pas de re-souscription tailer.
+  // économie (tokens) + effets fichiers. Stable (les `ingest` le sont) → pas de
+  // re-souscription tailer.
   const ingestRunnerEvent = useCallback(
     (projectId: string, ev: RunnerEvent): void => {
       agentTasks.ingest(projectId, ev);
       economy.ingest(projectId, ev);
+      effects.ingest(projectId, ev);
     },
-    [agentTasks, economy],
+    [agentTasks, economy, effects],
   );
 
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
@@ -320,6 +325,11 @@ export default function App(): JSX.Element {
             economySeries={
               conversations.active
                 ? economy.seriesFor(conversations.active.projectId)
+                : []
+            }
+            fileEffects={
+              conversations.active
+                ? sortedEffects(effects.effectsFor(conversations.active.projectId))
                 : []
             }
             resolveRunner={resolveRunner}

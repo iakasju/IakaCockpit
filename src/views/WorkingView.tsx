@@ -32,7 +32,9 @@ import { PlanPanel } from "../components/PlanPanel";
 import type { PlanItem } from "../hooks/derivePlan";
 import { EconomyPanel } from "../components/EconomyPanel";
 import { MemoryGauge } from "../components/MemoryGauge";
+import { EffectsPanel } from "../components/EffectsPanel";
 import type { EcoPoint } from "../hooks/useEconomy";
+import type { FileEffect } from "../hooks/useEffects";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
@@ -101,6 +103,8 @@ export interface WorkingViewProps {
   planItems?: PlanItem[] | null;
   /** Économie du tour (L18 #5) : série de points tokens de la session active. */
   economySeries?: readonly EcoPoint[];
+  /** Effets fichiers (L18 #7) : fichiers touchés (triés) de la session active. */
+  fileEffects?: readonly FileEffect[];
   /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
@@ -132,6 +136,7 @@ export function WorkingView({
   tasks,
   planItems,
   economySeries,
+  fileEffects,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -436,6 +441,8 @@ export function WorkingView({
           />
           {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}
           <EconomyPanel series={economySeries ?? []} />
+          {/* Effets fichiers (L18 #7) : fichiers touchés par les gestes d'édition. */}
+          <EffectsPanel effects={fileEffects ?? []} />
         </aside>
       )}
     </section>
