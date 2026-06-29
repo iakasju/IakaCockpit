@@ -5,6 +5,13 @@
 import type { Resources } from "./fr";
 
 export const en: Resources = {
+  plan: {
+    ariaLabel: "Current plan",
+    title: "Current plan",
+    progress: "{{done}}/{{total}} done",
+    empty: "No plan in progress.",
+  },
+
   nav: {
     ariaLabel: "Main navigation",
     brand: "Atelier",

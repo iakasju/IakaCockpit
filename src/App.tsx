@@ -15,6 +15,7 @@ import { useConversations } from "./hooks/useConversations";
 import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useAgentTasks } from "./hooks/useAgentTasks";
+import { usePlan } from "./hooks/usePlan";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -134,6 +135,14 @@ export default function App(): JSX.Element {
       })),
     [activeTeam],
   );
+
+  // Plan vivant (L18 #3) : conv_id = dernier segment du cwd de l'atelier actif (calque
+  // de l'émetteur hook `plan-courante.mjs`). Lu depuis la main courante (façade L4).
+  const activePlanProject = useMemo(() => {
+    const cwd = conversations.active?.cwd;
+    return cwd ? (cwd.split("/").filter(Boolean).pop() ?? null) : null;
+  }, [conversations.active]);
+  const plan = usePlan(activePlanProject);
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
@@ -294,6 +303,7 @@ export default function App(): JSX.Element {
                 ? agentTasks.tasksFor(conversations.active.projectId)
                 : []
             }
+            planItems={plan.items}
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

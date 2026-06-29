@@ -4,6 +4,13 @@
  * chemins, contenu de conversation mockée) : seulement des libellés d'interface.
  */
 export const fr = {
+  plan: {
+    ariaLabel: "Plan en cours",
+    title: "Plan en cours",
+    progress: "{{done}}/{{total}} fait",
+    empty: "Aucun plan en cours.",
+  },
+
   nav: {
     ariaLabel: "Navigation principale",
     brand: "Atelier",

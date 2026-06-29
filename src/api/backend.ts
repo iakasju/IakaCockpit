@@ -113,6 +113,8 @@ export interface FeedEvent {
   body: string;
   /** Horodatage ISO-8601 (mise en forme = UX front). */
   ts: string;
+  /** Payload structuré brut (`meta`) — passthrough (L18 : `event:"plan"` porte `items`). */
+  meta?: Record<string, unknown> | null;
 }
 
 /** Filtre serveur de la main courante (miroir de `maincourante::MainCouranteFilter`). */

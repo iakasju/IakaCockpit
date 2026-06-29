@@ -28,6 +28,8 @@ import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { Roster } from "../components/Roster";
 import { TasksPanel } from "../components/TasksPanel";
+import { PlanPanel } from "../components/PlanPanel";
+import type { PlanItem } from "../hooks/derivePlan";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
@@ -92,6 +94,8 @@ export interface WorkingViewProps {
    * Absent → panneau vide (état normal en démo : conversation mockée).
    */
   tasks?: readonly AgentTask[];
+  /** Plan vivant (L18 #3) : items du dernier snapshot, ou null si aucun. */
+  planItems?: PlanItem[] | null;
   /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
@@ -121,6 +125,7 @@ export function WorkingView({
   resolveAvatar,
   rosterMembers,
   tasks,
+  planItems,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -410,6 +415,11 @@ export function WorkingView({
             la collecte (tool_use_id, appariement running→done) vit dans le hook.
           */}
           <TasksPanel tasks={tasks ?? []} resolveAvatar={resolveAvatar} />
+          {/*
+            Plan vivant (L18 #3) : dernier snapshot de plan capté par le hook
+            `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
+          */}
+          <PlanPanel items={planItems ?? null} />
         </aside>
       )}
     </section>

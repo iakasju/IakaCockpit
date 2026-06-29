@@ -69,6 +69,9 @@ pub struct FeedEvent {
     pub body: String,
     /// Horodatage ISO-8601 (`ts`). Mise en forme = UX front.
     pub ts: String,
+    /// Payload structuré brut (`meta`) — passthrough pour les événements structurés de
+    /// la main courante (L18 : `meta.event:"plan"` porte `meta.items`…). `Null` si absent.
+    pub meta: serde_json::Value,
 }
 
 /// Filtre de la requête `_find` (filtres serveur : champs indexés).
@@ -201,6 +204,7 @@ fn map_doc(doc: &serde_json::Value) -> FeedEvent {
         project,
         body: content,
         ts,
+        meta,
     }
 }
 
