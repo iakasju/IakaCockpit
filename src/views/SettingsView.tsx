@@ -712,7 +712,7 @@ export function SettingsView({
                   placeholder="http://localhost:5678/webhook/iakacockpit-adresse"
                   value={n8nUrlValue}
                   onChange={(e) => setN8nUrlDraft(e.target.value)}
-                  aria-label="URL du webhook n8n"
+                  aria-label={t("settings.n8nUrlAria")}
                 />
                 <button
                   type="button"

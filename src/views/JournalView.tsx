@@ -4,11 +4,13 @@
  * Présentationnel : aucun I/O ici, le composant `MainCourante` porte son propre
  * hook `useMainCourante` (façade unique, D7).
  */
+import { useTranslation } from "react-i18next";
 import { MainCourante } from "../components/MainCourante";
 
 export function JournalView(): JSX.Element {
+  const { t } = useTranslation();
   return (
-    <section className="view journal" aria-label="Journal">
+    <section className="view journal" aria-label={t("nav.journal")}>
       <MainCourante />
     </section>
   );
