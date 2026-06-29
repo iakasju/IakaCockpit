@@ -79,6 +79,12 @@ export interface DemoSeedDeps {
    * `iaka-demo`. Optionnel ; absent en test → no-op.
    */
   seedTasks?: (projectId: string, initial: readonly AgentTask[]) => void;
+  /**
+   * Signal (L18) que le seed démo a eu lieu → `App` active les données de DÉMO des
+   * widgets dérivés (Plan/Économie/Mémoire/Effets) pour `iaka-demo`. Démo-only, dans
+   * le bloc `seeded:true` (dev). Absent en test → no-op.
+   */
+  onDemoWidgets?: () => void;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
@@ -91,6 +97,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
     onSeeded,
     resolveCoordinator,
     seedTasks,
+    onDemoWidgets,
   } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
@@ -110,6 +117,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   coordRef.current = resolveCoordinator;
   const seedTasksRef = useRef(seedTasks);
   seedTasksRef.current = seedTasks;
+  const onDemoWidgetsRef = useRef(onDemoWidgets);
+  onDemoWidgetsRef.current = onDemoWidgets;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -150,6 +159,10 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
       // de démo pour le SEUL projet `iaka-demo`. Démo-only (dans ce bloc `seeded:true`),
       // non destructif (`seed` no-op si des tâches live existent déjà).
       seedTasksRef.current?.(DEMO_PROJECT_ID, DEMO_TASKS);
+
+      // Vitrine des widgets dérivés (L18 #3/#5/#6/#7) : signale à `App` d'activer les
+      // données de démo (Plan/Économie/Mémoire/Effets) pour `iaka-demo`. Démo-only.
+      onDemoWidgetsRef.current?.();
 
       // L9-B : le projet démo entre dans le set de Work (idempotent, non destructif).
       // Borné par le flag dev (`seeded:true`) → inerte en prod. Reste sur Portfolio (AR-4).

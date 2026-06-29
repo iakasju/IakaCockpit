@@ -23,7 +23,8 @@ import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
-import { useDemoSeed } from "./hooks/useDemoSeed";
+import { useDemoSeed, DEMO_PROJECT_ID } from "./hooks/useDemoSeed";
+import { DEMO_PLAN, DEMO_ECONOMY, DEMO_EFFECTS } from "./mock/demoWidgets";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { JournalView } from "./views/JournalView";
@@ -99,6 +100,10 @@ export default function App(): JSX.Element {
   // onglets) si aucune conversation active. Reste sur Portfolio (AR-4). L11 : après
   // le seed, on relit la config team (le seed a posé `project_team:iaka-demo` côté
   // Rust → la démo s'ouvre sans popup même au ré-accès depuis la worklist).
+  // Vitrine des widgets dérivés (L18) : activé par le seed démo (dev) → App substitue les
+  // données de démo (Plan/Économie/Mémoire/Effets) si aucune donnée LIVE pour `iaka-demo`.
+  const [demoWidgetsOn, setDemoWidgetsOn] = useState(false);
+
   useDemoSeed({
     conversationsCount: conversations.conversations.length,
     openConversation: conversations.openConversation,
@@ -113,6 +118,7 @@ export default function App(): JSX.Element {
     // L-taches : précharge les délégations de démo dans le panneau « Tâches en cours »
     // (vitrine) pour le seul `iaka-demo`. Démo-only (gardé par le flag dev du seed).
     seedTasks: agentTasks.seed,
+    onDemoWidgets: () => setDemoWidgetsOn(true),
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
@@ -161,6 +167,26 @@ export default function App(): JSX.Element {
     return cwd ? (cwd.split("/").filter(Boolean).pop() ?? null) : null;
   }, [conversations.active]);
   const plan = usePlan(activePlanProject);
+
+  // Données des widgets dérivés (Plan/Économie/Mémoire/Effets) AVEC fallback DÉMO : si le
+  // projet actif est `iaka-demo`, que le seed dev a eu lieu et qu'aucune donnée LIVE
+  // n'existe, on substitue les données de démo (vitrine). Inerte en prod (pas d'iaka-demo).
+  const activeProjectId = conversations.active?.projectId ?? null;
+  const demoActive = demoWidgetsOn && activeProjectId === DEMO_PROJECT_ID;
+  const liveEconomy = activeProjectId ? economy.seriesFor(activeProjectId) : [];
+  const liveEffects = activeProjectId
+    ? sortedEffects(effects.effectsFor(activeProjectId))
+    : [];
+  const planItemsView =
+    plan.items && plan.items.length > 0
+      ? plan.items
+      : demoActive
+        ? DEMO_PLAN
+        : plan.items;
+  const economyView =
+    liveEconomy.length > 0 ? liveEconomy : demoActive ? DEMO_ECONOMY : liveEconomy;
+  const effectsView =
+    liveEffects.length > 0 ? liveEffects : demoActive ? DEMO_EFFECTS : liveEffects;
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
@@ -321,17 +347,9 @@ export default function App(): JSX.Element {
                 ? agentTasks.tasksFor(conversations.active.projectId)
                 : []
             }
-            planItems={plan.items}
-            economySeries={
-              conversations.active
-                ? economy.seriesFor(conversations.active.projectId)
-                : []
-            }
-            fileEffects={
-              conversations.active
-                ? sortedEffects(effects.effectsFor(conversations.active.projectId))
-                : []
-            }
+            planItems={planItemsView}
+            economySeries={economyView}
+            fileEffects={effectsView}
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>
