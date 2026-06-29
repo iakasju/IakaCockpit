@@ -216,7 +216,8 @@ export function defaultTeamFromDemo(vignetteTeam: string): Team {
 
 /**
  * Construit une **team par défaut éditable** à partir d'une entrée du catalogue
- * iakagraph (L15-B). Chaque agent : `id`/`name` = slug, `royaume` dérivé (slug
+ * iakagraph (L15-B). Chaque agent : `id` = slug, `name` = **nom du personnage**
+ * (catalogue, ex. « Beast »/« Professor X » — L15 noms), `royaume` dérivé (slug
  * MAJUSCULE), `roleIndex` = ordre teams.json, `runner:"claude-code"`, modèle vide,
  * **aucune skill** (ces personas ne portent pas de skill-rôle iakaframe).
  *
@@ -228,7 +229,7 @@ export function defaultTeamFromDemo(vignetteTeam: string): Team {
 export function teamFromCatalog(cat: CatalogTeam): Team {
   const agents: Agent[] = cat.agents.map((a) => ({
     id: a.slug,
-    name: a.slug,
+    name: a.name,
     royaume: a.slug.toUpperCase(),
     roleIndex: a.roleIndex,
     runner: "claude-code" as const,

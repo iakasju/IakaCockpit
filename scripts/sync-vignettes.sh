@@ -167,8 +167,10 @@ mkdir -p "$(dirname "$CATALOG")"
   echo " * secret : seulement slug + roleIndex + libelle d'affichage."
   echo " */"
   echo "export interface CatalogAgent {"
-  echo "  /** Slug stable (= nom affiche par defaut). */"
+  echo "  /** Slug stable (= cle teams.json, id d'agent). */"
   echo "  slug: string;"
+  echo "  /** Nom du personnage affiche (= teams.json .name ; fallback slug). */"
+  echo "  name: string;"
   echo "  /** Index de role (0..7) = ordre dans teams.json. */"
   echo "  roleIndex: number;"
   echo "}"
@@ -189,11 +191,11 @@ mkdir -p "$(dirname "$CATALOG")"
     echo "    name: \"${name}\","
     echo "    agents: ["
     role=0
-    while IFS= read -r slug; do
+    while IFS=$'\t' read -r slug aname; do
       [ -z "$slug" ] && { role=$((role+1)); continue; }
-      echo "      { slug: \"${slug}\", roleIndex: ${role} },"
+      echo "      { slug: \"${slug}\", name: \"${aname}\", roleIndex: ${role} },"
       role=$((role+1))
-    done < <(jq -r --arg t "$team" '.[$t][].slug' "$TEAMS_JSON")
+    done < <(jq -r --arg t "$team" '.[$t][] | "\(.slug)\t\(.name // .slug)"' "$TEAMS_JSON")
     echo "    ],"
     echo "  },"
   done

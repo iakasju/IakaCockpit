@@ -137,6 +137,24 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     }
   });
 
+  it("L15 : chaque agent du catalogue a un nom de personnage non vide", () => {
+    for (const cat of TEAM_CATALOG) {
+      for (const a of cat.agents) {
+        expect(a.name.trim().length).toBeGreaterThan(0);
+      }
+    }
+    // Échantillon : les noms sont les personnages, PAS les slugs bruts.
+    const xmen = TEAM_CATALOG.find((c) => c.id === "xmen")!;
+    expect(xmen.agents.find((a) => a.slug === "profx")?.name).toBe("Professor X");
+    expect(xmen.agents.find((a) => a.slug === "beast")?.name).toBe("Beast");
+    const avengers = TEAM_CATALOG.find((c) => c.id === "avengers")!;
+    expect(avengers.agents.find((a) => a.slug === "capamerica")?.name).toBe(
+      "Captain America",
+    );
+    const rebels = TEAM_CATALOG.find((c) => c.id === "rebels")!;
+    expect(rebels.agents.find((a) => a.slug === "r2d2")?.name).toBe("R2-D2");
+  });
+
   it("teamFromCatalog : coordinateur = roleIndex 1, runner claude-code, auto-casting, sans skill", () => {
     const lotr = TEAM_CATALOG.find((c) => c.id === "lotr")!;
     const team = teamFromCatalog(lotr);
@@ -149,8 +167,9 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     const coord = team.agents.find((a) => a.id === team.coordinator)!;
     expect(coord.roleIndex).toBe(1);
     expect(coord.id).toBe("aragorn");
-    // name = slug, royaume = slug MAJUSCULE.
-    expect(team.agents[0].name).toBe(team.agents[0].id);
+    // id = slug, name = nom du personnage (catalogue), royaume = slug MAJUSCULE.
+    expect(team.agents[0].id).toBe("galadriel");
+    expect(team.agents[0].name).toBe("Galadriel");
     expect(team.agents[0].royaume).toBe(team.agents[0].id.toUpperCase());
   });
 
