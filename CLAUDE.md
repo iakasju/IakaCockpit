@@ -315,9 +315,17 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       démonté) + vitrine démo. 332 front + 217 Rust verts (Rust **non touché**), couverture 83,6 %. Org : Gandalf
       retiré, chef de projet = cadrage+coordination. Différés : aria-label webhook, noms de chartes i18n, **purge
       historique git 118 Mo avant push**, recette EN + Codex réel + panneau en délégation réelle.)*
-- [ ] **(Horizon, non planifié)** **Vignettes-par-charte / teams par défaut** — aligner les teams par défaut
-      d'iakacockpit sur les ~11 teams iakagraph (chaque charte a leurs vignettes) ; faire suivre les vignettes à
-      la charte active. *(todo tracé, mémoire `iakagraph-chartes-vignettes-structure`.)*
+- [x] **L15** — **Vignettes-par-charte / teams par défaut** — *(LIVRÉ 2026-06-29, commit `a1fc11f` ;
+      amont iakagraph `f952db2`).* Réalisé en deux temps : **L15-B** (déjà en place) bootstrappe les 11
+      teams du catalogue iakagraph comme teams par défaut (`ensureDefaultTeams`/`teamFromCatalog`) +
+      vignettes suivant la **charte active** (`makeAvatarResolver(settings.theme, …)`, auto-casting
+      `vignetteTeam = id team`) ; puis **L15-noms** → chaque agent du catalogue affiche le **nom du
+      personnage** de la vignette (Beast, Professor X, Captain America, R2-D2…) au lieu du slug. Source de
+      vérité = iakagraph `teams.json` (champ `name` sur 88 entrées) recopié dans `catalog.ts` par
+      `sync-vignettes.sh`. 333 front verts, typecheck + lint OK. Instruction
+      `specs/instructions/L15-noms-personnages-teams-catalogue.md`. Reste possible (horizon) : faire
+      **suivre les vignettes à la charte** au-delà du roster (déjà le cas via `settings.theme`) ; rien de
+      bloquant.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
