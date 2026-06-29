@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Mémoire &amp; coût</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad">
+  <div class="eyebrow">Concepts 07 · 11 · 13</div>
+  <h1 class="title">Mémoire &amp; coût</h1>
+  <p class="sub">La conversation a un <b>horizon de contexte</b>. Au-delà, elle <b>se résume</b> (<span style="font-family:var(--mono);font-size:13px">compact_boundary</span>, <span style="font-family:var(--mono);font-size:13px">isCompactSummary</span>). Chaque tour a un <b>coût</b> (tokens, durée) — on le rend visible, frontières de mémoire comprises.</p>
+
+  <nav class="csub">
+    <a href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a class="on" href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <a href="gardes.html"><span class="n">05</span> Gardes &amp; autonomie</a>
+    <span class="grow"></span>
+    <span class="stat">142k / 200k tokens · 1 compaction</span>
+  </nav>
+
+  <div class="rowhead"><h2>Fenêtre de contexte &amp; compaction</h2><span class="eb">mémoire glissante</span></div>
+  <div class="ctxbig">
+    <div class="top">
+      <div class="v">142,3k <small>/ 200k tokens</small></div>
+      <div class="cap">horizon à 71 % · compaction franchie au tour 6</div>
+    </div>
+    <div class="ctxtrack">
+      <div class="seg sys" style="width:9%"></div>
+      <div class="seg sum" style="width:22%"></div>
+      <div class="seg live" style="width:40%"></div>
+      <div class="bound" style="left:31%"></div>
+    </div>
+    <div class="ctxlegend">
+      <span><i class="seg" style="background:rgba(20,22,28,.18)"></i> système &amp; outils · 18k</span>
+      <span><i class="seg" style="background:rgba(59,130,246,.5)"></i> résumé de l'avant-compaction · 44k</span>
+      <span><i class="seg" style="background:var(--green)"></i> contexte vivant · 80k</span>
+      <span><i class="seg" style="background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)"></i> libre · 58k</span>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="sl">⟐ compact_boundary · tour 6 · isCompactSummary:true</div>
+    <p>Les 5 premiers tours ont été résumés pour tenir dans l'horizon. <b style="color:var(--ink)">Résumé conservé :</b> « Refonte direction A validée. Rail d'icônes posé, grammaire sans-bord adoptée, polices bundlées en local. Densité par défaut = Confort (arbitrage Stéphane). Reste : passe typo + gate Legolas. » — les paroles brutes sont sorties du contexte, leur substance reste.</p>
+  </div>
+
+  <div class="rowhead"><h2>Économie du tour</h2><span class="eb">usage · durationMs</span></div>
+  <table class="turntbl">
+    <thead><tr><th>Tour</th><th>Auteur</th><th>Entrée</th><th>Sortie</th><th>Durée</th><th style="width:140px">Poids relatif</th></tr></thead>
+    <tbody>
+      <tr><td>T9</td><td class="who"><b>Gimli</b></td><td>9 210</td><td>1 840</td><td>12,8 s</td><td><div class="bar"><i style="width:88%"></i></div></td></tr>
+      <tr><td>T8</td><td class="who"><b>Gimli</b></td><td>7 460</td><td>1 120</td><td>9,1 s</td><td><div class="bar"><i style="width:64%"></i></div></td></tr>
+      <tr><td>T7</td><td class="who"><b>Gimli</b></td><td>3 100</td><td>240</td><td>2,2 s <span style="color:var(--red)">⟂ interrompu</span></td><td><div class="bar"><i style="width:18%"></i></div></td></tr>
+      <tr><td>T6</td><td class="who"><b>Système</b></td><td>—</td><td>—</td><td>compaction</td><td><div class="bar"><i style="width:31%;background:var(--blue)"></i></div></td></tr>
+      <tr><td>T5</td><td class="who"><b>Aragorn</b></td><td>5 940</td><td>2 310</td><td>7,7 s</td><td><div class="bar"><i style="width:55%"></i></div></td></tr>
+      <tr><td>T4</td><td class="who"><b>Gandalf</b></td><td>11 200</td><td>3 050</td><td>15,4 s</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+    </tbody>
+  </table>
+
+  <div class="duo" style="margin-top:8px">
+    <div>
+      <div class="rowhead"><h2>Titrage automatique</h2><span class="eb">aiTitle</span></div>
+      <div class="scard">
+        <div class="title-auto">Le LLM a nommé la conversation après le 1ᵉʳ tour utile.<span class="gen">« Refonte UI direction A — rail, sans-bord, conversation-first »</span></div>
+        <div class="eb" style="margin-top:12px">aiTitle · regénéré 2 fois · modèle source</div>
+      </div>
+    </div>
+    <div>
+      <div class="rowhead"><h2>Découverte d'outils</h2><span class="eb">ToolSearch</span></div>
+      <div class="scard">
+        <p class="sub" style="font-size:13px;margin-bottom:11px">La boîte à outils s'est élargie en cours de session, à la demande de l'agent.</p>
+        <div><span class="toolchip">Read</span><span class="toolchip">Edit</span><span class="toolchip">Write</span><span class="toolchip">Bash</span><span class="toolchip new">Glob <small>T3</small></span><span class="toolchip new">WebFetch <small>T8</small></span></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+</body></html>

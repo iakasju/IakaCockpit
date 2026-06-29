@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Effets fichiers</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad">
+  <div class="eyebrow">Concepts 08 · 12</div>
+  <h1 class="title">Effets fichiers</h1>
+  <p class="sub">À chaque tour, le runner capture l'état des fichiers touchés (<span style="font-family:var(--mono);font-size:13px">file-history-snapshot</span>, 1 374 mesurés). On en dérive une <b>timeline de diffs</b> avec <b>rollback par tour</b> — et l'on voit où la résilience a encaissé une interruption.</p>
+
+  <nav class="csub">
+    <a href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a class="on" href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <a href="gardes.html"><span class="n">05</span> Gardes &amp; autonomie</a>
+    <span class="grow"></span>
+    <span class="stat">iaka-demo · 9 tours · 14 fichiers · +218 / −96</span>
+  </nav>
+
+  <div class="legline">
+    <span><i style="background:var(--green)"></i> écriture</span>
+    <span><i style="background:var(--acc)"></i> édition</span>
+    <span><i style="background:var(--cyan)"></i> création</span>
+    <span><i style="background:var(--red)"></i> rollback disponible</span>
+  </div>
+
+  <div class="efftl">
+
+    <div class="turn">
+      <div class="tk">T9</div>
+      <div class="snaprow">
+        <div class="sh"><span class="file">src/components/Rail.tsx</span><span class="op edit">Edit</span><span class="delta"><span class="p">+12</span> <span class="m">−4</span></span><button class="roll">↺ rollback ce tour</button></div>
+        <div class="diff">
+          <span class="l gh">@@ -8,4 +8,12 @@ export function Rail()</span>
+          <span class="l del">- return &lt;nav className="tabs pill"&gt;</span>
+          <span class="l add">+ return (</span>
+          <span class="l add">+   &lt;nav className="rail"&gt;</span>
+          <span class="l add">+     &lt;Brand /&gt;</span>
+          <span class="l add">+     {ITEMS.map((i) =&gt; &lt;RailLink key={i.id} {...i} /&gt;)}</span>
+          <span class="l ctx">      &lt;/nav&gt;</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="turn">
+      <div class="tk">T8</div>
+      <div class="snaprow">
+        <div class="sh"><span class="file">src/theme/fonts.css</span><span class="op create">Create</span><span class="delta"><span class="p">+31</span></span><button class="roll">↺ rollback ce tour</button></div>
+        <div class="diff">
+          <span class="l add">+ @font-face {</span>
+          <span class="l add">+   font-family: "Space Grotesk";</span>
+          <span class="l add">+   src: url("../assets/fonts/space-grotesk-latin-variable.woff2") format("woff2");</span>
+          <span class="l add">+ }</span>
+          <span class="l ctx">  …</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- résilience : tour interrompu -->
+    <div class="turn">
+      <div class="tk" style="color:var(--red)">T7</div>
+      <div class="snaprow">
+        <div class="sh"><span class="file">src/App.tsx</span><span class="op edit">Edit</span><span class="delta"><span class="m">interrompu</span></span><button class="roll" style="border-color:var(--red);color:var(--red)">↺ revenu au snapshot</button></div>
+        <div class="diff">
+          <span class="l ctx">  // tour interrompu par l'utilisateur (⎋)</span>
+          <span class="l del">- interruptedMessageId: msg_7f2a…  ·  retryAttempt non rejoué</span>
+          <span class="l ctx">  // l'état fichier a été restauré depuis le snapshot du tour précédent —</span>
+          <span class="l ctx">  // aucune écriture partielle laissée sur disque.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="turn">
+      <div class="tk">T6</div>
+      <div class="snaprow">
+        <div class="sh"><span class="file">src/components/Composer.tsx</span><span class="op write">Write</span><span class="delta"><span class="p">+44</span></span><button class="roll">↺ rollback ce tour</button></div>
+        <div class="diff">
+          <span class="l add">+ export function Composer({ onSend }: Props) {</span>
+          <span class="l add">+   const [v, setV] = useState("");</span>
+          <span class="l ctx">    …</span>
+          <span class="l add">+ }</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="turn">
+      <div class="tk">T5</div>
+      <div class="snaprow">
+        <div class="sh"><span class="file">src/index.css</span><span class="op edit">Edit</span><span class="delta"><span class="p">+9</span> <span class="m">−27</span></span><button class="roll">↺ rollback ce tour</button></div>
+        <div class="diff">
+          <span class="l gh">@@ grammaire sans-bord @@</span>
+          <span class="l del">- .card { border: 1px solid var(--line); box-shadow: none; }</span>
+          <span class="l del">- .panel { border: 1px solid var(--line); }</span>
+          <span class="l add">+ .card { box-shadow: 0 1px 0 var(--line-soft), 0 16px 36px -30px rgba(20,22,28,.3); }</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

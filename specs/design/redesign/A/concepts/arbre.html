@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Arbre &amp; agents</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Concepts 01 · 02 · 09 · 10</div>
+  <h1 class="title">Arbre &amp; agents</h1>
+  <p class="sub">La conversation n'est pas une liste : c'est un <b>arbre</b> (<span style="font-family:var(--mono);font-size:13px">uuid → parentUuid</span>) avec des <b>sidechains</b> de délégation. Chaque nœud porte son auteur machine (<span style="font-family:var(--mono);font-size:13px">attributionAgent</span>) — la chaîne de badges iakaframe est émise, pas décorée.</p>
+
+  <nav class="csub">
+    <a href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a class="on" href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <a href="gardes.html"><span class="n">05</span> Gardes &amp; autonomie</a>
+    <span class="grow"></span>
+    <span class="stat">conv iaka-demo · 38 nœuds · 1 sidechain</span>
+  </nav>
+
+  <div class="duo">
+    <!-- colonne gauche : arbre -->
+    <div>
+      <div class="rowhead"><h2>Arbre de conversation</h2><span class="eb">main + sidechains</span></div>
+      <div class="legline">
+        <span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--acc);border-radius:50%"></i> tronc principal</span>
+        <span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--purple);border-radius:50%"></i> sidechain · délégation</span>
+      </div>
+
+      <div class="tree">
+        <div class="tnode main"><div class="knot"></div><div class="card">
+          <div class="ln1"><b>Stéphane</b><span class="ch parole">parole</span><span class="uuid">a1f0…2c</span></div>
+          <div class="ln2">« Lance la refonte avec Loki. »</div>
+        </div></div>
+
+        <div class="tnode main"><div class="knot"></div><div class="card">
+          <div class="ln1"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span><span class="uuid">b3c7…91</span></div>
+          <div class="ln2">Cadrage + délégation de l'audit. <code>parentUuid: a1f0…2c</code></div>
+          <div class="attrib"><span class="a">attributionAgent: <b>aragorn</b></span><span class="a">attributionSkill: <b>iakaframe-aragorn</b></span></div>
+        </div></div>
+
+        <!-- sidechain ouverte -->
+        <div class="side-wrap">
+          <div class="sidehead">⎇ sidechain · Agent « audit des écrans » · isSidechain:true</div>
+          <div class="tnode side"><div class="knot"></div><div class="card">
+            <div class="ln1"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="badge b-gand">Analyse</span><span class="uuid">c9d2…04</span></div>
+            <div class="ln2">Audit des 5 écrans. <code>logicalParentUuid: b3c7…91</code></div>
+            <div class="attrib"><span class="a">agentName: <b>gandalf</b></span><span class="a">sourceToolAssistantUUID: <b>b3c7…91</b></span></div>
+          </div></div>
+          <div class="tnode side"><div class="knot"></div><div class="card">
+            <div class="ln1"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="ch pensee">pensée</span><span class="uuid">c9d2…77</span></div>
+            <div class="ln2">« Le point dur n'est pas la charte mais la grammaire de mise en page. »</div>
+          </div></div>
+          <div class="tnode side"><div class="knot"></div><div class="card">
+            <div class="ln1"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="ch deleg">rapport</span><span class="uuid">c9d2…f3</span></div>
+            <div class="ln2">Rend un plan en 3 passes → ferme la sidechain.</div>
+          </div></div>
+        </div>
+
+        <div class="tnode main"><div class="knot"></div><div class="card">
+          <div class="ln1"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span><span class="uuid">b3c7…d8</span></div>
+          <div class="ln2">Reprend le tronc, restitue le verbatim de Gandalf à Stéphane. <code>parentUuid: b3c7…91</code></div>
+        </div></div>
+
+        <div class="tnode main"><div class="knot"></div><div class="card">
+          <div class="ln1"><img src="../../assets/gimli.png"><b>Gimli</b><span class="badge b-gim">Exécution</span><span class="uuid">e4a8…1b</span></div>
+          <div class="ln2">Branche d'exécution : passe 1 (rail). 6 gestes Edit enchaînés.</div>
+          <div class="attrib"><span class="a">attributionAgent: <b>gimli</b></span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- colonne droite : attribution + dialogue + async -->
+    <div>
+      <div class="rowhead"><h2>Attribution machine</h2><span class="eb">qui a écrit quoi</span></div>
+      <p class="sub" style="font-size:13.5px;margin-bottom:14px">Chaque ligne porte son auteur. Le badge n'est pas un habillage humain : c'est le champ <span style="font-family:var(--mono);font-size:12.5px">attributionAgent</span> rendu visible.</p>
+      <div class="scard" style="margin-bottom:24px">
+        <table class="maptbl">
+          <tr><td><b style="color:var(--blue)">Aragorn</b> · coordinateur</td><td>18 nœuds · iakaframe-aragorn</td></tr>
+          <tr><td><b style="color:var(--purple)">Gandalf</b> · analyse</td><td>7 nœuds · sidechain</td></tr>
+          <tr><td><b style="color:var(--green)">Gimli</b> · exécution</td><td>11 nœuds · 6 gestes Edit</td></tr>
+          <tr><td><b style="color:#b8770a">Legolas</b> · qualité</td><td>2 nœuds · gate</td></tr>
+        </table>
+      </div>
+
+      <div class="rowhead"><h2>Dialogue inter-agents</h2><span class="eb">SendMessage</span></div>
+      <div class="msgline"><span class="sm">SendMessage</span><b style="font-family:var(--display)">Aragorn</b><span class="ar">→</span><b style="font-family:var(--display)">Gandalf</b><span class="ar">·</span> « reprends ton audit, ajoute l'écran Teams »</div>
+      <div class="msgline"><span class="sm">SendMessage</span><b style="font-family:var(--display)">Gandalf</b><span class="ar">→</span><b style="font-family:var(--display)">Aragorn</b><span class="ar">·</span> « ajout fait, plan à 4 passes »</div>
+
+      <div class="rowhead"><h2>Asynchronisme &amp; fond</h2><span class="eb">tâches détachées</span></div>
+      <div class="async">
+        <div class="asyncard">
+          <div class="ah"><div class="ai">⏱️</div><b>Réveil programmé</b><span class="pulse"></span></div>
+          <div class="ad">Re-scan du chapeau ~/work planifié dans 4 min.</div>
+          <div class="meta"><span>ScheduleWakeup</span><span>14:42</span></div>
+        </div>
+        <div class="asyncard">
+          <div class="ah"><div class="ai">🪵</div><b>Agent de fond</b><span class="pulse"></span></div>
+          <div class="ad">Tail du transcript Codex en arrière-plan.</div>
+          <div class="meta"><span>pendingBackground: 1</span><span>Monitor</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+</body></html>

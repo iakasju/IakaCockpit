@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Gardes &amp; autonomie</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad">
+  <div class="eyebrow">Concepts 04 · 05</div>
+  <h1 class="title">Gardes &amp; autonomie</h1>
+  <p class="sub">Jusqu'où l'agent agit seul, et qui l'arrête. Le <b>mode d'autonomie</b> (<span style="font-family:var(--mono);font-size:13px">permissionMode</span>, plan vs exécution) et les <b>garde-fous</b> (<span style="font-family:var(--mono);font-size:13px">hookInfos</span>, <span style="font-family:var(--mono);font-size:13px">preventedContinuation</span>) sont tracés dans le transcript — on les rend lisibles.</p>
+
+  <nav class="csub">
+    <a href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <a class="on" href="gardes.html"><span class="n">05</span> Gardes &amp; autonomie</a>
+    <span class="grow"></span>
+    <span class="stat">mode exécution · allowlist 4 outils · 2 gardes</span>
+  </nav>
+
+  <div class="rowhead"><h2>État d'autonomie</h2><span class="eb">permissionMode · EnterPlanMode</span></div>
+  <div class="statebar">
+    <div class="statecard">
+      <div class="sl">Mode courant</div>
+      <div class="sv"><span class="dot g"></span>Exécution</div>
+      <div class="sd">Passé de <b>Plan</b> à <b>Exécution</b> au tour 4 après validation du périmètre (<code style="font-family:var(--mono)">ExitPlanMode</code>).</div>
+      <div class="pillrow"><span class="pill">EnterPlanMode · T1</span><span class="pill ok">ExitPlanMode · T4</span></div>
+    </div>
+    <div class="statecard">
+      <div class="sl">Permissions d'outils</div>
+      <div class="sv"><span class="dot b"></span>Allowlist</div>
+      <div class="sd">Liste explicite, pas d'auto-acceptation. Tout outil hors liste demande un arbitrage.</div>
+      <div class="pillrow"><span class="pill ok">Read</span><span class="pill ok">Glob</span><span class="pill ok">Grep</span><span class="pill ok">Bash</span><span class="pill no">WebFetch · refusé</span></div>
+    </div>
+    <div class="statecard">
+      <div class="sl">Trust du dossier</div>
+      <div class="sv"><span class="dot g"></span>Accordé</div>
+      <div class="sd">Le dossier <code style="font-family:var(--mono)">iaka-demo</code> est de confiance (<code style="font-family:var(--mono)">hasTrustDialogAccepted</code>) — le runner démarre sans dialogue.</div>
+      <div class="pillrow"><span class="pill ok">trust ✓</span><span class="pill">scope: cwd</span></div>
+    </div>
+  </div>
+
+  <div class="rowhead"><h2>Garde-fous &amp; hooks</h2><span class="eb">hookInfos · stopReason</span></div>
+  <div class="hooks">
+
+    <div class="hookcard block">
+      <div class="rail-c"></div>
+      <div class="hk">
+        <div class="h1l"><span class="ev">Stop hook</span><b>identity-guard</b><span class="verdict">interception</span></div>
+        <div class="hd">L'agent allait clore son tour sans <b>badge de clôture</b>. Le hook a posé <code>preventedContinuation:true</code> et renvoyé l'agent rédiger son identité. <code>stopReason: missing_identity_badge</code>.</div>
+        <div class="hmeta"><span>SubagentStop</span><span>preventedContinuation</span><span>relancé · 1 fois</span><span>10:34</span></div>
+      </div>
+    </div>
+
+    <div class="hookcard block">
+      <div class="rail-c"></div>
+      <div class="hk">
+        <div class="h1l"><span class="ev">PreToolUse</span><b>delegation-guard</b><span class="verdict">refus</span></div>
+        <div class="hd">Délégation tentée vers un agent <b>hors roster</b> (<code>balrog</code>). Le hook a refusé (<code>exit 2</code>) et émis un doc <code>refused</code> sur le canal geste — fail-open borné à 1,5 s.</div>
+        <div class="hmeta"><span>Task / Agent</span><span>hors-roster</span><span>exit 2</span><span>iakaboxlogs ✓</span></div>
+      </div>
+    </div>
+
+    <div class="hookcard pass">
+      <div class="rail-c"></div>
+      <div class="hk">
+        <div class="h1l"><span class="ev">PreToolUse</span><b>path-guard · anti-traversal</b><span class="verdict">laissé passer</span></div>
+        <div class="hd">Écriture sur <code>src/components/Rail.tsx</code> — chemin dans le cwy de confiance, hors <code>../</code>. Validé par <code>validate_cwd</code>, le geste a pu s'exécuter.</div>
+        <div class="hmeta"><span>hookInfos: ok</span><span>scope respecté</span><span>10:32</span></div>
+      </div>
+    </div>
+
+    <div class="hookcard pass">
+      <div class="rail-c"></div>
+      <div class="hk">
+        <div class="h1l"><span class="ev">Stop</span><b>stop_hook_summary</b><span class="verdict">tour clos</span></div>
+        <div class="hd">Fin de tour propre : badge de clôture présent, plan à jour, aucun effet partiel en suspens. Le système consigne un résumé de fin de tour.</div>
+        <div class="hmeta"><span>system · stop_hook_summary</span><span>messageCount: 9</span><span>10:36</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

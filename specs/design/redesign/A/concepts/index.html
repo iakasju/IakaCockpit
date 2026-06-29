@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Atlas du transcript</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Atlas du transcript</div>
+  <h1 class="title">Anatomie d'une session</h1>
+  <p class="sub">Le terminal possède toute la conversation ; les vues du Cockpit sont des <b>projections filtrées</b> du transcript JSONL. Cette section donne une forme à chaque concept LLM qu'on y lit — les 5 déjà segmentés, et le gisement des 13 autres, déjà présents dans la donnée.</p>
+
+  <nav class="csub">
+    <a class="on" href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <a href="gardes.html"><span class="n">05</span> Gardes &amp; autonomie</a>
+    <span class="grow"></span>
+    <span class="stat">15 transcripts · ~42 000 lignes · Claude + Codex</span>
+  </nav>
+
+  <div class="thesis">
+    <p>Un transcript n'est pas un log : c'est un <b>flux d'événements typés</b>. Chaque ligne porte un <span class="mono">uuid</span>, un <span class="mono">parentUuid</span>, un auteur machine (<span class="mono">attributionAgent</span>) et un type. Le Cockpit en segmente 5 aujourd'hui ; la donnée en porte <b>une douzaine de plus</b>, déjà là, prêts à devenir de l'IHM. Et comme ils <b>ré-émergent à l'identique sous deux moteurs indépendants</b>, ce sont des <i>invariants d'un agent au travail</i>.</p>
+  </div>
+
+  <div class="rowhead"><h2>Déjà segmenté · les 5 canaux L10</h2><span class="eb">30 731 événements mesurés</span></div>
+  <div class="legline">
+    <span><i style="background:var(--ink)"></i> Parole</span>
+    <span><i style="background:var(--acc)"></i> Geste</span>
+    <span><i style="background:var(--cyan)"></i> Activité</span>
+    <span><i style="background:var(--ink3)"></i> Pensée</span>
+    <span><i style="background:var(--purple)"></i> Délégation</span>
+  </div>
+  <div class="atlas">
+    <a class="ccard" href="session.html" style="--cc:var(--ink)"><div class="num">canal · 5 029</div><h3>Parole</h3><p>Le bloc <code>text</code> (user / assistant) : ce que l'agent dit. Filtré par auteur, il devient le fil de chat.</p><div class="tags"><span class="tg seg">segmenté</span></div><div class="field">text · role</div></a>
+    <a class="ccard" href="session.html" style="--cc:var(--acc)"><div class="num">canal · 8 209</div><h3>Geste</h3><p>Un <code>tool_use</code> — Bash, Edit, Read, Write… L'agent agit sur le monde. Argument + commande visibles.</p><div class="tags"><span class="tg seg">segmenté</span></div><div class="field">tool_use</div></a>
+    <a class="ccard" href="session.html" style="--cc:var(--cyan)"><div class="num">canal · 8 286</div><h3>Activité</h3><p>Le <code>tool_result</code>, recollé au geste par <code>tool_use_id</code> : sortie, diff, erreur. Le retour du monde.</p><div class="tags"><span class="tg seg">segmenté</span></div><div class="field">tool_result · tool_use_id</div></a>
+    <a class="ccard" href="session.html" style="--cc:var(--ink3)"><div class="num">canal · 5 014</div><h3>Pensée</h3><p>Le bloc <code>thinking</code>, masquable : le raisonnement avant l'acte. Présent, jamais imposé à l'œil.</p><div class="tags"><span class="tg seg">segmenté</span></div><div class="field">thinking</div></a>
+    <a class="ccard" href="arbre.html" style="--cc:var(--purple)"><div class="num">canal · 78 / 1 137</div><h3>Délégation</h3><p>Un <code>tool_use:"Agent"</code> + les lignes <code>isSidechain</code> : un agent en confie un autre. La chaîne de badges.</p><div class="tags"><span class="tg seg">segmenté</span></div><div class="field">Agent · isSidechain</div></a>
+  </div>
+
+  <div class="rowhead"><h2>Le gisement · 13 concepts présents, pas encore en IHM</h2><span class="eb">déjà dans la donnée</span></div>
+  <div class="atlas">
+    <a class="ccard" href="arbre.html" style="--cc:var(--acc)"><div class="num">01</div><h3>Arbre de conversation</h3><p>La conversation est un <b>arbre</b> : <code>uuid</code> / <code>parentUuid</code> / sidechains. Branches, retours arrière, embranchements.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Arbre &amp; agents</div></a>
+    <a class="ccard" href="arbre.html" style="--cc:var(--purple)"><div class="num">02</div><h3>Attribution machine</h3><p><code>attributionAgent</code>, <code>agentName</code>, <code>attributionSkill</code> : qui a produit chaque ligne — la chaîne de badges, émise par la machine.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Arbre &amp; agents</div></a>
+    <a class="ccard" href="session.html" style="--cc:var(--green)"><div class="num">03</div><h3>Plan vivant</h3><p><code>TaskCreate</code> / <code>TaskUpdate</code> : la todo que l'agent se donne et coche en direct (~400 événements).</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Session live</div></a>
+    <a class="ccard" href="gardes.html" style="--cc:var(--orange)"><div class="num">04</div><h3>Mode d'autonomie</h3><p><code>permissionMode</code>, <code>EnterPlanMode</code> / <code>ExitPlanMode</code> : planifie vs exécute, et jusqu'où l'agent agit seul.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Gardes &amp; autonomie</div></a>
+    <a class="ccard" href="gardes.html" style="--cc:var(--red)"><div class="num">05</div><h3>Garde-fous &amp; hooks</h3><p><code>hookInfos</code>, <code>preventedContinuation</code>, <code>stop_hook_summary</code> : les gardes qui interceptent l'agent.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Gardes &amp; autonomie</div></a>
+    <a class="ccard" href="session.html" style="--cc:var(--orange)"><div class="num">06</div><h3>Points d'arbitrage</h3><p><code>AskUserQuestion</code> (111) : les moments où l'agent rend la main et attend une décision humaine.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Session live</div></a>
+    <a class="ccard" href="memoire.html" style="--cc:var(--blue)"><div class="num">07</div><h3>Mémoire glissante</h3><p><code>compact_boundary</code>, <code>isCompactSummary</code>, <code>summary</code> : la conversation se résume au-delà de l'horizon de contexte.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Mémoire &amp; coût</div></a>
+    <a class="ccard" href="effets.html" style="--cc:var(--cyan)"><div class="num">08</div><h3>Versionnement des effets</h3><p><code>file-history-snapshot</code> (1 374) : l'état des fichiers capturé par tour → diff / rollback.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Effets fichiers</div></a>
+    <a class="ccard" href="arbre.html" style="--cc:var(--orange)"><div class="num">09</div><h3>Asynchronisme &amp; fond</h3><p><code>ScheduleWakeup</code>, <code>pendingBackgroundAgentCount</code>, <code>Monitor</code> : agents en tâche de fond, réveils programmés.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Arbre &amp; agents</div></a>
+    <a class="ccard" href="arbre.html" style="--cc:var(--purple)"><div class="num">10</div><h3>Dialogue inter-agents</h3><p><code>SendMessage</code> (63) : reprendre un sous-agent avec son contexte. Les agents <b>se parlent</b>.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Arbre &amp; agents</div></a>
+    <a class="ccard" href="memoire.html" style="--cc:var(--acc)"><div class="num">11</div><h3>Économie du tour</h3><p><code>usage</code> (tokens), <code>durationMs</code> (784), <code>messageCount</code> : coût et effort par tour → HUD de consommation.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Mémoire &amp; coût</div></a>
+    <a class="ccard" href="effets.html" style="--cc:var(--red)"><div class="num">12</div><h3>Résilience</h3><p><code>api_error</code>, <code>retryAttempt</code>, <code>interruptedMessageId</code> : reprises sur erreur, interruptions encaissées.</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Effets fichiers</div></a>
+    <a class="ccard" href="memoire.html" style="--cc:var(--cyan)"><div class="num">13</div><h3>Outils &amp; titrage</h3><p><code>ToolSearch</code> (la boîte à outils s'élargit), <code>aiTitle</code> (le LLM <b>nomme</b> la conversation).</p><div class="tags"><span class="tg gis">gisement</span></div><div class="field">→ Mémoire &amp; coût</div></a>
+  </div>
+
+  <div class="rowhead"><h2>Méta-concept · convergence inter-moteurs</h2><span class="chip acc">invariant prouvé</span></div>
+  <p class="sub" style="margin-bottom:18px">Codex écrit un JSONL <b>jumeau</b>. Les mêmes concepts ré-émergent sous un vocabulaire différent — l'abstraction <span style="font-family:var(--mono);font-size:13px">ConversationSource</span> du Cockpit est la bonne couture : tout nouveau runner se mappe sur le même alphabet.</p>
+  <div class="conv2">
+    <div class="engine">
+      <h4><span class="e-dot" style="background:var(--acc)"></span>Claude Code <span class="eb" style="margin-left:auto">~/.claude/projects</span></h4>
+      <table class="maptbl">
+        <tr><td>Parole</td><td>text · role</td></tr>
+        <tr><td>Geste / Activité</td><td>tool_use · tool_result</td></tr>
+        <tr><td>Pensée</td><td>thinking</td></tr>
+        <tr><td>Projet / cwd</td><td>cwd · sessionId</td></tr>
+        <tr><td>Économie</td><td>usage.input/output_tokens</td></tr>
+      </table>
+    </div>
+    <div class="engine">
+      <h4><span class="e-dot" style="background:var(--cyan)"></span>Codex <span class="eb" style="margin-left:auto">~/.codex/sessions</span></h4>
+      <table class="maptbl">
+        <tr><td>Parole</td><td>event_msg</td></tr>
+        <tr><td>Geste / Activité</td><td>function_call · function_call_output</td></tr>
+        <tr><td>Pensée</td><td>reasoning</td></tr>
+        <tr><td>Projet / cwd</td><td>session_meta</td></tr>
+        <tr><td>Économie</td><td>token_count</td></tr>
+      </table>
+    </div>
+  </div>
+</div></div>
+</body></html>

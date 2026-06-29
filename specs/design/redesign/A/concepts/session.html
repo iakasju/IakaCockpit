@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Session live</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="sess">
+  <main class="sess-main">
+    <!-- bandeau autonomie + HUD du tour -->
+    <div class="autobar">
+      <div class="mode"><span>⬡ Plan</span><span class="on">▶ Exécution</span></div>
+      <span class="perm">permissions <span class="tool">Read</span><span class="tool">Glob</span><span class="tool">Grep</span><span class="tool">Bash</span> · allowlist</span>
+      <div class="hud">
+        <div class="m"><span class="v">28,4k</span><span class="l">contexte</span></div>
+        <div class="ctxmini" title="142k / 200k tokens"><i style="width:71%"></i></div>
+        <div class="m"><span class="v">12,8s</span><span class="l">tour</span></div>
+        <div class="m"><span class="v">tour 9</span><span class="l">session</span></div>
+      </div>
+    </div>
+
+    <!-- flux d'événements typés -->
+    <div class="flow">
+
+      <!-- titrage auto -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--cyan)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><b>iakacockpit</b><span class="ch activite">aiTitle</span><span class="t">10:24</span></div>
+          <div class="title-auto">Le runner a nommé la conversation tout seul.<span class="gen">« Refonte UI direction A — rail, sans-bord, conversation-first »</span></div>
+        </div>
+      </div>
+
+      <!-- parole utilisateur -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--ink)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><b>Stéphane</b><span class="ch parole">parole · user</span><span class="t">10:25</span></div>
+          <p class="say">Le mock est validé. Porte la direction A dans le vrai front, mais commence par cadrer les écrans touchés.</p>
+        </div>
+      </div>
+
+      <!-- pensée -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--ink3)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span><span class="ch pensee">pensée</span><span class="t">10:25</span></div>
+          <div class="think"><div class="lbl">thinking · masquable</div><p>Avant de coder : le risque est de toucher App.tsx en god-component. Je cadre les 5 écrans, je délègue l'analyse des specs, puis l'exécution passe par Gimli. Je reste en mode plan tant que le périmètre n'est pas net.</p></div>
+        </div>
+      </div>
+
+      <!-- parole agent -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--ink)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span><span class="ch parole">parole</span><span class="t">10:26</span></div>
+          <p class="say">Je cadre, puis je délègue l'audit des écrans à Gandalf avant de lancer l'exécution. Je passe en mode plan le temps de fixer le périmètre.</p>
+        </div>
+      </div>
+
+      <!-- délégation -> sidechain -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--purple)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="ch deleg">délégation · Agent</span><span class="t">10:26</span></div>
+          <div class="delcard"><div class="dl">↳ confie à <b>Gandalf</b> — « audit des 5 écrans + hiérarchie de l'information, rends un plan en 3 passes »</div><span class="sidechip">sidechain ouverte · isSidechain:true · 14 lignes</span></div>
+        </div>
+      </div>
+
+      <!-- geste : Read -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--acc)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/gimli.png"><b>Gimli</b><span class="badge b-gim">Exécution</span><span class="ch geste">geste · Read</span><span class="t">10:31</span></div>
+          <div class="gcard"><div class="gh"><span class="tool">Read</span><span class="arg">src/App.tsx · 1-120</span><span class="st ok">✓ 120 lignes</span></div></div>
+        </div>
+      </div>
+
+      <!-- geste : Edit + activité (diff) -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--acc)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/gimli.png"><b>Gimli</b><span class="badge b-gim">Exécution</span><span class="ch geste">geste · Edit</span><span class="t">10:32</span></div>
+          <div class="gcard">
+            <div class="gh"><span class="tool">Edit</span><span class="arg">src/components/Rail.tsx</span><span class="st ok">✓ activité</span></div>
+            <div class="gbody"><span class="dim">@@ rail de navigation @@</span><br><span class="del">- &lt;nav className="tabs pill"&gt;</span><br><span class="add">+ &lt;nav className="rail"&gt;</span><br><span class="add">+   &lt;Brand /&gt;</span><br><span class="dim">    {ITEMS.map(i =&gt; …)}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- découverte d'outils -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--cyan)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/gimli.png"><b>Gimli</b><span class="ch activite">ToolSearch</span><span class="t">10:33</span></div>
+          <p class="say" style="font-size:13px;color:var(--ink2)">A élargi sa boîte à outils pour la passe typo :</p>
+          <div style="margin-top:7px"><span class="toolchip">Read</span><span class="toolchip">Edit</span><span class="toolchip new">+ WebFetch <small>nouveau</small></span><span class="toolchip new">+ Glob <small>nouveau</small></span></div>
+        </div>
+      </div>
+
+      <!-- résilience : retry -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--red)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><b>Runner</b><span class="ch garde">résilience</span><span class="t">10:33</span></div>
+          <div class="retry">⟳ <b>api_error 529</b> · retryAttempt 2/5 · reprise transparente après 1,2 s — aucune ligne perdue.</div>
+        </div>
+      </div>
+
+      <!-- point d'arbitrage -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--orange)"></span><span class="stem"></span></div>
+        <div>
+          <div class="who"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="ch arb">arbitrage · AskUserQuestion</span><span class="t">10:34</span></div>
+          <div class="arb-card">
+            <div class="q">Densité par défaut des vues retravaillées ?</div>
+            <div class="opts">
+              <div class="arb-opt pick"><span class="k">A</span><span class="lab">Confort <small>recommandé — équilibre lecture / densité</small></span></div>
+              <div class="arb-opt"><span class="k">B</span><span class="lab">Compact <small>plus d'information à l'écran</small></span></div>
+              <div class="arb-opt"><span class="k">C</span><span class="lab">Spacieux <small>respiration maximale</small></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- parole user décision -->
+      <div class="evt">
+        <div class="gut"><span class="pin" style="--cv:var(--ink)"></span></div>
+        <div>
+          <div class="who"><b>Stéphane</b><span class="ch parole">parole · user</span><span class="t">10:35</span></div>
+          <p class="say">A — Confort. Continue.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="composer2"><input placeholder="Écris à l'équipe…  ·  ⬡ bascule plan/exécution  ·  ⎋ interrompt le tour"><button class="send">Envoyer</button></div>
+  </main>
+
+  <!-- panneau latéral : plan vivant + outils + titrage -->
+  <aside class="sess-side">
+    <div class="scard">
+      <div class="sct">🗒️ Plan vivant<span class="badge">TaskUpdate · live</span></div>
+      <div class="todo done"><span class="box">✓</span><span class="tx">Cadrer les 5 écrans touchés<small>fermé · 10:26</small></span></div>
+      <div class="todo done"><span class="box">✓</span><span class="tx">Auditer la hiérarchie (Gandalf)<small>sidechain · 14 lignes</small></span></div>
+      <div class="todo run"><span class="box">●</span><span class="tx">Rail de navigation → sans-bord<small>en cours · Gimli</small></span></div>
+      <div class="todo wait"><span class="box"></span><span class="tx">Passe typo Space Grotesk + Inter</span></div>
+      <div class="todo wait"><span class="box"></span><span class="tx">Gate qualité (Legolas)</span></div>
+      <div class="planbar"><i style="width:42%"></i></div>
+      <div class="eb" style="margin-top:8px">2 / 5 · 42 %</div>
+    </div>
+
+    <div class="scard">
+      <div class="sct">🧭 Autonomie</div>
+      <div class="opt" style="padding:6px 0;border:0;max-width:none"><div><div class="k" style="font-size:13.5px">Mode courant</div><div class="d">défini par EnterPlanMode</div></div><span class="chip acc">Exécution</span></div>
+      <div class="opt" style="padding:6px 0;border:0;max-width:none"><div><div class="k" style="font-size:13.5px">Permissions</div><div class="d">allowlist explicite</div></div><span class="chip">4 outils</span></div>
+      <div class="opt" style="padding:6px 0;border:0;max-width:none"><div><div class="k" style="font-size:13.5px">Trust du dossier</div><div class="d">iaka-demo</div></div><span class="chip live">● accordé</span></div>
+    </div>
+
+    <div class="scard">
+      <div class="sct">🔧 Boîte à outils</div>
+      <div><span class="toolchip">Read</span><span class="toolchip">Edit</span><span class="toolchip">Write</span><span class="toolchip">Bash</span><span class="toolchip">Glob</span><span class="toolchip">Grep</span><span class="toolchip new">WebFetch <small>+</small></span></div>
+      <div class="eb" style="margin-top:10px">7 outils · 2 découverts ce tour</div>
+    </div>
+  </aside>
+</div>
+</body></html>

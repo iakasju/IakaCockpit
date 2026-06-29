@@ -1,0 +1,326 @@
+/* ============================================================
+   CONCEPTS — atlas des concepts LLM lisibles dans le transcript
+   Surcouche de app.css (direction A « Rail de commande »).
+   Offline : polices bundlées en @font-face (zéro CDN, CSP intacte).
+   Toute la grammaire reste studio-clair / sans-bord / aérée.
+   ============================================================ */
+
+/* ---- polices BUNDLÉES (mêmes woff2 que l'app, servies en local) ---- */
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("../../../../../src/assets/fonts/inter-latin-variable.woff2") format("woff2")}
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:300 700;font-display:swap;
+  src:url("../../../../../src/assets/fonts/space-grotesk-latin-variable.woff2") format("woff2")}
+
+/* ---- jetons couleur par concept (cohérents tout le mock) ---- */
+:root{
+  --c-parole:var(--ink);
+  --c-geste:var(--acc);          /* tool_use Bash/Edit/Read     */
+  --c-activite:var(--cyan);      /* tool_result                  */
+  --c-pensee:var(--ink3);        /* thinking                     */
+  --c-deleg:var(--purple);       /* Agent / sidechain            */
+  --c-arb:var(--orange);         /* AskUserQuestion              */
+  --c-garde:var(--red);          /* hooks / stopReason           */
+  --c-memo:var(--blue);          /* compaction                   */
+}
+
+/* ---- sous-navigation des pages concepts ---- */
+.csub{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:24px 0 4px}
+.csub a{font-size:13px;font-weight:500;font-family:var(--text);text-decoration:none;color:var(--ink2);
+  background:var(--deep);padding:8px 15px;border-radius:99px;display:inline-flex;align-items:center;gap:8px;transition:.12s}
+.csub a:hover{background:var(--card);box-shadow:0 1px 8px rgba(20,22,28,.06)}
+.csub a.on{background:var(--ink);color:var(--bg)}
+.csub a .n{font-family:var(--mono);font-size:11px;opacity:.6}
+.csub .grow{flex:1}
+.csub .stat{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+
+/* dot legend reuse */
+.legline{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin:18px 0 4px}
+.legline span{display:inline-flex;align-items:center;gap:7px}
+.legline i{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+/* =========================================================
+   ATLAS (index) — carte de tous les concepts
+   ========================================================= */
+.atlas{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+.ccard{background:var(--card);border-radius:18px;padding:20px;text-decoration:none;color:inherit;display:flex;flex-direction:column;
+  box-shadow:0 1px 0 var(--line-soft),0 16px 36px -30px rgba(20,22,28,.3);transition:.16s;position:relative;overflow:hidden}
+.ccard:hover{transform:translateY(-3px)}
+.ccard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cc,var(--acc))}
+.ccard .num{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.ccard h3{font-family:var(--display);font-weight:600;font-size:16px;margin:6px 0 7px;letter-spacing:-.01em}
+.ccard p{font-size:13px;color:var(--ink2);line-height:1.5;flex:1}
+.ccard .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.tg{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--deep);color:var(--ink3);font-family:var(--mono)}
+.tg.seg{background:rgba(48,164,108,.13);color:var(--green)}
+.tg.gis{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.ccard .field{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:10px}
+
+.thesis{background:var(--card);border-radius:20px;padding:26px 28px;margin-top:14px;
+  box-shadow:0 1px 0 var(--line-soft),0 20px 44px -34px rgba(20,22,28,.28)}
+.thesis p{font-size:14.5px;line-height:1.65;color:var(--ink2);max-width:74ch}
+.thesis p b{color:var(--ink)}
+.thesis .mono{font-family:var(--mono);font-size:13px;background:var(--deep);padding:1px 7px;border-radius:6px;color:var(--acc)}
+
+/* convergence Claude/Codex */
+.conv2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+.engine{background:var(--card);border-radius:18px;padding:20px;box-shadow:0 1px 0 var(--line-soft),0 16px 36px -30px rgba(20,22,28,.3)}
+.engine h4{font-family:var(--display);font-weight:600;font-size:15px;display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.engine .e-dot{width:10px;height:10px;border-radius:3px}
+.maptbl{width:100%;font-size:12.5px;border-collapse:collapse}
+.maptbl td{padding:6px 0;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.maptbl td:first-child{color:var(--ink2);width:38%}
+.maptbl td:last-child{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.maptbl tr:last-child td{border-bottom:0}
+
+/* =========================================================
+   SESSION — flux d'événements typés (centerpiece)
+   ========================================================= */
+.sess{display:grid;grid-template-columns:1fr 312px;gap:0;height:100vh;overflow:hidden}
+.sess-main{display:flex;flex-direction:column;overflow:hidden;background:var(--card)}
+.sess-side{border-left:1px solid var(--line-soft);overflow:auto;padding:20px 18px;background:var(--bg);display:flex;flex-direction:column;gap:22px}
+
+/* bandeau d'autonomie + HUD du tour */
+.autobar{display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.autobar .mode{display:inline-flex;background:var(--deep);border-radius:11px;padding:3px}
+.autobar .mode span{padding:6px 13px;border-radius:9px;font-size:12.5px;color:var(--ink2);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.autobar .mode span.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.perm{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.perm .tool{background:rgba(48,164,108,.12);color:var(--green);padding:2px 7px;border-radius:6px;font-weight:600}
+.hud{margin-left:auto;display:flex;gap:18px;align-items:center}
+.hud .m{display:flex;flex-direction:column;align-items:flex-end}
+.hud .m .v{font-family:var(--display);font-weight:600;font-size:15px}
+.hud .m .l{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.ctxmini{width:120px;height:7px;border-radius:99px;background:var(--deep);overflow:hidden;position:relative}
+.ctxmini i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--green),var(--orange));border-radius:99px}
+
+/* flux */
+.flow{flex:1;overflow:auto;padding:24px 28px;display:flex;flex-direction:column;gap:4px;max-width:880px;width:100%;margin:0 auto}
+
+/* ligne d'événement typée */
+.evt{display:grid;grid-template-columns:30px 1fr;gap:13px;padding:9px 0}
+.evt .gut{display:flex;flex-direction:column;align-items:center;gap:4px}
+.evt .gut .pin{width:11px;height:11px;border-radius:50%;margin-top:5px;flex:none;background:var(--cv,var(--ink3))}
+.evt .gut .stem{flex:1;width:2px;background:var(--line-soft)}
+.evt .who{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.evt .who img{width:24px;height:24px;border-radius:7px;object-fit:cover}
+.evt .who b{font-family:var(--display);font-weight:600;font-size:13px}
+.evt .who .t{margin-left:auto;font-size:11px;color:var(--ink3);font-family:var(--mono)}
+.ch{font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:6px;text-transform:uppercase;font-family:var(--mono)}
+.ch.parole{background:var(--deep);color:var(--ink2)}
+.ch.geste{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.ch.activite{background:rgba(18,165,148,.13);color:var(--cyan)}
+.ch.pensee{background:var(--deep);color:var(--ink3)}
+.ch.deleg{background:rgba(142,78,198,.13);color:var(--purple)}
+.ch.arb{background:rgba(245,166,35,.15);color:#b8770a}
+.ch.garde{background:rgba(229,72,77,.12);color:var(--red)}
+.evt p.say{font-size:14px;line-height:1.6;color:var(--ink);max-width:62ch}
+
+/* badge agent (attribution machine) */
+.b-arag{background:rgba(59,130,246,.13);color:var(--blue)}
+.b-gand{background:rgba(142,78,198,.13);color:var(--purple)}
+.b-gim{background:rgba(48,164,108,.13);color:var(--green)}
+.b-leg{background:rgba(245,166,35,.16);color:#b8770a}
+.b-fro{background:rgba(18,165,148,.13);color:var(--cyan)}
+.b-odin{background:rgba(20,22,28,.08);color:var(--ink)}
+
+/* geste : tool_use + tool_result */
+.gcard{background:var(--bg);border-radius:12px;overflow:hidden;max-width:62ch}
+.gcard .gh{display:flex;align-items:center;gap:9px;padding:9px 13px}
+.gcard .gh .tool{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--acc)}
+.gcard .gh .arg{font-family:var(--mono);font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gcard .gh .st{margin-left:auto;font-size:10.5px;font-family:var(--mono)}
+.gcard .gh .st.ok{color:var(--green)} .gcard .gh .st.run{color:var(--orange)} .gcard .gh .st.err{color:var(--red)}
+.gcard .gbody{border-top:1px solid var(--line-soft);padding:10px 13px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--ink2);background:var(--card);max-height:120px;overflow:auto}
+.gcard .gbody .add{color:var(--green)} .gcard .gbody .del{color:var(--red)} .gcard .gbody .dim{color:var(--ink3)}
+
+/* pensée */
+.think{background:var(--deep);border-radius:12px;padding:11px 14px;max-width:62ch;position:relative}
+.think p{font-size:13px;line-height:1.6;color:var(--ink3);font-style:italic;max-width:58ch}
+.think .lbl{font-size:10px;font-family:var(--mono);color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+
+/* délégation -> sidechain */
+.delcard{background:var(--bg);border-left:3px solid var(--purple);border-radius:0 12px 12px 0;padding:11px 14px;max-width:62ch}
+.delcard .dl{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.delcard .dl b{color:var(--purple)}
+.delcard .sidechip{font-family:var(--mono);font-size:10.5px;color:var(--purple);background:rgba(142,78,198,.1);padding:2px 7px;border-radius:6px;margin-top:7px;display:inline-block}
+
+/* arbitrage (AskUserQuestion) */
+.arb-card{background:#fff;border-radius:14px;padding:16px 18px;max-width:62ch;box-shadow:0 0 0 1px rgba(245,166,35,.25),0 14px 30px -22px rgba(245,166,35,.5)}
+.arb-card .q{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;font-family:var(--display)}
+.arb-card .opts{display:flex;flex-direction:column;gap:8px}
+.arb-opt{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:11px;background:var(--bg);cursor:pointer;border:1px solid transparent;transition:.12s}
+.arb-opt:hover{border-color:var(--orange);background:#fff}
+.arb-opt .k{width:22px;height:22px;border-radius:7px;background:var(--deep);display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink2)}
+.arb-opt .lab{font-size:13px;color:var(--ink)}
+.arb-opt .lab small{display:block;color:var(--ink3);font-size:11.5px;margin-top:1px}
+.arb-opt.pick{border-color:var(--orange);background:rgba(245,166,35,.06)}
+
+/* résilience inline */
+.retry{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3);font-family:var(--mono);background:rgba(229,72,77,.06);border-radius:10px;padding:8px 12px;max-width:62ch}
+.retry b{color:var(--red)}
+
+/* composer */
+.composer2{padding:13px 24px;border-top:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
+.composer2 input{flex:1;border:0;background:var(--deep);border-radius:13px;padding:12px 15px;font-family:var(--text);font-size:14px;color:var(--ink)}
+.composer2 .send{border:0;background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff;font-family:var(--display);font-weight:600;padding:0 18px;height:44px;border-radius:13px;cursor:pointer}
+
+/* ----- panneau latéral : plan vivant + outils + titrage ----- */
+.scard{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -28px rgba(20,22,28,.3)}
+.scard .sct{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:600;font-size:13.5px;margin-bottom:13px}
+.scard .sct .badge{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:400}
+
+/* plan vivant todos */
+.todo{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:13px;line-height:1.45}
+.todo .box{width:16px;height:16px;border-radius:5px;flex:none;margin-top:1px;display:grid;place-items:center;font-size:10px}
+.todo.done .box{background:var(--green);color:#fff}
+.todo.run .box{background:rgba(245,166,35,.18);color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--orange)}
+.todo.wait .box{background:var(--deep);box-shadow:inset 0 0 0 1.5px var(--line)}
+.todo.done .tx{color:var(--ink3);text-decoration:line-through}
+.todo.run .tx{color:var(--ink);font-weight:500}
+.todo.wait .tx{color:var(--ink2)}
+.todo .tx small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:1px}
+.planbar{height:6px;border-radius:99px;background:var(--deep);overflow:hidden;margin-top:6px}
+.planbar i{display:block;height:100%;background:var(--green);border-radius:99px}
+
+/* découverte outils */
+.toolchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--ink2);background:var(--deep);padding:5px 10px;border-radius:8px;margin:0 6px 6px 0}
+.toolchip.new{background:rgba(var(--acc-rgb),.1);color:var(--acc)}
+
+/* titrage auto */
+.title-auto{font-size:13px;line-height:1.5;color:var(--ink2)}
+.title-auto .gen{font-family:var(--display);font-weight:600;color:var(--ink);font-size:14.5px;display:block;margin-top:4px}
+
+/* =========================================================
+   ARBRE — graphe de conversation / sidechains / attribution
+   ========================================================= */
+.tree{position:relative;margin-top:8px;padding-left:6px}
+.tnode{position:relative;padding:0 0 4px 30px;margin-bottom:2px}
+.tnode::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--line-soft)}
+.tnode:last-child::before{bottom:auto;height:18px}
+.tnode .knot{position:absolute;left:2px;top:11px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--ink3);z-index:1}
+.tnode.main .knot{border-color:var(--acc)}
+.tnode.side .knot{border-color:var(--purple)}
+.tnode .card{background:var(--card);border-radius:13px;padding:11px 14px;box-shadow:0 1px 0 var(--line-soft),0 12px 26px -26px rgba(20,22,28,.3)}
+.tnode .ln1{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.tnode .ln1 img{width:22px;height:22px;border-radius:6px}
+.tnode .ln1 b{font-family:var(--display);font-weight:600;font-size:13px}
+.tnode .ln1 .uuid{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.tnode .ln2{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.tnode .ln2 code{font-family:var(--mono);font-size:11.5px;background:var(--deep);padding:1px 6px;border-radius:5px}
+
+/* sidechain : sous-arbre indenté */
+.side-wrap{margin:6px 0 12px 30px;padding-left:24px;position:relative;border-left:2px dashed rgba(142,78,198,.4)}
+.side-wrap .sidehead{font-family:var(--mono);font-size:11px;color:var(--purple);margin:0 0 8px -2px;display:flex;align-items:center;gap:7px}
+.side-wrap .tnode::before{background:rgba(142,78,198,.18)}
+
+/* attribution machine */
+.attrib{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
+.attrib .a{font-family:var(--mono);font-size:11px;color:var(--ink3);background:var(--deep);padding:3px 9px;border-radius:7px}
+.attrib .a b{color:var(--ink2)}
+
+/* dialogue inter-agents (SendMessage) */
+.msgline{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink2);background:var(--bg);border-radius:11px;padding:9px 13px;margin:8px 0 0 30px;max-width:60ch}
+.msgline .sm{font-family:var(--mono);font-size:10px;color:var(--purple);background:rgba(142,78,198,.1);padding:2px 7px;border-radius:6px}
+.msgline .ar{color:var(--ink3)}
+
+/* async / tâches de fond */
+.async{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px}
+.asyncard{background:var(--card);border-radius:15px;padding:16px;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -28px rgba(20,22,28,.3)}
+.asyncard .ah{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.asyncard .ah .ai{width:30px;height:30px;border-radius:9px;background:var(--deep);display:grid;place-items:center;font-size:15px}
+.asyncard .ah b{font-family:var(--display);font-weight:600;font-size:13.5px}
+.asyncard .ah .pulse{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 0 rgba(245,166,35,.5);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,166,35,.45)}70%{box-shadow:0 0 0 8px rgba(245,166,35,0)}100%{box-shadow:0 0 0 0 rgba(245,166,35,0)}}
+.asyncard .ad{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.asyncard .meta{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:9px;display:flex;gap:14px}
+
+/* =========================================================
+   EFFETS — snapshots / diff / rollback + résilience
+   ========================================================= */
+.efftl{position:relative;padding-left:34px;margin-top:10px}
+.efftl::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:var(--line-soft)}
+.turn{position:relative;margin-bottom:22px}
+.turn .tk{position:absolute;left:-34px;top:4px;width:24px;height:24px;border-radius:8px;background:var(--card);display:grid;place-items:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink2);box-shadow:0 1px 0 var(--line-soft),0 0 0 2px var(--bg)}
+.snaprow{background:var(--card);border-radius:15px;overflow:hidden;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -28px rgba(20,22,28,.3)}
+.snaprow .sh{display:flex;align-items:center;gap:11px;padding:13px 16px}
+.snaprow .sh .file{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink)}
+.snaprow .sh .op{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:6px;font-family:var(--mono)}
+.op.edit{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.op.write{background:rgba(48,164,108,.13);color:var(--green)}
+.op.create{background:rgba(18,165,148,.13);color:var(--cyan)}
+.snaprow .sh .delta{margin-left:auto;font-family:var(--mono);font-size:11.5px}
+.snaprow .sh .delta .p{color:var(--green)} .snaprow .sh .delta .m{color:var(--red)}
+.snaprow .sh .roll{border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:11.5px;border-radius:8px;padding:5px 11px;cursor:pointer;font-family:var(--text)}
+.snaprow .sh .roll:hover{border-color:var(--red);color:var(--red)}
+.diff{font-family:var(--mono);font-size:11.5px;line-height:1.6;border-top:1px solid var(--line-soft);padding:11px 16px;background:var(--bg);overflow:auto}
+.diff .l{display:block;white-space:pre}
+.diff .l.add{background:rgba(48,164,108,.09);color:var(--green)}
+.diff .l.del{background:rgba(229,72,77,.08);color:var(--red)}
+.diff .l.ctx{color:var(--ink3)}
+.diff .gh{color:var(--acc)}
+
+/* =========================================================
+   MEMOIRE — compaction + économie du tour + outils
+   ========================================================= */
+.ctxbig{background:var(--card);border-radius:18px;padding:22px 24px;margin-top:8px;box-shadow:0 1px 0 var(--line-soft),0 16px 36px -30px rgba(20,22,28,.3)}
+.ctxbig .top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.ctxbig .top .v{font-family:var(--display);font-weight:600;font-size:26px}
+.ctxbig .top .v small{font-size:14px;color:var(--ink3);font-weight:400}
+.ctxbig .top .cap{font-size:12.5px;color:var(--ink3);font-family:var(--mono)}
+.ctxtrack{height:26px;border-radius:9px;background:var(--deep);overflow:hidden;display:flex;position:relative}
+.ctxtrack .seg{height:100%}
+.ctxtrack .seg.sys{background:rgba(20,22,28,.18)}
+.ctxtrack .seg.sum{background:rgba(59,130,246,.5)}
+.ctxtrack .seg.live{background:linear-gradient(90deg,var(--green),var(--acc))}
+.ctxtrack .bound{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--red)}
+.ctxtrack .bound::after{content:"compaction";position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--red);white-space:nowrap}
+.ctxlegend{display:flex;gap:18px;margin-top:12px;font-size:11.5px;color:var(--ink3);flex-wrap:wrap}
+.ctxlegend span{display:inline-flex;align-items:center;gap:7px}
+.ctxlegend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+.summary{background:var(--card);border-radius:15px;padding:17px 19px;border-left:4px solid var(--blue);margin-top:14px;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -30px rgba(20,22,28,.3)}
+.summary .sl{font-family:var(--mono);font-size:10.5px;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.summary p{font-size:13.5px;line-height:1.6;color:var(--ink2);max-width:78ch}
+
+.turntbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+.turntbl th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:0 12px 10px;font-family:var(--mono)}
+.turntbl td{padding:11px 12px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12.5px;color:var(--ink2)}
+.turntbl td.who{font-family:var(--text)}
+.turntbl td.who b{font-family:var(--display);font-weight:600;color:var(--ink)}
+.turntbl .bar{height:6px;border-radius:99px;background:var(--deep);overflow:hidden;min-width:60px}
+.turntbl .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.turntbl tr:hover td{background:var(--bg)}
+
+/* =========================================================
+   GARDES — hooks + mode d'autonomie / permissions
+   ========================================================= */
+.statebar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+.statecard{background:var(--card);border-radius:16px;padding:18px;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -28px rgba(20,22,28,.3)}
+.statecard .sl{font-family:var(--mono);font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em}
+.statecard .sv{font-family:var(--display);font-weight:600;font-size:18px;margin:7px 0 4px;display:flex;align-items:center;gap:9px}
+.statecard .sd{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.statecard .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.statecard .pill{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:6px;background:var(--deep);color:var(--ink3)}
+.statecard .pill.ok{background:rgba(48,164,108,.13);color:var(--green)}
+.statecard .pill.no{background:rgba(229,72,77,.1);color:var(--red)}
+
+.hooks{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.hookcard{background:var(--card);border-radius:15px;padding:0;overflow:hidden;display:grid;grid-template-columns:5px 1fr;box-shadow:0 1px 0 var(--line-soft),0 14px 30px -28px rgba(20,22,28,.3)}
+.hookcard .rail-c{background:var(--ink3)}
+.hookcard.pass .rail-c{background:var(--green)}
+.hookcard.block .rail-c{background:var(--red)}
+.hookcard .hk{padding:15px 18px}
+.hookcard .h1l{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.hookcard .h1l .ev{font-family:var(--mono);font-size:11px;color:var(--ink3);background:var(--deep);padding:2px 8px;border-radius:6px}
+.hookcard .h1l b{font-family:var(--display);font-weight:600;font-size:14.5px}
+.hookcard .h1l .verdict{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-family:var(--mono);padding:3px 9px;border-radius:7px}
+.hookcard.pass .verdict{background:rgba(48,164,108,.13);color:var(--green)}
+.hookcard.block .verdict{background:rgba(229,72,77,.12);color:var(--red)}
+.hookcard .hd{font-size:13px;color:var(--ink2);line-height:1.55;max-width:80ch}
+.hookcard .hd code{font-family:var(--mono);font-size:11.5px;background:var(--deep);padding:1px 6px;border-radius:5px;color:var(--ink)}
+.hookcard .hmeta{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:9px;display:flex;gap:16px;flex-wrap:wrap}
+
+/* utilitaire : grille 2 colonnes de sections */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+@media(max-width:1100px){.atlas{grid-template-columns:repeat(2,1fr)}.duo,.conv2,.async{grid-template-columns:1fr}}
