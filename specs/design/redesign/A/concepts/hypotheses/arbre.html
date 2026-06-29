@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · Arbre &amp; délégations</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+<style>
+/* A · mini-map d'arbre */
+.mm{font-size:12px;line-height:1.3}
+.mm .row{display:flex;align-items:center;gap:8px;padding:5px 0;position:relative}
+.mm .row .dot{width:11px;height:11px;border-radius:50%;flex:none;background:#fff;border:2px solid var(--ink3)}
+.mm .row.main .dot{border-color:var(--acc)}
+.mm .row.side .dot{border-color:var(--purple)}
+.mm .row.side{margin-left:26px;border-left:2px dashed rgba(142,78,198,.4);padding-left:18px}
+.mm .row .nm{font-family:var(--display);font-weight:600;font-size:12px}
+.mm .row .tag{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.mm .sidehead{margin-left:26px;font-family:var(--mono);font-size:10px;color:var(--purple);padding:4px 0 2px 18px;border-left:2px dashed rgba(142,78,198,.4)}
+/* C river labels */
+.riv-st{font-family:var(--mono);font-size:9px;fill:var(--ink3)}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Donnée 01 · arbre &amp; délégations</div>
+  <h1 class="title">Naviguer l'arbre de conversation</h1>
+  <p class="sub">La conversation est un arbre <span style="font-family:var(--mono);font-size:13px">uuid → parentUuid</span> avec des sidechains de délégation (<span style="font-family:var(--mono);font-size:13px">isSidechain</span>, tool <span style="font-family:var(--mono);font-size:13px">Agent</span>). Trois manières de rendre cette structure <b>navigable</b> et de montrer qui a délégué à qui.</p>
+
+  <nav class="csub">
+    <a href="index.html">Sommaire</a>
+    <a class="on" href="arbre.html">Arbre &amp; délégations</a>
+    <a href="attribution.html">Attribution</a>
+    <a href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a href="memoire.html">Mémoire</a>
+    <a href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">iaka-demo · 38 nœuds · 1 sidechain</span>
+  </nav>
+
+  <div class="legend2">
+    <span><i style="background:var(--blue)"></i> Aragorn</span>
+    <span><i style="background:var(--purple)"></i> Gandalf</span>
+    <span><i style="background:var(--green)"></i> Gimli</span>
+    <span><i style="background:var(--ink)"></i> Stéphane</span>
+    <span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--purple);border-radius:50%"></i> sidechain</span>
+  </div>
+
+  <div class="planche">
+
+    <!-- A · mini-map -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">A</div><div class="vname">Mini-map d'arbre<small>indentation + branches</small></div><span class="reco">reco navigation</span></div>
+      <div class="canvas tall">
+        <div class="mm">
+          <div class="row main"><span class="dot"></span><span class="nm">Stéphane</span><span class="tag">a1f0</span></div>
+          <div class="row main"><span class="dot"></span><span class="nm">Aragorn</span><span class="tag">b3c7</span></div>
+          <div class="sidehead">⎇ Agent « audit »</div>
+          <div class="row side"><span class="dot"></span><span class="nm">Gandalf</span><span class="tag">c9d2</span></div>
+          <div class="row side"><span class="dot"></span><span class="nm">Gandalf</span><span class="tag">pensée</span></div>
+          <div class="row side"><span class="dot"></span><span class="nm">Gandalf</span><span class="tag">rapport</span></div>
+          <div class="row main"><span class="dot"></span><span class="nm">Aragorn</span><span class="tag">b3c7d8</span></div>
+          <div class="row main"><span class="dot"></span><span class="nm">Gimli</span><span class="tag">e4a8</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Panneau latéral pliable du chat : clic = saut au nœud. La sidechain se replie.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Dense, scannable, zéro courbe à suivre. Marche dès 2 colonnes.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Les retours arrière multiples se lisent mal au-delà de 2 niveaux.</span></div>
+      </div>
+    </div>
+
+    <!-- B · swimlanes -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">B</div><div class="vname">Swimlanes d'agents<small>couloir par agent + passages</small></div><span class="reco alt">vue d'ensemble</span></div>
+      <div class="canvas tall">
+        <svg viewBox="0 0 340 250" width="100%" style="display:block">
+          <!-- lanes -->
+          <g font-family="ui-monospace,monospace" font-size="9" fill="#9aa0ad">
+            <text x="4" y="34">Steph</text><text x="4" y="78">Aragorn</text><text x="4" y="122">Gandalf</text><text x="4" y="166">Gimli</text>
+          </g>
+          <g stroke="#eef0f3" stroke-width="1">
+            <line x1="50" y1="30" x2="336" y2="30"/><line x1="50" y1="74" x2="336" y2="74"/>
+            <line x1="50" y1="118" x2="336" y2="118"/><line x1="50" y1="162" x2="336" y2="162"/>
+          </g>
+          <!-- blocks -->
+          <rect x="56" y="22" width="34" height="16" rx="5" fill="#16181d"/>
+          <rect x="100" y="66" width="56" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="262" y="66" width="40" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="166" y="110" width="78" height="16" rx="5" fill="#8e4ec6"/>
+          <rect x="250" y="154" width="76" height="16" rx="5" fill="#30a46c"/>
+          <!-- delegation arrows -->
+          <path d="M156 74 C 168 90, 168 100, 174 110" fill="none" stroke="#8e4ec6" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <polygon points="174,110 169,105 178,104" fill="#8e4ec6"/>
+          <path d="M244 118 C 256 100, 256 92, 262 82" fill="none" stroke="#8e4ec6" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <polygon points="262,82 257,88 266,89" fill="#8e4ec6"/>
+          <!-- time axis -->
+          <g font-family="ui-monospace,monospace" font-size="8" fill="#c5c9d2">
+            <text x="56" y="205">10:25</text><text x="150" y="205">10:31</text><text x="250" y="205">10:34</text>
+          </g>
+          <line x1="50" y1="190" x2="336" y2="190" stroke="#e7e8ec" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Page « session » en vue macro : le temps file à droite, on voit la passe de relais.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">La délégation devient un geste visible (flèche). Lit la simultanéité.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Coûteux en hauteur si beaucoup d'agents ; le détail des messages se perd.</span></div>
+      </div>
+    </div>
+
+    <!-- C · river -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">C</div><div class="vname">Rivière / subway<small>un fil qui se divise et se rejoint</small></div><span class="reco alt">expressif</span></div>
+      <div class="canvas tall">
+        <svg viewBox="0 0 340 260" width="100%" style="display:block">
+          <!-- main line -->
+          <path d="M90 24 L90 90" stroke="#3b82f6" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M90 90 L90 200" stroke="#5b5bd6" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M90 200 L90 240" stroke="#30a46c" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <!-- branch (sidechain) : rejoint proprement le noeud Aragorn -->
+          <path d="M90 96 C 150 96, 214 100, 214 132 L214 166 C 214 198, 150 202, 92 202"
+                stroke="#8e4ec6" stroke-width="3" fill="none" stroke-dasharray="5 4" stroke-linecap="round"/>
+          <!-- stations -->
+          <g>
+            <circle cx="90" cy="24"  r="7" fill="#fff" stroke="#16181d" stroke-width="3"/>
+            <circle cx="90" cy="90"  r="7" fill="#fff" stroke="#3b82f6" stroke-width="3"/>
+            <circle cx="214" cy="132" r="6" fill="#fff" stroke="#8e4ec6" stroke-width="3"/>
+            <circle cx="214" cy="166" r="6" fill="#fff" stroke="#8e4ec6" stroke-width="3"/>
+            <circle cx="90" cy="202" r="7" fill="#fff" stroke="#5b5bd6" stroke-width="3"/>
+            <circle cx="90" cy="240" r="7" fill="#fff" stroke="#30a46c" stroke-width="3"/>
+          </g>
+          <g font-family="ui-monospace,monospace" font-size="9" fill="#5b6270">
+            <text x="104" y="28">Stéphane</text>
+            <text x="104" y="86">Aragorn · délègue</text>
+            <text x="226" y="136">Gandalf · audit</text>
+            <text x="226" y="170">Gandalf · rapport</text>
+            <text x="104" y="216">Aragorn · reprend</text>
+            <text x="104" y="244">Gimli · exécute</text>
+          </g>
+        </svg>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Carte « plan de session » pleine page : la branche pointillée = sidechain qui revient au tronc.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Très mémorable, raconte le détour de délégation d'un seul regard.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Le tracé devient vite spaghetti si plusieurs sidechains se chevauchent.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

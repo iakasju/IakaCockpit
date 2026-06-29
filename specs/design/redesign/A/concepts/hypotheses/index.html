@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · que faire de la donnée du transcript ?</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Exploration de design</div>
+  <h1 class="title">Hypothèses graphiques</h1>
+  <p class="sub">On extrait maintenant une donnée <b>riche</b> du transcript JSONL. La question n'est plus « qu'est-ce que c'est ? » mais <b>« qu'est-ce qu'on en FAIT à l'écran ? »</b>. Pour chaque donnée, voici plusieurs pistes visuelles concrètes, posées côte à côte — pour comparer et trancher.</p>
+
+  <nav class="csub">
+    <a class="on" href="index.html">Sommaire</a>
+    <a href="arbre.html">Arbre &amp; délégations</a>
+    <a href="attribution.html">Attribution</a>
+    <a href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a href="memoire.html">Mémoire</a>
+    <a href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">6 données · 17 variantes</span>
+  </nav>
+
+  <div class="qbar">
+    <div class="icon">🧪</div>
+    <div>
+      <div class="qt">Une planche = une donnée, 2 à 3 façons de l'exploiter</div>
+      <div class="qd">Chaque planche met en regard des <b>variantes graphiques</b> de la même donnée (ex. l'arbre <code>uuid→parentUuid</code> en mini-map, en swimlanes, ou en rivière). Chacune porte une note de designer — <b>usage</b>, <b>force</b>, <b>limite</b> — et une reco. Rien n'est arbitré : c'est de la matière à décision.</div>
+    </div>
+  </div>
+
+  <div class="rowhead"><h2>Données à explorer</h2><span class="eb">du plus fort potentiel au support</span></div>
+  <div class="dgrid">
+
+    <a class="dcard" href="arbre.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 01 · fort potentiel</div>
+      <h3>Arbre &amp; délégations</h3>
+      <div class="src">uuid → parentUuid · isSidechain · Agent</div>
+      <p>La conversation est un arbre avec des branches de délégation. Comment rendre la structure navigable d'un coup d'œil ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Mini-map d'arbre</span><span class="vp"><b>B</b> Swimlanes d'agents</span><span class="vp"><b>C</b> Rivière / subway</span></div>
+    </a>
+
+    <a class="dcard" href="attribution.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 02 · fort potentiel</div>
+      <h3>Attribution multi-agent</h3>
+      <div class="src">attributionAgent · agentName · skill</div>
+      <p>Chaque ligne sait qui l'a écrite. Comment montrer « qui tient la plume » sans alourdir le fil ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Ruban de provenance</span><span class="vp"><b>B</b> Part de voix</span><span class="vp"><b>C</b> Gouttière d'avatars</span></div>
+    </a>
+
+    <a class="dcard" href="plan.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 03 · surface immédiate</div>
+      <h3>Plan vivant</h3>
+      <div class="src">TaskCreate · TaskUpdate · TaskList</div>
+      <p>L'agent se donne une todo et la coche en direct. Quelle forme pour suivre l'avancement en temps réel ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Checklist live</span><span class="vp"><b>B</b> Barre de phases</span><span class="vp"><b>C</b> Mini-kanban</span></div>
+    </a>
+
+    <a class="dcard" href="effets.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 04 · fort potentiel</div>
+      <h3>Effets fichiers</h3>
+      <div class="src">file-history-snapshot · diff · tour</div>
+      <p>L'état des fichiers est capturé à chaque tour. Comment explorer ce qui a changé, où, et revenir en arrière ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Scrubber temporel</span><span class="vp"><b>B</b> Heatmap fichiers×tours</span><span class="vp"><b>C</b> Pile de diffs</span></div>
+    </a>
+
+    <a class="dcard" href="memoire.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 05 · support</div>
+      <h3>Mémoire &amp; compaction</h3>
+      <div class="src">compact_boundary · usage · context</div>
+      <p>Le contexte a un horizon ; au-delà il se résume. Comment rendre l'occupation et la frontière lisibles ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Jauge linéaire</span><span class="vp"><b>B</b> Anneau d'occupation</span><span class="vp"><b>C</b> Frise de tours</span></div>
+    </a>
+
+    <a class="dcard" href="economie.html">
+      <span class="go">→</span>
+      <div class="dn">donnée 06 · support</div>
+      <h3>Économie du tour</h3>
+      <div class="src">usage.tokens · durationMs · agent</div>
+      <p>Chaque tour a un coût et une durée. Comment repérer les tours chers et qui les a produits ?</p>
+      <div class="vlist"><span class="vp"><b>A</b> Sparkline</span><span class="vp"><b>B</b> Barres par tour</span><span class="vp"><b>C</b> Treemap de coût</span></div>
+    </a>
+
+  </div>
+</div></div>
+</body></html>

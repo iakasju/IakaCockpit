@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · Plan vivant</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+<style>
+/* A · checklist */
+.ck{display:flex;flex-direction:column;gap:2px}
+.ck .it{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px;line-height:1.4}
+.ck .it .bx{width:17px;height:17px;border-radius:5px;flex:none;margin-top:1px;display:grid;place-items:center;font-size:10px}
+.ck .it.done .bx{background:var(--green);color:#fff}
+.ck .it.run .bx{background:rgba(245,166,35,.18);color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--orange)}
+.ck .it.wait .bx{background:var(--deep);box-shadow:inset 0 0 0 1.5px var(--line)}
+.ck .it.done .t{color:var(--ink3);text-decoration:line-through}
+.ck .it.run .t{font-weight:600}
+.ck .it .t small{display:block;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:1px}
+/* B · barre de phases */
+.phases{display:flex;gap:6px;margin-bottom:18px}
+.phases .ph{flex:1;text-align:center}
+.phases .ph .bar{height:10px;border-radius:99px;background:var(--deep);overflow:hidden;margin-bottom:7px}
+.phases .ph .bar i{display:block;height:100%;border-radius:99px}
+.phases .ph .nm{font-family:var(--display);font-weight:600;font-size:11px}
+.phases .ph .st{font-family:var(--mono);font-size:9.5px;color:var(--ink3)}
+.bigprog{display:flex;align-items:center;gap:13px;margin-top:6px}
+.bigprog .ring{width:54px;height:54px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--green) 0 60%, var(--deep) 60% 100%);display:grid;place-items:center}
+.bigprog .ring span{width:40px;height:40px;border-radius:50%;background:var(--card);display:grid;place-items:center;
+  font-family:var(--display);font-weight:600;font-size:13px}
+.bigprog .lab{font-size:12.5px;color:var(--ink2)}
+.bigprog .lab b{font-family:var(--display);color:var(--ink)}
+/* C · kanban */
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.kb .col{background:var(--bg);border-radius:12px;padding:9px 8px;min-height:150px}
+.kb .col .ct{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;text-align:center}
+.kb .card2{background:var(--card);border-radius:9px;padding:8px 9px;font-size:11px;line-height:1.35;margin-bottom:6px;box-shadow:0 1px 4px rgba(20,22,28,.05)}
+.kb .card2 .who{display:flex;align-items:center;gap:5px;margin-top:5px}
+.kb .card2 .who img{width:15px;height:15px;border-radius:4px}
+.kb .card2 .who span{font-family:var(--mono);font-size:9px;color:var(--ink3)}
+.kb .col.doing .ct{color:var(--orange)}
+.kb .col.done .ct{color:var(--green)}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Donnée 03 · plan vivant</div>
+  <h1 class="title">Suivre le plan qui se coche en direct</h1>
+  <p class="sub">L'agent émet <span style="font-family:var(--mono);font-size:13px">TaskCreate</span> / <span style="font-family:var(--mono);font-size:13px">TaskUpdate</span> : il se donne une todo et la fait évoluer pendant qu'il travaille. Trois formes pour suivre cet <b>avancement temps réel</b>.</p>
+
+  <nav class="csub">
+    <a href="index.html">Sommaire</a>
+    <a href="arbre.html">Arbre &amp; délégations</a>
+    <a href="attribution.html">Attribution</a>
+    <a class="on" href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a href="memoire.html">Mémoire</a>
+    <a href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">5 tâches · 2 closes · 1 en cours</span>
+  </nav>
+
+  <div class="planche">
+
+    <!-- A · checklist -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">A</div><div class="vname">Checklist live<small>cases qui se cochent</small></div><span class="reco">reco panneau latéral</span></div>
+      <div class="canvas tall">
+        <div class="ck">
+          <div class="it done"><span class="bx">✓</span><span class="t">Cadrer les 5 écrans<small>fermé · 10:26</small></span></div>
+          <div class="it done"><span class="bx">✓</span><span class="t">Auditer la hiérarchie<small>sidechain · Gandalf</small></span></div>
+          <div class="it run"><span class="bx">●</span><span class="t">Rail → sans-bord<small>en cours · Gimli</small></span></div>
+          <div class="it wait"><span class="bx"></span><span class="t">Passe typo Space Grotesk + Inter</span></div>
+          <div class="it wait"><span class="bx"></span><span class="t">Gate qualité (Legolas)</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Colonne droite du Working, mise à jour à chaque TaskUpdate.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Lecture immédiate, familier, montre l'état exact de chaque item.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Liste plate : ne dit pas le poids relatif des tâches.</span></div>
+      </div>
+    </div>
+
+    <!-- B · barre de phases -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">B</div><div class="vname">Barre de phases<small>progression agrégée</small></div><span class="reco alt">macro</span></div>
+      <div class="canvas tall">
+        <div class="phases">
+          <div class="ph"><div class="bar"><i style="width:100%;background:var(--green)"></i></div><div class="nm">Cadrage</div><div class="st">2/2</div></div>
+          <div class="ph"><div class="bar"><i style="width:50%;background:var(--orange)"></i></div><div class="nm">Exécution</div><div class="st">1/2</div></div>
+          <div class="ph"><div class="bar"><i style="width:0;background:var(--ink3)"></i></div><div class="nm">Gate</div><div class="st">0/1</div></div>
+        </div>
+        <div class="bigprog">
+          <div class="ring"><span>60%</span></div>
+          <div class="lab"><b>3 tâches sur 5</b> closes.<br>Phase courante : <b>Exécution</b>.</div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Bandeau en tête de conversation ou pastille de progression sur la carte projet.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Une seule métrique « où en est-on ? » lisible à distance.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Exige de mapper les tâches à des phases ; cache le détail.</span></div>
+      </div>
+    </div>
+
+    <!-- C · kanban -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">C</div><div class="vname">Mini-kanban<small>à faire / en cours / fait</small></div><span class="reco alt">flux</span></div>
+      <div class="canvas tall">
+        <div class="kb">
+          <div class="col"><div class="ct">À faire</div>
+            <div class="card2">Passe typo<div class="who"><span>non assignée</span></div></div>
+            <div class="card2">Gate qualité<div class="who"><img src="../../../assets/legolas.png"><span>Legolas</span></div></div>
+          </div>
+          <div class="col doing"><div class="ct">En cours</div>
+            <div class="card2">Rail → sans-bord<div class="who"><img src="../../../assets/gimli.png"><span>Gimli</span></div></div>
+          </div>
+          <div class="col done"><div class="ct">Fait</div>
+            <div class="card2">Cadrer les écrans<div class="who"><img src="../../../assets/aragorn.png"><span>Aragorn</span></div></div>
+            <div class="card2">Audit hiérarchie<div class="who"><img src="../../../assets/gandalf.png"><span>Gandalf</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Onglet « plan » dédié : les cartes glissent de colonne au fil des TaskUpdate.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Montre l'assignation par agent et le flux de travail vivant.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Surdimensionné pour 3-5 tâches ; demande de la place horizontale.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

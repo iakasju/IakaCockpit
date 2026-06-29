@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · Économie du tour</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+<style>
+/* B · barres par tour (in/out empilées) */
+.bars{display:flex;align-items:flex-end;gap:7px;height:150px;padding-top:8px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bars .col .stk{width:100%;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden}
+.bars .col .stk .in{background:var(--acc)}.bars .col .stk .out{background:var(--acc-l)}
+.bars .col.hot .stk .in{background:var(--red)}.bars .col.hot .stk .out{background:#f3888c}
+.bars .col .lb{font-family:var(--mono);font-size:8.5px;color:var(--ink3)}
+/* C · treemap */
+.tmap{display:flex;flex-wrap:wrap;gap:5px;height:200px}
+.tmap .t{border-radius:9px;padding:10px 12px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.tmap .t .nm{font-family:var(--display);font-weight:600;font-size:13px}
+.tmap .t .v{font-family:var(--mono);font-size:11px;opacity:.85}
+.tmap .t small{font-size:10px;opacity:.8}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Donnée 06 · économie du tour</div>
+  <h1 class="title">Repérer les tours chers</h1>
+  <p class="sub">Chaque tour porte son <span style="font-family:var(--mono);font-size:13px">usage</span> (tokens entrée/sortie) et sa <span style="font-family:var(--mono);font-size:13px">durationMs</span>. Trois façons de visualiser le coût — tendance, détail par tour, ou répartition par agent.</p>
+
+  <nav class="csub">
+    <a href="index.html">Sommaire</a>
+    <a href="arbre.html">Arbre &amp; délégations</a>
+    <a href="attribution.html">Attribution</a>
+    <a href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a href="memoire.html">Mémoire</a>
+    <a class="on" href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">9 tours · 74,2k tokens · 89 s</span>
+  </nav>
+
+  <div class="planche">
+
+    <!-- A · sparkline -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">A</div><div class="vname">Sparkline<small>tendance en un trait</small></div><span class="reco">reco HUD</span></div>
+      <div class="canvas tall">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+          <span style="font-family:var(--display);font-weight:600;font-size:22px">74,2k</span>
+          <span style="font-size:12px;color:var(--ink3)">tokens cumulés · pic T4</span>
+        </div>
+        <svg viewBox="0 0 320 110" width="100%" style="display:block">
+          <defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5b5bd6" stop-opacity=".28"/><stop offset="1" stop-color="#5b5bd6" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="M5 85 L40 70 L75 78 L110 28 L145 50 L180 95 L215 80 L250 66 L285 58 L315 60 L315 105 L5 105 Z" fill="url(#ar)"/>
+          <path d="M5 85 L40 70 L75 78 L110 28 L145 50 L180 95 L215 80 L250 66 L285 58 L315 60" fill="none" stroke="#5b5bd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="110" cy="28" r="4" fill="#e5484d"/>
+          <circle cx="180" cy="95" r="4" fill="#fff" stroke="#9aa0ad" stroke-width="2"/>
+          <g font-family="ui-monospace,monospace" font-size="8" fill="#c5c9d2"><text x="100" y="20">T4</text><text x="170" y="108">T7 ⟂</text></g>
+        </svg>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Micro-graphe dans le HUD ou sur la carte projet : « la session coûte-t-elle cher ? ».</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Minuscule, montre la tendance et le pic d'un coup. Zéro légende requise.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Pas de valeurs exactes ni de qui ; purement indicatif.</span></div>
+      </div>
+    </div>
+
+    <!-- B · barres par tour -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">B</div><div class="vname">Barres par tour<small>entrée / sortie empilées</small></div><span class="reco alt">détail</span></div>
+      <div class="canvas tall">
+        <div class="bars">
+          <div class="col"><div class="stk"><div class="in" style="height:32px"></div><div class="out" style="height:10px"></div></div><div class="lb">T1</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:44px"></div><div class="out" style="height:14px"></div></div><div class="lb">T2</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:56px"></div><div class="out" style="height:16px"></div></div><div class="lb">T3</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:92px"></div><div class="out" style="height:26px"></div></div><div class="lb">T4</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:50px"></div><div class="out" style="height:20px"></div></div><div class="lb">T5</div></div>
+          <div class="col hot"><div class="stk"><div class="in" style="height:20px"></div><div class="out" style="height:4px"></div></div><div class="lb">T7</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:62px"></div><div class="out" style="height:10px"></div></div><div class="lb">T8</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:76px"></div><div class="out" style="height:16px"></div></div><div class="lb">T9</div></div>
+        </div>
+        <div class="legend2" style="margin-top:14px">
+          <span><i style="background:var(--acc)"></i> entrée</span>
+          <span><i style="background:var(--acc-l)"></i> sortie</span>
+          <span><i style="background:var(--red)"></i> interrompu</span>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Panneau « coût de session » : compare les tours, distingue entrée et sortie.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Précis et comparable ; le tour interrompu (rouge, court) saute aux yeux.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Ne dit pas quel agent a produit le tour cher.</span></div>
+      </div>
+    </div>
+
+    <!-- C · treemap -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">C</div><div class="vname">Treemap de coût<small>surface = tokens, par agent</small></div><span class="reco alt">répartition</span></div>
+      <div class="canvas tall">
+        <div class="tmap">
+          <div class="t" style="width:58%;background:#3b82f6"><span class="nm">Aragorn</span><span class="v">31,4k · 42%<br><small>coordination</small></span></div>
+          <div class="t" style="width:39%;background:#30a46c"><span class="nm">Gimli</span><span class="v">22,1k · 30%<br><small>exécution</small></span></div>
+          <div class="t" style="width:54%;background:#8e4ec6"><span class="nm">Gandalf</span><span class="v">15,7k · 21%</span></div>
+          <div class="t" style="width:43%;background:#b8770a"><span class="nm">Legolas</span><span class="v">5,0k · 7%</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Bilan « qui consomme quoi » : croise économie ET attribution multi-agent.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Une seule image relie coût et auteur ; idéal pour arbitrer un budget.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Pas de temporalité ; les petites parts deviennent illisibles.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

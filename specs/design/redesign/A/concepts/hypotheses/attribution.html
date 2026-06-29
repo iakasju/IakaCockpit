@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · Attribution multi-agent</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+<style>
+/* A · ruban de provenance */
+.ribbon{display:flex;gap:13px;align-items:stretch}
+.ribbon .strip{width:10px;border-radius:6px;flex:none;background:linear-gradient(180deg,
+  var(--ink) 0 12%, var(--blue) 12% 34%, var(--purple) 34% 56%, var(--blue) 56% 64%, var(--green) 64% 100%)}
+.ribbon .lines{flex:1;display:flex;flex-direction:column;gap:9px;font-size:12px;justify-content:space-between;padding:2px 0}
+.ribbon .lines .li{display:flex;align-items:center;gap:8px;color:var(--ink2)}
+.ribbon .lines .li b{font-family:var(--display);font-weight:600;color:var(--ink);font-size:12px}
+.ribbon .lines .li .tk{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+/* B · part de voix */
+.share{height:38px;border-radius:11px;overflow:hidden;display:flex;margin-bottom:16px}
+.share div{height:100%;display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:600;font-size:12px}
+.sharekey{display:flex;flex-direction:column;gap:9px}
+.sharekey .r{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.sharekey .r .sw{width:12px;height:12px;border-radius:4px}
+.sharekey .r .nm{font-family:var(--display);font-weight:600}
+.sharekey .r .pc{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink2)}
+/* C · gouttière d'avatars */
+.gutter{display:flex;flex-direction:column;gap:0}
+.gutter .ge{display:flex;align-items:center;gap:11px;padding:7px 0;position:relative}
+.gutter .ge .pin{width:26px;display:grid;place-items:center;flex:none}
+.gutter .ge .pin img{width:24px;height:24px;border-radius:7px}
+.gutter .ge .pin .bar{position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--line-soft);z-index:-1}
+.gutter .ge .tx{font-size:12.5px;color:var(--ink2)}
+.gutter .ge .tx b{font-family:var(--display);font-weight:600;color:var(--ink);font-size:12.5px}
+.gutter .ge .tx small{display:block;font-family:var(--mono);font-size:10px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Donnée 02 · attribution multi-agent</div>
+  <h1 class="title">Montrer qui tient la plume</h1>
+  <p class="sub">Le champ <span style="font-family:var(--mono);font-size:13px">attributionAgent</span> dit, ligne à ligne, quel agent a produit le contenu. Trois manières de rendre cette provenance <b>visible sans surcharger</b> le fil de conversation.</p>
+
+  <nav class="csub">
+    <a href="index.html">Sommaire</a>
+    <a href="arbre.html">Arbre &amp; délégations</a>
+    <a class="on" href="attribution.html">Attribution</a>
+    <a href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a href="memoire.html">Mémoire</a>
+    <a href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">38 nœuds · 4 agents</span>
+  </nav>
+
+  <div class="legend2">
+    <span><i style="background:var(--blue)"></i> Aragorn</span>
+    <span><i style="background:var(--purple)"></i> Gandalf</span>
+    <span><i style="background:var(--green)"></i> Gimli</span>
+    <span><i style="background:#b8770a"></i> Legolas</span>
+    <span><i style="background:var(--ink)"></i> Stéphane</span>
+  </div>
+
+  <div class="planche">
+
+    <!-- A · ruban -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">A</div><div class="vname">Ruban de provenance<small>bande couleur le long du fil</small></div><span class="reco">reco fil de chat</span></div>
+      <div class="canvas tall">
+        <div class="ribbon">
+          <div class="strip"></div>
+          <div class="lines">
+            <div class="li"><span class="ch2 k-user">user</span><b>Stéphane</b><span class="tk">10:25</span></div>
+            <div class="li"><span class="ch2 k-arag">arag</span><b>Aragorn</b><span class="tk">10:26</span></div>
+            <div class="li"><span class="ch2 k-gand">gand</span><b>Gandalf</b><span class="tk">10:31</span></div>
+            <div class="li"><span class="ch2 k-arag">arag</span><b>Aragorn</b><span class="tk">10:33</span></div>
+            <div class="li"><span class="ch2 k-gim">gim</span><b>Gimli</b><span class="tk">10:34</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Liseré vertical à gauche des bulles : la couleur suit l'auteur en continu.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Quasi-zéro coût visuel, intégré au chat existant. On « sent » les relais.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Au-delà de 5-6 agents, les teintes deviennent dures à distinguer.</span></div>
+      </div>
+    </div>
+
+    <!-- B · part de voix -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">B</div><div class="vname">Part de voix<small>répartition de la session</small></div><span class="reco alt">synthèse</span></div>
+      <div class="canvas tall">
+        <div class="share">
+          <div style="width:47%;background:#3b82f6">47%</div>
+          <div style="width:29%;background:#30a46c">29%</div>
+          <div style="width:18%;background:#8e4ec6">18%</div>
+          <div style="width:6%;background:#b8770a"></div>
+        </div>
+        <div class="sharekey">
+          <div class="r"><span class="sw" style="background:#3b82f6"></span><span class="nm">Aragorn</span><span style="color:var(--ink3);font-size:11px">coordinateur</span><span class="pc">18 nœuds · 47%</span></div>
+          <div class="r"><span class="sw" style="background:#30a46c"></span><span class="nm">Gimli</span><span style="color:var(--ink3);font-size:11px">exécution</span><span class="pc">11 nœuds · 29%</span></div>
+          <div class="r"><span class="sw" style="background:#8e4ec6"></span><span class="nm">Gandalf</span><span style="color:var(--ink3);font-size:11px">sidechain</span><span class="pc">7 nœuds · 18%</span></div>
+          <div class="r"><span class="sw" style="background:#b8770a"></span><span class="nm">Legolas</span><span style="color:var(--ink3);font-size:11px">gate</span><span class="pc">2 nœuds · 6%</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Carte « bilan de session » : qui a le plus contribué, en un coup d'œil.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Parfait pour un récap ou le Journal ; agrège tout l'arbre.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Perd la chronologie : ne dit pas QUAND chacun est intervenu.</span></div>
+      </div>
+    </div>
+
+    <!-- C · gouttière -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">C</div><div class="vname">Gouttière d'avatars<small>portrait en marge du flux</small></div><span class="reco alt">incarné</span></div>
+      <div class="canvas tall">
+        <div class="gutter">
+          <div class="ge"><span class="pin"><span class="bar"></span><img src="../../../assets/aragorn.png"></span><span class="tx"><b>Aragorn</b><small>cadre + délègue l'audit</small></span></div>
+          <div class="ge"><span class="pin"><span class="bar"></span><img src="../../../assets/gandalf.png"></span><span class="tx"><b>Gandalf</b><small>sidechain · audit des écrans</small></span></div>
+          <div class="ge"><span class="pin"><span class="bar"></span><img src="../../../assets/aragorn.png"></span><span class="tx"><b>Aragorn</b><small>restitue le verbatim</small></span></div>
+          <div class="ge"><span class="pin"><span class="bar"></span><img src="../../../assets/gimli.png"></span><span class="tx"><b>Gimli</b><small>exécution · 6 gestes Edit</small></span></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Marge gauche du flux : l'avatar regroupe les lignes consécutives d'un même auteur.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Identité forte (la team iakaframe est incarnée), très lisible.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Mange de la largeur ; redondant si la couleur fait déjà le travail.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

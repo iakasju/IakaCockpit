@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · iakacockpit — direction A + visualisations</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:10px}
+.nav{background:var(--card);border-radius:20px;padding:24px;text-decoration:none;color:inherit;display:flex;flex-direction:column;
+  box-shadow:0 1px 0 var(--line-soft),0 18px 40px -32px rgba(20,22,28,.3);transition:.16s;position:relative}
+.nav:hover{transform:translateY(-3px)}
+.nav .ico{width:46px;height:46px;border-radius:14px;background:var(--deep);display:grid;place-items:center;font-size:22px;margin-bottom:14px}
+.nav h3{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em}
+.nav .p{font-size:13.5px;color:var(--ink2);line-height:1.55;margin:7px 0 14px;flex:1}
+.nav .vz{display:flex;flex-wrap:wrap;gap:7px}
+.nav .vz span{font-size:11px;font-weight:500;padding:5px 11px;border-radius:8px;background:rgba(var(--acc-rgb),.1);color:var(--acc)}
+.nav .go{position:absolute;top:24px;right:24px;color:var(--ink3);font-size:18px;transition:.16s}
+.nav:hover .go{color:var(--acc);transform:translateX(3px)}
+.nav.hero{grid-column:span 2;background:linear-gradient(120deg,#fbfbfc,#f3f3fb)}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">iakacockpit · l'atelier — direction A</div>
+  <h1 class="title">L'atelier — les 5 vues, visualisations intégrées</h1>
+  <p class="sub">Mock statique de l'atelier entier dans la charte <b>studio-clair direction A</b> (rail iakaframe, Space Grotesk + Inter bundlées). Le geste central : prendre un projet sur l'<b>étagère</b>, le poser sur la <b>table</b>, le ranger. Les visualisations issues du <b>transcript JSONL</b> retenues lors des hypothèses sont ici posées à leur place de production.</p>
+
+  <div class="grid">
+    <a class="nav hero" href="travail.html">
+      <span class="go">→</span>
+      <div class="ico"></div>
+      <h3>Table — la session riche</h3>
+      <div class="p">La vue qui agrège le plus : fil de conversation avec <b>gouttière d'avatars</b>, <b>carte de session swimlanes + flèches user ↔ agent</b>, <b>plan vivant</b>, <b>heatmap d'effets fichiers</b> et HUD <b>jauge mémoire + économie multi-ligne par agent</b>.</div>
+      <div class="vz"><span>attribution C</span><span>arbre B enrichi</span><span>plan A</span><span>effets B</span><span>mémoire A</span><span>économie multi-ligne</span></div>
+    </a>
+    <a class="nav" href="portefeuille.html">
+      <span class="go">→</span>
+      <div class="ico"></div>
+      <h3>Étagère</h3>
+      <div class="p">La <b>treemap de coût</b> en KPI d'étagère — coût agrégé par projet et par agent — au-dessus des projets rangés (posés sur la table + atelier scanné).</div>
+      <div class="vz"><span>treemap de coût (économie C)</span><span>KPI d'étagère</span></div>
+    </a>
+    <a class="nav" href="journal.html">
+      <span class="go">→</span>
+      <div class="ico"></div>
+      <h3>Journal</h3>
+      <div class="p">Main courante 3 canaux (adresse / geste / pensée) en timeline, doublée d'un <b>bilan de session « part de voix »</b> par agent.</div>
+      <div class="vz"><span>timeline 3 canaux</span><span>part de voix (attribution B)</span></div>
+    </a>
+    <a class="nav" href="equipes.html">
+      <span class="go">→</span>
+      <div class="ico"></div>
+      <h3>Équipes</h3>
+      <div class="p">Casting de la team : liste d'agents incarnés + éditeur (runner, modèle, skills, rôle). Cohérence de charte.</div>
+      <div class="vz"><span>casting + éditeur</span></div>
+    </a>
+    <a class="nav" href="reglages.html">
+      <span class="go">→</span>
+      <div class="ico"></div>
+      <h3>Réglages</h3>
+      <div class="p">Apparence, police, charte, IA et opérationnel. Sous-navigation à deux niveaux, segments studio-clair.</div>
+      <div class="vz"><span>préférences persistées</span></div>
+    </a>
+  </div>
+</div></div>
+</body></html>

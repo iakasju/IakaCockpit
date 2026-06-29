@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothèses · Mémoire &amp; compaction</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="hypotheses.css">
+<style>
+/* A · jauge linéaire */
+.gauge{margin-top:10px}
+.gauge .num{font-family:var(--display);font-weight:600;font-size:24px;margin-bottom:12px}
+.gauge .num small{font-size:13px;color:var(--ink3);font-weight:400}
+.gauge .track{height:24px;border-radius:8px;background:var(--deep);overflow:hidden;display:flex;position:relative}
+.gauge .track .s{height:100%}
+.gauge .track .bound{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--red)}
+.gauge .track .bound::after{content:"⟐";position:absolute;top:-15px;left:-5px;font-size:11px;color:var(--red)}
+.gauge .key{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--ink3)}
+.gauge .key span{display:inline-flex;align-items:center;gap:6px}.gauge .key i{width:11px;height:11px;border-radius:3px}
+/* B · anneau */
+.donutwrap{display:flex;align-items:center;gap:20px;justify-content:center}
+.donut{width:140px;height:140px;border-radius:50%;flex:none;
+  background:conic-gradient(rgba(20,22,28,.22) 0 9%, rgba(59,130,246,.6) 9% 31%, #30a46c 31% 71%, var(--deep) 71% 100%);
+  display:grid;place-items:center;position:relative}
+.donut::before{content:"";position:absolute;width:88px;height:88px;border-radius:50%;background:var(--card)}
+.donut .mid{position:relative;text-align:center}
+.donut .mid b{font-family:var(--display);font-weight:600;font-size:20px;display:block}
+.donut .mid small{font-size:10px;color:var(--ink3)}
+.donutkey{display:flex;flex-direction:column;gap:9px;font-size:12px}
+.donutkey .r{display:flex;align-items:center;gap:9px}.donutkey .r i{width:11px;height:11px;border-radius:3px}
+.donutkey .r .pc{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+/* C · frise de tours */
+.frise{display:flex;align-items:flex-end;gap:5px;height:130px;padding-top:10px;position:relative}
+.frise .tcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.frise .tcol .b{width:100%;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--acc-l),var(--acc))}
+.frise .tcol .lb{font-family:var(--mono);font-size:8.5px;color:var(--ink3)}
+.frise .boundline{position:absolute;top:6px;bottom:18px;border-left:2px dashed var(--red)}
+.frise .boundline span{position:absolute;top:-2px;left:5px;font-family:var(--mono);font-size:8.5px;color:var(--red);white-space:nowrap}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Hypothèses">🧪<small>Hypo</small></a>
+  <div class="sep"></div>
+  <a href="../../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Donnée 05 · mémoire &amp; compaction</div>
+  <h1 class="title">Rendre l'horizon de contexte lisible</h1>
+  <p class="sub">Le contexte se remplit ; au-delà de l'horizon, il <b>se compacte</b> (<span style="font-family:var(--mono);font-size:13px">compact_boundary</span>, <span style="font-family:var(--mono);font-size:13px">isCompactSummary</span>). Trois façons de montrer l'occupation et le moment où la mémoire a basculé.</p>
+
+  <nav class="csub">
+    <a href="index.html">Sommaire</a>
+    <a href="arbre.html">Arbre &amp; délégations</a>
+    <a href="attribution.html">Attribution</a>
+    <a href="plan.html">Plan vivant</a>
+    <a href="effets.html">Effets fichiers</a>
+    <a class="on" href="memoire.html">Mémoire</a>
+    <a href="economie.html">Économie</a>
+    <span class="grow"></span>
+    <span class="stat">142k / 200k tokens · 1 compaction</span>
+  </nav>
+
+  <div class="planche">
+
+    <!-- A · jauge linéaire -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">A</div><div class="vname">Jauge linéaire<small>une barre, une frontière</small></div><span class="reco">reco bandeau</span></div>
+      <div class="canvas tall">
+        <div class="gauge">
+          <div class="num">142,3k <small>/ 200k · 71%</small></div>
+          <div class="track">
+            <div class="s" style="width:9%;background:rgba(20,22,28,.2)"></div>
+            <div class="s" style="width:22%;background:rgba(59,130,246,.55)"></div>
+            <div class="s" style="width:40%;background:linear-gradient(90deg,#30a46c,#5b5bd6)"></div>
+            <div class="bound" style="left:31%"></div>
+          </div>
+          <div class="key">
+            <span><i style="background:rgba(20,22,28,.2)"></i> système 18k</span>
+            <span><i style="background:rgba(59,130,246,.55)"></i> résumé 44k</span>
+            <span><i style="background:#30a46c"></i> vivant 80k</span>
+            <span><i style="background:var(--deep)"></i> libre 58k</span>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Bandeau fin en haut de la conversation, toujours visible.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Compact, montre la composition ET la frontière de compaction (⟐).</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Statique : ne montre pas comment l'occupation a évolué dans le temps.</span></div>
+      </div>
+    </div>
+
+    <!-- B · anneau -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">B</div><div class="vname">Anneau d'occupation<small>part du budget consommée</small></div><span class="reco alt">pastille</span></div>
+      <div class="canvas tall">
+        <div class="donutwrap">
+          <div class="donut"><div class="mid"><b>71%</b><small>du budget</small></div></div>
+          <div class="donutkey">
+            <div class="r"><i style="background:rgba(20,22,28,.22)"></i> Système <span class="pc">9%</span></div>
+            <div class="r"><i style="background:rgba(59,130,246,.6)"></i> Résumé <span class="pc">22%</span></div>
+            <div class="r"><i style="background:#30a46c"></i> Vivant <span class="pc">40%</span></div>
+            <div class="r"><i style="background:var(--deep)"></i> Libre <span class="pc">29%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Indicateur d'angle (HUD) ou pastille sur la carte projet du Portfolio.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Forme « jauge de réservoir » intuitive ; tient dans très peu de place.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Comparer des angles est moins précis qu'une barre ; pas de temporalité.</span></div>
+      </div>
+    </div>
+
+    <!-- C · frise de tours -->
+    <div class="frame">
+      <div class="fhead"><div class="vlabel">C</div><div class="vname">Frise de tours<small>croissance + bascule</small></div><span class="reco alt">temporel</span></div>
+      <div class="canvas tall">
+        <div class="frise">
+          <div class="boundline" style="left:48%"><span>compaction T6</span></div>
+          <div class="tcol"><div class="b" style="height:18%"></div><div class="lb">T1</div></div>
+          <div class="tcol"><div class="b" style="height:30%"></div><div class="lb">T2</div></div>
+          <div class="tcol"><div class="b" style="height:46%"></div><div class="lb">T3</div></div>
+          <div class="tcol"><div class="b" style="height:64%"></div><div class="lb">T4</div></div>
+          <div class="tcol"><div class="b" style="height:88%"></div><div class="lb">T5</div></div>
+          <div class="tcol"><div class="b" style="height:34%;background:linear-gradient(180deg,#9bb8f5,#3b82f6)"></div><div class="lb">T6</div></div>
+          <div class="tcol"><div class="b" style="height:50%"></div><div class="lb">T7</div></div>
+          <div class="tcol"><div class="b" style="height:62%"></div><div class="lb">T8</div></div>
+          <div class="tcol"><div class="b" style="height:71%"></div><div class="lb">T9</div></div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="nl"><span class="tag use">usage</span><span class="tx">Vue « santé de session » : la barre chute à T6 quand la compaction libère du contexte.</span></div>
+        <div class="nl"><span class="tag plus">force</span><span class="tx">Raconte la dynamique : on voit le remplissage puis le reset de mémoire.</span></div>
+        <div class="nl"><span class="tag minus">limite</span><span class="tx">Ne décompose pas système/résumé/vivant ; plus de place qu'une jauge.</span></div>
+      </div>
+    </div>
+
+  </div>
+</div></div>
+</body></html>

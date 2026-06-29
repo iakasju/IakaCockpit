@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · Table · Shell</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+body{grid-template-columns:76px 1fr}
+.work{display:grid;grid-template-columns:228px minmax(0,1fr) 350px;height:100vh;overflow:hidden}
+
+/* ---- colonne roster (gauche) ---- */
+.roster{padding:22px 16px;display:flex;flex-direction:column;gap:3px;overflow:auto;border-right:1px solid var(--line-soft)}
+.roster h2{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.01em;margin:6px 0 1px}
+.roster .s{font-size:12px;color:var(--ink2);margin-bottom:14px}
+.agent{display:flex;flex-direction:column;gap:8px;padding:9px 10px;border-radius:13px;cursor:pointer;transition:.12s}
+.agent:hover{background:var(--card)} .agent.on{background:var(--card);box-shadow:0 2px 10px rgba(20,22,28,.05)}
+.agent .arow{display:flex;align-items:center;gap:11px}
+.agent img{width:36px;height:36px;border-radius:10px;object-fit:cover;background:var(--deep)}
+.agent .nm{font-family:var(--display);font-weight:600;font-size:13.5px}.agent .rl{font-size:10.5px;color:var(--ink3)}
+.agent .st{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink3);text-align:right}
+.agent .st .dot{margin-bottom:3px}
+.prog{display:flex;align-items:center;gap:8px;padding-left:47px}
+.prog .track{flex:1;height:5px;border-radius:99px;background:var(--deep);overflow:hidden}
+.prog .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.prog .eta{font-family:var(--mono);font-size:9px;color:var(--ink3);white-space:nowrap}
+.prog.idle .track i{background:var(--line)}
+.prog.done .track i{background:var(--green);opacity:.5}
+.miniturn{margin-top:auto;padding-top:16px}
+.term{background:#16181d;color:#cbd2dc;font-family:var(--mono);font-size:11px;line-height:1.55;padding:11px 13px;border-radius:12px;overflow:auto}
+.term .pr{color:var(--cyan)}.term .ok{color:#7ee3b0}
+
+/* ---- colonne centre : SHELL plein cadre ---- */
+.conv{display:flex;flex-direction:column;background:var(--card);overflow:hidden;border-right:1px solid var(--line-soft)}
+.topbar{display:flex;align-items:center;gap:11px;padding:15px 22px;border-bottom:1px solid var(--line-soft)}
+.topbar .pj{font-family:var(--display);font-weight:600;font-size:15px}
+.spacer{flex:1}.ib{width:32px;height:32px;border-radius:10px;border:0;background:var(--deep);color:var(--ink2);cursor:pointer;font-size:14px}
+.viewtoggle{display:flex;background:var(--deep);border-radius:11px;padding:3px;gap:2px}
+.viewtoggle a{font-family:var(--display);font-weight:600;font-size:12.5px;padding:6px 13px;border-radius:8px;color:var(--ink2);text-decoration:none;display:flex;align-items:center;gap:6px;transition:.12s}
+.viewtoggle a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,22,28,.12)}
+.viewtoggle a:not(.on):hover{color:var(--ink)}
+
+/* en mode Shell, le terminal occupe TOUTE la hauteur centrale, jusqu'en bas,
+   recouvrant l'espace de l'ancienne barre d'input (plus de composer séparé) */
+.shellwrap{flex:1;padding:16px 18px 6px;display:flex;min-height:0}
+.bigterm{flex:1;background:#16181d;border-radius:16px;padding:18px 22px;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:#cbd2dc;overflow:auto}
+.bigterm .shellprompt{margin-top:12px}
+.bigterm .pr{color:var(--cyan)} .bigterm .ok{color:#7ee3b0} .bigterm .mut{color:#6b7280}
+.bigterm .acc{color:#a9a6ff} .bigterm .warn{color:#f5c277} .bigterm .vio{color:#c79be8}
+.bigterm .box{border:1px solid #2b2f38;border-radius:9px;padding:9px 12px;margin:10px 0}
+.bigterm .tool{color:#7ee3b0}
+.bigterm .cursor{display:inline-block;width:8px;height:15px;background:#cbd2dc;vertical-align:-2px;animation:bl 1s step-end infinite}
+@keyframes bl{50%{opacity:0}}
+.bigterm .hint{display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid #2b2f38;color:#6b7280;font-size:11px}
+.bigterm .hint b{color:#9aa0ad}
+
+.composer{padding:13px 22px;border-top:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
+.composer .inputwrap{flex:1;position:relative;display:flex;align-items:center}
+.composer input{flex:1;border:0;background:var(--deep);border-radius:13px;padding:12px 15px 12px 38px;font-family:var(--text);font-size:14px;color:var(--ink)}
+.composer .inputwrap::before{content:"❯";position:absolute;left:15px;font-family:var(--mono);color:var(--cyan);font-size:13px}
+.send{border:0;background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff;font-family:var(--display);font-weight:600;padding:0 18px;height:44px;border-radius:13px;cursor:pointer}
+.shellnote{font-size:10.5px;color:var(--ink3);text-align:center;padding:0 22px 9px}
+
+/* ---- colonne HUD (droite) ---- */
+.hud{overflow:auto;padding:20px 18px;display:flex;flex-direction:column;gap:16px;background:var(--bg)}
+.hud .vcard{padding:16px 17px}
+.econlegend{display:flex;gap:13px;flex-wrap:wrap;font-size:10.5px;color:var(--ink3);margin-top:10px}
+.econlegend span{display:inline-flex;align-items:center;gap:6px}.econlegend i{width:13px;height:3px;border-radius:2px}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a class="on" href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="work">
+
+  <!-- ROSTER (identique à la vue Chat) -->
+  <aside class="roster">
+    <div class="eb">Conversation active</div>
+    <h2>iaka-demo</h2><div class="s">Team iakaframe · coordinateur Aragorn</div>
+    <div class="agent on">
+      <div class="arow"><img src="../../../assets/aragorn.png"><div><div class="nm">Aragorn</div><div class="rl">Coordinateur · projet</div></div><div class="st"><span class="dot g"></span><br>travaille</div></div>
+      <div class="prog"><div class="track"><i style="width:55%;background:linear-gradient(90deg,var(--blue),#6aa6ff)"></i></div><span class="eta">coordination · ~5 min</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/gandalf.png"><div><div class="nm">Gandalf</div><div class="rl">Analyse · specs</div></div><div class="st"><span class="dot i"></span><br>sidechain clos</div></div>
+      <div class="prog done"><div class="track"><i style="width:100%"></i></div><span class="eta">audit · terminé</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/gimli.png"><div><div class="nm">Gimli</div><div class="rl">Exécution · code</div></div><div class="st"><span class="dot o"></span><br>exécute</div></div>
+      <div class="prog"><div class="track"><i style="width:62%;background:linear-gradient(90deg,var(--green),#5fd39c)"></i></div><span class="eta">implémentation · ~8 min</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/legolas.png"><div><div class="nm">Legolas</div><div class="rl">Qualité · gate</div></div><div class="st"><span class="dot i"></span><br>attend</div></div>
+      <div class="prog idle"><div class="track"><i style="width:0%"></i></div><span class="eta">en attente</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/frodo.png"><div><div class="nm">Frodo</div><div class="rl">Porteur · livraison</div></div><div class="st"><span class="dot i"></span><br>attend</div></div>
+      <div class="prog idle"><div class="track"><i style="width:0%"></i></div><span class="eta">en attente</span></div>
+    </div>
+    <div class="miniturn">
+      <div class="eb" style="margin-bottom:8px">Terminal-source</div>
+      <div class="term"><div><span class="pr">aragorn@iaka-demo</span> ~ % claude --resume</div><div><span class="ok">✓</span> transcript · 38 nœuds · 1 sidechain</div><div><span class="pr">›</span> _</div></div>
+    </div>
+  </aside>
+
+  <!-- CENTRE : le SHELL prend la place centrale (toggle → Shell) -->
+  <main class="conv">
+    <div class="topbar"><span class="pj">Conversation · iaka-demo</span><span class="chip live">● TUI native · réflexes intacts</span><span class="spacer"></span>
+      <a class="ib" href="portefeuille.html" title="Ranger le projet sur l'étagère" style="text-decoration:none;display:grid;place-items:center;margin-right:8px">⇤</a>
+      <div class="viewtoggle"><a href="travail.html">Chat</a><a class="on" href="travail-shell.html">▦ Shell</a></div>
+      <button class="ib" title="esc" style="margin-left:8px">⎋</button></div>
+
+    <div class="shellwrap">
+      <div class="bigterm">
+        <div><span class="pr">aragorn@iaka-demo</span> <span class="mut">~/work/iaka-demo</span> % claude --resume</div>
+        <div class="mut">↳ session reprise · transcript ~/.claude/projects/…/iaka-demo.jsonl</div>
+        <div style="margin-top:10px"><span class="acc">✻</span> <b>Aragorn</b> <span class="mut">· coordinateur · claude-code · sonnet</span></div>
+        <div class="box">
+          <div><span class="acc">●</span> Verbatim de Gandalf intégré. Je lance Gimli sur la passe 1</div>
+          <div>&nbsp;&nbsp;(navigation → rail sans-bord), puis Legolas en gate.</div>
+          <div style="margin-top:7px"><span class="vio">⏺ Agent</span><span class="mut">(subagent_type: gimli) — « passe 1 : rail sans-bord »</span></div>
+        </div>
+        <div style="margin-top:6px"><span class="vio">✻</span> <b>Gimli</b> <span class="mut">· exécution · sidechain</span></div>
+        <div class="box">
+          <div><span class="tool">⏺ Edit</span>(src/components/Rail.tsx)</div>
+          <div class="mut">&nbsp;&nbsp;⎿ 1 ajout, 14 suppressions — onglets-pilule retirés</div>
+          <div><span class="tool">⏺ Write</span>(src/assets/fonts.css)</div>
+          <div class="mut">&nbsp;&nbsp;⎿ Space Grotesk + Inter bundlées (offline)</div>
+          <div><span class="tool">⏺ Bash</span>(npm run dev)</div>
+          <div class="ok">&nbsp;&nbsp;⎿ VITE v6 ready · http://localhost:3020</div>
+        </div>
+        <div style="margin-top:8px"><span class="warn">●</span> <span class="mut">Gimli implémente la passe typo… <span class="warn">~8 min estimées</span></span></div>
+        <div class="shellprompt"><span class="pr">❯</span> <span class="mut">saisie directe dans le shell…</span> <span class="cursor"></span></div>
+        <div class="hint">
+          <span><b>shift+tab</b> cycle d'agents</span>
+          <span><b>esc</b> interrompre</span>
+          <span><b>ctrl+r</b> transcript</span>
+          <span><b>/</b> commandes</span>
+        </div>
+      </div>
+    </div>
+    <!-- En mode Shell : PAS de barre d'input séparée — le terminal-source RECOUVRE le champ « Envoyer ».
+         La saisie se fait directement dans le shell. Le chat reste monté, caché derrière. -->
+    <div class="shellnote">Le terminal-source occupe aussi l'espace de saisie — on tape <b>directement dans le shell</b>, plus de barre « Envoyer ». Le chat reste monté, caché derrière : la bascule ne tue jamais le terminal-source.</div>
+  </main>
+
+  <!-- HUD (identique à la vue Chat) -->
+  <aside class="hud">
+    <div class="vcard">
+      <div class="vh"><span class="vt">Plan vivant</span><span class="vs">3/5 · TaskUpdate live</span></div>
+      <div class="ck">
+        <div class="it done"><span class="bx">✓</span><span class="t">Cadrer les 5 écrans<small>fermé · 10:26 · Aragorn</small></span></div>
+        <div class="it done"><span class="bx">✓</span><span class="t">Auditer la hiérarchie<small>sidechain · Gandalf</small></span></div>
+        <div class="it done"><span class="bx">✓</span><span class="t">Rail → sans-bord<small>fermé · 10:35 · Gimli</small></span></div>
+        <div class="it run"><span class="bx">●</span><span class="t">Passe typo Space Grotesk + Inter<small>en cours · Gimli · ~8 min</small></span></div>
+        <div class="it wait"><span class="bx"></span><span class="t">Gate qualité<small>en attente · Legolas</small></span></div>
+      </div>
+    </div>
+
+    <div class="vcard">
+      <div class="vh"><span class="vt">Effets fichiers</span><span class="vs">9 tours · +218 / −96</span></div>
+      <div class="heat">
+        <div></div><div class="hh">T4</div><div class="hh">T5</div><div class="hh">T6</div><div class="hh">T7</div><div class="hh">T8</div><div class="hh">T9</div>
+        <div class="fn">App.tsx</div><div class="cell c2"></div><div class="cell c1"></div><div class="cell"></div><div class="cell cr"></div><div class="cell"></div><div class="cell c1"></div>
+        <div class="fn">Rail.tsx</div><div class="cell"></div><div class="cell c1"></div><div class="cell c3"></div><div class="cell"></div><div class="cell c2"></div><div class="cell c4"></div>
+        <div class="fn">index.css</div><div class="cell c1"></div><div class="cell c4"></div><div class="cell c2"></div><div class="cell"></div><div class="cell c1"></div><div class="cell"></div>
+        <div class="fn">fonts.css</div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell c3"></div><div class="cell"></div>
+        <div class="fn">Composer.tsx</div><div class="cell"></div><div class="cell"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell"></div><div class="cell c1"></div>
+      </div>
+      <div class="legend2" style="margin-top:12px;font-size:10.5px">
+        <span><i style="background:rgba(91,91,214,.18)"></i> léger</span>
+        <span><i style="background:rgba(91,91,214,.9)"></i> intense</span>
+        <span><i style="background:rgba(229,72,77,.5)"></i> tour interrompu</span>
+      </div>
+    </div>
+
+    <div class="vcard">
+      <div class="vh"><span class="vt">Économie · tokens par agent</span><span class="vs">9 tours · 74,2k</span></div>
+      <svg viewBox="0 0 360 150" width="100%" style="display:block">
+        <g stroke="#eef0f3" stroke-width="1">
+          <line x1="20" y1="130" x2="350" y2="130"/><line x1="20" y1="92" x2="350" y2="92"/><line x1="20" y1="54" x2="350" y2="54"/>
+        </g>
+        <polyline fill="none" stroke="#3b82f6" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="20,74 61,46 103,67 144,32 186,88 227,81 268,95 310,67 350,81"/>
+        <polyline fill="none" stroke="#8e4ec6" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="103,118 144,30 186,58 227,120 268,130"/>
+        <polyline fill="none" stroke="#30a46c" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="186,108 227,70 268,36 310,55 350,60"/>
+        <polyline fill="none" stroke="#b8770a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="310,112 350,98"/>
+        <circle cx="144" cy="32" r="3.5" fill="#3b82f6"/>
+        <circle cx="144" cy="30" r="3.5" fill="#8e4ec6"/>
+        <circle cx="268" cy="36" r="3.5" fill="#30a46c"/>
+        <g font-family="ui-monospace,monospace" font-size="8" fill="#c5c9d2">
+          <text x="16" y="146">T1</text><text x="140" y="146">T4</text><text x="264" y="146">T7</text><text x="344" y="146">T9</text>
+        </g>
+      </svg>
+      <div class="econlegend">
+        <span><i style="background:#3b82f6"></i> Aragorn 31,4k</span>
+        <span><i style="background:#30a46c"></i> Gimli 22,1k</span>
+        <span><i style="background:#8e4ec6"></i> Gandalf 15,7k</span>
+        <span><i style="background:#b8770a"></i> Legolas 5,0k</span>
+      </div>
+    </div>
+
+  </aside>
+</div>
+</body></html>

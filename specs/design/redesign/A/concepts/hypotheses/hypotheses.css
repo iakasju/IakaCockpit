@@ -1,0 +1,98 @@
+/* ============================================================
+   HYPOTHÈSES — exploration graphique : que FAIRE de la donnée
+   riche du transcript ? Planches comparatives (2-3 variantes
+   par donnée). Surcouche de ../../app.css (direction A).
+   Offline : polices bundlées (zéro CDN). Chemin = 6 niveaux.
+   ============================================================ */
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("../../../../../../src/assets/fonts/inter-latin-variable.woff2") format("woff2")}
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:300 700;font-display:swap;
+  src:url("../../../../../../src/assets/fonts/space-grotesk-latin-variable.woff2") format("woff2")}
+
+/* couleurs agents (cohérentes tout le mock) */
+:root{
+  --ag-arag:var(--blue); --ag-gand:var(--purple); --ag-gim:var(--green);
+  --ag-leg:#b8770a; --ag-fro:var(--cyan); --ag-user:var(--ink);
+}
+
+/* ---- sous-navigation hypothèses ---- */
+.csub{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:24px 0 6px}
+.csub a{font-size:13px;font-weight:500;font-family:var(--text);text-decoration:none;color:var(--ink2);
+  background:var(--deep);padding:8px 15px;border-radius:99px;transition:.12s}
+.csub a:hover{background:var(--card);box-shadow:0 1px 8px rgba(20,22,28,.06)}
+.csub a.on{background:var(--ink);color:var(--bg)}
+.csub .grow{flex:1}
+.csub .stat{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+
+/* ---- bandeau de cadrage « la question de design » ---- */
+.qbar{background:var(--card);border-radius:18px;padding:20px 24px;margin-top:12px;display:flex;gap:20px;align-items:center;
+  box-shadow:0 1px 0 var(--line-soft),0 18px 40px -34px rgba(20,22,28,.3)}
+.qbar .icon{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc-l));display:grid;place-items:center;font-size:22px;flex:none}
+.qbar .qt{font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:-.01em;margin-bottom:3px}
+.qbar .qd{font-size:13.5px;color:var(--ink2);line-height:1.5;max-width:80ch}
+.qbar .qd code{font-family:var(--mono);font-size:12px;background:var(--deep);padding:1px 6px;border-radius:5px;color:var(--acc)}
+
+/* =========================================================
+   INDEX — grille des données riches à explorer
+   ========================================================= */
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:8px}
+.dcard{background:var(--card);border-radius:20px;padding:22px 24px;text-decoration:none;color:inherit;display:flex;flex-direction:column;
+  box-shadow:0 1px 0 var(--line-soft),0 18px 40px -32px rgba(20,22,28,.3);transition:.16s;position:relative;overflow:hidden}
+.dcard:hover{transform:translateY(-3px)}
+.dcard .dn{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.04em}
+.dcard h3{font-family:var(--display);font-weight:600;font-size:19px;margin:7px 0 6px;letter-spacing:-.01em}
+.dcard .src{font-family:var(--mono);font-size:11.5px;color:var(--acc);margin-bottom:12px}
+.dcard p{font-size:13.5px;color:var(--ink2);line-height:1.55;flex:1}
+.dcard .vlist{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.dcard .vp{font-size:11.5px;font-weight:500;font-family:var(--text);padding:5px 11px;border-radius:8px;background:var(--deep);color:var(--ink2);display:inline-flex;align-items:center;gap:7px}
+.dcard .vp b{font-family:var(--mono);font-size:10px;color:var(--acc)}
+.dcard .go{position:absolute;top:22px;right:22px;color:var(--ink3);font-size:18px;transition:.16s}
+.dcard:hover .go{color:var(--acc);transform:translateX(3px)}
+
+/* =========================================================
+   PLANCHE — frames de variantes côte à côte
+   ========================================================= */
+.planche{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:10px;align-items:start}
+.planche.duo{grid-template-columns:repeat(2,1fr)}
+.frame{background:var(--card);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 1px 0 var(--line-soft),0 20px 44px -34px rgba(20,22,28,.3)}
+.fhead{display:flex;align-items:center;gap:11px;padding:16px 18px 14px}
+.vlabel{width:28px;height:28px;border-radius:9px;background:var(--ink);color:var(--bg);display:grid;place-items:center;
+  font-family:var(--display);font-weight:700;font-size:14px;flex:none}
+.vname{font-family:var(--display);font-weight:600;font-size:14.5px;line-height:1.2}
+.vname small{display:block;font-family:var(--text);font-weight:400;font-size:11px;color:var(--ink3);margin-top:2px}
+.reco{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-family:var(--mono);
+  padding:4px 9px;border-radius:7px;background:rgba(48,164,108,.13);color:var(--green)}
+.reco.alt{background:var(--deep);color:var(--ink3)}
+
+/* zone de dessin de la variante */
+.canvas{padding:6px 18px 18px;min-height:230px;display:flex;flex-direction:column;justify-content:center}
+.canvas.tall{min-height:300px}
+
+/* note de designer (usage / force / limite) */
+.note{border-top:1px solid var(--line-soft);padding:14px 18px;background:var(--bg)}
+.note .nl{display:flex;gap:9px;font-size:12.5px;line-height:1.5;margin-bottom:7px}
+.note .nl:last-child{margin-bottom:0}
+.note .nl .tag{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:2px 6px;border-radius:5px;height:fit-content;flex:none;margin-top:1px}
+.note .nl .tag.use{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.note .nl .tag.plus{background:rgba(48,164,108,.13);color:var(--green)}
+.note .nl .tag.minus{background:rgba(245,166,35,.16);color:#b8770a}
+.note .nl .tx{color:var(--ink2)}
+
+/* ---- petits jetons réutilisables ---- */
+.av{width:22px;height:22px;border-radius:6px;object-fit:cover;flex:none}
+.av.sm{width:18px;height:18px;border-radius:5px}
+.ch2{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-family:var(--mono);padding:2px 7px;border-radius:6px}
+.k-arag{background:rgba(59,130,246,.13);color:var(--blue)}
+.k-gand{background:rgba(142,78,198,.13);color:var(--purple)}
+.k-gim{background:rgba(48,164,108,.13);color:var(--green)}
+.k-leg{background:rgba(245,166,35,.16);color:#b8770a}
+.k-fro{background:rgba(18,165,148,.13);color:var(--cyan)}
+.k-user{background:var(--deep);color:var(--ink2)}
+
+.legend2{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin:16px 0 2px}
+.legend2 span{display:inline-flex;align-items:center;gap:7px}
+.legend2 i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+@media(max-width:1180px){.planche{grid-template-columns:1fr}.planche.duo{grid-template-columns:1fr}.dgrid{grid-template-columns:1fr}}

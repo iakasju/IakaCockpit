@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · Réglages</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+body{grid-template-columns:76px 1fr}
+.set{display:grid;grid-template-columns:240px 1fr;height:100vh;overflow:hidden}
+.subnav{padding:28px 16px;overflow:auto;border-right:1px solid var(--line-soft)}
+.subnav .grp{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 12px 8px}
+.subnav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;text-decoration:none;color:var(--ink2);font-size:14px;transition:.12s;cursor:pointer}
+.subnav a:hover{background:var(--card)} .subnav a.on{background:rgba(var(--acc-rgb),.1);color:var(--acc);font-weight:600}
+.scontent{overflow:auto;padding:36px 44px}
+.scontent h1{font-family:var(--display);font-weight:600;font-size:28px;letter-spacing:-.02em}
+.scontent .lead{font-size:14px;color:var(--ink2);margin:6px 0 30px;max-width:60ch}
+.sec{margin-bottom:30px}
+.sec .st{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:18px;margin-bottom:16px}
+.opt{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--line-soft);max-width:760px}
+.opt:last-child{border-bottom:0}
+.opt .k{font-weight:500;font-size:14.5px}.opt .d{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.seg{display:inline-flex;background:var(--deep);border-radius:11px;padding:3px}
+.seg span{padding:7px 14px;border-radius:9px;font-size:13px;color:var(--ink2);cursor:pointer}
+.seg span.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.swatches{display:flex;gap:10px}
+.sw{width:54px;height:38px;border-radius:10px;cursor:pointer;border:2px solid transparent}
+.sw.on{border-color:var(--acc)}
+.range{width:200px;height:5px;background:var(--deep);border-radius:99px;position:relative}
+.range::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--acc)}
+.input{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-family:var(--mono);font-size:13px;color:var(--ink);min-width:280px}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a class="on" href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="set">
+  <aside class="subnav">
+    <div class="grp">Apparence</div>
+    <a class="on">Interface</a>
+    <a>Police</a>
+    <a>Charte</a>
+    <div class="grp">Opérationnel</div>
+    <a>Cockpit</a>
+    <a>IA · LiteLLM</a>
+    <a>Sécurité d'exécution</a>
+    <a>Main courante</a>
+    <a>Canal adresse · n8n</a>
+    <a>Services iakabox</a>
+  </aside>
+  <div class="scontent">
+    <h1>Interface</h1>
+    <p class="lead">Apparence, forme et police. Ces préférences sont persistées (elles survivent au redémarrage).</p>
+
+    <div class="sec">
+      <div class="st">Disposition</div>
+      <div class="opt"><div><div class="k">Position de la navigation</div><div class="d">rail à gauche / haut / droite</div></div><div class="seg"><span class="on">Rail gauche</span><span>Haut</span><span>Droite</span></div></div>
+      <div class="opt"><div><div class="k">Densité</div><div class="d">espacement des vues</div></div><div class="seg"><span>Compact</span><span class="on">Confort</span><span>Spacieux</span></div></div>
+      <div class="opt"><div><div class="k">Forme</div><div class="d">coins arrondis ou nets</div></div><div class="seg"><span class="on">Arrondi</span><span>Net</span></div></div>
+      <div class="opt"><div><div class="k">Langue</div><div class="d">interface FR / EN</div></div><div class="seg"><span class="on">Français</span><span>English</span></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="st">Police</div>
+      <div class="opt"><div><div class="k">Display</div><div class="d">titres &amp; chiffres</div></div><div class="seg"><span class="on">Space Grotesk</span><span>Système</span></div></div>
+      <div class="opt"><div><div class="k">Texte</div><div class="d">corps de lecture</div></div><div class="seg"><span class="on">Inter</span><span>Système</span><span>Serif</span></div></div>
+      <div class="opt"><div><div class="k">Échelle</div><div class="d">100 %</div></div><div class="range"></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="st">Charte</div>
+      <div class="opt"><div><div class="k">Thème actif</div><div class="d">studio-clair (10 chartes au catalogue)</div></div>
+        <div class="swatches">
+          <div class="sw" style="background:linear-gradient(135deg,#16181d,#c9a227)"></div>
+          <div class="sw on" style="background:linear-gradient(135deg,#fbfbfc,#5b5bd6)"></div>
+          <div class="sw" style="background:linear-gradient(135deg,#f5efe6,#e0531d)"></div>
+          <div class="sw" style="background:linear-gradient(135deg,#efe7d6,#7a4b2b)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="st">IA · LiteLLM</div>
+      <div class="opt"><div><div class="k">Endpoint OpenAI-compat</div><div class="d">un seul endpoint câblé (LiteLLM / Ollama / cloud)</div></div><div class="input">http://localhost:11434/v1</div></div>
+      <div class="opt"><div><div class="k">Modèle par défaut</div><div class="d">source des paroles d'agent</div></div><div class="input">llama3.1:8b</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

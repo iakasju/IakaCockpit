@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · Table</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+body{grid-template-columns:76px 1fr}
+.work{display:grid;grid-template-columns:228px minmax(0,1fr) 350px;height:100vh;overflow:hidden}
+
+/* ---- colonne roster (gauche) ---- */
+.roster{padding:22px 16px;display:flex;flex-direction:column;gap:3px;overflow:auto;border-right:1px solid var(--line-soft)}
+.roster h2{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.01em;margin:6px 0 1px}
+.roster .s{font-size:12px;color:var(--ink2);margin-bottom:14px}
+.agent{display:flex;flex-direction:column;gap:8px;padding:9px 10px;border-radius:13px;cursor:pointer;transition:.12s}
+.agent:hover{background:var(--card)} .agent.on{background:var(--card);box-shadow:0 2px 10px rgba(20,22,28,.05)}
+.agent .arow{display:flex;align-items:center;gap:11px}
+.agent img{width:36px;height:36px;border-radius:10px;object-fit:cover;background:var(--deep)}
+.agent .nm{font-family:var(--display);font-weight:600;font-size:13.5px}.agent .rl{font-size:10.5px;color:var(--ink3)}
+.agent .st{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink3);text-align:right}
+.agent .st .dot{margin-bottom:3px}
+/* barre de progression / auto-éval du temps à faire */
+.prog{display:flex;align-items:center;gap:8px;padding-left:47px}
+.prog .track{flex:1;height:5px;border-radius:99px;background:var(--deep);overflow:hidden}
+.prog .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.prog .eta{font-family:var(--mono);font-size:9px;color:var(--ink3);white-space:nowrap}
+.prog.idle .track i{background:var(--line)}
+.prog.done .track i{background:var(--green);opacity:.5}
+.miniturn{margin-top:auto;padding-top:16px}
+.term{background:#16181d;color:#cbd2dc;font-family:var(--mono);font-size:11px;line-height:1.55;padding:11px 13px;border-radius:12px;overflow:auto}
+.term .pr{color:var(--cyan)}.term .ok{color:#7ee3b0}
+
+/* ---- colonne conversation (centre) ---- */
+.conv{display:flex;flex-direction:column;background:var(--card);overflow:hidden;border-right:1px solid var(--line-soft)}
+.topbar{display:flex;align-items:center;gap:11px;padding:15px 22px;border-bottom:1px solid var(--line-soft)}
+.topbar .pj{font-family:var(--display);font-weight:600;font-size:15px}
+.spacer{flex:1}.ib{width:32px;height:32px;border-radius:10px;border:0;background:var(--deep);color:var(--ink2);cursor:pointer;font-size:14px}
+/* toggle Chat ↔ Shell (segmented) */
+.viewtoggle{display:flex;background:var(--deep);border-radius:11px;padding:3px;gap:2px}
+.viewtoggle a{font-family:var(--display);font-weight:600;font-size:12.5px;padding:6px 13px;border-radius:8px;color:var(--ink2);text-decoration:none;display:flex;align-items:center;gap:6px;transition:.12s}
+.viewtoggle a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,22,28,.12)}
+.viewtoggle a:not(.on):hover{color:var(--ink)}
+.convscroll{flex:1;overflow:auto;padding:18px 24px 8px}
+.sessionwrap{max-width:720px;margin:0 auto}
+
+/* bandeau mémoire (jauge A) */
+.membar{background:var(--bg);border-radius:14px;padding:13px 16px;margin-bottom:14px}
+.membar .gauge .num{font-size:16px;margin-bottom:8px}
+.membar .gauge .track{height:18px}
+
+/* carte de session : swimlanes B enrichi (user↔agent) */
+.sesscard{background:var(--bg);border-radius:14px;padding:14px 16px 10px;margin-bottom:16px}
+.sesscard .hh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sesscard .hh .t{font-family:var(--display);font-weight:600;font-size:13px}
+.sesscard .hh .c{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+
+/* fil de chat + gouttière d'avatars (attribution C) */
+.who{display:flex;align-items:center;gap:8px;margin-bottom:4px}.who b{font-family:var(--display);font-size:13px;font-weight:600}
+.t{color:var(--ink3);font-size:11px;font-family:var(--mono)}
+.bub p{font-size:13.5px;line-height:1.58;color:var(--ink);max-width:58ch}
+.deleg{margin-top:8px;font-size:12px;color:var(--ink2);background:var(--card);border-radius:11px;padding:9px 12px;border-left:3px solid var(--purple)}
+.deleg.ret{border-left-color:var(--blue)}
+.gestes{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.geste{font-family:var(--mono);font-size:10.5px;background:var(--card);border:1px solid var(--line-soft);border-radius:8px;padding:4px 9px;color:var(--ink2)}
+.geste b{color:var(--acc)}
+
+.composer{padding:13px 22px;border-top:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
+.composer input{flex:1;border:0;background:var(--deep);border-radius:13px;padding:12px 15px;font-family:var(--text);font-size:14px;color:var(--ink)}
+.send{border:0;background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff;font-family:var(--display);font-weight:600;padding:0 18px;height:44px;border-radius:13px;cursor:pointer}
+
+/* ---- colonne HUD (droite) ---- */
+.hud{overflow:auto;padding:20px 18px;display:flex;flex-direction:column;gap:16px;background:var(--bg)}
+.hud .vcard{padding:16px 17px}
+/* économie multi-ligne */
+.econlegend{display:flex;gap:13px;flex-wrap:wrap;font-size:10.5px;color:var(--ink3);margin-top:10px}
+.econlegend span{display:inline-flex;align-items:center;gap:6px}.econlegend i{width:13px;height:3px;border-radius:2px}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a class="on" href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="work">
+
+  <!-- ROSTER -->
+  <aside class="roster">
+    <div class="eb">Conversation active</div>
+    <h2>iaka-demo</h2><div class="s">Team iakaframe · coordinateur Aragorn</div>
+    <div class="agent on">
+      <div class="arow"><img src="../../../assets/aragorn.png"><div><div class="nm">Aragorn</div><div class="rl">Coordinateur · projet</div></div><div class="st"><span class="dot g"></span><br>travaille</div></div>
+      <div class="prog"><div class="track"><i style="width:55%;background:linear-gradient(90deg,var(--blue),#6aa6ff)"></i></div><span class="eta">coordination · ~5 min</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/gandalf.png"><div><div class="nm">Gandalf</div><div class="rl">Analyse · specs</div></div><div class="st"><span class="dot i"></span><br>sidechain clos</div></div>
+      <div class="prog done"><div class="track"><i style="width:100%"></i></div><span class="eta">audit · terminé</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/gimli.png"><div><div class="nm">Gimli</div><div class="rl">Exécution · code</div></div><div class="st"><span class="dot o"></span><br>exécute</div></div>
+      <div class="prog"><div class="track"><i style="width:62%;background:linear-gradient(90deg,var(--green),#5fd39c)"></i></div><span class="eta">implémentation · ~8 min</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/legolas.png"><div><div class="nm">Legolas</div><div class="rl">Qualité · gate</div></div><div class="st"><span class="dot i"></span><br>attend</div></div>
+      <div class="prog idle"><div class="track"><i style="width:0%"></i></div><span class="eta">en attente</span></div>
+    </div>
+    <div class="agent">
+      <div class="arow"><img src="../../../assets/frodo.png"><div><div class="nm">Frodo</div><div class="rl">Porteur · livraison</div></div><div class="st"><span class="dot i"></span><br>attend</div></div>
+      <div class="prog idle"><div class="track"><i style="width:0%"></i></div><span class="eta">en attente</span></div>
+    </div>
+    <div class="miniturn">
+      <div class="eb" style="margin-bottom:8px">Terminal-source</div>
+      <div class="term"><div><span class="pr">aragorn@iaka-demo</span> ~ % claude --resume</div><div><span class="ok">✓</span> transcript · 38 nœuds · 1 sidechain</div><div><span class="pr">›</span> _</div></div>
+    </div>
+  </aside>
+
+  <!-- CONVERSATION -->
+  <main class="conv">
+    <div class="topbar"><span class="pj">Conversation · iaka-demo</span><span class="chip live">● terminal-source vivant</span><span class="spacer"></span>
+      <a class="ib" href="portefeuille.html" title="Ranger le projet sur l'étagère" style="text-decoration:none;display:grid;place-items:center;margin-right:8px">⇤</a>
+      <div class="viewtoggle"><a class="on" href="travail.html">Chat</a><a href="travail-shell.html">▦ Shell</a></div>
+      <button class="ib" title="esc" style="margin-left:8px">⎋</button></div>
+
+    <div class="convscroll"><div class="sessionwrap">
+
+      <!-- jauge mémoire (variante A) -->
+      <div class="membar">
+        <div class="gauge">
+          <div class="num">142,3k <small>/ 200k · 71 % du contexte · 1 compaction (T6)</small></div>
+          <div class="track">
+            <div class="s" style="width:9%;background:rgba(20,22,28,.2)"></div>
+            <div class="s" style="width:22%;background:rgba(59,130,246,.55)"></div>
+            <div class="s" style="width:40%;background:linear-gradient(90deg,#30a46c,#5b5bd6)"></div>
+            <div class="bound" style="left:31%"></div>
+          </div>
+          <div class="key">
+            <span><i style="background:rgba(20,22,28,.2)"></i> système 18k</span>
+            <span><i style="background:rgba(59,130,246,.55)"></i> résumé 44k</span>
+            <span><i style="background:#30a46c"></i> vivant 80k</span>
+            <span><i style="background:var(--deep)"></i> libre 58k</span>
+            <span style="color:var(--red)">⟐ frontière de compaction</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- carte de session : swimlanes (relations) + GANTT prévisionnel (temps) -->
+      <div class="sesscard">
+        <div class="hh"><span class="t">Carte de session · délégations</span><span class="c">5 acteurs · 1 sidechain · prévisionnel live</span></div>
+
+        <!-- DÉBRANCHÉ (conservé pour réactivation) : widget arbre de délégation / swimlanes
+             « Relations · qui délègue à qui ». Masqué via `hidden` (et non commenté, car le SVG
+             contient déjà des commentaires qui casseraient un commentaire englobant). Ses flèches
+             de relation sont désormais portées par le Gantt ci-dessous (couche .grel). NE PAS supprimer. -->
+        <div class="swimlanes-debranche" hidden>
+        <div class="eb" style="margin:2px 0 9px">Relations · qui délègue à qui</div>
+        <svg viewBox="0 0 460 224" width="100%" style="display:block">
+          <!-- labels de couloir -->
+          <g font-family="ui-monospace,monospace" font-size="9" fill="#9aa0ad">
+            <text x="4" y="31">Stéphane</text><text x="4" y="69">Aragorn</text><text x="4" y="107">Gandalf</text><text x="4" y="145">Gimli</text><text x="4" y="183">Legolas</text>
+          </g>
+          <g stroke="#eef0f3" stroke-width="1">
+            <line x1="58" y1="28" x2="452" y2="28"/><line x1="58" y1="66" x2="452" y2="66"/>
+            <line x1="58" y1="104" x2="452" y2="104"/><line x1="58" y1="142" x2="452" y2="142"/><line x1="58" y1="180" x2="452" y2="180"/>
+          </g>
+          <!-- blocs d'activité -->
+          <rect x="58"  y="20"  width="40" height="16" rx="5" fill="#16181d"/>
+          <rect x="120" y="58"  width="70" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="232" y="96"  width="84" height="16" rx="5" fill="#8e4ec6"/>
+          <rect x="300" y="58"  width="46" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="336" y="134" width="64" height="16" rx="5" fill="#30a46c"/>
+          <rect x="404" y="172" width="44" height="16" rx="5" fill="#b8770a"/>
+          <rect x="410" y="20"  width="40" height="16" rx="5" fill="#16181d"/>
+          <!-- flèche user→agent (solicitation) — ENRICHISSEMENT -->
+          <path d="M98 28 C 112 36, 110 50, 122 60" fill="none" stroke="#16181d" stroke-width="1.6"/>
+          <polygon points="122,60 116,55 125,53" fill="#16181d"/>
+          <!-- délégation Aragorn→Gandalf -->
+          <path d="M190 66 C 214 74, 216 88, 234 99" fill="none" stroke="#8e4ec6" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <polygon points="234,99 227,96 230,104" fill="#8e4ec6"/>
+          <!-- retour Gandalf→Aragorn -->
+          <path d="M316 104 C 322 88, 314 78, 302 70" fill="none" stroke="#8e4ec6" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <polygon points="302,70 305,77 311,71" fill="#8e4ec6"/>
+          <!-- délégation Aragorn→Gimli -->
+          <path d="M340 74 C 332 98, 334 116, 338 132" fill="none" stroke="#8e4ec6" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <polygon points="338,132 333,126 342,126" fill="#8e4ec6"/>
+          <!-- flèche agent→user (rapport) — ENRICHISSEMENT -->
+          <path d="M346 60 C 380 48, 396 40, 408 32" fill="none" stroke="#16181d" stroke-width="1.6"/>
+          <polygon points="408,32 401,33 405,40" fill="#16181d"/>
+          <!-- axe temps -->
+          <line x1="58" y1="200" x2="452" y2="200" stroke="#e7e8ec" stroke-width="1"/>
+          <g font-family="ui-monospace,monospace" font-size="8" fill="#c5c9d2">
+            <text x="58" y="214">10:25</text><text x="220" y="214">10:31</text><text x="330" y="214">10:34</text><text x="408" y="214">10:38</text>
+          </g>
+        </svg>
+        <div class="legend2" style="margin-top:8px;font-size:10.5px">
+          <span><i style="width:16px;height:2px;border-radius:2px;background:#16181d"></i> user ↔ agent</span>
+          <span><i style="width:16px;height:2px;border-radius:2px;background:repeating-linear-gradient(90deg,#8e4ec6 0 3px,transparent 3px 6px)"></i> délégation agent → agent</span>
+        </div>
+        </div>
+        <!-- fin du widget swimlanes débranché -->
+
+        <div class="eb" style="margin:16px 0 10px;display:flex;align-items:center;gap:8px">Prévisionnel vs réalisé &amp; relations · piloté au timer<span class="chip" style="font-size:9.5px;padding:2px 8px;background:rgba(229,72,77,.1);color:var(--red)">1 dépassement</span></div>
+
+        <div class="ganttwrap">
+          <!-- prévisionnel au lancement : Aragorn évalue chaque tâche -->
+          <div class="estban">
+            <div class="who"><img src="../../../assets/aragorn.png">Aragorn estime</div>
+            <div class="est">
+              <span><b>cadrage</b> 4 min</span><span><b>impl.</b> 12 min</span><span><b>tests</b> 6 min</span><span><b>doc</b> 3 min</span>
+              <span class="tot">· total prévu 25 min · lancé 10:25</span>
+            </div>
+          </div>
+
+          <!-- règle de temps -->
+          <div class="gaxis">
+            <div class="tk" style="left:0;transform:none">10:25<i></i></div>
+            <div class="tk" style="left:16.667%">10:30<i></i></div>
+            <div class="tk" style="left:33.333%">10:35<i></i></div>
+            <div class="tk" style="left:50%">10:40<i></i></div>
+            <div class="tk" style="left:66.667%">10:45<i></i></div>
+            <div class="tk" style="left:83.333%">10:50<i></i></div>
+            <div class="tk" style="left:100%;transform:translateX(-100%)">10:55<i></i></div>
+          </div>
+
+          <div class="glanes">
+            <!-- curseur « maintenant » qui traverse tous les couloirs -->
+            <div class="gnowwrap"><div class="gnow" style="left:63.333%"><span class="lab">maintenant · 10:44</span></div></div>
+
+            <!-- USER comme acteur (canal adresse) : sollicite au lancement, reçoit le rapport final -->
+            <div class="glane userlane">
+              <div class="glabel"><span class="upin">S</span>Stéphane</div>
+              <div class="gtrack">
+                <div class="umark" style="left:0">sollicite · 10:25</div>
+                <div class="umark proj" style="right:0">rapport final ↥</div>
+              </div>
+            </div>
+
+            <!-- Aragorn : coordination, EN COURS (remplissage normal au timer) -->
+            <div class="glane">
+              <div class="glabel"><img src="../../../assets/aragorn.png">Aragorn</div>
+              <div class="gtrack">
+                <div class="gbar run" style="left:0;width:80%">
+                  <div class="fill" style="width:79.2%;background:linear-gradient(90deg,var(--blue),#6aa6ff)"></div>
+                  <span class="cap">Coordination · live</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gandalf : cadrage, TERMINÉ (barre pleine) -->
+            <div class="glane">
+              <div class="glabel"><img src="../../../assets/gandalf.png">Gandalf</div>
+              <div class="gtrack">
+                <div class="gbar done" style="left:0;width:13.333%">
+                  <div class="fill" style="width:100%;background:linear-gradient(90deg,var(--green),#5fd39c)"></div>
+                  <span class="cap">Cadrage ✓</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gimli : implémentation, EN COURS + DÉPASSEMENT (débord rouge vs baseline) -->
+            <div class="glane alert">
+              <div class="glabel"><img src="../../../assets/gimli.png">Gimli</div>
+              <div class="gtrack">
+                <div class="gbar over" style="left:13.333%;width:50%">
+                  <div class="fill" style="width:80%;background:linear-gradient(90deg,var(--green),#5fd39c)"></div>
+                  <div class="fill ovf" style="left:80%;width:20%"></div>
+                  <div class="planend" style="left:80%"></div>
+                  <span class="cap">Implémentation</span>
+                </div>
+                <div class="galert" style="left:64.2%">⚠ retard +3 min</div>
+              </div>
+            </div>
+
+            <!-- Legolas : tests, À VENIR, décalé en cascade (+3) -->
+            <div class="glane">
+              <div class="glabel"><img src="../../../assets/legolas.png">Legolas</div>
+              <div class="gtrack">
+                <div class="gghost" style="left:53.333%;width:20%"></div>
+                <div class="gwait" style="left:63.333%;width:20%"><span class="gl">tests · en attente</span></div>
+                <div class="gslip" style="left:53.333%;width:10%"><span class="gl">↦ +3 min</span></div>
+              </div>
+            </div>
+
+            <!-- Frodo : doc, À VENIR, décalé en cascade (+3) -->
+            <div class="glane">
+              <div class="glabel"><img src="../../../assets/frodo.png">Frodo</div>
+              <div class="gtrack">
+                <div class="gghost" style="left:73.333%;width:10%"></div>
+                <div class="gwait" style="left:83.333%;width:10%"><span class="gl">doc</span></div>
+                <div class="gslip" style="left:73.333%;width:10%"><span class="gl">↦ +3 min</span></div>
+              </div>
+            </div>
+
+            <!-- COUCHE RELATIONS : flèches de délégation (agent→agent, pointillé indigo) +
+                 adresse (user↔agent, plein bleu), positionnées sur l'axe de temps. Reprend ce
+                 que portaient les swimlanes débranchées. viewBox 588×240 ≈ 6 couloirs (40px) × largeur de piste. -->
+            <div class="grel" aria-hidden="true">
+              <svg viewBox="0 0 588 240" preserveAspectRatio="none">
+                <!-- A · user → Aragorn (adresse, plein bleu) — sollicitation au lancement 10:25 -->
+                <circle cx="12" cy="22" r="2.4" fill="#3b82f6"/>
+                <path d="M12 22 C 17 35, 18 47, 25 58" fill="none" stroke="#3b82f6" stroke-width="2"/>
+                <polygon points="25,60 21.5,53 28.5,53" fill="#3b82f6"/>
+                <!-- B · Aragorn → Gandalf (délégation, pointillé indigo) — début ~10:26 -->
+                <circle cx="40" cy="62" r="2.2" fill="#8e4ec6"/>
+                <path d="M40 62 C 46 75, 48 87, 54 98" fill="none" stroke="#8e4ec6" stroke-width="1.6" stroke-dasharray="4 3"/>
+                <polygon points="54,100 50.5,93 57.5,93" fill="#8e4ec6"/>
+                <!-- C · Gandalf → Aragorn (retour de sidechain) ~10:31 -->
+                <circle cx="124" cy="98" r="2.2" fill="#8e4ec6"/>
+                <path d="M124 98 C 130 85, 132 73, 138 62" fill="none" stroke="#8e4ec6" stroke-width="1.6" stroke-dasharray="4 3"/>
+                <polygon points="138,60 134.5,67 141.5,67" fill="#8e4ec6"/>
+                <!-- D · Aragorn → Gimli (délégation exécution) ~10:34 -->
+                <circle cx="176" cy="62" r="2.2" fill="#8e4ec6"/>
+                <path d="M176 62 C 185 90, 185 114, 190 138" fill="none" stroke="#8e4ec6" stroke-width="1.6" stroke-dasharray="4 3"/>
+                <polygon points="190,140 186.5,133 193.5,133" fill="#8e4ec6"/>
+                <!-- E · Gimli → Legolas (gate, projeté) ~10:44 -->
+                <circle cx="372" cy="142" r="2.2" fill="#8e4ec6"/>
+                <path d="M372 142 C 378 155, 380 167, 386 178" fill="none" stroke="#8e4ec6" stroke-width="1.6" stroke-dasharray="4 3"/>
+                <polygon points="386,180 382.5,173 389.5,173" fill="#8e4ec6"/>
+                <!-- F · Aragorn → user (adresse, plein bleu) — rapport final qui remonte -->
+                <circle cx="540" cy="58" r="2.4" fill="#3b82f6"/>
+                <path d="M540 58 C 547 45, 549 33, 554 22" fill="none" stroke="#3b82f6" stroke-width="2"/>
+                <polygon points="554,20 550.5,27 557.5,27" fill="#3b82f6"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="gleg">
+            <span><i style="background:linear-gradient(90deg,var(--green),#5fd39c)"></i> réalisé · rempli au timer</span>
+            <span><i style="border:1.4px dashed var(--line);background:repeating-linear-gradient(135deg,transparent 0 4px,rgba(20,22,28,.05) 4px 8px)"></i> baseline prévue (fantôme)</span>
+            <span><i style="background:repeating-linear-gradient(45deg,#e5484d 0 4px,#f0686c 4px 8px)"></i> dépassement</span>
+            <span><i style="width:3px;background:var(--red)"></i> maintenant</span>
+            <span><i style="border-top:1.5px dotted var(--red);height:0;border-radius:0"></i> décalage cascade</span>
+            <span><i style="width:16px;height:0;border-top:2px solid #3b82f6;border-radius:0"></i> adresse · user ↔ agent</span>
+            <span><i style="width:16px;height:0;border-top:2px dashed #8e4ec6;border-radius:0"></i> délégation · agent → agent</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIL DE CHAT — gouttière d'avatars (attribution C) -->
+      <div class="gut">
+        <div class="ge"><div class="pin"><span class="userpin">S</span></div>
+          <div class="gutrow"><div class="who"><b>Stéphane</b><span class="ch2 k-user">user</span><span class="t">10:25</span></div>
+            <div class="bub"><p>Le site est trop vieux, trop lourd, pas assez aéré. Lance la refonte visuelle avec la team.</p></div></div></div>
+        <div class="ge"><div class="pin"><img src="../../../assets/aragorn.png"></div>
+          <div class="gutrow"><div class="who"><b>Aragorn</b><span class="ch2 k-arag">arag</span><span class="t">10:26</span></div>
+            <div class="bub"><p>Reçu. Je cadre les 5 écrans, puis je délègue l'audit de la hiérarchie de l'information à Gandalf avant de lancer l'exécution.</p>
+              <div class="deleg">↳ délègue à <b>Gandalf</b> — « audit des écrans + hiérarchie » <span style="color:var(--ink3)">· sidechain ouvert</span></div></div></div></div>
+        <div class="ge"><div class="pin"><img src="../../../assets/gandalf.png"></div>
+          <div class="gutrow"><div class="who"><b>Gandalf</b><span class="ch2 k-gand">gand</span><span class="t">10:31</span><span class="ch2" style="background:rgba(142,78,198,.1);color:var(--purple)">sidechain</span></div>
+            <div class="bub"><p>Le point dur n'est pas la charte mais la grammaire de mise en page : on empile des cartes bordées sans respiration. Trois passes — navigation, sans-bord, typo.</p>
+              <div class="deleg ret">↳ rapport remonté à <b>Aragorn</b> — plan validé, 1 sidechain clos</div></div></div></div>
+        <div class="ge"><div class="pin"><img src="../../../assets/aragorn.png"></div>
+          <div class="gutrow"><div class="who"><b>Aragorn</b><span class="ch2 k-arag">arag</span><span class="t">10:33</span></div>
+            <div class="bub"><p>Verbatim de Gandalf intégré. Je lance Gimli sur la passe 1 (navigation → rail sans-bord), puis Legolas en gate.</p></div></div></div>
+        <div class="ge"><div class="pin"><img src="../../../assets/gimli.png"></div>
+          <div class="gutrow"><div class="who"><b>Gimli</b><span class="ch2 k-gim">gim</span><span class="t">10:34</span><span class="ch2" style="background:rgba(48,164,108,.12);color:var(--green)">exécute</span></div>
+            <div class="bub"><p>Je prends la passe 1. Rail d'icônes en place, je retire les onglets-pilule et passe les sections en sans-bord.</p>
+              <div class="gestes"><span class="geste"><b>Edit</b> Rail.tsx</span><span class="geste"><b>Edit</b> index.css</span><span class="geste"><b>Write</b> fonts.css</span><span class="geste"><b>Bash</b> npm run dev</span></div></div></div></div>
+      </div>
+
+    </div></div>
+
+    <div class="composer"><input placeholder="Écris à l'équipe… (@agent pour viser un membre)"><button class="send">Envoyer</button></div>
+  </main>
+
+  <!-- HUD -->
+  <aside class="hud">
+
+    <!-- Plan vivant (variante A) -->
+    <div class="vcard">
+      <div class="vh"><span class="vt">Plan vivant</span><span class="vs">3/5 · TaskUpdate live</span></div>
+      <div class="ck">
+        <div class="it done"><span class="bx">✓</span><span class="t">Cadrer les 5 écrans<small>fermé · 10:26 · Aragorn</small></span></div>
+        <div class="it done"><span class="bx">✓</span><span class="t">Auditer la hiérarchie<small>sidechain · Gandalf</small></span></div>
+        <div class="it done"><span class="bx">✓</span><span class="t">Rail → sans-bord<small>fermé · 10:35 · Gimli</small></span></div>
+        <div class="it run"><span class="bx">●</span><span class="t">Passe typo Space Grotesk + Inter<small>en cours · Gimli</small></span></div>
+        <div class="it wait"><span class="bx"></span><span class="t">Gate qualité<small>en attente · Legolas</small></span></div>
+      </div>
+    </div>
+
+    <!-- Effets fichiers (heatmap · variante B) -->
+    <div class="vcard">
+      <div class="vh"><span class="vt">Effets fichiers</span><span class="vs">9 tours · +218 / −96</span></div>
+      <div class="heat">
+        <div></div><div class="hh">T4</div><div class="hh">T5</div><div class="hh">T6</div><div class="hh">T7</div><div class="hh">T8</div><div class="hh">T9</div>
+        <div class="fn">App.tsx</div><div class="cell c2"></div><div class="cell c1"></div><div class="cell"></div><div class="cell cr"></div><div class="cell"></div><div class="cell c1"></div>
+        <div class="fn">Rail.tsx</div><div class="cell"></div><div class="cell c1"></div><div class="cell c3"></div><div class="cell"></div><div class="cell c2"></div><div class="cell c4"></div>
+        <div class="fn">index.css</div><div class="cell c1"></div><div class="cell c4"></div><div class="cell c2"></div><div class="cell"></div><div class="cell c1"></div><div class="cell"></div>
+        <div class="fn">fonts.css</div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell c3"></div><div class="cell"></div>
+        <div class="fn">Composer.tsx</div><div class="cell"></div><div class="cell"></div><div class="cell c2"></div><div class="cell c1"></div><div class="cell"></div><div class="cell c1"></div>
+      </div>
+      <div class="legend2" style="margin-top:12px;font-size:10.5px">
+        <span><i style="background:rgba(91,91,214,.18)"></i> léger</span>
+        <span><i style="background:rgba(91,91,214,.9)"></i> intense</span>
+        <span><i style="background:rgba(229,72,77,.5)"></i> tour interrompu</span>
+      </div>
+    </div>
+
+    <!-- Économie multi-ligne : une courbe par agent -->
+    <div class="vcard">
+      <div class="vh"><span class="vt">Économie · tokens par agent</span><span class="vs">9 tours · 74,2k</span></div>
+      <svg viewBox="0 0 360 150" width="100%" style="display:block">
+        <!-- grille -->
+        <g stroke="#eef0f3" stroke-width="1">
+          <line x1="20" y1="130" x2="350" y2="130"/><line x1="20" y1="92" x2="350" y2="92"/><line x1="20" y1="54" x2="350" y2="54"/>
+        </g>
+        <!-- Aragorn (bleu) -->
+        <polyline fill="none" stroke="#3b82f6" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="20,74 61,46 103,67 144,32 186,88 227,81 268,95 310,67 350,81"/>
+        <!-- Gandalf (violet) — pic sidechain T4 puis décroît -->
+        <polyline fill="none" stroke="#8e4ec6" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="103,118 144,30 186,58 227,120 268,130"/>
+        <!-- Gimli (vert) — monte tardivement -->
+        <polyline fill="none" stroke="#30a46c" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="186,108 227,70 268,36 310,55 350,60"/>
+        <!-- Legolas (or) — gate finale -->
+        <polyline fill="none" stroke="#b8770a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+          points="310,112 350,98"/>
+        <!-- points de pic -->
+        <circle cx="144" cy="32" r="3.5" fill="#3b82f6"/>
+        <circle cx="144" cy="30" r="3.5" fill="#8e4ec6"/>
+        <circle cx="268" cy="36" r="3.5" fill="#30a46c"/>
+        <g font-family="ui-monospace,monospace" font-size="8" fill="#c5c9d2">
+          <text x="16" y="146">T1</text><text x="140" y="146">T4</text><text x="264" y="146">T7</text><text x="344" y="146">T9</text>
+        </g>
+      </svg>
+      <div class="econlegend">
+        <span><i style="background:#3b82f6"></i> Aragorn 31,4k</span>
+        <span><i style="background:#30a46c"></i> Gimli 22,1k</span>
+        <span><i style="background:#8e4ec6"></i> Gandalf 15,7k</span>
+        <span><i style="background:#b8770a"></i> Legolas 5,0k</span>
+      </div>
+    </div>
+
+  </aside>
+</div>
+</body></html>

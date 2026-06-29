@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · Étagère</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+.actions{display:flex;gap:12px;margin-top:22px}
+
+/* ---- bandeau KPI horizontal (rangée de chiffres) ---- */
+.kpibar{display:flex;background:var(--card);border-radius:18px;margin-top:24px;
+  box-shadow:0 1px 0 var(--line-soft),0 18px 40px -34px rgba(20,22,28,.28);overflow:hidden}
+.kpibar .k{flex:1;padding:18px 22px;border-right:1px solid var(--line-soft)}
+.kpibar .k:last-child{border-right:0}
+.kpibar .kl{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+.kpibar .kv{font-family:var(--display);font-weight:600;font-size:27px;letter-spacing:-.025em;margin-top:7px;line-height:1}
+.kpibar .kv small{font-size:13px;color:var(--ink3);font-weight:400}
+.kpibar .kd{font-size:11.5px;color:var(--ink2);margin-top:6px}
+
+/* ---- 2 zones : tuiles (centre) + économie (droite) ---- */
+.foliolayout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+.foliomain{min-width:0}
+.foliomain .rowhead:first-child{margin-top:28px}
+.folioside{position:sticky;top:0;display:flex;flex-direction:column;gap:16px}
+.folioside .rowhead{margin:28px 0 14px}
+
+/* cartes projet — 3 COLONNES */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.proj{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 1px 0 var(--line-soft),0 16px 36px -28px rgba(20,22,28,.25);transition:.18s}
+.proj:hover{transform:translateY(-3px)}
+.proj .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.proj .ic{width:38px;height:38px;border-radius:12px;background:var(--deep);display:grid;place-items:center;font-size:18px;flex:none}
+.proj h3{font-family:var(--display);font-weight:600;font-size:15.5px}
+.proj .path{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.proj .desc{font-size:12.5px;color:var(--ink2);line-height:1.5;margin-bottom:14px;min-height:54px}
+.proj .foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line-soft);padding-top:13px}
+.avatars{display:flex}.avatars img{width:26px;height:26px;border-radius:8px;object-fit:cover;margin-left:-7px;box-shadow:0 0 0 3px var(--card);background:var(--deep)}.avatars img:first-child{margin-left:0}
+.cost{margin-left:auto;display:flex;align-items:center;gap:7px}
+.cost .ring{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center}
+.cost .ring span{width:20px;height:20px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-family:var(--mono);font-size:7.5px;color:var(--ink2)}
+.cost .tk{font-family:var(--mono);font-size:10px;color:var(--ink3);text-align:right;line-height:1.3}
+.cost .tk b{display:block;color:var(--ink);font-size:11.5px}
+.proj .chip{font-size:10.5px;padding:3px 9px}
+
+/* économie · colonne droite */
+.folioside .vcard{padding:16px 17px}
+.folioside .vh .vs{font-size:10px}
+
+.scan{display:flex;flex-direction:column;gap:2px}
+.scanrow{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:13px;transition:.12s}
+.scanrow:hover{background:var(--card)}
+.scanrow .nm{font-family:var(--display);font-weight:500;font-size:14.5px}
+.scanrow .pth{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.scanrow .meta{margin-left:auto;font-size:12px;color:var(--ink3);display:flex;gap:16px;align-items:center}
+.add{border:1px solid var(--line);background:transparent;color:var(--acc);font-weight:600;font-size:13px;border-radius:10px;padding:7px 14px;cursor:pointer}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a class="on" href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Étagère</div>
+  <h1 class="title">Étagère</h1>
+  <p class="sub">L'atelier <span style="font-family:var(--mono);font-size:13px">~/work</span> est scanné en continu : tous les projets y sont rangés, prêts à être posés sur la table. Le coût des sessions est agrégé par projet et par agent — une lecture de l'étagère en un regard.</p>
+  <div class="actions">
+    <button class="btn primary">⟳ Rescanner l'atelier</button>
+    <button class="btn soft">+ Ranger un dossier</button>
+  </div>
+
+  <!-- ZONE 1 — bandeau supérieur : KPIs numériques en ligne -->
+  <div class="kpibar">
+    <div class="k"><div class="kl">Projets en cours</div><div class="kv">3 <small>/ 7 détectés</small></div><div class="kd">1 conversation vivante</div></div>
+    <div class="k"><div class="kl">Tokens · 7 j</div><div class="kv">317,4k</div><div class="kd">pic : iaka-demo (47 %)</div></div>
+    <div class="k"><div class="kl">Temps agent · 7 j</div><div class="kv">~112 <small>min</small></div><div class="kd">cumulé toutes sessions</div></div>
+    <div class="k"><div class="kl">Agent le plus sollicité</div><div class="kv">Aragorn</div><div class="kd">coordination · 132k tokens</div></div>
+    <div class="k"><div class="kl">Coût estimé · 7 j</div><div class="kv">4,80 <small>$</small></div><div class="kd">endpoint Ollama + cloud</div></div>
+  </div>
+
+  <!-- ZONES 2 & 3 — tuiles (centre, 3 col) + économie (droite) -->
+  <div class="foliolayout">
+
+    <div class="foliomain">
+      <div class="rowhead"><h2>Posés sur la table · 3 projets</h2><a class="link" href="#">tout ranger</a></div>
+      <div class="cards">
+        <div class="proj">
+          <div class="top"><div class="ic"></div><div><h3>iaka-demo</h3><div class="path">~/work/iaka-demo</div></div><span class="chip live" style="margin-left:auto">● en cours</span></div>
+          <div class="desc">Dossier de démonstration. Conversation ouverte avec la team iakaframe, refonte visuelle en cours.</div>
+          <div class="foot"><div class="avatars"><img src="../../../assets/aragorn.png"><img src="../../../assets/gandalf.png"><img src="../../../assets/gimli.png"></div>
+            <div class="cost"><div class="ring" style="background:conic-gradient(var(--orange) 0 71%,var(--deep) 71% 100%)"><span>71%</span></div><div class="tk"><b>148,2k</b>tokens</div></div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="top"><div class="ic"></div><div><h3>iakacockpit</h3><div class="path">~/work/IakaCockpit</div></div><span class="chip" style="margin-left:auto">au repos</span></div>
+          <div class="desc">Le cockpit lui-même. Candidate v0.12.0, panneau Tâches et i18n livrés.</div>
+          <div class="foot"><div class="avatars"><img src="../../../assets/aragorn.png"><img src="../../../assets/legolas.png"></div>
+            <div class="cost"><div class="ring" style="background:conic-gradient(var(--green) 0 34%,var(--deep) 34% 100%)"><span>34%</span></div><div class="tk"><b>96,7k</b>tokens</div></div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="top"><div class="ic"></div><div><h3>iakagraph</h3><div class="path">~/work/iakagraph</div></div><span class="chip" style="margin-left:auto">au repos</span></div>
+          <div class="desc">Atelier des chartes &amp; vignettes : 10 chartes, 11 teams, 952 portraits.</div>
+          <div class="foot"><div class="avatars"><img src="../../../assets/frodo.png"></div>
+            <div class="cost"><div class="ring" style="background:conic-gradient(var(--purple) 0 22%,var(--deep) 22% 100%)"><span>22%</span></div><div class="tk"><b>52,3k</b>tokens</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rowhead"><h2>Rangés dans l'atelier · 4</h2><a class="link" href="#">filtrer…</a></div>
+      <div class="scan">
+        <div class="scanrow"><span class="dot i"></span><div><div class="nm">iakabox</div><div class="pth">~/work/iakabox</div></div><div class="meta"><span>infra · docker</span><span>main · propre</span></div><button class="add">↗ Poser sur la table</button></div>
+        <div class="scanrow"><span class="dot i"></span><div><div class="nm">iakaframe</div><div class="pth">~/work/iakaframe</div></div><div class="meta"><span>méthode · skills</span><span>main · propre</span></div><button class="add">↗ Poser sur la table</button></div>
+        <div class="scanrow"><span class="dot o"></span><div><div class="nm">iaka-notify</div><div class="pth">~/work/iaka-notify</div></div><div class="meta"><span>n8n · flows</span><span>3 fichiers modifiés</span></div><button class="add">↗ Poser sur la table</button></div>
+        <div class="scanrow"><span class="dot i"></span><div><div class="nm">litellm-stack</div><div class="pth">~/work/litellm-stack</div></div><div class="meta"><span>ia · proxy</span><span>main · propre</span></div><button class="add">↗ Poser sur la table</button></div>
+      </div>
+    </div>
+
+    <!-- ZONE 3 — économie (treemap de coût) à droite -->
+    <aside class="folioside">
+      <div class="rowhead"><h2 style="font-size:17px">Économie</h2><span class="eb">7 j</span></div>
+      <div class="vcard">
+        <div class="vh"><span class="vt">Coût par projet &amp; agent</span><span class="vs">317,4k tokens</span></div>
+        <div class="tmap">
+          <a class="t" href="travail.html" style="width:58%;background:#3b82f6">
+            <span class="nm">iaka-demo</span>
+            <span class="v">148,2k · 47%</span>
+            <span class="seg"><i style="width:42%;background:rgba(255,255,255,.95)"></i><i style="width:30%;background:rgba(255,255,255,.65)"></i><i style="width:21%;background:rgba(255,255,255,.4)"></i><i style="width:7%;background:rgba(255,255,255,.25)"></i></span>
+          </a>
+          <a class="t" href="travail.html" style="width:39%;background:#30a46c">
+            <span class="nm">iakacockpit</span>
+            <span class="v">96,7k · 30%</span>
+            <span class="seg"><i style="width:55%;background:rgba(255,255,255,.95)"></i><i style="width:45%;background:rgba(255,255,255,.5)"></i></span>
+          </a>
+          <a class="t" href="travail.html" style="width:46%;background:#8e4ec6">
+            <span class="nm">iakagraph</span>
+            <span class="v">52,3k · 16%</span>
+            <span class="seg"><i style="width:100%;background:rgba(255,255,255,.7)"></i></span>
+          </a>
+          <a class="t" href="travail.html" style="width:51%;background:#b8770a">
+            <span class="nm">iaka-notify</span>
+            <span class="v">20,2k · 7%</span>
+            <span class="seg"><i style="width:70%;background:rgba(255,255,255,.8)"></i><i style="width:30%;background:rgba(255,255,255,.4)"></i></span>
+          </a>
+        </div>
+        <div class="legend2" style="margin-top:13px;font-size:10px">
+          <span><i style="background:var(--blue)"></i> iaka-demo</span>
+          <span><i style="background:var(--green)"></i> iakacockpit</span>
+          <span><i style="background:var(--purple)"></i> iakagraph</span>
+          <span><i style="background:#b8770a"></i> iaka-notify</span>
+          <span style="color:var(--ink2)">surface ∝ tokens · segments = part par agent</span>
+        </div>
+      </div>
+
+      <!-- mini-widget éco -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Tendance · 7 j</span><span class="vs">+12 % vs s-1</span></div>
+        <svg viewBox="0 0 280 70" width="100%" style="display:block">
+          <polyline fill="none" stroke="var(--acc)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+            points="6,52 44,46 82,49 120,34 158,40 196,22 234,30 274,14"/>
+          <circle cx="274" cy="14" r="3.5" fill="var(--acc)"/>
+        </svg>
+        <div class="legend2" style="margin-top:6px;font-size:10.5px"><span style="color:var(--ink2)">L &nbsp; M &nbsp; M &nbsp; J &nbsp; V &nbsp; S &nbsp; D</span></div>
+      </div>
+    </aside>
+
+  </div>
+</div></div>
+</body></html>

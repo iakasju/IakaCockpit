@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App · Journal</title>
+<link rel="stylesheet" href="../../app.css">
+<link rel="stylesheet" href="viz.css">
+<style>
+.flabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:22px 0 8px;display:flex;align-items:center;gap:9px}
+.flabel .lv{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--acc);background:rgba(var(--acc-rgb),.1);padding:1px 6px;border-radius:5px;letter-spacing:.02em}
+.filters{display:flex;gap:10px;margin:0 0 4px;align-items:center;flex-wrap:wrap}
+.fchip{font-size:13px;font-weight:500;padding:8px 15px;border-radius:99px;background:var(--deep);color:var(--ink2);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.fchip.on{background:var(--ink);color:var(--bg)}
+.fchip .d{width:8px;height:8px;border-radius:50%}
+.fchip.pf{font-family:var(--mono);font-size:12px;letter-spacing:-.01em}
+.fchip.pf .ic{font-size:13px;font-family:var(--text)}
+.fchip.pf.on{background:linear-gradient(135deg,var(--acc),var(--acc-l));color:#fff}
+.selnote{margin-left:auto;font-size:12px;color:var(--acc);font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.selnote::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc)}
+.search{flex:1;min-width:200px;border:0;background:var(--deep);border-radius:99px;padding:9px 16px;font-family:var(--text);font-size:13.5px}
+.legend{font-size:12.5px;color:var(--ink3);margin:14px 0 24px}
+.legend b{color:var(--ink2)}
+.pfhint{font-size:12px;color:var(--ink3);margin:2px 0 0}
+.pfhint b{color:var(--ink2);font-weight:600}
+.jgrid{display:block}
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--line-soft)}
+.ev{position:relative;margin-bottom:24px}
+.ev .node{position:absolute;left:-30px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--bg);display:grid;place-items:center}
+.ev .node i{width:10px;height:10px;border-radius:50%}
+.canal-adresse i{background:var(--blue)} .canal-geste i{background:var(--acc)} .canal-pensee i{background:var(--ink3)}
+.ev .head{display:flex;align-items:center;gap:9px;margin-bottom:5px;flex-wrap:wrap}
+.ev .who{font-family:var(--display);font-weight:600;font-size:14px}
+.ev .arrow{color:var(--ink3)}
+.ev .proj{font-family:var(--mono);font-size:11px;color:var(--acc)}
+.ev .lab{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.lab.adresse{background:rgba(59,130,246,.12);color:var(--blue)}
+.lab.geste{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.lab.pensee{background:var(--deep);color:var(--ink3)}
+.ev .time{margin-left:auto;font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.ev .body{font-size:14px;line-height:1.6;color:var(--ink);max-width:64ch}
+.ev.canal-pensee .body{color:var(--ink2);font-style:italic}
+.ev .body code{font-family:var(--mono);font-size:12.5px;background:var(--deep);padding:1px 6px;border-radius:6px}
+.bilan{position:sticky;top:0;display:flex;flex-direction:column;gap:16px}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="portefeuille.html" title="Étagère — les projets rangés"><small>Étagère</small></a>
+  <a href="travail.html" title="Table — le projet posé"><small>Table</small></a>
+  <a class="on" href="journal.html" title="Journal"><small>Log</small></a>
+  <a href="equipes.html" title="Équipes"><small>Team</small></a>
+  <div class="sep"></div>
+  <a href="reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Main courante</div>
+  <h1 class="title">Journal</h1>
+  <p class="sub">Trois canaux de communication tracés : <b>adresse</b> (humain ↔ agents), <b>geste</b> (délégations machine), <b>pensée</b> (raisonnement). Lecture seule depuis iakaboxlogs.</p>
+  <!-- NIVEAU 1 · projets actifs de la session (nouveau, en haut) -->
+  <div class="flabel"><span class="lv">niv. 1</span>Projets actifs de la session</div>
+  <div class="filters pfilters">
+    <span class="fchip pf"><span class="ic">⧉</span>Tous</span>
+    <span class="fchip pf on"><span class="ic"></span>iaka-demo</span>
+    <span class="fchip pf"><span class="ic"></span>iakacockpit</span>
+    <span class="fchip pf"><span class="ic"></span>iakagraph</span>
+    <span class="selnote">1 projet sélectionné — vue session</span>
+  </div>
+  <div class="pfhint"><b>Tous</b> = toute la session (multi-projets) ; les deux widgets de session n'apparaissent que pour <b>un seul</b> projet filtré.</div>
+
+  <!-- NIVEAU 2 · canaux (existant, dessous) -->
+  <div class="flabel"><span class="lv">niv. 2</span>Canaux de communication</div>
+  <div class="filters">
+    <span class="fchip on">Tous</span>
+    <span class="fchip"><span class="d" style="background:var(--blue)"></span>adresse</span>
+    <span class="fchip"><span class="d" style="background:var(--acc)"></span>geste</span>
+    <span class="fchip"><span class="d" style="background:var(--ink3)"></span>pensée</span>
+    <input class="search" placeholder="filtrer par agent…">
+  </div>
+  <div class="legend">Canal porté par la couleur du nœud · <b>bleu</b> adresse · <b>indigo</b> geste · <b>gris</b> pensée.</div>
+
+  <!-- WIDGETS DE SESSION · visibles UNIQUEMENT si 1 SEUL projet filtré -->
+  <section class="sessband">
+    <div class="sbhead">
+      <span class="pill">1 projet sélectionné — vue session</span>
+      <span class="hint">arbre des délégations + frise des tours de <code>iaka-demo</code> · masqués dès que plusieurs projets sont filtrés.</span>
+    </div>
+
+    <!-- DEUX COLONNES : à gauche les widgets de session, à droite les widgets remontés -->
+    <div class="sesslayout">
+
+    <!-- COLONNE GAUCHE : widgets de session (déployés / iconisés) -->
+    <div class="sesscol">
+
+    <!-- arbre des délégations de la session (swimlanes · variante B) — état DÉPLOYÉ -->
+    <div class="vcard">
+      <div class="vh"><span class="vt">Arbre des délégations · session</span>
+        <span class="vhr"><span class="vs">iaka-demo · 5 agents · 5 passages</span>
+        <button class="vbtn" title="Replier ce widget (le ranger en chip)">⊟</button></span></div>
+      <div class="legend2" style="margin:0 0 12px">
+        <span><i style="background:var(--ink)"></i> Stéphane</span>
+        <span><i style="background:var(--blue)"></i> Aragorn</span>
+        <span><i style="background:var(--purple)"></i> Gandalf</span>
+        <span><i style="background:var(--green)"></i> Gimli</span>
+        <span><i style="background:#b8770a"></i> Legolas</span>
+        <span><i style="background:var(--cyan)"></i> Frodo</span>
+        <span style="margin-left:8px"><i style="width:16px;height:2px;border-radius:0;background:var(--blue)"></i> adresse (user ↔ agent)</span>
+        <span><i style="width:16px;height:0;border-radius:0;border-top:2px dashed var(--acc)"></i> délégation (agent → agent)</span>
+      </div>
+      <div class="swim">
+        <svg viewBox="0 0 700 268" role="img" aria-label="Swimlanes des délégations de la session iaka-demo">
+          <!-- libellés de couloir -->
+          <g font-family="ui-monospace,monospace" font-size="10" fill="#5b6270" font-weight="600">
+            <text x="6" y="46">Steph</text><text x="6" y="94">Aragorn</text><text x="6" y="142">Gandalf</text><text x="6" y="190">Gimli</text><text x="6" y="238">Legolas</text>
+          </g>
+          <!-- lignes de couloir -->
+          <g stroke="#eef0f3" stroke-width="1">
+            <line x1="74" y1="42" x2="688" y2="42"/><line x1="74" y1="90" x2="688" y2="90"/>
+            <line x1="74" y1="138" x2="688" y2="138"/><line x1="74" y1="186" x2="688" y2="186"/><line x1="74" y1="234" x2="688" y2="234"/>
+          </g>
+
+          <!-- flèches de délégation (sous les blocs) -->
+          <!-- Steph -> Aragorn : adresse (user -> agent) -->
+          <path d="M122 42 C 140 56, 142 70, 150 81" fill="none" stroke="#3b82f6" stroke-width="1.6"/>
+          <polygon points="150,81 143,76 152,74" fill="#3b82f6"/>
+          <!-- Aragorn -> Gandalf : délégation (agent -> agent) -->
+          <path d="M236 90 C 256 106, 258 118, 266 129" fill="none" stroke="#5b5bd6" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <polygon points="266,129 259,124 268,122" fill="#5b5bd6"/>
+          <!-- Gandalf -> Aragorn : retour (agent -> agent) -->
+          <path d="M372 138 C 392 122, 394 110, 402 99" fill="none" stroke="#5b5bd6" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <polygon points="402,99 395,104 404,106" fill="#5b5bd6"/>
+          <!-- Aragorn -> Gimli : délégation (agent -> agent) -->
+          <path d="M470 90 C 490 122, 492 154, 500 177" fill="none" stroke="#5b5bd6" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <polygon points="500,177 493,172 502,170" fill="#5b5bd6"/>
+          <!-- Gimli -> Legolas : passage au gate (agent -> agent) -->
+          <path d="M584 186 C 604 202, 606 214, 614 225" fill="none" stroke="#5b5bd6" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <polygon points="614,225 607,220 616,218" fill="#5b5bd6"/>
+          <!-- Aragorn -> Steph : rapport final (agent -> user, adresse) -->
+          <path d="M540 81 C 540 60, 320 60, 132 50" fill="none" stroke="#3b82f6" stroke-width="1.6" stroke-dasharray="1 0"/>
+          <polygon points="132,50 140,47 140,55" fill="#3b82f6"/>
+
+          <!-- blocs d'activité (couleur = agent) -->
+          <rect x="80"  y="34" width="44" height="16" rx="5" fill="#16181d"/>
+          <rect x="150" y="82" width="88" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="266" y="130" width="108" height="16" rx="5" fill="#8e4ec6"/>
+          <rect x="402" y="82" width="70" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="500" y="178" width="86" height="16" rx="5" fill="#30a46c"/>
+          <rect x="540" y="82" width="48" height="16" rx="5" fill="#3b82f6"/>
+          <rect x="614" y="226" width="68" height="16" rx="5" fill="#b8770a"/>
+
+          <!-- axe de temps -->
+          <line x1="74" y1="252" x2="688" y2="252" stroke="#e7e8ec" stroke-width="1"/>
+          <g font-family="ui-monospace,monospace" font-size="8.5" fill="#9aa0ad">
+            <text x="80" y="265">10:25</text><text x="266" y="265">10:29</text><text x="500" y="265">10:34</text><text x="630" y="265">10:38</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- la frise des tours est ICONISÉE → rangée en chip dans la pile en haut à droite (voir colonne droite) -->
+    <div class="collapsed-hint">
+      <span class="ch-ic">⊟</span>
+      <span><b>Frise des tours</b> repliée — rangée en chip dans la pile, en haut à droite. Un clic sur le chip la ré-ouvre ici.</span>
+    </div>
+
+    <!-- rappel de l'état conditionnel : si plusieurs projets → widgets masqués -->
+    <div class="sessmask">
+      <div class="mk">⧉</div>
+      <div class="mt"><b>Vue session conditionnelle.</b> Ces deux widgets n'apparaissent que pour <b>un seul</b> projet filtré. Sélectionnez <b>Tous</b> (ou plusieurs projets) et ils se masquent — le journal repasse en main courante multi-projets.</div>
+    </div>
+
+    </div><!-- /sesscol -->
+
+    <!-- COLONNE DROITE : pile de chips (widgets repliés) + widgets remontés en haut -->
+    <aside class="rightcol">
+
+      <!-- PILE DE CHIPS — au-dessus des autres widgets de droite -->
+      <div class="chipdock">
+        <div class="dockhead">Widgets repliés · 1</div>
+        <button class="wchip" title="Ré-ouvrir la frise des tours">
+          <span class="ico">▦</span>
+          <span class="wc-tx"><span class="wc-t">Frise des tours · part d'agent</span><span class="wc-s">9 tours · session iaka-demo</span></span>
+          <span class="wc-act">déployer ⊞</span>
+        </button>
+      </div>
+
+      <!-- Bilan de session (remonté du bas) -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Bilan de session</span><span class="vs">iaka-demo · 38 nœuds</span></div>
+        <div class="share">
+          <div style="width:47%;background:#3b82f6">47%</div>
+          <div style="width:29%;background:#30a46c">29%</div>
+          <div style="width:18%;background:#8e4ec6">18%</div>
+          <div style="width:6%;background:#b8770a"></div>
+        </div>
+        <div class="sharekey">
+          <div class="r"><span class="sw" style="background:#3b82f6"></span><span class="nm">Aragorn</span><span style="color:var(--ink3);font-size:11px">coordinateur</span><span class="pc">18 · 47%</span></div>
+          <div class="r"><span class="sw" style="background:#30a46c"></span><span class="nm">Gimli</span><span style="color:var(--ink3);font-size:11px">exécution</span><span class="pc">11 · 29%</span></div>
+          <div class="r"><span class="sw" style="background:#8e4ec6"></span><span class="nm">Gandalf</span><span style="color:var(--ink3);font-size:11px">sidechain</span><span class="pc">7 · 18%</span></div>
+          <div class="r"><span class="sw" style="background:#b8770a"></span><span class="nm">Legolas</span><span style="color:var(--ink3);font-size:11px">gate</span><span class="pc">2 · 6%</span></div>
+        </div>
+      </div>
+
+      <!-- Canaux du jour (remonté du bas) -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Canaux du jour</span><span class="vs">14 événements</span></div>
+        <div class="legend2" style="flex-direction:column;gap:10px;font-size:12.5px;color:var(--ink2)">
+          <span><i style="background:var(--blue)"></i> adresse · 5 — humain ↔ agents</span>
+          <span><i style="background:var(--acc)"></i> geste · 6 — délégations machine</span>
+          <span><i style="background:var(--ink3)"></i> pensée · 3 — raisonnement</span>
+        </div>
+      </div>
+
+    </aside>
+    </div><!-- /sesslayout -->
+  </section>
+
+  <!-- TIMELINE (main courante) en pleine largeur, sous la bande de session -->
+  <div class="jgrid">
+    <div class="tl">
+      <div class="ev canal-adresse">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Stéphane</span><span class="arrow">→</span><span class="who">Aragorn</span><span class="lab adresse">adresse</span><span class="proj">iaka-demo</span><span class="time">10:25</span></div>
+        <div class="body">Le site est trop vieux, trop lourd, pas assez aéré — lance la refonte avec la team.</div>
+      </div>
+      <div class="ev canal-geste">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Aragorn</span><span class="arrow">⇄</span><span class="who">Gandalf</span><span class="lab geste">geste</span><span class="proj">iaka-demo</span><span class="time">10:26</span></div>
+        <div class="body">Délégation <code>tool_use Agent</code> — « audit des écrans + hiérarchie de l'information ».</div>
+      </div>
+      <div class="ev canal-pensee">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Gandalf</span><span class="lab pensee">pensée</span><span class="proj">iaka-demo</span><span class="time">10:29</span></div>
+        <div class="body">Le point dur n'est pas la charte mais la grammaire de mise en page ; trois passes : nav, sans-bord, typo.</div>
+      </div>
+      <div class="ev canal-geste">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Gandalf</span><span class="arrow">→</span><span class="who">Aragorn</span><span class="lab geste">geste</span><span class="proj">iaka-demo</span><span class="time">10:31</span></div>
+        <div class="body">Rapport remonté au coordinateur · 1 sidechain clos · plan validé.</div>
+      </div>
+      <div class="ev canal-geste">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Gimli</span><span class="arrow">→</span><span class="who">Rail.tsx</span><span class="lab geste">geste</span><span class="proj">iaka-demo</span><span class="time">10:34</span></div>
+        <div class="body">4 gestes en T9 : <code>Edit Rail.tsx</code>, <code>Edit index.css</code>, <code>Write fonts.css</code>, <code>Bash npm run dev</code>.</div>
+      </div>
+      <div class="ev canal-adresse">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Aragorn</span><span class="arrow">→</span><span class="who">Stéphane</span><span class="lab adresse">adresse</span><span class="proj">iaka-demo</span><span class="time">10:38</span></div>
+        <div class="body">Passe 1 livrée. 4 hypothèses de refonte rendues — tu peux trancher.</div>
+      </div>
+      <div class="ev canal-pensee">
+        <div class="node"><i></i></div>
+        <div class="head"><span class="who">Legolas</span><span class="lab pensee">pensée</span><span class="proj">iakacockpit</span><span class="time">09:58</span></div>
+        <div class="body">Gate v0.12.0 : 332 front + 217 Rust verts, recette terrain OK. Candidate scellée.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+</body></html>
