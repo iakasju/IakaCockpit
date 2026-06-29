@@ -36,8 +36,8 @@ export const fr = {
     eyebrow: "Étagère",
     title: "Étagère",
     rootUnresolved: "atelier non résolu",
-    worksetLabel: "Set de Work",
-    worksetCount: "{{count}} projet(s) sélectionné(s)",
+    worksetLabel: "Sur la table",
+    worksetCount: "{{count}} projet(s) sur la table",
     openInWorking: "Poser sur la table →",
     underHat: "Dans l'atelier",
     scanning: "Scan de l'atelier…",
@@ -46,10 +46,10 @@ export const fr = {
   },
 
   tile: {
-    addToWorkAria: "Ajouter au set de Work",
-    removeFromWorkAria: "Retirer du set de Work",
-    inWork: "dans le set de Work",
-    addToWork: "ajouter au Work",
+    addToWorkAria: "Poser sur la table",
+    removeFromWorkAria: "Ranger sur l'étagère",
+    inWork: "sur la table",
+    addToWork: "poser sur la table",
     gitNone: "hors git",
     gitDirty: "dirty",
     gitClean: "clean",
@@ -57,13 +57,13 @@ export const fr = {
 
   working: {
     ariaLabel: "Table",
-    worksetTitle: "Set de Work",
+    worksetTitle: "Sur la table",
     worksetCount: "{{count}} projet(s)",
     importAria: "Importer un projet (dossier existant)",
     importTitle: "Importer un projet existant…",
-    selectedProjects: "Projets sélectionnés",
+    selectedProjects: "Projets sur la table",
     emptyList:
-      "Aucun projet. Importe un dossier existant via le bouton + ci-dessus, ou ajoute des projets depuis Portfolio.",
+      "Aucun projet. Importe un dossier existant via le bouton + ci-dessus, ou pose des projets sur la table depuis l'Étagère.",
     interlocutorTitle: "Interlocuteur courant",
     runnerTitle:
       "Coordinateur · runner · modèle (édition : Réglages → Teams & agents). Appliqué au prochain lancement.",
@@ -84,7 +84,7 @@ export const fr = {
       "Runner « {{kind}} » du coordinateur {{coordinator}} non encore exécutable (étape : claude-code). La conversation reste ouverte ; la définition est conservée.",
     emptyConv: "Aucune conversation ouverte.",
     emptyConvHint:
-      "Choisis un projet du set de Work pour ouvrir sa conversation.",
+      "Choisis un projet sur la table pour ouvrir sa conversation.",
   },
 
   roster: {

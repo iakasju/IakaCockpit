@@ -37,8 +37,8 @@ export const en: Resources = {
     eyebrow: "Shelf",
     title: "Shelf",
     rootUnresolved: "studio unresolved",
-    worksetLabel: "Work set",
-    worksetCount: "{{count}} project(s) selected",
+    worksetLabel: "On the table",
+    worksetCount: "{{count}} project(s) on the table",
     openInWorking: "Put on the table →",
     underHat: "In the studio",
     scanning: "Scanning the studio…",
@@ -47,10 +47,10 @@ export const en: Resources = {
   },
 
   tile: {
-    addToWorkAria: "Add to work set",
-    removeFromWorkAria: "Remove from work set",
-    inWork: "in the work set",
-    addToWork: "add to Work",
+    addToWorkAria: "Put on the table",
+    removeFromWorkAria: "Put back on the shelf",
+    inWork: "on the table",
+    addToWork: "put on the table",
     gitNone: "no git",
     gitDirty: "dirty",
     gitClean: "clean",
@@ -58,13 +58,13 @@ export const en: Resources = {
 
   working: {
     ariaLabel: "Table",
-    worksetTitle: "Work set",
+    worksetTitle: "On the table",
     worksetCount: "{{count}} project(s)",
     importAria: "Import a project (existing folder)",
     importTitle: "Import an existing project…",
-    selectedProjects: "Selected projects",
+    selectedProjects: "Projects on the table",
     emptyList:
-      "No project. Import an existing folder via the + button above, or add projects from Portfolio.",
+      "No project. Import an existing folder via the + button above, or put projects on the table from the Shelf.",
     interlocutorTitle: "Current interlocutor",
     runnerTitle:
       "Coordinator · runner · model (edit: Settings → Teams & agents). Applied on next launch.",
@@ -84,7 +84,7 @@ export const en: Resources = {
     bannerChat:
       "Coordinator {{coordinator}}'s runner “{{kind}}” is not executable yet (step: claude-code). The conversation stays open; the definition is kept.",
     emptyConv: "No conversation open.",
-    emptyConvHint: "Pick a project from the work set to open its conversation.",
+    emptyConvHint: "Pick a project on the table to open its conversation.",
   },
 
   roster: {
