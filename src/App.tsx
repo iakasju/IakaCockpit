@@ -15,6 +15,7 @@ import { useConversations } from "./hooks/useConversations";
 import { useTeams } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useAgentTasks } from "./hooks/useAgentTasks";
+import { useEconomy } from "./hooks/useEconomy";
 import { usePlan } from "./hooks/usePlan";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
@@ -30,7 +31,7 @@ import { SettingsView } from "./views/SettingsView";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { DemoTeamMember } from "./mock/demoTeam";
-import type { Project } from "./api/backend";
+import type { Project, RunnerEvent } from "./api/backend";
 import "./theme/tokens.css";
 // Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
 // commités et servis en 'self' (CSP intacte, zero origine Google, offline).
@@ -63,17 +64,29 @@ export default function App(): JSX.Element {
   // projet : `delegation` → tâche running, `activite` du même id → done. La collecte vit
   // dans le hook (pas de god-component) ; le panneau ne reçoit que la liste.
   const agentTasks = useAgentTasks();
+  // Économie du tour (L18 #5) : accumule les events `kind:"economie"` du tailer par projet.
+  const economy = useEconomy();
+
+  // Observateur ADDITIF combiné des events bruts : panneau Tâches (délégations) + HUD
+  // économie (tokens). Stable (les deux `ingest` le sont) → pas de re-souscription tailer.
+  const ingestRunnerEvent = useCallback(
+    (projectId: string, ev: RunnerEvent): void => {
+      agentTasks.ingest(projectId, ev);
+      economy.ingest(projectId, ev);
+    },
+    [agentTasks, economy],
+  );
 
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
   // conversations (runner://event → ChatTurn). Démarré dès qu'un runnerSessionId
   // apparaît dans une session PTY. Le parse vit côté Rust (CSP) ; ici on ne route que
   // des events typés vers l'état conversation. `onEvent` est l'observateur ADDITIF des
-  // events bruts (tool_use_id préservé) pour le panneau « Tâches en cours ».
+  // events bruts (tool_use_id préservé) pour les panneaux Tâches + Économie.
   useRunnerViews({
     conversations: conversations.conversations,
     ptySessions: pty.sessions,
     appendTurn: conversations.appendTurn,
-    onEvent: agentTasks.ingest,
+    onEvent: ingestRunnerEvent,
   });
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
@@ -304,6 +317,11 @@ export default function App(): JSX.Element {
                 : []
             }
             planItems={plan.items}
+            economySeries={
+              conversations.active
+                ? economy.seriesFor(conversations.active.projectId)
+                : []
+            }
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

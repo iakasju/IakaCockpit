@@ -11,6 +11,17 @@ export const fr = {
     empty: "Aucun plan en cours.",
   },
 
+  economy: {
+    ariaLabel: "Économie du tour",
+    title: "Économie",
+    turns: "{{count}} tour(s)",
+    empty: "Aucun tour mesuré.",
+    out: "sortie",
+    in: "entrée",
+    coord: "coordinateur",
+    delegated: "délégués",
+  },
+
   nav: {
     ariaLabel: "Navigation principale",
     brand: "Atelier",

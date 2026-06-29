@@ -12,6 +12,17 @@ export const en: Resources = {
     empty: "No plan in progress.",
   },
 
+  economy: {
+    ariaLabel: "Turn economy",
+    title: "Economy",
+    turns: "{{count}} turn(s)",
+    empty: "No turn measured.",
+    out: "out",
+    in: "in",
+    coord: "coordinator",
+    delegated: "delegated",
+  },
+
   nav: {
     ariaLabel: "Main navigation",
     brand: "Atelier",

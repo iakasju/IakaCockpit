@@ -30,6 +30,8 @@ import { Roster } from "../components/Roster";
 import { TasksPanel } from "../components/TasksPanel";
 import { PlanPanel } from "../components/PlanPanel";
 import type { PlanItem } from "../hooks/derivePlan";
+import { EconomyPanel } from "../components/EconomyPanel";
+import type { EcoPoint } from "../hooks/useEconomy";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
@@ -96,6 +98,8 @@ export interface WorkingViewProps {
   tasks?: readonly AgentTask[];
   /** Plan vivant (L18 #3) : items du dernier snapshot, ou null si aucun. */
   planItems?: PlanItem[] | null;
+  /** Économie du tour (L18 #5) : série de points tokens de la session active. */
+  economySeries?: readonly EcoPoint[];
   /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
@@ -126,6 +130,7 @@ export function WorkingView({
   rosterMembers,
   tasks,
   planItems,
+  economySeries,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -420,6 +425,8 @@ export function WorkingView({
             `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
           */}
           <PlanPanel items={planItems ?? null} />
+          {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}
+          <EconomyPanel series={economySeries ?? []} />
         </aside>
       )}
     </section>

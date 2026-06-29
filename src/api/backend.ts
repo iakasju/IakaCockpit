@@ -466,7 +466,8 @@ export type RunnerEventKind =
   | "geste"
   | "delegation"
   | "activite"
-  | "pensee";
+  | "pensee"
+  | "economie";
 
 /**
  * Miroir de `transcript::RunnerEvent` (Rust, L10b) — une vue dérivée du transcript.
