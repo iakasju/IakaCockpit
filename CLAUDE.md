@@ -326,6 +326,16 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `specs/instructions/L15-noms-personnages-teams-catalogue.md`. Reste possible (horizon) : faire
       **suivre les vignettes à la charte** au-delà du roster (déjà le cas via `settings.theme`) ; rien de
       bloquant.
+- [ ] **L16** — **Pilotage vocal d'iakacockpit** (voix → action IHM) → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
+      *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
+      cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher
+      d'intent (règles d'abord, LLM Ollama en secours) → action IHM`. STT **côté Rust** (WKWebView sans
+      Web Speech fiable), **offline** (voix jamais au cloud). **P1 = barre de commande IHM / navigation**
+      (`voice.rs` cpal+whisper-rs, push-to-talk, dispatcher règles pur, façade `voiceListen()`,
+      `useVoiceCommand`, UI micro) — prouve la chaîne voix→action sans LLM. **P2 différé** = lancer le
+      Travail (fuzzy projet/équipe + LLM-secours). **P3 différé** = conversation vocale avec les teams
+      (whisper free-form → chat coordinateur ; TTS option). Réutilise nav/Ollama/façade ; modèle non
+      bundlé en P1 (téléchargé). Lié à la note `specs/notes/concepts-llm-transcript-ihm.md`.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
