@@ -19,27 +19,35 @@ délégation agent→agent + user↔agent (déjà mergées dans cette vue côté
 |---|---|---|
 | **Réalisé** (avancement, timer, statuts) | **snapshots de plan L18** : chaque `TodoWrite` émet un snapshot horodaté ; comparer les snapshots donne **quand** chaque tâche passe `pending→in_progress→completed` | **DATA-READY** (via L18) |
 | **Flèches relations** | délégations (`kind:"delegation"`, agent) + paroles user↔agent | DATA-READY (transcript) |
-| **Prévisionnel** (durée estimée par tâche) | n'existe PAS — le coordinateur doit la **produire** | **FEATURE à concevoir** |
+| **Prévisionnel** (étapes + délégations + durées) | le **rôle coordinateur** DOIT le produire (obligation, cf. § Décision) | **FEATURE — décidée** |
 | **Dépassement + cascade + alerte** | comparer réalisé (snapshots) vs estimé | dérivé, dès que l'estimé existe |
 
 **Conséquence clé** : on peut livrer **le réalisé + les flèches + l'alerte-sur-retard** rien
 qu'avec L18 (snapshots datés), AVANT même les estimations. Le **prévisionnel** est le seul vrai
 nouveau mécanisme.
 
-## Arbitrage à trancher (Stéphane) — comment le coordinateur PRODUIT les estimations
+## Source des estimations — DÉCISION (Stéphane, 2026-06-30) : OBLIGATION DE RÔLE
 
-- **Option A — durée dans le plan** : convention sur `TodoWrite` (le coordinateur préfixe/encode
-  une durée par item, ex. `"[~5min] Cadrer"`). Le hook L18 la capte (déjà le plan complet). Zéro
-  nouvel outil ; dépend du **prompt** du coordinateur (qu'il estime). *Le plus léger.*
-- **Option B — étape d'estimation dédiée** : le coordinateur émet, au lancement, un **doc
-  d'estimation structuré** (via le hook / main courante, `event:"estimate"`, `[{task,minutes}]`).
-  Plus propre/explicite ; demande de **prompter** le coordinateur pour cette étape.
-- **Option C — heuristique** (sans LLM) : estimer depuis l'historique (durées réelles passées des
-  tâches similaires, via les snapshots accumulés). Aucun changement de prompt ; moins « parlant »
-  au 1ᵉʳ run (pas d'historique).
+Ce n'est **pas** un prompt ponctuel : c'est une **obligation portée par le rôle
+« coordinateur »** (le chef de projet de la team). Le rôle coordinateur **DOIT**, à chaque
+étape :
+1. **planifier les étapes** (la liste prévisionnelle),
+2. **planifier les délégations** de chaque étape (quel agent fait quoi),
+3. **évaluer les temps prévisionnels** (durée par étape/tâche).
 
-*Reco : **A** pour amorcer (léger, converge avec L18), avec repli **C** (heuristique) quand
-l'historique existe ; **B** si on veut une estimation de premier rang plus tard.*
+**Dégradation honnête (gravée)** : si les étapes **ou** les timings **ne sont pas produits**, on
+**retombe en mode SANS prévisionnel** (#9a, réalisé seul) — **jamais de fausse baseline**.
+
+### Matérialisation (couplage L11 ↔ L18)
+- **Contrat de rôle (L11)** : l'obligation vit dans la **définition du rôle coordinateur**
+  (persona/contrat de l'agent coordinateur). Concrètement, le **runner coordinateur** reçoit au
+  lancement une **instruction** qui impose : produire le plan (étapes + délégations) **et** les
+  durées estimées (canal structuré — p. ex. `TodoWrite` enrichi d'une durée, ou un doc
+  `event:"plan"` portant `minutes` par item).
+- **Capture (L18)** : le hook de main courante capte ce plan **complet** (étapes + délégations +
+  durées) → la baseline prévisionnelle. Le **réalisé** se dérive des snapshots successifs.
+- **Indépendance moteur** : l'obligation est attachée au **rôle**, pas au runner — un coordinateur
+  `codex`/`ollama` la porte aussi (chacun l'émet par sa voie, schéma unifié L18).
 
 ## Tranches proposées
 
