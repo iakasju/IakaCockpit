@@ -6,8 +6,9 @@
 export const fr = {
   nav: {
     ariaLabel: "Navigation principale",
-    portfolio: "Portefeuille",
-    working: "Travail",
+    brand: "Atelier",
+    portfolio: "Étagère",
+    working: "Table",
     journal: "Journal",
     teams: "Équipes",
     settings: "Réglages",
@@ -31,17 +32,17 @@ export const fr = {
   },
 
   portfolio: {
-    ariaLabel: "Portfolio",
-    eyebrow: "Portefeuille",
-    title: "Portefeuille",
-    rootUnresolved: "chapeau non résolu",
+    ariaLabel: "Étagère",
+    eyebrow: "Étagère",
+    title: "Étagère",
+    rootUnresolved: "atelier non résolu",
     worksetLabel: "Set de Work",
     worksetCount: "{{count}} projet(s) sélectionné(s)",
-    openInWorking: "Ouvrir dans Travail →",
-    underHat: "Sous le chapeau",
-    scanning: "Scan du chapeau…",
+    openInWorking: "Poser sur la table →",
+    underHat: "Dans l'atelier",
+    scanning: "Scan de l'atelier…",
     scanError: "Erreur de scan : {{error}}",
-    empty: "Aucun projet sous le chapeau.",
+    empty: "Aucun projet dans l'atelier.",
   },
 
   tile: {
@@ -55,7 +56,7 @@ export const fr = {
   },
 
   working: {
-    ariaLabel: "Travail",
+    ariaLabel: "Table",
     worksetTitle: "Set de Work",
     worksetCount: "{{count}} projet(s)",
     importAria: "Importer un projet (dossier existant)",
@@ -282,9 +283,9 @@ export const fr = {
     teamVignettesAria: "Team de vignettes",
 
     cockpitTitle: "Cockpit",
-    rootLabel: "Chapeau (racine)",
-    rootDesc: "dossier scanné par le portfolio",
-    rootAria: "Racine du chapeau",
+    rootLabel: "Atelier (racine)",
+    rootDesc: "dossier scanné pour l'étagère",
+    rootAria: "Racine de l'atelier",
     rootApply: "Appliquer & re-scanner",
 
     aiTitle: "IA (LiteLLM)",

@@ -209,6 +209,9 @@ export default function App(): JSX.Element {
         <div className="brand" aria-hidden>
           i
         </div>
+        <div className="brandsub" aria-hidden>
+          {t("nav.brand")}
+        </div>
         <button
           type="button"
           className={`railitem${grid.activeView === "portfolio" ? " on" : ""}`}

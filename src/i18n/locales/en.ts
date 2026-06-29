@@ -7,8 +7,9 @@ import type { Resources } from "./fr";
 export const en: Resources = {
   nav: {
     ariaLabel: "Main navigation",
-    portfolio: "Portfolio",
-    working: "Working",
+    brand: "Atelier",
+    portfolio: "Shelf",
+    working: "Table",
     journal: "Journal",
     teams: "Teams",
     settings: "Settings",
@@ -32,17 +33,17 @@ export const en: Resources = {
   },
 
   portfolio: {
-    ariaLabel: "Portfolio",
-    eyebrow: "Portfolio",
-    title: "Portfolio",
-    rootUnresolved: "root folder unresolved",
+    ariaLabel: "Shelf",
+    eyebrow: "Shelf",
+    title: "Shelf",
+    rootUnresolved: "studio unresolved",
     worksetLabel: "Work set",
     worksetCount: "{{count}} project(s) selected",
-    openInWorking: "Open in Working →",
-    underHat: "Under the root",
-    scanning: "Scanning the root folder…",
+    openInWorking: "Put on the table →",
+    underHat: "In the studio",
+    scanning: "Scanning the studio…",
     scanError: "Scan error: {{error}}",
-    empty: "No project under the root folder.",
+    empty: "No project in the studio.",
   },
 
   tile: {
@@ -56,7 +57,7 @@ export const en: Resources = {
   },
 
   working: {
-    ariaLabel: "Working",
+    ariaLabel: "Table",
     worksetTitle: "Work set",
     worksetCount: "{{count}} project(s)",
     importAria: "Import a project (existing folder)",
@@ -281,9 +282,9 @@ export const en: Resources = {
     teamVignettesAria: "Avatar team",
 
     cockpitTitle: "Cockpit",
-    rootLabel: "Root folder",
-    rootDesc: "folder scanned by the portfolio",
-    rootAria: "Root folder",
+    rootLabel: "Atelier (root)",
+    rootDesc: "folder scanned for the shelf",
+    rootAria: "Atelier root",
     rootApply: "Apply & re-scan",
 
     aiTitle: "AI (LiteLLM)",
