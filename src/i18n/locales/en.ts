@@ -12,6 +12,13 @@ export const en: Resources = {
     empty: "No plan in progress.",
   },
 
+  memory: {
+    ariaLabel: "Memory / context",
+    title: "Memory",
+    empty: "Context not measured.",
+    used: "{{pct}}% of context",
+  },
+
   economy: {
     ariaLabel: "Turn economy",
     title: "Economy",

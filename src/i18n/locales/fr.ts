@@ -11,6 +11,13 @@ export const fr = {
     empty: "Aucun plan en cours.",
   },
 
+  memory: {
+    ariaLabel: "Mémoire / contexte",
+    title: "Mémoire",
+    empty: "Contexte non mesuré.",
+    used: "{{pct}} % du contexte",
+  },
+
   economy: {
     ariaLabel: "Économie du tour",
     title: "Économie",

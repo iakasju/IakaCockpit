@@ -31,6 +31,7 @@ import { TasksPanel } from "../components/TasksPanel";
 import { PlanPanel } from "../components/PlanPanel";
 import type { PlanItem } from "../hooks/derivePlan";
 import { EconomyPanel } from "../components/EconomyPanel";
+import { MemoryGauge } from "../components/MemoryGauge";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
@@ -425,6 +426,14 @@ export function WorkingView({
             `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
           */}
           <PlanPanel items={planItems ?? null} />
+          {/* Jauge mémoire (L18 #6) : input du dernier tour ≈ occupation du contexte. */}
+          <MemoryGauge
+            usedTokens={
+              economySeries && economySeries.length > 0
+                ? economySeries[economySeries.length - 1].input
+                : 0
+            }
+          />
           {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}
           <EconomyPanel series={economySeries ?? []} />
         </aside>
