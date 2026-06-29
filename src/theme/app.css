@@ -370,6 +370,109 @@ button {
     grid-template-columns: 1fr;
   }
 }
+/* --- Étagère : bandeau KPIs en ligne + layout 2 zones (tuiles / économie) (L17 #1) --- */
+.kpibar {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--surf);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+  margin: 22px 0 6px;
+  overflow: hidden;
+}
+.kpibar .k {
+  flex: 1;
+  min-width: 130px;
+  padding: 16px 20px;
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--text-3) 16%, transparent);
+}
+.kpibar .k:last-child {
+  box-shadow: none;
+}
+.kpibar .kl {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.kpibar .kv {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: calc(26px * var(--fscale));
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin-top: 7px;
+}
+.kpibar .kv small {
+  font-size: 13px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+.kpibar .k-soon .kv {
+  color: var(--text-3);
+}
+.foliolayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.foliomain {
+  min-width: 0;
+}
+.folioside {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.folioside .rowhead {
+  margin: 0 0 12px;
+}
+.folioside .eb {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.ecocard {
+  background: var(--surf);
+  border-radius: 18px;
+  padding: 16px 17px;
+  box-shadow: var(--shadow-soft);
+}
+.ecocard .ecoh {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.ecoskel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ecoskel i {
+  height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-3) 12%, transparent);
+}
+.ecocard.soon .ecohint {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+@media (max-width: 1080px) {
+  .foliolayout {
+    grid-template-columns: 1fr;
+  }
+  .folioside {
+    position: static;
+  }
+}
+
 /* Carte projet SANS-BORD : fond + ombre douce + espace (plus de trait/empilement). */
 .tile {
   background: var(--surf);

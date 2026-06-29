@@ -43,6 +43,18 @@ export const fr = {
     scanning: "Scan de l'atelier…",
     scanError: "Erreur de scan : {{error}}",
     empty: "Aucun projet dans l'atelier.",
+    kpiDetected: "Rangés dans l'atelier",
+    kpiOnTable: "Sur la table",
+    kpiClean: "Dépôts propres",
+    kpiDirty: "Dépôts modifiés",
+    kpiEconomy: "Économie · 7 j",
+    soon: "à brancher",
+    economyAria: "Économie",
+    economyTitle: "Économie",
+    economyPeriod: "7 j",
+    economyCardTitle: "Coût par projet & agent",
+    economyPlaceholder:
+      "Données de coût (tokens par session) à brancher — prochain incrément.",
   },
 
   tile: {

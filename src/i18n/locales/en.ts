@@ -44,6 +44,18 @@ export const en: Resources = {
     scanning: "Scanning the studio…",
     scanError: "Scan error: {{error}}",
     empty: "No project in the studio.",
+    kpiDetected: "On the shelf",
+    kpiOnTable: "On the table",
+    kpiClean: "Clean repos",
+    kpiDirty: "Dirty repos",
+    kpiEconomy: "Economy · 7 d",
+    soon: "to wire",
+    economyAria: "Economy",
+    economyTitle: "Economy",
+    economyPeriod: "7 d",
+    economyCardTitle: "Cost by project & agent",
+    economyPlaceholder:
+      "Cost data (tokens per session) to be wired — next increment.",
   },
 
   tile: {
