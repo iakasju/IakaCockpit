@@ -106,6 +106,28 @@ export function Chat({
     [history],
   );
 
+  // Gouttière d'attribution (décision IHM variante C, L17 #2) : on regroupe les bulles
+  // ASSISTANT consécutives d'un même auteur — l'avatar n'apparaît que sur la PREMIÈRE
+  // d'un run, les suivantes s'alignent sous la même gouttière. Toute ligne d'événement
+  // ou bulle user rompt le run. PUR (dérivé de `history`/`agent`).
+  const firstOfRun = useMemo(() => {
+    const flags: boolean[] = [];
+    let prev: string | null = null;
+    for (const turn of history) {
+      const isAssistantParole =
+        turn.role === "assistant" && (turn.kind ?? "parole") === "parole";
+      if (isAssistantParole) {
+        const who = turn.agent ?? agent;
+        flags.push(prev !== who);
+        prev = who;
+      } else {
+        flags.push(false);
+        prev = null;
+      }
+    }
+    return flags;
+  }, [history, agent]);
+
   // Auto-scroll en bas à chaque nouveau tour / pending.
   useEffect(() => {
     const el = scrollRef.current;
@@ -167,41 +189,44 @@ export function Chat({
             );
           }
 
-          // L9 fix avatar par-tour : l'émetteur est FIGÉ sur le tour (`turn.agent`).
-          // Fallback rétro-compat L8 : si absent, on retombe sur la persona courante.
-          // Changer l'interlocuteur ne re-rend donc PAS les avatars des tours passés.
-          const turnAgent =
-            turn.role === "assistant" ? (turn.agent ?? agent) : agent;
-          const avatarUrl =
-            turn.role === "assistant"
-              ? (resolveAvatar?.(turnAgent) ?? null)
-              : null;
+          // Bulle UTILISATEUR : à droite, sans gouttière.
+          if (turn.role === "user") {
+            return (
+              <div key={i} className="bubble me">
+                <span className="btext">{turn.content}</span>
+              </div>
+            );
+          }
+
+          // Bulle ASSISTANT : gouttière d'avatar (attribution variante C) + corps.
+          // L9 fix avatar par-tour : l'émetteur est FIGÉ sur le tour (`turn.agent`) ;
+          // fallback persona courante si absent. Avatar + nom seulement en TÊTE de run.
+          const turnAgent = turn.agent ?? agent;
+          const head = firstOfRun[i];
+          const avatarUrl = head ? (resolveAvatar?.(turnAgent) ?? null) : null;
           return (
-            <div
-              key={i}
-              className={`bubble ${turn.role === "user" ? "me" : "them"}`}
-            >
-              {turn.role === "assistant" && (
-                <span className="bhead">
-                  {avatarUrl && (
-                    <BubbleAvatar url={avatarUrl} alt={turnAgent} />
-                  )}
-                  <span className="bwho">{turnAgent}</span>
-                </span>
-              )}
-              <span className="btext">{turn.content}</span>
+            <div key={i} className={`turnrow them${head ? " runstart" : ""}`}>
+              <span className="bgutter">
+                {avatarUrl && <BubbleAvatar url={avatarUrl} alt={turnAgent} />}
+              </span>
+              <div className="bubble them">
+                {head && <span className="bwho">{turnAgent}</span>}
+                <span className="btext">{turn.content}</span>
+              </div>
             </div>
           );
         })}
         {pending && (
-          <div className="bubble them pending" aria-live="polite">
-            <span className="bhead">
+          <div className="turnrow them runstart" aria-live="polite">
+            <span className="bgutter">
               {resolveAvatar?.(agent) && (
                 <BubbleAvatar url={resolveAvatar(agent) as string} alt={agent} />
               )}
-              <span className="bwho">{agent}</span>
             </span>
-            <span className="btext typing">…</span>
+            <div className="bubble them pending">
+              <span className="bwho">{agent}</span>
+              <span className="btext typing">…</span>
+            </div>
           </div>
         )}
         {error && (

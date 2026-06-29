@@ -1159,10 +1159,28 @@ button {
   border-bottom-left-radius: 5px;
   box-shadow: var(--shadow-soft);
 }
-.bubble .bhead {
+/* Gouttière d'attribution (variante C, L17 #2) : avatar en colonne à gauche, bulles
+   d'un même run regroupées sous le même avatar. */
+.turnrow {
   display: flex;
-  align-items: center;
-  gap: 7px;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 84%;
+}
+.turnrow:not(.runstart) {
+  margin-top: -3px;
+}
+.turnrow .bgutter {
+  width: 24px;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding-top: 3px;
+}
+.turnrow .bubble.them {
+  align-self: flex-start;
+  max-width: 100%;
 }
 .bubble .bwho {
   font-family: var(--font-display);
