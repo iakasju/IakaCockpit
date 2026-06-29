@@ -539,7 +539,7 @@ mod tests {
 
     #[test]
     fn response_item_appel_outil_est_un_geste() {
-        // ⚠️ Shape DÉFENSIF (à confirmer recette) : un appel de commande shell.
+        // Shape `local_shell_call` (variante historique, toujours gérée défensivement).
         let evs = src().map_record(
             r#"{"type":"response_item","payload":{"type":"local_shell_call","call_id":"c1","name":"shell","command":["ls","-1"]}}"#,
         );
@@ -558,6 +558,38 @@ mod tests {
         assert_eq!(evs[0].kind, EventKind::Activite);
         assert_eq!(evs[0].tool_use_id.as_deref(), Some("c1"));
         assert!(evs[0].text.as_deref().unwrap().contains("README.md"));
+    }
+
+    #[test]
+    fn response_item_function_call_reel_geste_et_correlation() {
+        // Shape RÉELLE confirmée sur rollout Codex 0.142.3 (recette 2026-06-29) :
+        // l'appel est un `function_call` (name=exec_command, arguments JSON, call_id distinct
+        // du `id` `fc_…`), le résultat un `function_call_output` partageant le MÊME `call_id`.
+        // On vérifie que le geste prend bien `call_id` (et pas l'`id` `fc_…`) pour corréler.
+        let call = src().map_record(
+            r#"{"type":"response_item","payload":{"type":"function_call","id":"fc_abc","name":"exec_command","arguments":"{\"cmd\":\"ls\",\"workdir\":\"/w\"}","call_id":"call_42"}}"#,
+        );
+        assert_eq!(call.len(), 1);
+        assert_eq!(call[0].kind, EventKind::Geste);
+        assert_eq!(call[0].tool_name.as_deref(), Some("exec_command"));
+        assert_eq!(
+            call[0].tool_use_id.as_deref(),
+            Some("call_42"),
+            "le geste doit corréler sur call_id, pas sur l'id fc_…"
+        );
+        assert!(call[0].tool_input.as_deref().unwrap().contains("ls"));
+
+        let out = src().map_record(
+            r#"{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_42","output":"alpha\nbravo\n"}}"#,
+        );
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].kind, EventKind::Activite);
+        assert_eq!(
+            out[0].tool_use_id.as_deref(),
+            call[0].tool_use_id.as_deref(),
+            "appel et résultat partagent le même call_id => corrélation possible"
+        );
+        assert!(out[0].text.as_deref().unwrap().contains("alpha"));
     }
 
     // --- Fixture RÉELLE (rollout capturé) : ne panique pas, paroles présentes, pas de doublon ---
