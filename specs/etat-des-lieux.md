@@ -1,47 +1,78 @@
 # État des lieux — 2026-06-30
 
 ## En une phrase
-IakaCockpit est **scellé en v0.14.0** : le Gantt prévisionnel est complet (cascade L19 #9b
-+ conformité au mock et remplissage live L20), par-dessus l'identité Atelier/Étagère/Table
-+ main courante par hook L18 + widgets Table de la v0.13.0 ; recette terrain Stéphane OK,
-gate Legolas PASS sur chaque lot.
+**PAUSE 2026-06-30.** v0.14.0 scellée+poussée (Gantt prévisionnel complet). Par-dessus,
+la branche **`fix/portefeuille-recette-terrain`** (6 commits d'avance sur `main`=`f6713df`,
+arbre propre, **tout gate Legolas PASS**, **NON scellée v0.15.0**) porte la refonte
+Portefeuille/Atelier (L21) + finition + retours de recette terrain. **La pause survient sur
+un BUG OUVERT diagnostiqué non corrigé** : le widget Économie (treemap « coût par projet &
+agent ») reste **vide**.
 
-## Fait récemment
-- **v0.14.0 scellée** (2026-06-30) — clôture du Gantt prévisionnel. Trois lots livrés au-dessus
-  de v0.13.0, chacun **gate Legolas PASS** :
-  - **L19 #9b — cascade** (`54a6ea0`) : quand une tâche estimée dépasse son estimation, les
-    baselines prévues des tâches **suivantes** se décalent en cascade (`baselineStartMs`,
-    dérivation pure testée) ; dégradation honnête → no-estimate = no-baseline = no-cascade.
-  - **L20 A — conformité mock** (`f14f941`) : `GanttPanel` réécrit contre le mock de référence
-    (`specs/design/redesign/A/concepts/app/travail.html`) — couloirs **par tâche**, bandeau
-    d'estimation, axe gradué **étendu au-delà de « maintenant »**, curseur labellisé, barres
-    riches (fill/cap/débord rouge/marqueur prévu), rendu cascade (ghost/wait/connecteur), légende ;
-    front pur, donnée inchangée (`derivePlanTimeline.ts` intact).
-  - **L20 B — remplissage live** (`3b1dd51`) : hook `useNow` (ticker, pause onglet masqué) +
-    polling `usePlan` (12 s, via façade L4 `fetchMainCourante`, anti-fuite d'interval) → les barres
-    grandissent, le curseur avance, les nouvelles transitions sont captées. `_changes` CouchDB différé.
-- **Recette terrain GUI validée par Stéphane** (look conforme au mock + live à l'œil).
-- **Rappel socle v0.13.0** (`8b80087`) : identité Atelier/Étagère/Table, **L18 main courante par
-  hook**, widgets Table, agrégation cross-projet des tokens (Étagère), campagne **ui-align v1a→v1c**.
+## Fait récemment (depuis v0.14.0, sur la branche, non scellé)
+- **v0.14.0 scellée+poussée** (`00b7004`, tag `v0.14.0`) — clôture du Gantt prévisionnel
+  (L19 #9b cascade `54a6ea0` + L20 conformité mock `f14f941` + L20 live `3b1dd51`), recette
+  terrain Stéphane OK, gate Legolas PASS.
+- **L21 — refonte Portefeuille/Atelier conforme au mock** (`portefeuille.html`) : cartes riches
+  « Posés sur la table » (chip statut, description=dernier commit, **vignettes superposées**,
+  anneau coût %), section « Rangés dans l'atelier » en lignes + bouton poser, scoping anneau/treemap
+  à la table (AR-4), + visu **« Travail récent »** (scatter-timeline d'activité, façade Rust
+  `portfolio_activity()`). **AR-5 révisé** : l'activité reflète le **portefeuille réel entier**
+  (hors démo). Commits `86544eb`/`856d6cb` (sur main jusqu'à f6713df).
+- **Patch Gantt fondu** (`ee4abc6`) : token `--font-mono` (16 usages cassés → monospace) + pilule du
+  chip d'en-tête. **Finition Loki** (`f6713df`) : treemap mosaïque + segments pilule + légende,
+  anti-collision bulles, ombre hairline lisible en dark, 3ᵉ ligne KPI.
+- **Retours de recette terrain** (branche) : activité recâblée portefeuille-réel (`708256a`),
+  « Travail récent » **pleine largeur** + rail Économie à droite (`5762fb5`), coût « coordinateur vs
+  délégués » ajouté puis **retiré** (redondant avec les segments du treemap, décision « b », `62b284f`),
+  rail Économie aligné sur « Posés sur la table » (`a150835`), activité **police ×2 + 5 lignes
+  visibles + scroll** (`3167192`). Chaque lot **gate Legolas PASS** (dernier : 401 front + 231 Rust).
 
-## En cours
-- Rien de bloquant. Branche `main`, arbre propre après seal. Différés tracés : couloirs-par-agent,
-  flèches de relations + lane user (AR-1/AR-2 de L20), souscription `_changes` CouchDB.
+## En cours — BUG ÉCONOMIE OUVERT (cause de la pause)
+Le treemap Économie (scopé table, AR-4) reste **vide** même en posant un projet sur la table.
+**Cause trouvée empiriquement** (rejeu du fold sur `~/.claude/projects`, 59 projets) :
+1. **Troncature top-8 AVANT le scope table** : `economy.rs::scan_projects_dir(dir, 8)` ne renvoie
+   que les 8 plus gros projets ; les vrais projets de la table (ex. `iaka-demo`, petit) **ne sont
+   pas dans le top-8** → absents de `portfolioEco` → le filtre `worksetIds` ne trouve rien → vide.
+2. **Clés polluées par d'anciennes sessions Windows** : `project_of(cwd)` coupe sur `/` seulement ;
+   les vieux transcripts ont des cwd `C:\iakaVODdash` (sans `/`) → la clé devient le chemin entier
+   `C:\…`, qui n'matche aucun id Mac et **écrase le classement** (squatte le top-8).
+L'activité (non filtrée, top-12) « marche » mais affiche ces `C:\…` ; l'économie (filtrée table) est vide.
+
+## Décision en attente (Stéphane) — bloque le fix
+Pour les vieilles sessions Windows (`C:\iakaVODdash`, `C:\robotimmo`…), vraie donnée passée mais
+hors arbo Mac : **(a)** ne montrer que les projets du **portefeuille actuel** *(reco)* / **(b)** tout
+garder / **(c)** filtrer par fenêtre de temps. Reco = **(a)** + le fix technique (ci-dessous).
 
 ## Jalons (gates)
 | Jalon | Statut |
 |---|---|
-| Instruction cadrée | oui (L18 + L19 + L20 dans `specs/instructions/`, L20 arbitrages tranchés) |
-| Tests verts | oui (375/375, typecheck + lint + build verts au gate L20) |
-| Recette stage | oui (gate Legolas PASS sur `54a6ea0`, `f14f941`+`3b1dd51` ; recette terrain GUI Stéphane OK) |
-| Feu vert prod | non applicable (produit en dev, pas de bascule prod prévue à ce stade) |
+| Instructions cadrées | oui (L18→L21 dans `specs/instructions/`, arbitrages tranchés ; L21 AR-5 révisé) |
+| Tests verts | oui (401 front + 231 Rust au dernier gate ; quality.sh OK) |
+| Recette stage | PASS sur tous les lots de la branche (Legolas) |
+| Recette terrain GUI | **partielle** — Portefeuille recettée sauf le **bug économie** non résolu |
+| Seal v0.15.0 | **NON** (bloqué par le bug économie + merge branche→main) |
 
-## Prochaine étape
-**L16 — pilotage vocal d'iakacockpit** (cadré, non démarré) : P1 = barre de commande IHM /
-navigation par la voix (STT local whisper.cpp côté Rust, dispatcher d'intent par règles). Sinon,
-itérer sur les différés Gantt (couloirs-par-agent, flèches de relations) si Stéphane les repriorise.
+## Prochaine étape (à la reprise)
+1. **Trancher (a)/(b)/(c)** avec Stéphane (reco a).
+2. **Fix `economy.rs`** (Rust, donc redémarrage app nécessaire) : (i) **normaliser `project_of`**
+   pour couper sur `/` ET `\` ; (ii) **ne pas tronquer avant le scope** (renvoyer tous les projets,
+   le front scope à la table puis le treemap prend le top de CE sous-ensemble) ; (iii) selon (a),
+   **filtrer aux projets du portefeuille scanné**. Idem pour l'activité si on veut purger les `C:\…`.
+3. **Gate Legolas** → **redémarrer `tauri dev`** (Rust) → **recette terrain** Stéphane (économie
+   non vide + activité propre).
+4. Si OK → **merge `fix/portefeuille-recette-terrain` → `main`** (fast-forward) → **seal v0.15.0**
+   (« update iakaframe » : état des lieux + tag + commit global + push).
+Ensuite seulement : L16 pilotage vocal (cadré, non démarré).
 
 ## Points d'attention
+- **BUG ÉCONOMIE (ouvert)** : cf. § « En cours » — top-8 avant scope + `project_of` ne gère pas `\`.
+  Le rejeu du fold est dans l'historique de session ; la correction est cadrée, pas codée.
+- **État démo gardé sur le seed one-shot** : `useDemoSeed` (l.137,169) n'ajoute `iaka-demo` à la
+  table et n'active les widgets démo que si `seedDemo()` renvoie `seeded:true` — **faux sur un env
+  déjà seedé**. D'où « table vide » au relancement. À considérer si on veut un état démo dev fiable
+  (découpler du seed one-shot, en gardant l'invariant prod). Hors périmètre du fix économie immédiat.
+- **Branche non fusionnée** : tout le travail post-v0.14.0 est sur `fix/portefeuille-recette-terrain`
+  (poussée à la pause). NE PAS sceller v0.15.0 ni merger avant la résolution du bug économie.
 - **Honnêteté de la baseline (verrou L19)** : ne jamais inventer d'estimation — la dégradation
   vers « réalisé seul » doit être visible et testée. Décision déjà gravée, à ne pas contourner.
 - **Hooks globaux L18** (`~/.claude`, hors dépôt) : doivent rester **scopés par cwd/session** et
@@ -57,6 +88,7 @@ itérer sur les différés Gantt (couloirs-par-agent, flèches de relations) si 
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-06-30 | pause | v0.14.0 (+ branche non scellée) | fix/portefeuille-recette-terrain | PAUSE sur BUG ÉCONOMIE OUVERT. La branche (6 commits sur main=f6713df, tout gate Legolas PASS) porte L21 (refonte Portefeuille/Atelier conforme mock : cartes riches + vignettes superposées + anneau %, lignes Atelier, scoping table, visu « Travail récent » réelle portefeuille-entier) + patch Gantt (--font-mono + chip) + finition Loki (treemap mosaïque/pilule/légende, ombre dark, KPI .kd) + retours terrain (travail récent pleine largeur police×2 cap-5+scroll, rail Économie aligné, EconomyShare retiré=redondant). BUG : treemap Économie vide = top-8 tronqué AVANT scope table (iaka-demo petit hors top-8) + project_of ne coupe pas sur `\` (clés Windows `C:\…` polluent). REPRISE = trancher (a/b/c) reco a → fix economy.rs (normaliser séparateurs + ne pas tronquer avant scope + filtrer portefeuille) → gate → restart app → recette → merge branche→main → seal v0.15.0. Relancer services (ollama/Docker) + `npm run tauri dev` (3020) après reboot. |
 | 2026-06-30 | version | v0.14.0 | main | Clôture du Gantt prévisionnel. L19 #9b cascade (`54a6ea0`) + L20 conformité mock (`f14f941`) + L20 live (`3b1dd51`), chacun gate Legolas PASS (375/375 tests, typecheck/lint/build verts), recette terrain GUI Stéphane OK. Cycle complet de la méthode : reprise → recette Aragorn (cascade absente) → cadrage Gandalf L20 (4 arbitrages tranchés : par tâche / différé flèches+lane user / live B1+B2 / axe étendu) → Gimli → Legolas → recette terrain. Front pur côté L20 (Rust inchangé). Différés : couloirs-par-agent, flèches de relations, lane user, `_changes` CouchDB. PROCHAINE ÉTAPE = L16 pilotage vocal (cadré, non démarré). |
 | 2026-06-30 | reprise | v0.13.0 (+ lot non scellé) | main | Reprise après campagne ui-align. v0.13.0 scellée (L18 main courante par hook + widgets + Gantt). Lot post-seal : L19 Gantt prévisionnel #9a (réalisé data-ready) + #9b (obligation de rôle coordinateur, source des estimations tranchée), Étagère agrégation cross-projet tokens + treemap coût, Journal filtre/délégations, ui-align v1a→v1c (purge emojis, champs papier, casse normalisée). Arbre propre, main=origin/main. PROCHAINE ÉTAPE = recetter L19 #9b terrain (prévu vs réalisé→rouge+cascade ; dégradation honnête) puis sceller v0.14.0 après gate Legolas. |
 | 2026-06-26 | pause | v0.9.0-rc | main | Pause après L10 COMPLET (recette terrain OK). REPRISE = arbitrer les 5 différés, le plus structurant = (c) modèle chef nu vs team (auto-iakastart ? persona/roster vs chef réel ; touche vision §0) -> cadrage Gandalf. Sinon (d) Stop hook sur le chef, (b) rendu xterm, (a) spike Codex. iaka-demo pré-trusté (backup ~/.claude.json.bak-iaka). Relancer services après reboot/pause. |
