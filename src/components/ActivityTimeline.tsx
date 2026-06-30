@@ -57,9 +57,10 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
     }))
     .filter((r) => r.pts.every((b) => !Number.isNaN(b.t)));
 
+  // Le titre de section est porté par le `rowhead` parent (Loki P2-6) ; ici on ne garde
+  // que la légende explicative pour éviter un double titre redondant.
   const header = (
     <div className="acthead">
-      <h2>{t("activity.title")}</h2>
       <span className="actsub">{t("activity.subtitle")}</span>
     </div>
   );
@@ -92,12 +93,14 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
   const L = 140;
   const R = 24;
   const T = 34;
-  const rowH = 26;
+  // Anti-collision verticale des bulles (Loki P1-1) : rowH=30 ET rayon plafonné à 12
+  // (Ø max ≈ 24 < rowH) → deux lignes voisines ne se chevauchent plus.
+  const rowH = 30;
   const B = 16;
   const H = T + rows.length * rowH + B;
   const span = maxT - minT || 1;
   const x = (ts: number): number => L + ((ts - minT) / span) * (W - L - R);
-  const rad = (v: number): number => 3.5 + Math.sqrt(v / maxV) * 10;
+  const rad = (v: number): number => 3 + Math.sqrt(v / maxV) * 9;
 
   // Quadrillage : jours (≤ 45 j) sinon mois.
   const ticks: { px: number; label: string }[] = [];
