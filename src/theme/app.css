@@ -2226,11 +2226,12 @@ button {
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(20, 22, 28, 0.06);
 }
+/* Champ « papier » (direction A) : fond clair + fine bordure (plus de gris plein). */
 .field {
-  background: var(--surf-2);
-  border: none;
+  background: var(--surf);
+  border: 1px solid color-mix(in srgb, var(--text-3) 26%, transparent);
   border-radius: 11px;
-  padding: 11px 14px;
+  padding: 10px 13px;
   font-size: 13.5px;
   color: var(--text);
   font-family: var(--font-sans);
@@ -2238,7 +2239,34 @@ button {
   min-width: 180px;
 }
 .field:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+/* Select dé-nativisé : chevron custom, plus de chrome système gris. */
+select.field {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      var(--text-3) 50%
+    ),
+    linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) center,
+    calc(100% - 10px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+/* Endpoints / chemins techniques en mono (URL, paths). */
+.field[type="url"],
+.field.mono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
 }
 /* Swatches de chartes (sans-bord, échantillons colorés). */
 .themegrid {
