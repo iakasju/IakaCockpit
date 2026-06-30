@@ -26,10 +26,12 @@ pub struct ProjectEconomy {
 /// Accumulateur par projet : (input, output, coord, sub).
 type Acc = HashMap<String, (u64, u64, u64, u64)>;
 
-/// Dernier segment d'un cwd = nom de projet (`/a/b/iaka-demo` → `iaka-demo`).
+/// Dernier segment d'un cwd = nom de projet. Coupe sur `/` ET `\` pour gérer les vieux
+/// transcripts Windows (`C:\iakaVODdash` → `iakaVODdash`, `/a/b/iaka-demo` → `iaka-demo`).
+/// Défensif : chaîne vide → `None`, segments vides (séparateurs de fin) ignorés.
 fn project_of(cwd: &str) -> Option<String> {
-    cwd.trim_end_matches('/')
-        .rsplit('/')
+    cwd.trim_end_matches(['/', '\\'])
+        .rsplit(['/', '\\'])
         .find(|s| !s.is_empty())
         .map(str::to_string)
 }
@@ -249,11 +251,14 @@ fn claude_projects_dir() -> Option<std::path::PathBuf> {
     Some(Path::new(&home).join(".claude").join("projects"))
 }
 
-/// Commande : coût agrégé par projet (top 8) depuis les transcripts de session.
+/// Commande : coût agrégé par projet depuis les transcripts de session. Renvoie TOUS les
+/// projets (pas de troncature) ; le scope (projets de la table) est appliqué CÔTÉ FRONT —
+/// tronquer ici jetterait les petits projets de la table avant le filtre (décision = tout
+/// garder). Calque `portfolio_activity`.
 #[tauri::command]
 pub fn portfolio_economy() -> Result<Vec<ProjectEconomy>, String> {
     match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_dir(&dir, 8)),
+        Some(dir) => Ok(scan_projects_dir(&dir, usize::MAX)),
         None => Ok(Vec::new()),
     }
 }
@@ -280,6 +285,21 @@ mod tests {
         );
         assert_eq!(project_of("/a/b/"), Some("b".into()));
         assert_eq!(project_of(""), None);
+    }
+
+    #[test]
+    fn project_of_gere_les_cwd_windows() {
+        // Vieux transcripts Windows : séparateur antislash.
+        assert_eq!(project_of(r"C:\iakaVODdash"), Some("iakaVODdash".into()));
+        assert_eq!(
+            project_of(r"C:\Users\x\work\iaka-demo"),
+            Some("iaka-demo".into())
+        );
+        // Chemin mixte (slash + antislash).
+        assert_eq!(project_of(r"/c/work\iaka-demo"), Some("iaka-demo".into()));
+        // Séparateur de fin (trailing) ignoré.
+        assert_eq!(project_of(r"C:\iakaVODdash\"), Some("iakaVODdash".into()));
+        assert_eq!(project_of(r"\a\b\"), Some("b".into()));
     }
 
     #[test]
