@@ -357,18 +357,11 @@ button {
 }
 .tilegrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Responsive au CONTENEUR (pas à la fenêtre) : auto-fill → 3 colonnes en grand, moins
+     quand le foliomain rétrécit (colonne économie à droite). Évite tout débordement /
+     collision au redimensionnement progressif. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 18px;
-}
-@media (max-width: 1180px) {
-  .tilegrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 760px) {
-  .tilegrid {
-    grid-template-columns: 1fr;
-  }
 }
 /* --- Étagère : bandeau KPIs en ligne + layout 2 zones (tuiles / économie) (L17 #1) --- */
 .kpibar {
@@ -486,6 +479,17 @@ button {
   transition: 0.18s;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.tile .th b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.tile .desc {
+  overflow-wrap: anywhere;
 }
 .tile:hover {
   transform: translateY(-3px);
@@ -1254,6 +1258,9 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* La colonne empile Roster + Tâches + Plan + Mémoire + Économie + Effets : elle DOIT
+     défiler, sinon les panneaux du bas (Économie/Effets) sont coupés. */
+  overflow-y: auto;
   background: var(--bg);
   border-left: 1px solid var(--surf-2);
 }
