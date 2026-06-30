@@ -17,6 +17,7 @@ import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
 import { ShelfRow } from "../components/ShelfRow";
 import { ActivityTimeline } from "../components/ActivityTimeline";
 import { TreemapPanel, type TreemapItem } from "../components/TreemapPanel";
+import { EconomyShare } from "../components/EconomyShare";
 import { treemapColor } from "../components/treemapColor";
 import { scopePortfolioEconomy, ringPct, tokensOf } from "./portfolioScope";
 
@@ -80,6 +81,12 @@ export function PortfolioView({
   const colorByProject = new Map(
     scope.tableEconomy.map((e, i) => [e.project, treemapColor(i)]),
   );
+  // Découpage COORDINATEUR vs DÉLÉGUÉS (option a MVP, retour terrain) — AGRÉGÉ sur les projets
+  // de la TABLE (même scope que la treemap, AR-4). Donnée RÉELLE `economy.rs::ProjectEconomy`
+  // (coord = sortie non-sidechain, sub = sortie sidechain), portée par `TreemapItem.coord/sub`.
+  // Le coût par agent NOMMÉ (corrélation sidechain→agent) reste un incrément ULTÉRIEUR.
+  const tableCoord = scope.tableEconomy.reduce((s, e) => s + (e.coord ?? 0), 0);
+  const tableSub = scope.tableEconomy.reduce((s, e) => s + (e.sub ?? 0), 0);
   // Visu « travail passé » (AR-5 RÉVISÉ) : à l'échelle du PORTEFEUILLE ENTIER — PAS de
   // filtre `worksetIds` ici (comme le naonedge-dashboard montre tous les projets). L'anneau
   // % des cartes ET la treemap Économie RESTENT, eux, scopés à la table (AR-4) : seule
@@ -136,6 +143,16 @@ export function PortfolioView({
             </div>
           </div>
 
+          {/* Travail récent · portefeuille — PLEINE LARGEUR (retour terrain) : SORTI de
+              `.foliolayout` pour s'étendre jusqu'au bord droit (plus contraint par la grille
+              tuiles|économie). Posé juste APRÈS la `.kpibar`, AVANT le layout 2 zones, en flux
+              bloc de `.pfpad` → largeur pleine. Échelle PORTEFEUILLE ENTIER (AR-5 révisé) :
+              `activity` non filtrée par la table. */}
+          <div className="rowhead">
+            <h2>{t("portfolio.recentWorkHead")}</h2>
+          </div>
+          <ActivityTimeline activity={activity} />
+
           {/* Tuiles (centre) + économie (droite). */}
           <div className="foliolayout">
             <div className="foliomain">
@@ -150,13 +167,6 @@ export function PortfolioView({
               {showEmpty && (
                 <div className="pfstate">{t("portfolio.empty")}</div>
               )}
-
-              {/* Visu « travail passé » — ANCRÉE sous un titre de section (Loki P2-6), plus
-                  flottante. Échelle PORTEFEUILLE ENTIER (AR-5 révisé) : `activity` non filtrée. */}
-              <div className="rowhead">
-                <h2>{t("portfolio.recentWorkHead")}</h2>
-              </div>
-              <ActivityTimeline activity={activity} />
 
               {/* Posés sur la table — cartes riches. */}
               <div className="rowhead">
@@ -213,6 +223,8 @@ export function PortfolioView({
               </div>
               {/* Treemap coût par projet & agent (L18 #5b) — SCOPÉE à la table (tranche C). */}
               <TreemapPanel items={scope.tableEconomy} />
+              {/* Coordinateur vs délégués (option a MVP) — même scope table, donnée réelle. */}
+              <EconomyShare coord={tableCoord} sub={tableSub} />
             </aside>
           </div>
         </div>
