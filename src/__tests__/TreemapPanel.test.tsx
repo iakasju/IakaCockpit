@@ -4,9 +4,9 @@ import "../i18n";
 import { TreemapPanel } from "../components/TreemapPanel";
 
 describe("TreemapPanel (L18 #5b)", () => {
-  it("vide → placeholder honnête", () => {
+  it("vide → placeholder honnête (sans « prochain incrément »)", () => {
     render(<TreemapPanel items={[]} />);
-    expect(screen.getByText(/à brancher/)).toBeTruthy();
+    expect(screen.getByText(/Aucun coût mesuré/)).toBeTruthy();
   });
 
   it("rend une cellule par projet avec tokens + part", () => {

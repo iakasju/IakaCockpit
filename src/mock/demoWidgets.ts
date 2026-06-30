@@ -55,6 +55,9 @@ export const DEMO_EFFECTS_TOTAL = 23;
 
 /** Économie de l'Étagère (KPI cross-projet) de démo : coût par projet & agent (#5b). */
 export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
+  // `coord`/`sub` = part coordinateur (non-sidechain) vs délégués (sidechain) de la SORTIE,
+  // miroir de `ProjectEconomy.coord/sub` — alimente le panneau « Coordinateur vs délégués »
+  // (le coordinateur = 1er segment, les autres = délégués, pour une démo cohérente).
   {
     project: "iaka-demo",
     tokens: 148_200,
@@ -64,6 +67,8 @@ export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
       { label: "gimli", tokens: 31_000 },
       { label: "legolas", tokens: 11_200 },
     ],
+    coord: 62_000,
+    sub: 86_200,
   },
   {
     project: "iakacockpit",
@@ -72,11 +77,15 @@ export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
       { label: "aragorn", tokens: 53_000 },
       { label: "legolas", tokens: 43_700 },
     ],
+    coord: 53_000,
+    sub: 43_700,
   },
   {
     project: "iakagraph",
     tokens: 52_300,
     segments: [{ label: "frodo", tokens: 52_300 }],
+    coord: 52_300,
+    sub: 0,
   },
   {
     project: "iaka-notify",
@@ -85,6 +94,8 @@ export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
       { label: "gimli", tokens: 14_000 },
       { label: "gandalf", tokens: 6_200 },
     ],
+    coord: 14_000,
+    sub: 6_200,
   },
 ];
 

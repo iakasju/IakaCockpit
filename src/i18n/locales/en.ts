@@ -115,9 +115,12 @@ export const en: Resources = {
     economyTitle: "Economy",
     economyPeriod: "7 d",
     economyCardTitle: "Cost by project & agent",
-    economyPlaceholder:
-      "Cost data (tokens per session) to be wired — next increment.",
+    economyPlaceholder: "No cost measured yet.",
     treemapLegendNote: "area ∝ tokens · segments = share per agent",
+    shareTitle: "Coordinator vs delegates",
+    shareCoord: "Coordinator",
+    shareDelegated: "Delegates",
+    shareEmpty: "No coordinator/delegate cost measured on the table.",
   },
 
   tile: {

@@ -25,6 +25,11 @@ export function usePortfolioEconomy(api: Backend = backend): TreemapItem[] {
               { label: "coordinateur", tokens: r.coord },
               { label: "délégués", tokens: r.sub },
             ].filter((s) => s.tokens > 0),
+            // Conserve coord/sub en CHAMPS de premier rang (pas seulement repliés dans les
+            // segments) → le panneau « Coordinateur vs délégués » lit la donnée réelle sans
+            // matcher des labels (le `label` des segments varie : agents nommés en démo).
+            coord: r.coord,
+            sub: r.sub,
           })),
         );
       })

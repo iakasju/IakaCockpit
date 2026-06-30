@@ -12,6 +12,12 @@ export interface TreemapItem {
   project: string;
   tokens: number;
   segments: { label: string; tokens: number }[];
+  /** Tokens de SORTIE du coordinateur (tours non-sidechain) — porté par `ProjectEconomy.coord`
+   *  (economy.rs). Optionnel : alimente le panneau « Coordinateur vs délégués » (la treemap
+   *  elle-même n'en a pas besoin et l'ignore). */
+  coord?: number;
+  /** Tokens de SORTIE des délégués (fils sidechain) — `ProjectEconomy.sub`. */
+  sub?: number;
 }
 
 function fmtK(n: number): string {
