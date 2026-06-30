@@ -93,6 +93,9 @@ export const fr = {
     worksetCount: "{{count}} projet(s) sur la table",
     openInWorking: "Poser sur la table →",
     underHat: "Dans l'atelier",
+    tableHead: "Posés sur la table",
+    shelfHead: "Rangés dans l'atelier",
+    tableEmpty: "Aucun projet sur la table — pose-en un depuis l'atelier.",
     scanning: "Scan de l'atelier…",
     scanError: "Erreur de scan : {{error}}",
     empty: "Aucun projet dans l'atelier.",
@@ -118,6 +121,22 @@ export const fr = {
     gitNone: "hors git",
     gitDirty: "dirty",
     gitClean: "clean",
+  },
+
+  card: {
+    statusLive: "● en cours",
+    statusIdle: "au repos",
+    noCommit: "—",
+    tokens: "tokens",
+    putOnTable: "↗ Poser sur la table",
+    removeAria: "Ranger {{project}} sur l'étagère",
+  },
+
+  activity: {
+    title: "Travail passé",
+    subtitle: "Tokens par jour et par projet · table",
+    empty: "Aucune activité mesurée.",
+    bubbleTitle: "{{project}} — {{date}} — {{tokens}} tokens",
   },
 
   working: {

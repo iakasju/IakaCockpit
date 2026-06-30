@@ -42,6 +42,7 @@ import { TeamsView } from "./views/TeamsView";
 import { SettingsView } from "./views/SettingsView";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
+import type { AvatarMember } from "./components/ProjectCard";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import type { Project, RunnerEvent } from "./api/backend";
 import "./theme/tokens.css";
@@ -137,6 +138,32 @@ export default function App(): JSX.Element {
   const worksetProjects = useMemo<Project[]>(
     () => portfolio.projects.filter((p) => workset.ids.has(p.id)),
     [portfolio.projects, workset.ids],
+  );
+
+  // L21/A — chip statut « ● en cours » : projets ayant une conversation VIVANTE (AR-2).
+  const liveProjectIds = useMemo(
+    () => new Set(conversations.conversations.map((c) => c.projectId)),
+    [conversations.conversations],
+  );
+
+  // L21/A — avatars d'une carte = roster de la team DU PROJET (pas la team active),
+  // vignettes résolues suivant la charte ACTIVE (`settings.theme`). Fallback pastille
+  // si la vignette est absente (`url:null`). Réutilise `makeAvatarResolver` par projet.
+  const avatarsForProject = useCallback(
+    (projectId: string): AvatarMember[] => {
+      const team = teams.teamForProject(projectId);
+      const resolve = makeAvatarResolver(
+        settings.theme,
+        team.vignetteTeam,
+        team.agents,
+      );
+      return team.agents.map((a) => ({
+        name: a.name,
+        royaume: a.royaume,
+        url: resolve(a.name),
+      }));
+    },
+    [teams, settings.theme],
   );
 
   // Popup de liaison projet↔team (L11) : projet en attente de choix de team.
@@ -353,6 +380,8 @@ export default function App(): JSX.Element {
             worksetCount={workset.ids.size}
             onToggleWork={workset.toggle}
             onGotoWork={() => grid.setActiveView("working")}
+            liveProjectIds={liveProjectIds}
+            avatarsForProject={avatarsForProject}
             economy={
               portfolioEco.length > 0
                 ? portfolioEco

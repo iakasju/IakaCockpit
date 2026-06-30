@@ -94,6 +94,9 @@ export const en: Resources = {
     worksetCount: "{{count}} project(s) on the table",
     openInWorking: "Put on the table →",
     underHat: "In the studio",
+    tableHead: "On the table",
+    shelfHead: "On the shelf",
+    tableEmpty: "No project on the table — put one from the studio.",
     scanning: "Scanning the studio…",
     scanError: "Scan error: {{error}}",
     empty: "No project in the studio.",
@@ -119,6 +122,22 @@ export const en: Resources = {
     gitNone: "no git",
     gitDirty: "dirty",
     gitClean: "clean",
+  },
+
+  card: {
+    statusLive: "● active",
+    statusIdle: "idle",
+    noCommit: "—",
+    tokens: "tokens",
+    putOnTable: "↗ Put on the table",
+    removeAria: "Put {{project}} back on the shelf",
+  },
+
+  activity: {
+    title: "Past work",
+    subtitle: "Tokens per day and project · table",
+    empty: "No activity measured.",
+    bubbleTitle: "{{project}} — {{date}} — {{tokens}} tokens",
   },
 
   working: {

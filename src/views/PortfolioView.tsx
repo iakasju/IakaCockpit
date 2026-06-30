@@ -1,17 +1,23 @@
 /**
  * PortfolioView — vue « Étagère » (D2, identité Atelier/Étagère/Table). Présentationnel :
- * bandeau de KPIs + grille de tuiles RÉELLE (3 colonnes) + colonne « Économie ». Reçoit
- * l'état des hooks en props, aucun I/O ici.
+ * bandeau de KPIs + projets POSÉS SUR LA TABLE (cartes riches `.proj`) + projets RANGÉS DANS
+ * L'ATELIER (lignes `.scanrow`) + colonne « Économie » (treemap). Reçoit l'état des hooks en
+ * props, aucun I/O ici.
  *
- * Layout (décision IHM, mock Loki — incrément L17 #1) : KPIs numériques en LIGNE (bandeau
- * au-dessus) · tuiles au CENTRE (3 colonnes) · widgets économie à DROITE. Les KPIs et
- * widgets de COÛT (tokens) ne sont pas encore branchés (incrément suivant) : affichés en
- * placeholder HONNÊTE, pas de fausse donnée.
+ * Conformité mock Loki (L21, `specs/design/redesign/A/concepts/app/portefeuille.html:87-172`).
+ *  - Table (`worksetIds`) → `ProjectCard` : nom + chemin + chip statut + description (sujet du
+ *    dernier commit) + avatars de la team + anneau de coût (% scopé table) + total tokens.
+ *  - Atelier (hors workset) → `ShelfRow` : nom + chemin + statut git réel + bouton « poser ».
+ *  - Scoping (tranche C) : anneau % ET treemap partagent le MÊME dénominateur = Σ tokens des
+ *    projets de la TABLE uniquement.
  */
 import { useTranslation } from "react-i18next";
 import type { Project } from "../api/backend";
-import { Tile } from "../components/Tile";
+import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
+import { ShelfRow } from "../components/ShelfRow";
 import { TreemapPanel, type TreemapItem } from "../components/TreemapPanel";
+import { treemapColor } from "../components/treemapColor";
+import { scopePortfolioEconomy, ringPct, tokensOf } from "./portfolioScope";
 
 export interface PortfolioViewProps {
   projects: Project[];
@@ -22,9 +28,15 @@ export interface PortfolioViewProps {
   worksetCount: number;
   onToggleWork: (projectId: string) => void;
   onGotoWork: () => void;
-  /** Coût par projet & agent (L18 #5b) ; vide → placeholder. */
+  /** Projets ayant une conversation vivante → chip `● en cours` (AR-2). */
+  liveProjectIds?: ReadonlySet<string>;
+  /** Avatars de la team d'un projet (URL résolue suivant la charte active, ou `null`). */
+  avatarsForProject?: (projectId: string) => AvatarMember[];
+  /** Coût par projet & agent (L18 #5b) ; vide → placeholder. Sert l'anneau ET la treemap. */
   economy?: readonly TreemapItem[];
 }
+
+const NO_AVATARS: AvatarMember[] = [];
 
 export function PortfolioView({
   projects,
@@ -35,6 +47,8 @@ export function PortfolioView({
   worksetCount,
   onToggleWork,
   onGotoWork,
+  liveProjectIds,
+  avatarsForProject,
   economy = [],
 }: PortfolioViewProps): JSX.Element {
   const { t } = useTranslation();
@@ -42,6 +56,22 @@ export function PortfolioView({
   // KPIs RÉELS (dérivés des props, purs) — le coût/tokens reste un placeholder.
   const cleanCount = projects.filter((p) => p.is_git && !p.dirty).length;
   const dirtyCount = projects.filter((p) => p.dirty).length;
+
+  // Partition table / atelier (front pur).
+  const tableProjects = projects.filter((p) => worksetIds.has(p.id));
+  const shelfProjects = projects.filter((p) => !worksetIds.has(p.id));
+
+  // ÉCONOMIE SCOPÉE À LA TABLE (tranche C, helper pur) : dénominateur de l'anneau % ET de
+  // la treemap = Σ tokens des projets de la table uniquement (AR-4).
+  const scope = scopePortfolioEconomy(economy, worksetIds);
+  // Couleur d'anneau alignée sur la treemap (même index → même teinte par projet).
+  const colorByProject = new Map(
+    scope.tableEconomy.map((e, i) => [e.project, treemapColor(i)]),
+  );
+
+  const showLoading = loading;
+  const showError = !loading && error;
+  const showEmpty = !loading && !error && projects.length === 0;
 
   return (
     <section className="view pf" aria-label={t("portfolio.ariaLabel")}>
@@ -79,11 +109,26 @@ export function PortfolioView({
             </div>
           </div>
 
-          {/* Tuiles (centre, 3 colonnes) + économie (droite). */}
+          {/* Tuiles (centre) + économie (droite). */}
           <div className="foliolayout">
             <div className="foliomain">
+              {showLoading && (
+                <div className="pfstate">{t("portfolio.scanning")}</div>
+              )}
+              {showError && (
+                <div className="pfstate err">
+                  {t("portfolio.scanError", { error })}
+                </div>
+              )}
+              {showEmpty && (
+                <div className="pfstate">{t("portfolio.empty")}</div>
+              )}
+
+              {/* Posés sur la table — cartes riches. */}
               <div className="rowhead">
-                <h2>{t("portfolio.underHat")}</h2>
+                <h2>
+                  {t("portfolio.tableHead")} · {tableProjects.length}
+                </h2>
                 {worksetCount > 0 && (
                   <button
                     type="button"
@@ -95,26 +140,34 @@ export function PortfolioView({
                 )}
               </div>
 
-              {loading && (
-                <div className="pfstate">{t("portfolio.scanning")}</div>
-              )}
-              {error && (
-                <div className="pfstate err">
-                  {t("portfolio.scanError", { error })}
-                </div>
-              )}
-              {!loading && !error && projects.length === 0 && (
-                <div className="pfstate">{t("portfolio.empty")}</div>
+              {!showLoading && !showError && tableProjects.length === 0 && (
+                <div className="pfstate">{t("portfolio.tableEmpty")}</div>
               )}
 
-              <div className="tilegrid">
-                {projects.map((p) => (
-                  <Tile
+              <div className="cards">
+                {tableProjects.map((p) => (
+                  <ProjectCard
                     key={p.id}
                     project={p}
-                    inWork={worksetIds.has(p.id)}
-                    onToggleWork={onToggleWork}
+                    live={liveProjectIds?.has(p.id) ?? false}
+                    avatars={avatarsForProject?.(p.id) ?? NO_AVATARS}
+                    tokens={tokensOf(scope, p.id)}
+                    ringPct={ringPct(scope, p.id)}
+                    ringColor={colorByProject.get(p.id) ?? "var(--text-3)"}
+                    onRemove={onToggleWork}
                   />
+                ))}
+              </div>
+
+              {/* Rangés dans l'atelier — lignes compactes. */}
+              <div className="rowhead">
+                <h2>
+                  {t("portfolio.shelfHead")} · {shelfProjects.length}
+                </h2>
+              </div>
+              <div className="scan">
+                {shelfProjects.map((p) => (
+                  <ShelfRow key={p.id} project={p} onPut={onToggleWork} />
                 ))}
               </div>
             </div>
@@ -124,9 +177,8 @@ export function PortfolioView({
                 <h2>{t("portfolio.economyTitle")}</h2>
                 <span className="eb">{t("portfolio.economyPeriod")}</span>
               </div>
-              {/* Treemap coût par projet & agent (L18 #5b). Vide → placeholder honnête
-                  (l'agrégation CROSS-PROJET live est un suivi backend). */}
-              <TreemapPanel items={economy} />
+              {/* Treemap coût par projet & agent (L18 #5b) — SCOPÉE à la table (tranche C). */}
+              <TreemapPanel items={scope.tableEconomy} />
             </aside>
           </div>
         </div>

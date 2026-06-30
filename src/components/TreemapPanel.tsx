@@ -5,6 +5,7 @@
  * un suivi backend ; ici on rend la donnée quand elle est fournie, démo incluse).
  */
 import { useTranslation } from "react-i18next";
+import { treemapColor } from "./treemapColor";
 
 /** Coût d'un projet + répartition par agent. */
 export interface TreemapItem {
@@ -16,8 +17,6 @@ export interface TreemapItem {
 function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 }
-
-const HUES = [210, 150, 270, 35, 0, 190];
 
 export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.Element {
   const { t } = useTranslation();
@@ -49,7 +48,7 @@ export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.
                 className="tcell"
                 style={{
                   width: `${40 + (it.tokens / max) * 60}%`,
-                  background: `hsl(${HUES[i % HUES.length]} 60% 55%)`,
+                  background: treemapColor(i),
                 }}
                 title={`${it.project} · ${fmtK(it.tokens)}`}
               >
