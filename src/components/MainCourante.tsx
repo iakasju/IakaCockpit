@@ -30,8 +30,19 @@ export function MainCourante(): JSX.Element {
 
   // Aucun canal coché = tout visible (filtre OFF, UX testée — feed.test.ts).
   const [active, setActive] = useState<Set<Canal>>(() => new Set());
+  // Filtre projet de session (client) : null = tous les projets (L19, décision mock).
+  const [project, setProject] = useState<string | null>(null);
   // Filtre agent (serveur) : brouillon saisi puis appliqué via refresh.
   const [agentDraft, setAgentDraft] = useState<string>("");
+
+  // Projets présents dans la main courante (conv_id), pour le filtre de session.
+  const projects = useMemo(
+    () =>
+      Array.from(
+        new Set(mc.events.map((e) => e.project).filter((p) => p && p !== "?")),
+      ).sort(),
+    [mc.events],
+  );
 
   const toggle = (c: Canal): void => {
     setActive((prev) => {
@@ -47,10 +58,10 @@ export function MainCourante(): JSX.Element {
     void mc.refresh(a ? { agent: a } : undefined);
   };
 
-  const events = useMemo(
-    () => filterFeed(mc.events, active),
-    [mc.events, active],
-  );
+  const events = useMemo(() => {
+    const byCanal = filterFeed(mc.events, active);
+    return project ? byCanal.filter((e) => e.project === project) : byCanal;
+  }, [mc.events, active, project]);
 
   return (
     <aside className="mcleft" aria-label={t("journal.ariaLabel")}>
@@ -60,8 +71,39 @@ export function MainCourante(): JSX.Element {
         <div className="sub">
           <Trans i18nKey="journal.sub" components={[<b />, <b />, <b />]} />
         </div>
-        {/* Direction A : UNE rangée — [Tous] [● adresse] [● geste] [● pensée] [● agent]
-            + recherche en flex-grow. Le canal est porté par la couleur du point. */}
+        {/* Niveau 1 (décision mock) : filtre des PROJETS de la session, au-dessus des
+            canaux. [Tous] + un bouton par projet présent dans la main courante. */}
+        {projects.length > 1 && (
+          <div
+            className="projfilters"
+            role="group"
+            aria-label={t("journal.projectsAria")}
+          >
+            <button
+              type="button"
+              className="cf"
+              data-on={project === null ? "1" : "0"}
+              aria-pressed={project === null}
+              onClick={() => setProject(null)}
+            >
+              {t("journal.allProjects")}
+            </button>
+            {projects.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className="cf"
+                data-on={project === p ? "1" : "0"}
+                aria-pressed={project === p}
+                onClick={() => setProject(p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Niveau 2 — Direction A : UNE rangée — [Tous] [● adresse] [● geste] [● pensée]
+            [● agent] + recherche. Le canal est porté par la couleur du point. */}
         <div
           className="chanfilters"
           role="group"

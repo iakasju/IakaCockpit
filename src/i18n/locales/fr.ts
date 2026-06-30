@@ -191,6 +191,8 @@ export const fr = {
     sub: "Trois canaux tracés : <0>adresse</0> (humain ↔ agents), <1>geste</1> (délégations machine), <2>pensée</2> (raisonnement). Lecture seule depuis iakaboxlogs — le canal est porté par la couleur du nœud.",
     filtersAria: "Filtres de canaux",
     filterAll: "Tous",
+    projectsAria: "Filtres de projets",
+    allProjects: "Tous les projets",
     canalAdresse: "adresse",
     canalGeste: "geste",
     canalPensee: "pensée",

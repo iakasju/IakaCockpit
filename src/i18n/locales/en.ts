@@ -191,6 +191,8 @@ export const en: Resources = {
     sub: "Three traced channels: <0>address</0> (human ↔ agents), <1>gesture</1> (machine delegations), <2>thinking</2> (reasoning). Read-only from iakaboxlogs — the channel is carried by the node color.",
     filtersAria: "Channel filters",
     filterAll: "All",
+    projectsAria: "Project filters",
+    allProjects: "All projects",
     canalAdresse: "address",
     canalGeste: "gesture",
     canalPensee: "thinking",

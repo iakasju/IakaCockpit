@@ -645,6 +645,17 @@ button {
   margin-top: 22px;
   align-items: center;
 }
+/* Niveau 1 (L19) : filtres de PROJETS de la session, au-dessus des canaux. */
+.projfilters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  align-items: center;
+}
+.projfilters + .chanfilters {
+  margin-top: 12px;
+}
 .cf {
   font-size: 13px;
   font-weight: 500;
