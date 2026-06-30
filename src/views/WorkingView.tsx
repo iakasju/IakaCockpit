@@ -154,6 +154,8 @@ export function WorkingView({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
   const [showNextStep, setShowNextStep] = useState(false);
+  // Bandeau Gantt (L19) : ouvert par défaut (au-dessus du chat, large & lisible).
+  const [showGantt, setShowGantt] = useState(true);
 
   // Statut roster VIVANT (L10b/P3) : agents « au travail » dérivés du transcript
   // (délégations) de la conversation active. Recalculé à chaque nouveau tour.
@@ -302,6 +304,14 @@ export function WorkingView({
               >
                 {t("working.nextStep")}
               </button>
+              <button
+                type="button"
+                className={`btn sm${showGantt ? " accent" : ""}`}
+                aria-pressed={showGantt}
+                onClick={() => setShowGantt((v) => !v)}
+              >
+                {t("gantt.title")}
+              </button>
             </div>
 
             {showNextStep && (
@@ -312,6 +322,13 @@ export function WorkingView({
                 error={nextStepError}
                 onRequest={() => onRequestNextStep(active.cwd)}
               />
+            )}
+
+            {/* Bandeau Gantt CENTRAL (L19) : large & lisible, au-dessus du chat. */}
+            {showGantt && timeline && (
+              <div className="gantband">
+                <GanttPanel timeline={timeline} />
+              </div>
             )}
 
             <div className="convbody">
@@ -439,8 +456,7 @@ export function WorkingView({
             `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
           */}
           <PlanPanel items={planItems ?? null} />
-          {/* Gantt du réalisé (L19 #9a) : timeline des tâches + alerte de retard. */}
-          {timeline && <GanttPanel timeline={timeline} />}
+          {/* Le Gantt vit en BANDEAU CENTRAL (large) — pas dans cette colonne étroite. */}
           {/* Jauge mémoire (L18 #6) : input du dernier tour ≈ contexte + frontière compaction. */}
           <MemoryGauge series={economySeries ?? []} />
           {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}
