@@ -431,7 +431,11 @@ button {
   gap: 16px;
 }
 .folioside .rowhead {
-  margin: 0 0 12px;
+  /* Aligne le HAUT du rail Économie sur le bandeau « Posés sur la table » : les deux
+     colonnes démarrent au même offset de grille (align-items:start), donc l'écart venait
+     du seul margin-top — la base `.rowhead` a 34px en haut, ce rowhead était remis à 0
+     (rail ~3 lignes trop haut). On reprend le même margin-top que la colonne de gauche. */
+  margin: 34px 0 12px;
 }
 .folioside .eb {
   font-size: 11px;
