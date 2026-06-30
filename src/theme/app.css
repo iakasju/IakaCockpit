@@ -1553,8 +1553,17 @@ button {
   border-bottom: 1px solid var(--surf-2);
   background: var(--surf);
 }
-/* Gantt du réalisé (L19 #9a) — barres par tâche sur l'axe de temps + alerte. */
+/* ===========================================================
+   GANTT PRÉVISIONNEL (L19 #9a/#9b + L20 — conformité au mock)
+   Couloirs PAR TÂCHE (AR-1), grammaire visuelle du mock portée
+   sur la donnée actuelle : bandeau d'estimation, axe gradué et
+   ÉTENDU au-delà de « maintenant » (AR-4), curseur labellisé,
+   barres riches (fill + caption + débord rouge + marqueur prévu),
+   baseline fantôme + cascade (ghost/wait/slip), alerte inline,
+   légende. Présentationnel pur — aucune donnée inventée.
+   =========================================================== */
 .gantt {
+  --gantt-label: 196px;
   flex: 0 0 auto;
   padding: 2px 0 4px;
 }
@@ -1574,77 +1583,327 @@ button {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
-  color: #d9534f;
+  color: var(--red);
 }
 .gempty {
   font-size: 12px;
   color: var(--text-3);
   padding: 0 2px;
 }
+
+/* bandeau : estimation prévisionnelle du coordinateur au lancement */
+.estban {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-wrap: wrap;
+  background: var(--surf-2);
+  border-radius: 12px;
+  padding: 8px 13px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+}
+.estban .who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+}
+.estban .est {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.estban .est b {
+  color: var(--accent);
+  font-weight: 700;
+}
+.estban .est .tot {
+  color: var(--text-3);
+}
+
+/* règle de temps (alignée sur la zone de piste) */
+.gaxis {
+  position: relative;
+  height: 15px;
+  margin-left: var(--gantt-label);
+  margin-bottom: 2px;
+}
+.gaxis .tk {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.gaxis .tk i {
+  position: absolute;
+  left: 50%;
+  top: 11px;
+  width: 1px;
+  height: 4px;
+  background: color-mix(in srgb, var(--text-3) 45%, transparent);
+}
+
+/* couloirs + overlay « maintenant » qui traverse toutes les lignes */
 .gbars {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 0;
 }
-.grow {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 14px;
-}
-.glabel {
-  width: 220px;
-  flex: none;
-  font-size: 12.5px;
-  color: var(--text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.gtrack {
-  position: relative;
-  flex: 1;
-  height: 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text-3) 12%, transparent);
-  /* Une baseline décalée par la cascade peut se projeter au-delà de « maintenant » :
-     on clippe proprement pour ne jamais déborder sur la rangée. */
-  overflow: hidden;
-}
-.gbar {
+.gnowwrap {
   position: absolute;
+  left: var(--gantt-label);
+  right: 0;
   top: 0;
-  height: 100%;
-  border-radius: 999px;
-  min-width: 4px;
-}
-.gbar.st-completed {
-  background: var(--green);
-}
-.gbar.st-in_progress {
-  background: var(--accent);
-}
-.gbar.ovr {
-  background: #d9534f;
-}
-/* Baseline prévisionnelle (#9b) : contour pointillé = durée estimée par le coordinateur. */
-.gbase {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  border-radius: 999px;
-  background: transparent;
-  border: 1px dashed color-mix(in srgb, var(--text-3) 55%, transparent);
-  min-width: 4px;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 6;
 }
 .gnow {
   position: absolute;
-  right: 0;
-  top: 18px;
+  top: -2px;
   bottom: 0;
-  width: 1px;
-  background: color-mix(in srgb, #d9534f 55%, transparent);
+  width: 2px;
+  background: var(--red);
+}
+.gnow .lab {
+  position: absolute;
+  top: -1px;
+  left: 5px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--red);
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--red) 35%, transparent);
+}
+.gnow::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: gpulse 2.2s infinite;
+}
+@keyframes gpulse {
+  70% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--red) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 0%, transparent);
+  }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 50%, transparent);
+  }
+}
+
+.glane {
+  display: grid;
+  grid-template-columns: var(--gantt-label) 1fr;
+  align-items: center;
+  height: 36px;
+}
+.glane .glabel {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--text-2);
+  padding-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.glane .gtrack {
+  position: relative;
+  height: 100%;
+  border-top: 1px solid var(--surf-2);
+}
+.glane.alert .gtrack {
+  background: color-mix(in srgb, var(--red) 5%, transparent);
+}
+.glane.alert .glabel {
+  color: var(--red);
+}
+
+/* barre réalisée (remplie au timer) */
+.gbar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 21px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-3) 14%, transparent);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--surf-2);
+}
+.gbar .fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 8px 0 0 8px;
+}
+.gbar .fill.done {
+  background: linear-gradient(90deg, var(--green), color-mix(in srgb, var(--green) 70%, #fff));
+}
+.gbar .fill.run {
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #fff));
+}
+.gbar .cap {
+  position: absolute;
+  top: 50%;
+  left: 9px;
+  transform: translateY(-50%);
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* dépassement : la barre déborde la baseline (overflow visible pour le marqueur) */
+.gbar.over {
+  overflow: visible;
+}
+.gbar .fill.ovf {
+  border-radius: 0 8px 8px 0;
+  background: repeating-linear-gradient(45deg, var(--red) 0 6px, color-mix(in srgb, var(--red) 78%, #fff) 6px 12px);
+}
+/* marqueur « prévu » = fin de la baseline, sur une barre en dépassement */
+.gbar .planend {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 0;
+  border-left: 1.5px dashed color-mix(in srgb, var(--text-2) 60%, transparent);
+  z-index: 3;
+}
+.gbar .planend .pl {
+  position: absolute;
+  top: -12px;
+  left: 3px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* baseline prévue fantôme (tâche à venir, à sa place initiale) */
+.gghost {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 21px;
+  border-radius: 8px;
+  border: 1.4px dashed color-mix(in srgb, var(--text-3) 45%, transparent);
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--text-3) 6%, transparent) 6px 12px
+  );
+}
+/* barre réelle décalée, en attente (vide) */
+.gwait {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 21px;
+  border-radius: 8px;
+  border: 1.4px solid var(--surf-2);
+  background: var(--surf);
+}
+.gwait .gl {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+/* connecteur de décalage (cascade) entre place prévue et place réelle */
+.gslip {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0;
+  z-index: 4;
+  border-top: 1.5px dotted var(--red);
+}
+.gslip .gl {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  padding: 1px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+/* pastille d'alerte de retard, inline sur la barre */
+.galertbar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 7;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--red);
+  padding: 3px 7px;
+  border-radius: 7px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--red) 40%, transparent);
+}
+
+/* légende du gantt */
+.gleg {
+  display: flex;
+  gap: 13px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 12px;
+  padding: 0 2px;
+}
+.gleg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gleg i {
+  width: 15px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  flex: none;
 }
 
 /* Effets fichiers (L18 #7) — fichiers touchés + barre d'intensité. */

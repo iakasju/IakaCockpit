@@ -87,37 +87,45 @@ export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
   },
 ];
 
-/** Gantt du réalisé de démo (ms relatifs : 0 → 30 min). Cohérent avec DEMO_PLAN. */
+/**
+ * Gantt prévisionnel de démo. Les positions internes sont relatives (0 → 30 min de réalisé,
+ * fin projetée ~41 min) ; on les ANCRE sur une horloge murale déterministe (10:25 local) pour
+ * que l'axe et le bandeau affichent des heures lisibles plutôt que 1970. Cohérent avec
+ * DEMO_PLAN et avec le nouveau rendu L20 (bandeau + axe étendu + cascade ghost/wait/slip).
+ */
+const DEMO_T0 = new Date(2026, 5, 30, 10, 25, 0).getTime(); // ancre « lancé 10:25 » (local)
+const at = (rel: number | null): number | null => (rel == null ? null : DEMO_T0 + rel);
+
 export const DEMO_TIMELINE: PlanTimeline = {
-  minMs: 0,
-  nowMs: 1_800_000,
+  minMs: DEMO_T0,
+  nowMs: DEMO_T0 + 1_800_000, // maintenant = +30 min
   bars: [
     {
       content: "Cadrer la refonte visuelle (direction A)",
-      startMs: 0,
-      endMs: 240_000,
+      startMs: at(0),
+      endMs: at(240_000),
       status: "completed",
       overrun: false,
       estMs: 300_000, // estimé 5 min, fait en 4 → dans les temps
-      baselineStartMs: 0, // 1ʳᵉ tâche estimée : ancrée sur son début réel
+      baselineStartMs: at(0), // 1ʳᵉ tâche estimée : ancrée sur son début réel
     },
     {
       content: "Porter l'identité Atelier/Étagère/Table",
-      startMs: 240_000,
-      endMs: 660_000,
+      startMs: at(240_000),
+      endMs: at(660_000),
       status: "completed",
       overrun: true,
       estMs: 360_000, // estimé 6 min, pris 7 → dépassement (+1 min)
-      baselineStartMs: 300_000, // fin prévue de la tâche 1 (0 + 5 min)
+      baselineStartMs: at(300_000), // fin prévue de la tâche 1 (0 + 5 min)
     },
     {
       content: "Implémenter les widgets de la Table",
-      startMs: 660_000,
+      startMs: at(660_000),
       endMs: null,
       status: "in_progress",
       overrun: true,
       estMs: 480_000, // estimé 8 min, déjà au-delà → en retard
-      baselineStartMs: 720_000, // fin prévue tâche 2 (5+6 min) décalée du dépassement (+1 min)
+      baselineStartMs: at(720_000), // fin prévue tâche 2 (5+6 min) décalée du dépassement (+1 min)
     },
     {
       content: "Brancher l'économie du tour",
@@ -126,7 +134,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "pending",
       overrun: false,
       estMs: 240_000,
-      baselineStartMs: 1_860_000, // poussée par la cascade des dépassements amont (tâches 2 & 3)
+      baselineStartMs: at(1_860_000), // poussée par la cascade des dépassements amont (tâches 2 & 3)
     },
     {
       content: "Recette visuelle + gate qualité",
@@ -135,7 +143,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "pending",
       overrun: false,
       estMs: 360_000,
-      baselineStartMs: 2_100_000, // 1_860_000 + 4 min (estimé tâche 4)
+      baselineStartMs: at(2_100_000), // 1_860_000 + 4 min (estimé tâche 4)
     },
   ],
 };
