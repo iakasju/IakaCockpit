@@ -1,85 +1,71 @@
-# Etat des lieux - IakaCockpit
+# État des lieux — 2026-06-30
 
-> Genere par iakaframe (CLI) le 2026-06-26 14:01 (motif: pause).
-> A regenerer a chaque changement de version et a chaque pause/reprise.
+## En une phrase
+IakaCockpit est **scellé en v0.14.0** : le Gantt prévisionnel est complet (cascade L19 #9b
++ conformité au mock et remplissage live L20), par-dessus l'identité Atelier/Étagère/Table
++ main courante par hook L18 + widgets Table de la v0.13.0 ; recette terrain Stéphane OK,
+gate Legolas PASS sur chaque lot.
 
-## Etat courant
+## Fait récemment
+- **v0.14.0 scellée** (2026-06-30) — clôture du Gantt prévisionnel. Trois lots livrés au-dessus
+  de v0.13.0, chacun **gate Legolas PASS** :
+  - **L19 #9b — cascade** (`54a6ea0`) : quand une tâche estimée dépasse son estimation, les
+    baselines prévues des tâches **suivantes** se décalent en cascade (`baselineStartMs`,
+    dérivation pure testée) ; dégradation honnête → no-estimate = no-baseline = no-cascade.
+  - **L20 A — conformité mock** (`f14f941`) : `GanttPanel` réécrit contre le mock de référence
+    (`specs/design/redesign/A/concepts/app/travail.html`) — couloirs **par tâche**, bandeau
+    d'estimation, axe gradué **étendu au-delà de « maintenant »**, curseur labellisé, barres
+    riches (fill/cap/débord rouge/marqueur prévu), rendu cascade (ghost/wait/connecteur), légende ;
+    front pur, donnée inchangée (`derivePlanTimeline.ts` intact).
+  - **L20 B — remplissage live** (`3b1dd51`) : hook `useNow` (ticker, pause onglet masqué) +
+    polling `usePlan` (12 s, via façade L4 `fetchMainCourante`, anti-fuite d'interval) → les barres
+    grandissent, le curseur avance, les nouvelles transitions sont captées. `_changes` CouchDB différé.
+- **Recette terrain GUI validée par Stéphane** (look conforme au mock + live à l'œil).
+- **Rappel socle v0.13.0** (`8b80087`) : identité Atelier/Étagère/Table, **L18 main courante par
+  hook**, widgets Table, agrégation cross-projet des tokens (Étagère), campagne **ui-align v1a→v1c**.
 
-| Champ | Valeur |
+## En cours
+- Rien de bloquant. Branche `main`, arbre propre après seal. Différés tracés : couloirs-par-agent,
+  flèches de relations + lane user (AR-1/AR-2 de L20), souscription `_changes` CouchDB.
+
+## Jalons (gates)
+| Jalon | Statut |
 |---|---|
-| Version | - |
-| Branche | main |
-| Dernier commit | c400476 docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog |
-| Arbre | propre |
-| Fichiers (hors .git/node_modules) | 19459 |
-| Note | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
+| Instruction cadrée | oui (L18 + L19 + L20 dans `specs/instructions/`, L20 arbitrages tranchés) |
+| Tests verts | oui (375/375, typecheck + lint + build verts au gate L20) |
+| Recette stage | oui (gate Legolas PASS sur `54a6ea0`, `f14f941`+`3b1dd51` ; recette terrain GUI Stéphane OK) |
+| Feu vert prod | non applicable (produit en dev, pas de bascule prod prévue à ce stade) |
 
-## Commits recents
+## Prochaine étape
+**L16 — pilotage vocal d'iakacockpit** (cadré, non démarré) : P1 = barre de commande IHM /
+navigation par la voix (STT local whisper.cpp côté Rust, dispatcher d'intent par règles). Sinon,
+itérer sur les différés Gantt (couloirs-par-agent, flèches de relations) si Stéphane les repriorise.
 
-| Hash | Date | Sujet |
-|---|---|---|
-| `c400476` | 2026-06-26 | docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog |
-| `48d722d` | 2026-06-26 | docs(vision): grave le modele produit corrige — terminal-source / chat-vue, chef-runner, agents runner+modele (PROJET.md) |
-| `d56af0f` | 2026-06-26 | test(L9): non-regression de la trace — changer d'agent ne change pas les avatars passes |
-| `898c4f6` | 2026-06-26 | fix(L9): historique demo — emetteur par tour (Aragorn/Gandalf) |
-| `094ead9` | 2026-06-26 | fix(L9): Chat resout l'avatar de chaque bulle depuis turn.agent |
-| `60c42db` | 2026-06-26 | fix(L9): avatar par-tour — emetteur fige sur ChatTurn (preserve la trace) |
-| `879edb9` | 2026-06-26 | docs(L9): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.8.0-rc) |
-| `43f58ff` | 2026-06-26 | docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee) |
-| `4e2cf74` | 2026-06-26 | test(L9): import du script CouchDB via ?raw (sans dependance @types/node) |
-| `703a8fb` | 2026-06-26 | test(L9): coherence chat<->main courante (C4) + doc sync-vignettes (CLAUDE.md) |
+## Points d'attention
+- **Honnêteté de la baseline (verrou L19)** : ne jamais inventer d'estimation — la dégradation
+  vers « réalisé seul » doit être visible et testée. Décision déjà gravée, à ne pas contourner.
+- **Hooks globaux L18** (`~/.claude`, hors dépôt) : doivent rester **scopés par cwd/session** et
+  **fail-open bornés** (~1,5 s) pour ne jamais bloquer une session non-cockpit. À re-vérifier après
+  toute évolution du hook.
+- **Live = polling, pas `_changes`** : le remplissage live repose sur un polling à 12 s (L20 B) ;
+  la souscription temps réel `_changes` CouchDB reste différée. Latence ≤ 12 s assumée.
+- **Pièges environnement (après reboot/pause)** : relancer `ollama serve` (11434, llama3.1:8b) +
+  stack Docker (`cd docker && docker compose up -d` : ollama/litellm/couchdb/n8n) ; re-seeder
+  CouchDB si besoin (`bash docker/init-couchdb.sh`, admin/iaka-test). App : `npm run tauri dev`
+  (port 3020 ; tuer un Vite résiduel avant). NaonEdge = thème par défaut, **pas** la cible d'identité.
 
-## Reprise du travail (a completer par Cowork)
-
-- **Ce qui vient d'etre fait** : Lots **L0->L9 livres** (candidate v0.8.0-rc). Puis **L10 demarre et
-  VIRAGE majeur acte** (2026-06-26). Deux spikes : **P0** (`3ad0ffb`) a prouve `claude --print
-  --input-format stream-json` en pipes — fiable MAIS **tue la TUI native** (perte des reflexes
-  `Shift+Tab`/`esc`) ; **L10b** (`b7ac879`, `specs/mock/spike-l10b/`) a prouve la **CIBLE** : runner en
-  **TUI NATIVE dans le PTY** (reflexes intacts) **+ vues derivees du TRANSCRIPT JSONL** de session ecrit
-  en direct (`~/.claude/projects/<cwd-escaped>/<sid>.jsonl`), zero parsing ANSI. Gotcha cle : **scrubber
-  `CLAUDE_CODE_*`** avant spawn (sinon nested = pas de transcript). Instruction **re-cadree** par Gandalf
-  (`4caf3e2`) + 6 arbitrages tranches (`f49e6fc`) : allowlist explicite, gate fin L10a/L10b, `ai.rs chat`
-  reframe source Ollama, esc bouton+natif, `@agent` verbatim, delegations sur preuve live. **L10a (P1)
-  LIVRE : gate Legolas PASS + recette terrain OK** (candidate `v0.9.0-rc`) — `terminal.rs` etendu
-  (`pty_runner_open`, session_id uuid, scrub env, allowlist), Working bascule en TUI native auto-lancee
-  hands-off dans le cwd ; recette reelle = transcript ecrit dans `iaka-demo` (preuve). Pipes `runner.rs`
-  **parque au chaud**.
-- **L10b (P2+P3) LIVRE + recette terrain OK** (2026-06-26, candidate `v0.9.0-rc`). Tailer `transcript.rs`
-  cote Rust -> `runner://event` (mapping paroles/gestes/**delegation = tool `Agent`**/activite/pensee), vues
-  filtrees (chat = paroles attribuees, gestes, delegations), entree partagee chat<->terminal (`@agent`
-  verbatim), bouton esc chat, reglages globaux (modele/allowlist/trust/pensee en config), roster vivant.
-  **3 cycles de debogage recette** : (1) args Tauri v2 **camelCase** (le tailer ne demarrait jamais) ; (2)
-  double-spawn **StrictMode** (garde spawnRef) ; (3) **plafond d'attente du tailer retire** (Claude cree le
-  transcript tard). Recette finale OK avec `iaka-demo` **pre-truste** (`hasTrustDialogAccepted=true` dans
-  `~/.claude.json` ; backup `~/.claude.json.bak-iaka`). 234 front + 202 Rust verts. **=> L10 COMPLET.**
-- **Differe trace (post-L10, hors lot)** : (a) spike **P0bis Codex/ChatGPT** (CLI non installe, verifier
-  `~/.codex/sessions`) ; (b) **rendu xterm TUI** lent + lignes qui se chevauchent (secondaire) ; (c) **modele
-  chef nu vs team** (le chef = claude generique, pas la team iakaframe — auto-iakastart ? rapport persona/
-  roster ↔ chef ?) ; (d) **Stop hook identity-guard** se declenche sur le chef (herite de `~/.claude`) ;
-  (e) `isSidechain` non reconfirme en TUI.
-- **Prochaine etape concrete** : avec Stephane, **arbitrer les differes** — le plus structurant = (c) modele
-  chef/team (touche la vision §0). Sinon attaquer (b) rendu ou (a) spike Codex. Cf. memoires
-  `runner-natif-tail-transcript`, `transcript-delegation-agent-tool`, `vision-terminal-source-chat-vue`,
-  `ne-pas-deformer-architecture-via-mvp`.
-- **Pieges connus** : **APRES REBOOT, relancer les services** : `ollama serve` (hote 11434, modele llama3.1:8b) ;
-  stack Docker `cd docker && docker compose up -d` (ollama/litellm/couchdb/n8n) ; re-seeder CouchDB si besoin
-  (`bash docker/init-couchdb.sh`, admin/iaka-test). L'app : `npm run tauri dev` (port 3020 ; tuer un Vite
-  residuel avant). Le **reboot terminal** vise a donner a Claude Code/Tauri les **droits macOS de modif d'apps**
-  (necessaire au spike L10 : lancer `claude` runner). NaonEdge = theme par defaut INCIDENT, PAS la cible
-  d'identite (produit a part). NE PAS biaiser les briefs d'agents (cf. memoire). L5 (tracage delegations) reste
-  en cours (emission a finir). Recette n8n L6 manuelle non faite. Push differe (pas de remote Forgejo branche).
-
-## Journal (versions & pauses)
-
+## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
-| 2026-06-26 | pause | v0.9.0-rc | main | Pause apres L10 COMPLET (recette terrain OK). REPRISE = arbitrer les 5 differes, le plus structurant = (c) modele chef nu vs team (auto-iakastart ? persona/roster vs chef reel ; touche vision §0) -> cadrage Gandalf. Sinon (d) Stop hook sur le chef, (b) rendu xterm, (a) spike Codex. iaka-demo pre-truste (backup ~/.claude.json.bak-iaka). Relancer services apres reboot/pause. |
-| 2026-06-26 | version | v0.9.0-rc | main | L10 COMPLET (L10a+L10b) — gate Legolas PASS + recette terrain OK. VIRAGE : runner en TUI NATIVE dans le PTY (reflexes Shift+Tab/esc) + vues (chat = paroles, gestes, delegations) derivees du transcript JSONL de session ecrit live (zero parsing ANSI). L10a : terminal.rs (pty_runner_open, session_id uuid, scrub env CLAUDE_CODE_*, allowlist, auto-launch hands-off). L10b : tailer transcript.rs -> runner://event, vues filtrees, entree partagee (@agent verbatim), esc chat, reglages globaux, roster vivant. Delegation = tool Agent (pas Task). Pipes runner.rs parque. 3 cycles debug recette (camelCase Tauri, double-spawn StrictMode, plafond tailer). 234 front + 202 Rust. Differe : Codex spike, rendu xterm, modele chef/team, Stop hook. |
-| 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
-| 2026-06-26 10:38 | version | v0.8.0-rc | main | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte). |
-| 2026-06-26 09:32 | version | v0.7.0-rc | main | L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation). |
-| 2026-06-26 08:25 | version | v0.6.0-rc | main | L7 seed demo dev — gate Legolas PASS. Build dev/test s'ouvre deja peuple : dossier iaka-demo, team 5 onglets, config Ollama hote/CouchDB/n8n, zero seed en prod. Slider police jusqu'a 200%. |
-| 2026-06-26 00:01 | version | v0.5.0-rc | main | L6 canal adresse externe SORTANT via n8n-passerelle — gate Legolas PASS. Cockpit POSTe un webhook n8n qui route Discord/Slack/MQTT. n8n local Docker pour recette. Aussi: brouillon L5 (tracage machine delegations) a valider. |
-| 2026-06-25 22:47 | version | v0.4.0-rc | main | L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS + re-gate apres fix Mango. Recette reelle sur CouchDB local Docker. Socle v0.1 (L0..L4) complet. |
-| 2026-06-25 21:43 | version | v0.3.0-rc | main | L3 moteur prochaine etape via endpoint OpenAI-compat configurable — gate Legolas PASS, teste reel Ollama localhost + LiteLLM->Ollama Docker. MVP v0.1 (L0+L1+L2+L3) complet. |
+| 2026-06-30 | version | v0.14.0 | main | Clôture du Gantt prévisionnel. L19 #9b cascade (`54a6ea0`) + L20 conformité mock (`f14f941`) + L20 live (`3b1dd51`), chacun gate Legolas PASS (375/375 tests, typecheck/lint/build verts), recette terrain GUI Stéphane OK. Cycle complet de la méthode : reprise → recette Aragorn (cascade absente) → cadrage Gandalf L20 (4 arbitrages tranchés : par tâche / différé flèches+lane user / live B1+B2 / axe étendu) → Gimli → Legolas → recette terrain. Front pur côté L20 (Rust inchangé). Différés : couloirs-par-agent, flèches de relations, lane user, `_changes` CouchDB. PROCHAINE ÉTAPE = L16 pilotage vocal (cadré, non démarré). |
+| 2026-06-30 | reprise | v0.13.0 (+ lot non scellé) | main | Reprise après campagne ui-align. v0.13.0 scellée (L18 main courante par hook + widgets + Gantt). Lot post-seal : L19 Gantt prévisionnel #9a (réalisé data-ready) + #9b (obligation de rôle coordinateur, source des estimations tranchée), Étagère agrégation cross-projet tokens + treemap coût, Journal filtre/délégations, ui-align v1a→v1c (purge emojis, champs papier, casse normalisée). Arbre propre, main=origin/main. PROCHAINE ÉTAPE = recetter L19 #9b terrain (prévu vs réalisé→rouge+cascade ; dégradation honnête) puis sceller v0.14.0 après gate Legolas. |
+| 2026-06-26 | pause | v0.9.0-rc | main | Pause après L10 COMPLET (recette terrain OK). REPRISE = arbitrer les 5 différés, le plus structurant = (c) modèle chef nu vs team (auto-iakastart ? persona/roster vs chef réel ; touche vision §0) -> cadrage Gandalf. Sinon (d) Stop hook sur le chef, (b) rendu xterm, (a) spike Codex. iaka-demo pré-trusté (backup ~/.claude.json.bak-iaka). Relancer services après reboot/pause. |
+| 2026-06-26 | version | v0.9.0-rc | main | L10 COMPLET (L10a+L10b) — gate Legolas PASS + recette terrain OK. Runner en TUI NATIVE dans le PTY (réflexes Shift+Tab/esc) + vues (chat=paroles, gestes, délégations) dérivées du transcript JSONL de session écrit live. Délégation = tool Agent (pas Task). 234 front + 202 Rust. |
+| 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 puis P1+. Lots livrés jusqu'à L9 (v0.8.0-rc) + fix trace. Vision PROJET.md §0 = terminal-source/chat-vue. |
+| 2026-06-26 10:38 | version | v0.8.0-rc | main | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation préchargée cohérente, vignettes thémées par team. |
+| 2026-06-26 09:32 | version | v0.7.0-rc | main | L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat<->Shell, chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell réel. |
+| 2026-06-26 08:25 | version | v0.6.0-rc | main | L7 seed demo dev — gate Legolas PASS. Build dev/test peuplé (iaka-demo, team 5 onglets, config Ollama/CouchDB/n8n), zéro seed en prod. |
+| 2026-06-26 00:01 | version | v0.5.0-rc | main | L6 canal adresse externe sortant via n8n — gate Legolas PASS. Cockpit POST un webhook n8n (Discord/Slack/MQTT). |
+| 2026-06-25 22:47 | version | v0.4.0-rc | main | L4 mains courantes 3-canaux (iakaboxlogs, lecture seule) — gate Legolas PASS. Socle v0.1 (L0..L4) complet. |
+| 2026-06-25 21:43 | version | v0.3.0-rc | main | L3 moteur prochaine étape via endpoint OpenAI-compat — gate Legolas PASS, testé réel Ollama + LiteLLM->Ollama Docker. |
 | 2026-06-24 20:36 | version | v0.1.0 | main | onboarding initial |
