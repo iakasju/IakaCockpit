@@ -11,6 +11,7 @@ import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
 import type { PlanTimeline } from "../hooks/derivePlanTimeline";
 import type { TreemapItem } from "../components/TreemapPanel";
+import type { ProjectActivity } from "../api/backend";
 
 /** Plan vivant de démo (étapes + statuts cohérents avec la conversation démo). */
 export const DEMO_PLAN: PlanItem[] = [
@@ -83,6 +84,30 @@ export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
     segments: [
       { label: "gimli", tokens: 14_000 },
       { label: "gandalf", tokens: 6_200 },
+    ],
+  },
+];
+
+/** Activité « travail passé » de démo (L21 D) : tokens/jour/projet pour la scatter-timeline.
+ *  Dev-only : substituée par App UNIQUEMENT si `demoWidgetsOn` et aucune donnée LIVE — inerte
+ *  en prod. Scopée à la table côté front (en démo, seul `iaka-demo` est posé). */
+export const DEMO_PORTFOLIO_ACTIVITY: ProjectActivity[] = [
+  {
+    project: "iaka-demo",
+    days: [
+      { date: "2026-06-24", tokens: 18_000 },
+      { date: "2026-06-26", tokens: 42_000 },
+      { date: "2026-06-27", tokens: 31_000 },
+      { date: "2026-06-29", tokens: 57_000 },
+      { date: "2026-06-30", tokens: 22_000 },
+    ],
+  },
+  {
+    project: "iakacockpit",
+    days: [
+      { date: "2026-06-25", tokens: 26_000 },
+      { date: "2026-06-28", tokens: 44_000 },
+      { date: "2026-06-30", tokens: 27_000 },
     ],
   },
 ];

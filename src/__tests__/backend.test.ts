@@ -28,6 +28,7 @@ import {
   isTauri,
   backend,
   scanPortfolio,
+  portfolioActivity,
   addProject,
   listExtraProjects,
   pickDirectory,
@@ -122,6 +123,16 @@ describe("backend.ts (commandes métier L1)", () => {
     invokeMock.mockResolvedValue([]);
     await checkServices();
     expect(invokeMock).toHaveBeenCalledWith("check_services", undefined);
+  });
+
+  it("portfolioActivity invoque portfolio_activity sans args (L21 D)", async () => {
+    const rows = [
+      { project: "iaka-demo", days: [{ date: "2026-06-30", tokens: 150 }] },
+    ];
+    invokeMock.mockResolvedValue(rows);
+    const r = await portfolioActivity();
+    expect(invokeMock).toHaveBeenCalledWith("portfolio_activity", undefined);
+    expect(r).toEqual(rows);
   });
 
   it("getRoot invoque get_root sans args", async () => {

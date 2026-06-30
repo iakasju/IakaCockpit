@@ -192,6 +192,28 @@ export function portfolioEconomy(): Promise<ProjectEconomy[]> {
   return call<ProjectEconomy[]>("portfolio_economy");
 }
 
+/** Tokens d'un jour pour un projet (miroir `economy::DayTokens`, L21 D). */
+export interface DayTokens {
+  date: string;
+  tokens: number;
+}
+
+/** Série d'activité d'un projet : jours triés croissants (miroir `economy::ProjectActivity`). */
+export interface ProjectActivity {
+  project: string;
+  days: DayTokens[];
+}
+
+/**
+ * Ventilation tokens/jour/projet (top 12, tri total desc) depuis les transcripts de session
+ * (L21 D). Somme `input + output + cache_creation` HORS `cache_read`, bucketée par jour.
+ * Lecture seule. Vide si aucun transcript / hors Tauri. Alimente la visu « travail passé »
+ * (scatter-timeline) ; le scope « projets de la table » est appliqué côté front.
+ */
+export function portfolioActivity(): Promise<ProjectActivity[]> {
+  return call<ProjectActivity[]>("portfolio_activity");
+}
+
 /**
  * Importe un dossier existant comme projet (bouton + de Working). Persiste son
  * chemin côté Rust et renvoie son état git scanné. Le dossier peut vivre hors du
@@ -617,6 +639,7 @@ export const backend = {
   isTauri,
   scanPortfolio,
   portfolioEconomy,
+  portfolioActivity,
   addProject,
   listExtraProjects,
   pickDirectory,

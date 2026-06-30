@@ -12,9 +12,10 @@
  *    projets de la TABLE uniquement.
  */
 import { useTranslation } from "react-i18next";
-import type { Project } from "../api/backend";
+import type { Project, ProjectActivity } from "../api/backend";
 import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
 import { ShelfRow } from "../components/ShelfRow";
+import { ActivityTimeline } from "../components/ActivityTimeline";
 import { TreemapPanel, type TreemapItem } from "../components/TreemapPanel";
 import { treemapColor } from "../components/treemapColor";
 import { scopePortfolioEconomy, ringPct, tokensOf } from "./portfolioScope";
@@ -34,6 +35,8 @@ export interface PortfolioViewProps {
   avatarsForProject?: (projectId: string) => AvatarMember[];
   /** Coût par projet & agent (L18 #5b) ; vide → placeholder. Sert l'anneau ET la treemap. */
   economy?: readonly TreemapItem[];
+  /** Ventilation tokens/jour/projet (L21 D) ; scopée à la table → scatter-timeline. */
+  activity?: readonly ProjectActivity[];
 }
 
 const NO_AVATARS: AvatarMember[] = [];
@@ -50,6 +53,7 @@ export function PortfolioView({
   liveProjectIds,
   avatarsForProject,
   economy = [],
+  activity = [],
 }: PortfolioViewProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -68,6 +72,8 @@ export function PortfolioView({
   const colorByProject = new Map(
     scope.tableEconomy.map((e, i) => [e.project, treemapColor(i)]),
   );
+  // Visu « travail passé » (tranche D) : scopée aux projets de la table (cohérent C).
+  const tableActivity = activity.filter((a) => worksetIds.has(a.project));
 
   const showLoading = loading;
   const showError = !loading && error;
@@ -123,6 +129,9 @@ export function PortfolioView({
               {showEmpty && (
                 <div className="pfstate">{t("portfolio.empty")}</div>
               )}
+
+              {/* Visu « travail passé » (L21 D) — AU-DESSUS des cartes de la table. */}
+              <ActivityTimeline activity={tableActivity} />
 
               {/* Posés sur la table — cartes riches. */}
               <div className="rowhead">

@@ -21,6 +21,7 @@ import { usePlan } from "./hooks/usePlan";
 import { derivePlanTimeline } from "./hooks/derivePlanTimeline";
 import { useNow } from "./hooks/useNow";
 import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
+import { usePortfolioActivity } from "./hooks/usePortfolioActivity";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -34,6 +35,7 @@ import {
   DEMO_EFFECTS_TOTAL,
   DEMO_TIMELINE,
   DEMO_PORTFOLIO_ECONOMY,
+  DEMO_PORTFOLIO_ACTIVITY,
 } from "./mock/demoWidgets";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
@@ -83,6 +85,8 @@ export default function App(): JSX.Element {
   const effects = useEffects();
   // Coût cross-projet (L18 #5b) : agrégation des transcripts → treemap de l'Étagère.
   const portfolioEco = usePortfolioEconomy();
+  // Activité « travail passé » (L21 D) : ventilation tokens/jour/projet → scatter-timeline.
+  const portfolioAct = usePortfolioActivity();
 
   // Observateur ADDITIF combiné des events bruts : panneau Tâches (délégations) + HUD
   // économie (tokens) + effets fichiers. Stable (les `ingest` le sont) → pas de
@@ -387,6 +391,13 @@ export default function App(): JSX.Element {
                 ? portfolioEco
                 : demoWidgetsOn
                   ? DEMO_PORTFOLIO_ECONOMY
+                  : []
+            }
+            activity={
+              portfolioAct.length > 0
+                ? portfolioAct
+                : demoWidgetsOn
+                  ? DEMO_PORTFOLIO_ACTIVITY
                   : []
             }
           />

@@ -908,6 +908,57 @@ button {
   border-color: var(--accent);
 }
 
+/* Visu « travail passé » — scatter-timeline tokens/jour/projet (L21 D). */
+.activity {
+  margin-top: 28px;
+  background: var(--surf);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-soft);
+}
+.activity .acthead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.activity .acthead h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: calc(15px * var(--fscale));
+}
+.activity .actsub {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.activity .actempty {
+  font-size: 12.5px;
+  color: var(--text-3);
+  padding: 6px 2px;
+}
+.activity .actsvg {
+  display: block;
+}
+.activity .actgrid {
+  stroke: color-mix(in srgb, var(--text-3) 18%, transparent);
+  stroke-width: 1;
+}
+.activity .actrow {
+  stroke: color-mix(in srgb, var(--text-3) 10%, transparent);
+  stroke-width: 1;
+}
+.activity .actax {
+  fill: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.activity .actlab {
+  fill: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 11px;
+}
+
 /* ===================== JOURNAL (timeline calme) ===================== */
 .journal {
   flex-direction: column;

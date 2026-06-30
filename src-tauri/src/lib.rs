@@ -53,6 +53,7 @@ pub fn run() {
             portfolio::add_project,
             portfolio::list_extra_projects,
             economy::portfolio_economy,
+            economy::portfolio_activity,
             services::check_services,
             config::get_root,
             config::set_root,
