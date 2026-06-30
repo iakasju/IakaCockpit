@@ -414,7 +414,9 @@ button {
 }
 .foliolayout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  /* Colonne économie RELATIVE (borne min/max) — plus de largeur fixe qui collisionne au
+     redimensionnement ; la zone tuiles prend le reste (minmax(0,1fr)). */
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   gap: 24px;
   align-items: start;
 }
@@ -464,7 +466,9 @@ button {
   color: var(--text-3);
   line-height: 1.5;
 }
-@media (max-width: 1080px) {
+/* Sous une largeur confortable : on EMPILE (économie passe sous les tuiles) — évite tout
+   écrasement de la colonne économie quand la fenêtre rétrécit. */
+@media (max-width: 1200px) {
   .foliolayout {
     grid-template-columns: 1fr;
   }
