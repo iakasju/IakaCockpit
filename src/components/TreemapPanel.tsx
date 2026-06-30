@@ -45,7 +45,10 @@ export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.
           <p className="ecohint">{t("portfolio.economyPlaceholder")}</p>
         </>
       ) : (
-        <>
+        // Corps scrollable (retour terrain) : depuis le « tout garder » (plus de troncature
+        // top-8), la mosaïque peut s'allonger et pousser le rail. On borne sa hauteur visible
+        // et on scrolle pour voir le surplus — la donnée n'est JAMAIS tronquée.
+        <div className="ecobody">
           {/* SILHOUETTE MOSAÏQUE 2D (calque mock `portefeuille.html` + `viz.css` .tmap) :
               cellules en flex-wrap, largeur % ∝ part de tokens (surface ∝ tokens). */}
           <div className="tmap">
@@ -94,7 +97,7 @@ export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.
             ))}
             <span className="legend2note">{t("portfolio.treemapLegendNote")}</span>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
