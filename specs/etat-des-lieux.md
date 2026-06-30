@@ -1,12 +1,14 @@
 # État des lieux — 2026-06-30
 
 ## En une phrase
-**PAUSE 2026-06-30.** v0.14.0 scellée+poussée (Gantt prévisionnel complet). Par-dessus,
-la branche **`fix/portefeuille-recette-terrain`** (6 commits d'avance sur `main`=`f6713df`,
-arbre propre, **tout gate Legolas PASS**, **NON scellée v0.15.0**) porte la refonte
-Portefeuille/Atelier (L21) + finition + retours de recette terrain. **La pause survient sur
-un BUG OUVERT diagnostiqué non corrigé** : le widget Économie (treemap « coût par projet &
-agent ») reste **vide**.
+**v0.15.0 SCELLÉE 2026-06-30.** La branche `fix/portefeuille-recette-terrain` (10 commits)
+est **fusionnée dans `main` en fast-forward** puis taguée `v0.15.0` : refonte
+Portefeuille/Atelier (L21) + finition Loki + **résolution du bug Économie** (treemap vide :
+`project_of` coupe sur `/` ET `\` + plus de troncature top-8 avant le scope ; décision
+« tout garder ») + ajustements de recette terrain (Travail récent polices std/interligne
+resserré, scrollbar Économie). **Gate Legolas PASS** (232 Rust + 401 front) **et recette
+terrain GUI validée par Stéphane**. Doc qualité : `docs/qualite/v0.15.0.md`. Prochaine
+étape = **L16 pilotage vocal** (cadré, non démarré).
 
 ## Fait récemment (depuis v0.14.0, sur la branche, non scellé)
 - **v0.14.0 scellée+poussée** (`00b7004`, tag `v0.14.0`) — clôture du Gantt prévisionnel
@@ -88,6 +90,7 @@ Ensuite seulement : L16 pilotage vocal (cadré, non démarré).
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-06-30 | version | v0.15.0 | main | SEAL v0.15.0. Branche `fix/portefeuille-recette-terrain` (10 commits) fusionnée en fast-forward dans `main`. Résolution du BUG ÉCONOMIE (treemap vide) : `economy.rs::project_of` coupe sur `/` ET `\` (clés Windows `C:\…` nettoyées, décision Stéphane « tout garder ») + `portfolio_economy()` ne tronque plus à top-8 avant le scope front (`scan_projects_dir(usize::MAX)`) → les petits projets de la table (iaka-demo) ne sont plus jetés. Ajustements recette terrain (front) : Travail récent revenu aux polices std + interligne resserré (rowH 26, anti-collision OK) + 5 visibles/scroll ; corps treemap Économie borné 390px + scrollbar (donnée non tronquée). Gate Legolas PASS (232 Rust + 401 front, fmt/clippy/lint/typecheck OK) ; recette terrain GUI validée (tauri dev recompilé). Doc qualité `docs/qualite/v0.15.0.md`. PROCHAINE ÉTAPE = L16 pilotage vocal. |
 | 2026-06-30 | pause | v0.14.0 (+ branche non scellée) | fix/portefeuille-recette-terrain | PAUSE sur BUG ÉCONOMIE OUVERT. La branche (6 commits sur main=f6713df, tout gate Legolas PASS) porte L21 (refonte Portefeuille/Atelier conforme mock : cartes riches + vignettes superposées + anneau %, lignes Atelier, scoping table, visu « Travail récent » réelle portefeuille-entier) + patch Gantt (--font-mono + chip) + finition Loki (treemap mosaïque/pilule/légende, ombre dark, KPI .kd) + retours terrain (travail récent pleine largeur police×2 cap-5+scroll, rail Économie aligné, EconomyShare retiré=redondant). BUG : treemap Économie vide = top-8 tronqué AVANT scope table (iaka-demo petit hors top-8) + project_of ne coupe pas sur `\` (clés Windows `C:\…` polluent). REPRISE = trancher (a/b/c) reco a → fix economy.rs (normaliser séparateurs + ne pas tronquer avant scope + filtrer portefeuille) → gate → restart app → recette → merge branche→main → seal v0.15.0. Relancer services (ollama/Docker) + `npm run tauri dev` (3020) après reboot. |
 | 2026-06-30 | version | v0.14.0 | main | Clôture du Gantt prévisionnel. L19 #9b cascade (`54a6ea0`) + L20 conformité mock (`f14f941`) + L20 live (`3b1dd51`), chacun gate Legolas PASS (375/375 tests, typecheck/lint/build verts), recette terrain GUI Stéphane OK. Cycle complet de la méthode : reprise → recette Aragorn (cascade absente) → cadrage Gandalf L20 (4 arbitrages tranchés : par tâche / différé flèches+lane user / live B1+B2 / axe étendu) → Gimli → Legolas → recette terrain. Front pur côté L20 (Rust inchangé). Différés : couloirs-par-agent, flèches de relations, lane user, `_changes` CouchDB. PROCHAINE ÉTAPE = L16 pilotage vocal (cadré, non démarré). |
 | 2026-06-30 | reprise | v0.13.0 (+ lot non scellé) | main | Reprise après campagne ui-align. v0.13.0 scellée (L18 main courante par hook + widgets + Gantt). Lot post-seal : L19 Gantt prévisionnel #9a (réalisé data-ready) + #9b (obligation de rôle coordinateur, source des estimations tranchée), Étagère agrégation cross-projet tokens + treemap coût, Journal filtre/délégations, ui-align v1a→v1c (purge emojis, champs papier, casse normalisée). Arbre propre, main=origin/main. PROCHAINE ÉTAPE = recetter L19 #9b terrain (prévu vs réalisé→rouge+cascade ; dégradation honnête) puis sceller v0.14.0 après gate Legolas. |
