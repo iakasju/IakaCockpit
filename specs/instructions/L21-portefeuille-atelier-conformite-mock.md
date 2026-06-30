@@ -185,13 +185,17 @@ différé. Mise en œuvre :
   ventilation byDay applique la règle dashboard), clé jour = préfixe `YYYY-MM-DD` du `timestamp` du
   JSONL. Nouvelle façade **`portfolioActivity()`** (`backend.ts`, **seul `invoke`** D7) renvoyant
   `[{project, days:[{date, tokens}]}]`.
-- **Scope = projets de la TABLE uniquement** (cohérent C) : le filtrage par `worksetIds` peut se
-  faire côté front (la commande peut renvoyer tous les projets, le composant ne trace que ceux de la
-  table) — au choix d'implémentation, mais **l'affichage ne montre que la table**.
+- **Scope = PORTEFEUILLE RÉEL ENTIER** (**AR-5 RÉVISÉ (Stéphane, 2026-06-30) : portefeuille-réel,
+  hors démo**) : la visu reflète **tous** les projets ayant de l'activité dans les transcripts
+  `~/.claude/projects` (calque exact du naonedge-dashboard, `index.html:303-310`), **PAS** scopée à
+  la table — **aucun filtre `worksetIds` pour CE widget**. (À distinguer de l'anneau % des cartes et
+  de la treemap Économie qui, eux, restent scopés TABLE — AR-4 inchangé.)
 - **Rendu front** : scatter-timeline calqué `renderChart` (`index.html:303-360`) — 1 ligne/projet,
   X = temps (jours ≤ 45 j, sinon mois), bulle = un jour, **rayon ∝ tokens du jour**. SVG (pas de dép).
-- **Démo dev-gardée** : série de démo (calque `demoWidgets.ts:1-13`) substituée **uniquement** si
-  `demoWidgetsOn` + projet `iaka-demo` + aucune donnée live — **zéro fausse donnée en prod**.
+- **Donnée = la vraie `portfolioActivity()`, indépendamment de la démo.** **Démo dev-gardée en repli
+  SEULEMENT** si `demoWidgetsOn` (dev) **ET** la commande ne renvoie réellement aucune donnée — **zéro
+  fausse donnée en prod** ; en prod (ou dev) avec des transcripts, c'est **toujours** le portefeuille
+  réel qui s'affiche (la démo ne masque jamais la vraie donnée).
 
 **Tranche D = SEULE tranche qui touche le Rust** (extension `economy.rs` + façade
 `portfolioActivity()`). A/B/C restent front pur.
@@ -199,10 +203,15 @@ différé. Mise en œuvre :
 **Clôture D**
 - Nouvelle agrégation Rust testée (`economy.rs`) : buckets byDay corrects, **`cache_read` exclu** de
   la ventilation (test dédié calquant la règle dashboard), tri/bornage cohérents.
-- La visu affiche une ligne par projet **de la table** avec ses bulles d'activité **réelles** ; un
-  projet sans transcript n'affiche aucune bulle (pas de bulle fantôme).
-- Hors Tauri / aucune donnée → bloc vide honnête (« Aucune activité mesurée »), pas de crash.
-- En démo (`iaka-demo`, dev), la série de démo apparaît ; **inerte en prod**.
+- La visu affiche **l'activité réelle du PORTEFEUILLE ENTIER** : une ligne par projet **ayant des
+  transcripts** (pas seulement la table), avec ses bulles d'activité **réelles** ; un projet sans
+  transcript n'apparaît pas (pas de ligne ni de bulle fantôme). Le filtre `worksetIds` n'est PAS
+  appliqué à ce widget.
+- Empty-state honnête **seulement si vraiment aucune donnée** : hors Tauri **ou** `portfolioActivity()`
+  vide → bloc « Aucune activité mesurée », pas de crash. Dès qu'il y a des transcripts, la vraie
+  donnée s'affiche.
+- **Prod sans fausse donnée** : la série de démo n'apparaît qu'en dev (`demoWidgetsOn`) **et**
+  uniquement si la commande ne renvoie rien ; elle ne se substitue jamais à une donnée réelle.
 - `bash scripts/quality.sh` vert (front + `cargo test`/`clippy`/`fmt` Rust).
 
 ---
@@ -222,7 +231,13 @@ différé. Mise en œuvre :
 5. **AR-5 — Visu « travail passé ». TRANCHÉ = D-RÉELLE** : étendre `economy.rs` avec une **ventilation
    tokens/jour/projet** (façade `portfolioActivity()`, algo calqué `scan.js getTokenStats byDay` :
    `input+output+cache_creation` **hors `cache_read`**, bucket byDay) → scatter-timeline fidèle.
-   **Scope = projets de la TABLE uniquement.** Pas de commits-sous-libellé-tokens, pas de différé.
+   Pas de commits-sous-libellé-tokens, pas de différé.
+   **AR-5 RÉVISÉ (Stéphane, 2026-06-30) : portefeuille-réel, hors démo.** La visu reflète le
+   **PORTEFEUILLE RÉEL ENTIER** (tous les projets ayant des transcripts `~/.claude/projects`, calque
+   naonedge-dashboard), **NON scopée à la table** (on retire le filtre `worksetIds` pour CE widget) ;
+   pilotée par la **vraie donnée `portfolioActivity()`**, **indépendamment de la démo** (repli démo
+   seulement en dev si réellement aucune donnée) ; garde prod honnête conservée. *(L'anneau % des
+   cartes et la treemap Économie restent scopés TABLE — AR-4 inchangé.)*
 
 ---
 

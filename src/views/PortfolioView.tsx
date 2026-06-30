@@ -35,7 +35,8 @@ export interface PortfolioViewProps {
   avatarsForProject?: (projectId: string) => AvatarMember[];
   /** Coût par projet & agent (L18 #5b) ; vide → placeholder. Sert l'anneau ET la treemap. */
   economy?: readonly TreemapItem[];
-  /** Ventilation tokens/jour/projet (L21 D) ; scopée à la table → scatter-timeline. */
+  /** Ventilation tokens/jour/projet (L21 D / AR-5 révisé) ; échelle PORTEFEUILLE ENTIER
+   *  (non filtrée par la table) → scatter-timeline « Travail récent · portefeuille ». */
   activity?: readonly ProjectActivity[];
 }
 
@@ -60,10 +61,17 @@ export function PortfolioView({
   // KPIs RÉELS (dérivés des props, purs) — le coût/tokens reste un placeholder.
   const cleanCount = projects.filter((p) => p.is_git && !p.dirty).length;
   const dirtyCount = projects.filter((p) => p.dirty).length;
+  // Descripteurs `.kd` HONNÊTES (3ᵉ niveau du bandeau, Loki P2-5) — dérivés du réel,
+  // jamais un chiffre inventé : nb de dépôts sous git + nb de projets vivants sur la table.
+  const gitCount = projects.filter((p) => p.is_git).length;
 
   // Partition table / atelier (front pur).
   const tableProjects = projects.filter((p) => worksetIds.has(p.id));
   const shelfProjects = projects.filter((p) => !worksetIds.has(p.id));
+  // Projets de la table ayant une conversation vivante (descripteur `.kd` « sur la table »).
+  const liveOnTable = tableProjects.filter(
+    (p) => liveProjectIds?.has(p.id) ?? false,
+  ).length;
 
   // ÉCONOMIE SCOPÉE À LA TABLE (tranche C, helper pur) : dénominateur de l'anneau % ET de
   // la treemap = Σ tokens des projets de la table uniquement (AR-4).
@@ -72,8 +80,10 @@ export function PortfolioView({
   const colorByProject = new Map(
     scope.tableEconomy.map((e, i) => [e.project, treemapColor(i)]),
   );
-  // Visu « travail passé » (tranche D) : scopée aux projets de la table (cohérent C).
-  const tableActivity = activity.filter((a) => worksetIds.has(a.project));
+  // Visu « travail passé » (AR-5 RÉVISÉ) : à l'échelle du PORTEFEUILLE ENTIER — PAS de
+  // filtre `worksetIds` ici (comme le naonedge-dashboard montre tous les projets). L'anneau
+  // % des cartes ET la treemap Économie RESTENT, eux, scopés à la table (AR-4) : seule
+  // l'activité passe en vue portefeuille. La donnée est la VRAIE `portfolioActivity()`.
 
   const showLoading = loading;
   const showError = !loading && error;
@@ -89,29 +99,40 @@ export function PortfolioView({
             <span className="sub">{root ?? t("portfolio.rootUnresolved")}</span>
           </div>
 
-          {/* Bandeau KPIs numériques en ligne (décision IHM). */}
+          {/* Bandeau KPIs numériques en ligne (décision IHM) — rythme à 3 niveaux du mock :
+              libellé `.kl` / valeur `.kv` / descripteur `.kd` (Loki P2-5). Les `.kd` sont
+              HONNÊTES (dérivés du réel ou libellé qualitatif), jamais un chiffre inventé. */}
           <div className="kpibar">
             <div className="k">
               <div className="kl">{t("portfolio.kpiDetected")}</div>
               <div className="kv">{projects.length}</div>
+              <div className="kd">
+                {t("portfolio.kdDetected", { count: gitCount })}
+              </div>
             </div>
             <div className="k">
               <div className="kl">{t("portfolio.kpiOnTable")}</div>
               <div className="kv">{worksetCount}</div>
+              <div className="kd">
+                {t("portfolio.kdOnTable", { count: liveOnTable })}
+              </div>
             </div>
             <div className="k">
               <div className="kl">{t("portfolio.kpiClean")}</div>
               <div className="kv">{cleanCount}</div>
+              <div className="kd">{t("portfolio.kdClean")}</div>
             </div>
             <div className="k">
               <div className="kl">{t("portfolio.kpiDirty")}</div>
               <div className="kv">{dirtyCount}</div>
+              <div className="kd">{t("portfolio.kdDirty")}</div>
             </div>
             <div className="k k-soon">
               <div className="kl">{t("portfolio.kpiEconomy")}</div>
               <div className="kv">
                 <small>{t("portfolio.soon")}</small>
               </div>
+              <div className="kd">{t("portfolio.economyPeriod")}</div>
             </div>
           </div>
 
@@ -130,8 +151,12 @@ export function PortfolioView({
                 <div className="pfstate">{t("portfolio.empty")}</div>
               )}
 
-              {/* Visu « travail passé » (L21 D) — AU-DESSUS des cartes de la table. */}
-              <ActivityTimeline activity={tableActivity} />
+              {/* Visu « travail passé » — ANCRÉE sous un titre de section (Loki P2-6), plus
+                  flottante. Échelle PORTEFEUILLE ENTIER (AR-5 révisé) : `activity` non filtrée. */}
+              <div className="rowhead">
+                <h2>{t("portfolio.recentWorkHead")}</h2>
+              </div>
+              <ActivityTimeline activity={activity} />
 
               {/* Posés sur la table — cartes riches. */}
               <div className="rowhead">
