@@ -4,8 +4,9 @@
  * (jours si ≤ 45 j, sinon mois), chaque bulle = un jour d'activité, rayon ∝ tokens du jour.
  *
  * Présentationnel PUR (D8), SVG en JSX (aucune dépendance, CSP intacte — pas d'innerHTML).
- * Reçoit la série DÉJÀ SCOPÉE aux projets de la table. Empty-state honnête si aucune donnée
- * (jamais de bulle fantôme : un projet sans transcript n'apparaît pas).
+ * Reçoit la série à l'échelle du PORTEFEUILLE ENTIER (AR-5 révisé : non filtrée par la table).
+ * Empty-state honnête si aucune donnée (jamais de bulle fantôme : un projet sans transcript
+ * n'apparaît pas).
  */
 import { useTranslation } from "react-i18next";
 import type { ProjectActivity } from "../api/backend";
@@ -37,7 +38,7 @@ interface Row {
 }
 
 export interface ActivityTimelineProps {
-  /** Série tokens/jour/projet, DÉJÀ scopée aux projets de la table. */
+  /** Série tokens/jour/projet, à l'échelle du PORTEFEUILLE ENTIER (AR-5 révisé). */
   activity: readonly ProjectActivity[];
 }
 
