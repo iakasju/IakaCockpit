@@ -301,10 +301,20 @@ fn claude_program() -> String {
     }
 }
 
+/// Obligation de RÔLE du coordinateur (L19, décision Stéphane) : planifier les étapes,
+/// planifier les délégations, et estimer les temps prévisionnels — encodés `[~Xmin]` en
+/// tête d'item `TodoWrite` (option A, parsé par le Gantt). Injectée au système du
+/// chef-runner. Si le runner ne produit rien → le Gantt reste en réalisé seul (honnête).
+const COORDINATOR_OBLIGATION: &str = "En tant que coordinateur de l'équipe : AVANT d'exécuter, \
+établis le plan des étapes avec l'outil TodoWrite. Préfixe CHAQUE étape de sa durée estimée \
+entre crochets (ex. « [~5min] Cadrer »), et précise l'agent délégué quand l'étape est déléguée. \
+Mets le plan à jour (statuts in_progress/completed) au fil de l'avancement.";
+
 /// Arguments du chef-runner `claude-code` (TUI native — PAS de `--print`, prouvé spike
 /// L10b). `--session-id` rend le transcript DÉTERMINISTE ; `--allowedTools` = allowlist
 /// (réglage global L10b/P3, défaut `CHEF_ALLOWED_TOOLS`), **jamais**
-/// `--dangerously-skip-permissions`. Schéma figé Rust.
+/// `--dangerously-skip-permissions` ; `--append-system-prompt` porte l'obligation de rôle
+/// du coordinateur (L19). Schéma figé Rust.
 fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> {
     vec![
         "--session-id".to_string(),
@@ -313,6 +323,8 @@ fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> 
         model.to_string(),
         "--allowedTools".to_string(),
         allowed_tools.to_string(),
+        "--append-system-prompt".to_string(),
+        COORDINATOR_OBLIGATION.to_string(),
     ]
 }
 
@@ -741,6 +753,19 @@ mod tests {
             let i = args.iter().position(|a| a == flag).expect("flag présent");
             assert_eq!(args.get(i + 1).map(String::as_str), Some(value));
         }
+    }
+
+    #[test]
+    fn chef_args_porte_l_obligation_coordinateur() {
+        // L19 : le coordinateur reçoit l'obligation de planifier + estimer (option A).
+        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS);
+        let i = args
+            .iter()
+            .position(|a| a == "--append-system-prompt")
+            .expect("flag d'obligation présent");
+        let prompt = args.get(i + 1).map(String::as_str).unwrap_or("");
+        assert!(prompt.contains("TodoWrite"));
+        assert!(prompt.contains("[~5min]"));
     }
 
     #[test]
