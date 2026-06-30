@@ -5,12 +5,20 @@
  * `invoke` direct ici (D7). Mode dégradé toléré : si la lecture échoue, items=null /
  * snapshots=[] → empty-state honnête.
  *
- * MVP : (re)chargement au changement de projet + `refresh()`. Temps réel différé (L4).
+ * Live (L20 B2) : (re)chargement au changement de projet, `refresh()` manuel ET POLLING
+ * périodique (`setInterval`) tant qu'un projet est actif → capte les NOUVELLES transitions
+ * de statut écrites en main courante pendant la session, sans changer de projet. Nettoyage
+ * strict de l'intervalle au démontage / changement de projet (anti-fuite, calque L10/usePty).
+ * MVP polling ; la souscription `_changes` CouchDB reste différée (L4).
  */
 import { useCallback, useEffect, useState } from "react";
 import { backend, type Backend } from "../api/backend";
 import { derivePlan, derivePlanSnapshots, type PlanItem } from "./derivePlan";
 import type { PlanSnapshot } from "./derivePlanTimeline";
+
+/** Intervalle de polling de la main courante (ms). Volontairement large : le live « visuel »
+ *  (barres/curseur) vient du ticker `useNow` ; ce poll ne sert qu'aux nouvelles transitions. */
+export const PLAN_POLL_MS = 12_000;
 
 export interface UsePlan {
   items: PlanItem[] | null;
@@ -18,7 +26,11 @@ export interface UsePlan {
   refresh: () => Promise<void>;
 }
 
-export function usePlan(project: string | null, api: Backend = backend): UsePlan {
+export function usePlan(
+  project: string | null,
+  api: Backend = backend,
+  pollMs: number = PLAN_POLL_MS,
+): UsePlan {
   const [items, setItems] = useState<PlanItem[] | null>(null);
   const [snapshots, setSnapshots] = useState<PlanSnapshot[]>([]);
 
@@ -38,9 +50,22 @@ export function usePlan(project: string | null, api: Backend = backend): UsePlan
     }
   }, [project, api]);
 
+  // Chargement immédiat au montage / changement de projet (et sur `refresh` recréé).
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Polling périodique tant qu'un projet est actif (L20 B2). L'intervalle est recréé quand
+  // `project`/`refresh` change (changement de projet) et NETTOYÉ au démontage → jamais de
+  // double-abonnement ni de fuite. Idempotent et silencieux en mode dégradé (refresh gère
+  // l'échec → empty-state). `_changes` CouchDB différé.
+  useEffect(() => {
+    if (!project || pollMs <= 0) return;
+    const id = setInterval(() => {
+      void refresh();
+    }, pollMs);
+    return () => clearInterval(id);
+  }, [project, refresh, pollMs]);
 
   return { items, snapshots, refresh };
 }

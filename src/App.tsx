@@ -19,6 +19,7 @@ import { useEconomy } from "./hooks/useEconomy";
 import { useEffects, sortedEffects } from "./hooks/useEffects";
 import { usePlan } from "./hooks/usePlan";
 import { derivePlanTimeline } from "./hooks/derivePlanTimeline";
+import { useNow } from "./hooks/useNow";
 import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
@@ -205,13 +206,17 @@ export default function App(): JSX.Element {
       : demoActive
         ? DEMO_EFFECTS_TOTAL
         : liveEffectsState.total;
-  // Gantt du réalisé (L19 #9a) : timeline dérivée des snapshots de plan, ou démo.
+  // Gantt prévisionnel (L19 #9a/#9b) : timeline dérivée des snapshots de plan, ou démo.
+  // `now` est TICKÉ (L20 B1, `useNow`) — pas un `Date.now()` figé au render : les barres
+  // `in_progress` grandissent, le curseur avance et le dépassement vire au rouge au fil du
+  // temps, sans rechargement. En pause quand l'onglet est masqué (cf. `useNow`).
+  const now = useNow();
   const timelineView =
     plan.snapshots.length > 0
-      ? derivePlanTimeline(plan.snapshots, Date.now())
+      ? derivePlanTimeline(plan.snapshots, now)
       : demoActive
         ? DEMO_TIMELINE
-        : derivePlanTimeline([], Date.now());
+        : derivePlanTimeline([], now);
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
