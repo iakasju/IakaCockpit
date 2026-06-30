@@ -12,6 +12,13 @@ export const en: Resources = {
     empty: "No plan in progress.",
   },
 
+  gantt: {
+    ariaLabel: "Actual progress",
+    title: "Actual progress",
+    empty: "No task started.",
+    overrun: "{{count}} overdue",
+  },
+
   memory: {
     ariaLabel: "Memory / context",
     title: "Memory",

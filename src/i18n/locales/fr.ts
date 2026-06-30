@@ -11,6 +11,13 @@ export const fr = {
     empty: "Aucun plan en cours.",
   },
 
+  gantt: {
+    ariaLabel: "Avancement réalisé",
+    title: "Avancement réalisé",
+    empty: "Aucune tâche démarrée.",
+    overrun: "{{count}} en retard",
+  },
+
   memory: {
     ariaLabel: "Mémoire / contexte",
     title: "Mémoire",

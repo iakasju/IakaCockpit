@@ -33,8 +33,10 @@ import type { PlanItem } from "../hooks/derivePlan";
 import { EconomyPanel } from "../components/EconomyPanel";
 import { MemoryGauge } from "../components/MemoryGauge";
 import { EffectsPanel } from "../components/EffectsPanel";
+import { GanttPanel } from "../components/GanttPanel";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
+import type { PlanTimeline } from "../hooks/derivePlanTimeline";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
@@ -107,6 +109,8 @@ export interface WorkingViewProps {
   fileEffects?: readonly FileEffect[];
   /** Total d'éditions (borne des buckets de la heatmap). */
   fileEffectsTotal?: number;
+  /** Gantt du réalisé (L19 #9a) : timeline dérivée des snapshots de plan. */
+  timeline?: PlanTimeline;
   /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
@@ -140,6 +144,7 @@ export function WorkingView({
   economySeries,
   fileEffects,
   fileEffectsTotal,
+  timeline,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -434,6 +439,8 @@ export function WorkingView({
             `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
           */}
           <PlanPanel items={planItems ?? null} />
+          {/* Gantt du réalisé (L19 #9a) : timeline des tâches + alerte de retard. */}
+          {timeline && <GanttPanel timeline={timeline} />}
           {/* Jauge mémoire (L18 #6) : input du dernier tour ≈ contexte + frontière compaction. */}
           <MemoryGauge series={economySeries ?? []} />
           {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}

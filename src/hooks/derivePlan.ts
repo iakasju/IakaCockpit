@@ -32,6 +32,36 @@ function isPlanEvent(ev: FeedEvent): boolean {
   return !!m && typeof m === "object" && (m as Record<string, unknown>).event === "plan";
 }
 
+/** Parse `meta.items` en `PlanItem[]` (défensif, [] si invalide). */
+export function parsePlanItems(meta: FeedEvent["meta"]): PlanItem[] {
+  const raw = meta && typeof meta === "object" ? (meta as Record<string, unknown>).items : null;
+  if (!Array.isArray(raw)) return [];
+  const items: PlanItem[] = [];
+  for (const it of raw) {
+    if (it && typeof it === "object") {
+      const o = it as Record<string, unknown>;
+      const content = typeof o.content === "string" ? o.content.trim() : "";
+      if (content.length > 0) items.push({ content, status: normStatus(o.status) });
+    }
+  }
+  return items;
+}
+
+/** Tous les snapshots de plan (horodatés) pour `project` — pour la timeline (#9a). */
+export function derivePlanSnapshots(
+  events: readonly FeedEvent[],
+  project?: string,
+): { ts: string; items: PlanItem[] }[] {
+  const out: { ts: string; items: PlanItem[] }[] = [];
+  for (const ev of events) {
+    if (!isPlanEvent(ev)) continue;
+    if (project && ev.project !== project) continue;
+    const items = parsePlanItems(ev.meta);
+    if (items.length > 0) out.push({ ts: ev.ts, items });
+  }
+  return out;
+}
+
 /**
  * Dernier plan pour `project` (ou tous projets si absent), ou `null` si aucun.
  * Tri par `ts` ISO (lexicographique = chronologique). Items défensivement normalisés.
@@ -47,17 +77,6 @@ export function derivePlan(
     if (latest === null || ev.ts > latest.ts) latest = ev;
   }
   if (latest === null) return null;
-  const raw = (latest.meta as Record<string, unknown>).items;
-  if (!Array.isArray(raw)) return null;
-  const items: PlanItem[] = [];
-  for (const it of raw) {
-    if (it && typeof it === "object") {
-      const o = it as Record<string, unknown>;
-      const content = typeof o.content === "string" ? o.content.trim() : "";
-      if (content.length > 0) {
-        items.push({ content, status: normStatus(o.status) });
-      }
-    }
-  }
-  return items;
+  const items = parsePlanItems(latest.meta);
+  return items.length > 0 ? items : null;
 }

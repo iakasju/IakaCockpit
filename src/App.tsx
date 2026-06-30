@@ -18,6 +18,7 @@ import { useAgentTasks } from "./hooks/useAgentTasks";
 import { useEconomy } from "./hooks/useEconomy";
 import { useEffects, sortedEffects } from "./hooks/useEffects";
 import { usePlan } from "./hooks/usePlan";
+import { derivePlanTimeline } from "./hooks/derivePlanTimeline";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -29,6 +30,7 @@ import {
   DEMO_ECONOMY,
   DEMO_EFFECTS,
   DEMO_EFFECTS_TOTAL,
+  DEMO_TIMELINE,
 } from "./mock/demoWidgets";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
@@ -199,6 +201,13 @@ export default function App(): JSX.Element {
       : demoActive
         ? DEMO_EFFECTS_TOTAL
         : liveEffectsState.total;
+  // Gantt du réalisé (L19 #9a) : timeline dérivée des snapshots de plan, ou démo.
+  const timelineView =
+    plan.snapshots.length > 0
+      ? derivePlanTimeline(plan.snapshots, Date.now())
+      : demoActive
+        ? DEMO_TIMELINE
+        : derivePlanTimeline([], Date.now());
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
@@ -363,6 +372,7 @@ export default function App(): JSX.Element {
             economySeries={economyView}
             fileEffects={effectsView}
             fileEffectsTotal={effectsTotalView}
+            timeline={timelineView}
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

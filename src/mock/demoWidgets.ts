@@ -9,6 +9,7 @@
 import type { PlanItem } from "../hooks/derivePlan";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
+import type { PlanTimeline } from "../hooks/derivePlanTimeline";
 
 /** Plan vivant de démo (étapes + statuts cohérents avec la conversation démo). */
 export const DEMO_PLAN: PlanItem[] = [
@@ -49,3 +50,46 @@ export const DEMO_EFFECTS: FileEffect[] = [
 
 /** Total d'éditions de démo (borne des buckets de la heatmap). */
 export const DEMO_EFFECTS_TOTAL = 23;
+
+/** Gantt du réalisé de démo (ms relatifs : 0 → 30 min). Cohérent avec DEMO_PLAN. */
+export const DEMO_TIMELINE: PlanTimeline = {
+  minMs: 0,
+  nowMs: 1_800_000,
+  bars: [
+    {
+      content: "Cadrer la refonte visuelle (direction A)",
+      startMs: 0,
+      endMs: 240_000,
+      status: "completed",
+      overrun: false,
+    },
+    {
+      content: "Porter l'identité Atelier/Étagère/Table",
+      startMs: 240_000,
+      endMs: 660_000,
+      status: "completed",
+      overrun: false,
+    },
+    {
+      content: "Implémenter les widgets de la Table",
+      startMs: 660_000,
+      endMs: null,
+      status: "in_progress",
+      overrun: true,
+    },
+    {
+      content: "Brancher l'économie du tour",
+      startMs: null,
+      endMs: null,
+      status: "pending",
+      overrun: false,
+    },
+    {
+      content: "Recette visuelle + gate qualité",
+      startMs: null,
+      endMs: null,
+      status: "pending",
+      overrun: false,
+    },
+  ],
+};
