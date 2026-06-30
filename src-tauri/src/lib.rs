@@ -12,6 +12,7 @@ pub mod ai;
 pub mod codex;
 pub mod config;
 pub mod db;
+pub mod economy;
 pub mod git;
 pub mod maincourante;
 pub mod notify;
@@ -51,6 +52,7 @@ pub fn run() {
             portfolio::scan_portfolio,
             portfolio::add_project,
             portfolio::list_extra_projects,
+            economy::portfolio_economy,
             services::check_services,
             config::get_root,
             config::set_root,

@@ -173,6 +173,25 @@ export function scanPortfolio(root: string): Promise<Project[]> {
   return call<Project[]>("scan_portfolio", { root });
 }
 
+/** Coût agrégé d'un projet (miroir `economy::ProjectEconomy`, L18 #5b). */
+export interface ProjectEconomy {
+  project: string;
+  input: number;
+  output: number;
+  /** Tokens de sortie du coordinateur (tours principaux). */
+  coord: number;
+  /** Tokens de sortie des sous-agents délégués (sidechain). */
+  sub: number;
+}
+
+/**
+ * Coût par projet agrégé depuis les transcripts de session (top 8, tri coût desc). Lecture
+ * seule. Vide si aucun transcript / hors Tauri. Alimente la treemap de l'Étagère (#5b).
+ */
+export function portfolioEconomy(): Promise<ProjectEconomy[]> {
+  return call<ProjectEconomy[]>("portfolio_economy");
+}
+
 /**
  * Importe un dossier existant comme projet (bouton + de Working). Persiste son
  * chemin côté Rust et renvoie son état git scanné. Le dossier peut vivre hors du
@@ -597,6 +616,7 @@ export const backend = {
   call,
   isTauri,
   scanPortfolio,
+  portfolioEconomy,
   addProject,
   listExtraProjects,
   pickDirectory,

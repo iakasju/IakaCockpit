@@ -19,6 +19,7 @@ import { useEconomy } from "./hooks/useEconomy";
 import { useEffects, sortedEffects } from "./hooks/useEffects";
 import { usePlan } from "./hooks/usePlan";
 import { derivePlanTimeline } from "./hooks/derivePlanTimeline";
+import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
@@ -78,6 +79,8 @@ export default function App(): JSX.Element {
   const economy = useEconomy();
   // Effets fichiers (L18 #7) : accumule les gestes d'édition (Edit/Write…) par projet.
   const effects = useEffects();
+  // Coût cross-projet (L18 #5b) : agrégation des transcripts → treemap de l'Étagère.
+  const portfolioEco = usePortfolioEconomy();
 
   // Observateur ADDITIF combiné des events bruts : panneau Tâches (délégations) + HUD
   // économie (tokens) + effets fichiers. Stable (les `ingest` le sont) → pas de
@@ -345,7 +348,13 @@ export default function App(): JSX.Element {
             worksetCount={workset.ids.size}
             onToggleWork={workset.toggle}
             onGotoWork={() => grid.setActiveView("working")}
-            economy={demoWidgetsOn ? DEMO_PORTFOLIO_ECONOMY : []}
+            economy={
+              portfolioEco.length > 0
+                ? portfolioEco
+                : demoWidgetsOn
+                  ? DEMO_PORTFOLIO_ECONOMY
+                  : []
+            }
           />
         )}
         {grid.activeView === "working" && (
