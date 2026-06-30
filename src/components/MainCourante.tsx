@@ -63,6 +63,16 @@ export function MainCourante(): JSX.Element {
     return project ? byCanal.filter((e) => e.project === project) : byCanal;
   }, [mc.events, active, project]);
 
+  // Widget de session (décision mock) : visible UNIQUEMENT quand 1 projet est filtré.
+  // Délégations = events du canal « geste » (trace machine L5) du projet. Data-ready.
+  const sessionDelegations = useMemo(
+    () =>
+      project
+        ? mc.events.filter((e) => e.project === project && e.canal === "geste")
+        : [],
+    [mc.events, project],
+  );
+
   return (
     <aside className="mcleft" aria-label={t("journal.ariaLabel")}>
       <div className="mchead">
@@ -156,6 +166,30 @@ export function MainCourante(): JSX.Element {
       )}
 
       {mc.loading && <div className="mcnote">{t("journal.loading")}</div>}
+
+      {/* Widget de session (décision mock) : 1 projet filtré → arbre des délégations
+          (events canal geste = délégations machine L5). La frise mémoire colorée par
+          agent reste différée (donnée token-par-agent hors flux Journal). */}
+      {project && sessionDelegations.length > 0 && (
+        <section
+          className="sessdeleg"
+          aria-label={t("journal.sessionDelegAria")}
+        >
+          <div className="sdh">
+            {t("journal.sessionDelegTitle")}
+            <span className="sdn">{sessionDelegations.length}</span>
+          </div>
+          <ul className="sdlist">
+            {sessionDelegations.map((e) => (
+              <li key={e.id} className="sditem">
+                <span className="cfdot geste" aria-hidden />
+                <span className="sdwho">{e.who}</span>
+                <span className="sdbody">{e.body}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="feed">
         {!mc.loading && events.length === 0 && (

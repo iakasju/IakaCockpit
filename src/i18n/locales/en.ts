@@ -193,6 +193,8 @@ export const en: Resources = {
     filterAll: "All",
     projectsAria: "Project filters",
     allProjects: "All projects",
+    sessionDelegAria: "Session delegations",
+    sessionDelegTitle: "Session delegations",
     canalAdresse: "address",
     canalGeste: "gesture",
     canalPensee: "thinking",
