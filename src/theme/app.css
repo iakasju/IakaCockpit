@@ -549,29 +549,6 @@ button {
   color: var(--text-2);
   flex-basis: 100%;
 }
-/* Panneau « Coordinateur vs délégués » (option a MVP) : barre segmentée part coord/sub. */
-.ecocard .esbar {
-  display: flex;
-  height: 10px;
-  border-radius: 99px;
-  overflow: hidden;
-  margin-bottom: 10px;
-  background: color-mix(in srgb, var(--text-3) 14%, transparent);
-}
-.ecocard .esbar i {
-  display: block;
-  height: 100%;
-}
-.ecocard .esbar i.es-main {
-  background: var(--accent);
-}
-.ecocard .esbar i.es-sub {
-  background: var(--text-3);
-}
-.ecocard .ecosplit {
-  flex-wrap: wrap;
-}
-
 /* Sous une largeur confortable : on EMPILE (économie passe sous les tuiles) — évite tout
    écrasement de la colonne économie quand la fenêtre rétrécit. */
 @media (max-width: 1200px) {

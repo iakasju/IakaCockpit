@@ -116,10 +116,6 @@ export const fr = {
     economyCardTitle: "Coût par projet & agent",
     economyPlaceholder: "Aucun coût mesuré pour l'instant.",
     treemapLegendNote: "surface ∝ tokens · segments = part par agent",
-    shareTitle: "Coordinateur vs délégués",
-    shareCoord: "Coordinateur",
-    shareDelegated: "Délégués",
-    shareEmpty: "Aucun coût coordinateur/délégués mesuré sur la table.",
   },
 
   tile: {

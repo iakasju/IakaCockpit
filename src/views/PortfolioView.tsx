@@ -17,7 +17,6 @@ import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
 import { ShelfRow } from "../components/ShelfRow";
 import { ActivityTimeline } from "../components/ActivityTimeline";
 import { TreemapPanel, type TreemapItem } from "../components/TreemapPanel";
-import { EconomyShare } from "../components/EconomyShare";
 import { treemapColor } from "../components/treemapColor";
 import { scopePortfolioEconomy, ringPct, tokensOf } from "./portfolioScope";
 
@@ -81,12 +80,6 @@ export function PortfolioView({
   const colorByProject = new Map(
     scope.tableEconomy.map((e, i) => [e.project, treemapColor(i)]),
   );
-  // Découpage COORDINATEUR vs DÉLÉGUÉS (option a MVP, retour terrain) — AGRÉGÉ sur les projets
-  // de la TABLE (même scope que la treemap, AR-4). Donnée RÉELLE `economy.rs::ProjectEconomy`
-  // (coord = sortie non-sidechain, sub = sortie sidechain), portée par `TreemapItem.coord/sub`.
-  // Le coût par agent NOMMÉ (corrélation sidechain→agent) reste un incrément ULTÉRIEUR.
-  const tableCoord = scope.tableEconomy.reduce((s, e) => s + (e.coord ?? 0), 0);
-  const tableSub = scope.tableEconomy.reduce((s, e) => s + (e.sub ?? 0), 0);
   // Visu « travail passé » (AR-5 RÉVISÉ) : à l'échelle du PORTEFEUILLE ENTIER — PAS de
   // filtre `worksetIds` ici (comme le naonedge-dashboard montre tous les projets). L'anneau
   // % des cartes ET la treemap Économie RESTENT, eux, scopés à la table (AR-4) : seule
@@ -221,10 +214,9 @@ export function PortfolioView({
                 <h2>{t("portfolio.economyTitle")}</h2>
                 <span className="eb">{t("portfolio.economyPeriod")}</span>
               </div>
-              {/* Treemap coût par projet & agent (L18 #5b) — SCOPÉE à la table (tranche C). */}
+              {/* Treemap coût par projet & agent (L18 #5b) — SCOPÉE à la table (tranche C) :
+                  EST le « coût par projet & agent » (segments coordinateur/délégués par projet). */}
               <TreemapPanel items={scope.tableEconomy} />
-              {/* Coordinateur vs délégués (option a MVP) — même scope table, donnée réelle. */}
-              <EconomyShare coord={tableCoord} sub={tableSub} />
             </aside>
           </div>
         </div>

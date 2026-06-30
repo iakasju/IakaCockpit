@@ -117,10 +117,6 @@ export const en: Resources = {
     economyCardTitle: "Cost by project & agent",
     economyPlaceholder: "No cost measured yet.",
     treemapLegendNote: "area ∝ tokens · segments = share per agent",
-    shareTitle: "Coordinator vs delegates",
-    shareCoord: "Coordinator",
-    shareDelegated: "Delegates",
-    shareEmpty: "No coordinator/delegate cost measured on the table.",
   },
 
   tile: {
