@@ -34,11 +34,13 @@ button {
   font-family: inherit;
 }
 
-/* Élévation douce (sans-bord) — séparation par l'ombre, pas par un trait. */
+/* Élévation douce (sans-bord) — séparation par l'ombre, pas par un trait. La 1ʳᵉ couche
+   (hairline) était un noir fixe `rgba(20,22,28,.04)` ILLISIBLE en charte sombre (Loki P2-4) ;
+   on la passe au token thématique `--surf-2` (résolu par charte → visible en dark ET light). */
 :root {
-  --shadow-soft: 0 1px 0 rgba(20, 22, 28, 0.04),
+  --shadow-soft: 0 1px 0 var(--surf-2),
     0 16px 36px -28px rgba(20, 22, 28, 0.25);
-  --shadow-card: 0 1px 0 rgba(20, 22, 28, 0.05),
+  --shadow-card: 0 1px 0 var(--surf-2),
     0 20px 44px -32px rgba(20, 22, 28, 0.28);
   --shadow-pop: 0 18px 50px rgba(20, 22, 28, 0.28);
   --rail-w: 76px;
@@ -401,6 +403,12 @@ button {
   color: var(--text-3);
   font-weight: 400;
 }
+/* 3ᵉ niveau du bandeau (rythme du mock, Loki P2-5) : descripteur sous la valeur. */
+.kpibar .kd {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-top: 6px;
+}
 .kpibar .k-soon .kv {
   color: var(--text-3);
 }
@@ -467,23 +475,30 @@ button {
   color: var(--text-3);
   font-weight: 400;
 }
-/* Treemap coût par projet & agent (L18 #5b). */
+/* Treemap coût par projet & agent (L18 #5b) — SILHOUETTE MOSAÏQUE 2D (décision Stéphane,
+   calque mock `portefeuille.html` + `viz.css` .tmap/.tcell). Cellules en flex-wrap, largeur
+   % ∝ part de tokens → surface ∝ tokens, plus la pile de barres verticales. */
 .tmap {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
 }
 .tcell {
-  border-radius: 10px;
-  padding: 9px 11px;
+  border-radius: 11px;
+  padding: 12px 14px;
   color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  min-height: 84px;
   min-width: 0;
 }
 .tcell .tnm {
   display: block;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -491,19 +506,48 @@ button {
 .tcell .tv {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
-  opacity: 0.85;
-  margin-top: 1px;
+  font-size: 11px;
+  opacity: 0.9;
+  margin-top: 2px;
 }
+/* Segments en PILULE (Loki P1-2) : barre arrondie, segments butés bord-à-bord (gap:0). */
 .tcell .tseg {
   display: flex;
-  gap: 2px;
-  margin-top: 6px;
   height: 5px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 0;
+  margin-top: 9px;
+  background: color-mix(in srgb, #fff 25%, transparent);
 }
 .tcell .tseg i {
-  background: #fff;
-  border-radius: 2px;
+  height: 100%;
+  border-radius: 0;
+}
+/* Légende de la treemap (Loki P1-3, calque `viz.css` .legend2) : pastille + nom projet,
+   plus une note de lecture « surface ∝ tokens · segments = part par agent ». */
+.ecocard .legend2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 13px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.ecocard .legend2 span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ecocard .legend2 i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.ecocard .legend2 .legend2note {
+  color: var(--text-2);
+  flex-basis: 100%;
 }
 /* Sous une largeur confortable : on EMPILE (économie passe sous les tuiles) — évite tout
    écrasement de la colonne économie quand la fenêtre rétrécit. */
