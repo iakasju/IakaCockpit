@@ -11,6 +11,7 @@
 import { useTranslation } from "react-i18next";
 import type { Project } from "../api/backend";
 import { Tile } from "../components/Tile";
+import { TreemapPanel, type TreemapItem } from "../components/TreemapPanel";
 
 export interface PortfolioViewProps {
   projects: Project[];
@@ -21,6 +22,8 @@ export interface PortfolioViewProps {
   worksetCount: number;
   onToggleWork: (projectId: string) => void;
   onGotoWork: () => void;
+  /** Coût par projet & agent (L18 #5b) ; vide → placeholder. */
+  economy?: readonly TreemapItem[];
 }
 
 export function PortfolioView({
@@ -32,6 +35,7 @@ export function PortfolioView({
   worksetCount,
   onToggleWork,
   onGotoWork,
+  economy = [],
 }: PortfolioViewProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -120,16 +124,9 @@ export function PortfolioView({
                 <h2>{t("portfolio.economyTitle")}</h2>
                 <span className="eb">{t("portfolio.economyPeriod")}</span>
               </div>
-              <div className="ecocard soon">
-                <div className="ecoh">{t("portfolio.economyCardTitle")}</div>
-                <div className="ecoskel" aria-hidden>
-                  <i style={{ width: "58%" }} />
-                  <i style={{ width: "39%" }} />
-                  <i style={{ width: "46%" }} />
-                  <i style={{ width: "30%" }} />
-                </div>
-                <p className="ecohint">{t("portfolio.economyPlaceholder")}</p>
-              </div>
+              {/* Treemap coût par projet & agent (L18 #5b). Vide → placeholder honnête
+                  (l'agrégation CROSS-PROJET live est un suivi backend). */}
+              <TreemapPanel items={economy} />
             </aside>
           </div>
         </div>

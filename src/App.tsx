@@ -31,6 +31,7 @@ import {
   DEMO_EFFECTS,
   DEMO_EFFECTS_TOTAL,
   DEMO_TIMELINE,
+  DEMO_PORTFOLIO_ECONOMY,
 } from "./mock/demoWidgets";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
@@ -344,6 +345,7 @@ export default function App(): JSX.Element {
             worksetCount={workset.ids.size}
             onToggleWork={workset.toggle}
             onGotoWork={() => grid.setActiveView("working")}
+            economy={demoWidgetsOn ? DEMO_PORTFOLIO_ECONOMY : []}
           />
         )}
         {grid.activeView === "working" && (

@@ -459,6 +459,53 @@ button {
   color: var(--text-3);
   line-height: 1.5;
 }
+.ecocard .ecohint {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.ecocard .ecoht {
+  color: var(--text-3);
+  font-weight: 400;
+}
+/* Treemap coût par projet & agent (L18 #5b). */
+.tmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tcell {
+  border-radius: 10px;
+  padding: 9px 11px;
+  color: #fff;
+  min-width: 0;
+}
+.tcell .tnm {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tcell .tv {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+.tcell .tseg {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  height: 5px;
+}
+.tcell .tseg i {
+  background: #fff;
+  border-radius: 2px;
+}
 /* Sous une largeur confortable : on EMPILE (économie passe sous les tuiles) — évite tout
    écrasement de la colonne économie quand la fenêtre rétrécit. */
 @media (max-width: 1200px) {

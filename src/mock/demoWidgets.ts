@@ -10,6 +10,7 @@ import type { PlanItem } from "../hooks/derivePlan";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
 import type { PlanTimeline } from "../hooks/derivePlanTimeline";
+import type { TreemapItem } from "../components/TreemapPanel";
 
 /** Plan vivant de démo (étapes + statuts cohérents avec la conversation démo). */
 export const DEMO_PLAN: PlanItem[] = [
@@ -50,6 +51,41 @@ export const DEMO_EFFECTS: FileEffect[] = [
 
 /** Total d'éditions de démo (borne des buckets de la heatmap). */
 export const DEMO_EFFECTS_TOTAL = 23;
+
+/** Économie de l'Étagère (KPI cross-projet) de démo : coût par projet & agent (#5b). */
+export const DEMO_PORTFOLIO_ECONOMY: TreemapItem[] = [
+  {
+    project: "iaka-demo",
+    tokens: 148_200,
+    segments: [
+      { label: "aragorn", tokens: 62_000 },
+      { label: "gandalf", tokens: 44_000 },
+      { label: "gimli", tokens: 31_000 },
+      { label: "legolas", tokens: 11_200 },
+    ],
+  },
+  {
+    project: "iakacockpit",
+    tokens: 96_700,
+    segments: [
+      { label: "aragorn", tokens: 53_000 },
+      { label: "legolas", tokens: 43_700 },
+    ],
+  },
+  {
+    project: "iakagraph",
+    tokens: 52_300,
+    segments: [{ label: "frodo", tokens: 52_300 }],
+  },
+  {
+    project: "iaka-notify",
+    tokens: 20_200,
+    segments: [
+      { label: "gimli", tokens: 14_000 },
+      { label: "gandalf", tokens: 6_200 },
+    ],
+  },
+];
 
 /** Gantt du réalisé de démo (ms relatifs : 0 → 30 min). Cohérent avec DEMO_PLAN. */
 export const DEMO_TIMELINE: PlanTimeline = {
