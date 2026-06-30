@@ -479,6 +479,14 @@ button {
   color: var(--text-3);
   font-weight: 400;
 }
+/* Corps scrollable de l'Économie (retour terrain) : borne la hauteur visible de la
+   mosaïque + légende et scrolle au-delà (calque `.activity .actscroll.on`). La donnée
+   n'est jamais tronquée ; la carte garde son padding/ombre, c'est le corps qui défile. */
+.ecobody {
+  max-height: 390px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 /* Treemap coût par projet & agent (L18 #5b) — SILHOUETTE MOSAÏQUE 2D (décision Stéphane,
    calque mock `portefeuille.html` + `viz.css` .tmap/.tcell). Cellules en flex-wrap, largeur
    % ∝ part de tokens → surface ∝ tokens, plus la pile de barres verticales. */
@@ -1006,17 +1014,17 @@ button {
   stroke: color-mix(in srgb, var(--text-3) 10%, transparent);
   stroke-width: 1;
 }
-/* Police ×2 (retour terrain) : axe temps mono 9→18, labels de ligne display 11→22.
-   La géométrie SVG (rowH, T, L, rayons) est doublée en regard dans ActivityTimeline.tsx. */
+/* Tailles standard : axe temps mono 9, labels de ligne display 11. Géométrie SVG
+   (rowH, T, L, rayons) resserrée en regard dans ActivityTimeline.tsx. */
 .activity .actax {
   fill: var(--text-3);
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 9px;
 }
 .activity .actlab {
   fill: var(--text-2);
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 11px;
 }
 
 /* ===================== JOURNAL (timeline calme) ===================== */

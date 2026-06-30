@@ -91,18 +91,18 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
   maxT += pad;
 
   const W = 1000;
-  const L = 200;
+  const L = 140;
   const R = 24;
-  const T = 60;
-  // Police ×2 (retour terrain) : labels de ligne 22 / axe 18 (cf. app.css). rowH DOUBLÉ (60)
-  // et gouttière de labels élargie (L=200) pour rester lisibles. Anti-collision verticale des
-  // bulles préservée : rayon plafonné à ~21 (Ø max ≈ 42 < rowH) → pas de chevauchement.
-  const rowH = 60;
-  const B = 24;
+  const T = 34;
+  // Tailles standard (axe 9 / labels 11, cf. app.css) + interligne resserré : rowH = 26.
+  // Anti-collision verticale des bulles préservée : rayon plafonné à ~12 (Ø max ≈ 24 ≤ rowH)
+  // → pas de chevauchement entre lignes adjacentes.
+  const rowH = 26;
+  const B = 16;
   const H = T + rows.length * rowH + B;
   const span = maxT - minT || 1;
   const x = (ts: number): number => L + ((ts - minT) / span) * (W - L - R);
-  const rad = (v: number): number => 5 + Math.sqrt(v / maxV) * 16;
+  const rad = (v: number): number => 3 + Math.sqrt(v / maxV) * 9;
 
   // Max 5 lignes VISIBLES (retour terrain) : au-delà, le surplus reste accessible par SCROLL
   // vertical — la donnée n'est JAMAIS tronquée (toutes les lignes sont rendues). On borne la
@@ -164,7 +164,7 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
               y2={H - B}
               className="actgrid"
             />
-            <text x={tk.px + 4} y={T - 14} className="actax">
+            <text x={tk.px + 4} y={T - 10} className="actax">
               {tk.label}
             </text>
           </g>
@@ -173,7 +173,7 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
           const y = T + i * rowH + rowH / 2;
           return (
             <g key={r.name}>
-              <text x={L - 10} y={y + 7} className="actlab" textAnchor="end">
+              <text x={L - 10} y={y + 3} className="actlab" textAnchor="end">
                 {r.name}
               </text>
               <line x1={L} y1={y} x2={W - R} y2={y} className="actrow" />
