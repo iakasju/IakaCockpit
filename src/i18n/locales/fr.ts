@@ -212,8 +212,8 @@ export const fr = {
   teams: {
     ariaLabel: "Équipes",
     editorAria: "Équipes & agents",
-    eyebrow: "Casting",
-    title: "Équipes & agents",
+    eyebrow: "Équipes & agents",
+    title: "Casting",
     lead: "Choisis l'agent à gauche, règle son <0>runner</0>, son <1>modèle</1> et ses <2>skills</2> à droite, puis désigne le <3>coordinateur</3> (chef de projet). Les changements s'appliquent au <4>prochain lancement</4> de la conversation (pas de re-spawn à chaud).",
     teamLabel: "Team",
     teamSelectAria: "Team à éditer",
@@ -234,6 +234,7 @@ export const fr = {
     emptyAgents: "Aucun agent. Ajoute un agent ci-dessous.",
     selectAgentAria: "Sélectionner {{name}}",
     coordinatorTag: "Coordinateur",
+    coordinatorShort: "coord.",
     newAgentPlaceholder: "nom de l'agent",
     newAgentAria: "Nom du nouvel agent",
     addAgent: "+ Ajouter un agent",

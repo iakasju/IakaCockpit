@@ -196,10 +196,7 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
   return (
     <div className="block teamseditor" aria-label={t("teams.editorAria")}>
       <span className="eyebrow">{t("teams.eyebrow")}</span>
-      <div className="bt">
-        <span className="e">👥</span>
-        <h2>{t("teams.title")}</h2>
-      </div>
+      <h1 className="title">{t("teams.title")}</h1>
       <p className="lead">
         <Trans
           i18nKey="teams.lead"
@@ -363,12 +360,8 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                     </span>
                   </span>
                   {isCoord && (
-                    <span
-                      className="crown"
-                      title={t("teams.coordinatorTag")}
-                      aria-hidden
-                    >
-                      👑
+                    <span className="crown" title={t("teams.coordinatorTag")}>
+                      {t("teams.coordinatorShort")}
                     </span>
                   )}
                 </button>

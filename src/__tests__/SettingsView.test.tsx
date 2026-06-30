@@ -197,7 +197,7 @@ describe("SettingsView — vignettes & chef-runner", () => {
   it("L13 : l'éditeur « Teams & agents » n'est PLUS dans Réglages (sorti vers la vue Teams)", () => {
     renderView({});
     expect(
-      screen.queryByRole("heading", { name: "Équipes & agents" }),
+      screen.queryByRole("heading", { name: "Casting" }),
     ).toBeNull();
     expect(screen.queryByLabelText("Runner de aragorn")).toBeNull();
   });

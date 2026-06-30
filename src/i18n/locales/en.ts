@@ -211,8 +211,8 @@ export const en: Resources = {
   teams: {
     ariaLabel: "Teams",
     editorAria: "Teams & agents",
-    eyebrow: "Casting",
-    title: "Teams & agents",
+    eyebrow: "Teams & agents",
+    title: "Casting",
     lead: "Pick the agent on the left, set its <0>runner</0>, <1>model</1> and <2>skills</2> on the right, then designate the <3>coordinator</3> (project lead). Changes apply on the <4>next launch</4> of the conversation (no hot re-spawn).",
     teamLabel: "Team",
     teamSelectAria: "Team to edit",
@@ -233,6 +233,7 @@ export const en: Resources = {
     emptyAgents: "No agent. Add one below.",
     selectAgentAria: "Select {{name}}",
     coordinatorTag: "Coordinator",
+    coordinatorShort: "lead",
     newAgentPlaceholder: "agent name",
     newAgentAria: "New agent name",
     addAgent: "+ Add an agent",

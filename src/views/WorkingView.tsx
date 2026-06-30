@@ -427,7 +427,6 @@ export function WorkingView({
           </>
         ) : (
           <div className="workempty">
-            <span className="e">💬</span>
             {t("working.emptyConv")}
             <br />
             {t("working.emptyConvHint")}
