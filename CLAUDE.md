@@ -326,6 +326,20 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `specs/instructions/L15-noms-personnages-teams-catalogue.md`. Reste possible (horizon) : faire
       **suivre les vignettes à la charte** au-delà du roster (déjà le cas via `settings.theme`) ; rien de
       bloquant.
+- [x] **v0.13.0 — Identité Atelier/Étagère/Table + main courante par hook + widgets de la Table** (jalon)
+      *(SCELLÉ 2026-06-30 ; doc qualité `docs/qualite/v0.13.0.md` ; 360 front + 221 Rust verts, `quality.sh` OK).*
+      Bundle : (1) **Identité** Atelier/Étagère/Table — relabel d'EXPÉRIENCE (rail, vues, geste prendre→poser→
+      ranger), socle technique intact (`specs/design/identite-atelier-etagere-table.md`). (2) **L18 — main
+      courante par hook** (fondation « instrumenter, pas gratter ») : hook `~/.claude/plan-courante.mjs` émet le
+      plan complet → CouchDB (lu par L4) ; schéma unifié, émetteur par source ; `FeedEvent.meta` passthrough.
+      (3) **Widgets de la Table** dérivés du transcript : #1 Étagère (KPIs+3 col responsive-conteneur+économie),
+      #2 attribution (gouttière), #3 plan vivant (checklist), #5a économie (multi-ligne coord/délégués), #6
+      mémoire (jauge+frontière compaction), #7 effets (heatmap fichiers×tours). (4) **L19 — Gantt** : #9a réalisé
+      (snapshots plan→timeline+alerte), #9b prévisionnel (baseline `[~Xmin]` option A+dépassement), **obligation
+      coordinateur** injectée au runner (`--append-system-prompt`) → prévisionnel LIVE. (5) **Démo** iaka-demo
+      enrichie (tous widgets pertinents, fallback dev-gardé, zéro fausse donnée prod). Instructions
+      `specs/instructions/L17/L18/L19`. Différés : recettes live, flèches Gantt, #5b treemap cross-projet,
+      widgets Journal, économie par agent nommé.
 - [ ] **L16** — **Pilotage vocal d'iakacockpit** (voix → action IHM) → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
       *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
       cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher
