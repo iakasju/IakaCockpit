@@ -76,6 +76,13 @@ html[data-theme="naonedge-light"] {
   --fscale: 1;
   --font-grotesk: "Space Grotesk", system-ui, -apple-system, sans-serif;
   --font-display: var(--font-grotesk);
+  /* Pont de police MONO (calque de --font-display). Le token de charte est `--mono`
+     (défini par CHAQUE charte : naonedge dark/light + 8 chartes iakagraph). `--font-mono`
+     est consommé ~16× par le bloc `.gantt` (app.css) mais n'était jamais défini → labels
+     du Gantt rendus en sans-serif. La résolution PARESSEUSE de var(--mono) se fait sur
+     l'élément consommateur : déclaré ici (:root = html), il résout le `--mono` de la
+     charte ACTIVE pour toutes les chartes. Fallback explicite si aucune charte. */
+  --font-mono: var(--mono, "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace);
 }
 /* « système » (défaut) : display = Space Grotesk, texte = --font-sans de la charte. */
 html[data-font="system"] {

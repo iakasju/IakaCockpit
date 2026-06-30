@@ -1580,10 +1580,14 @@ button {
 }
 .galert {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0;
   color: var(--red);
+  /* Pilule du mock (travail.html:205) : fond rouge ténu + padding + coins arrondis. */
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 .gempty {
   font-size: 12px;
