@@ -2482,10 +2482,9 @@ select.field {
   white-space: nowrap;
 }
 .arowkingdom {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--text-3);
 }
 .arow .crown {
