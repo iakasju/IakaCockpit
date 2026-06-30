@@ -62,6 +62,51 @@ describe("derivePlanTimeline (L19 #9a) — réalisé du plan", () => {
     expect(a.overrun).toBe(true);
   });
 
+  it("CASCADE : un dépassement amont décale la baseline aval du montant du dépassement", () => {
+    // A et B estimées 5 min. A démarre à T0 et finit à T2 (10 min → dépassement 5 min).
+    // B (estimée) doit voir sa baseline démarrer à la fin PRÉVUE de A décalée du dépassement,
+    // soit T0 + 5min(estimé) + 5min(dépassement) = T0 + 10min = T2.
+    const snaps: PlanSnapshot[] = [
+      { ts: T0, items: [{ content: "[~5min] A", status: "in_progress" }, { content: "[~5min] B", status: "pending" }] },
+      { ts: T2, items: [{ content: "[~5min] A", status: "completed" }, { content: "[~5min] B", status: "in_progress" }] },
+    ];
+    const tl = derivePlanTimeline(snaps, ms(T2));
+    const a = tl.bars.find((b) => b.content === "[~5min] A")!;
+    const b = tl.bars.find((b) => b.content === "[~5min] B")!;
+    expect(a.baselineStartMs).toBe(ms(T0)); // 1ʳᵉ tâche estimée : ancrée sur son début réel
+    expect(a.overrun).toBe(true);
+    expect(b.baselineStartMs).toBe(ms(T2)); // décalée de 5 min (le dépassement de A)
+  });
+
+  it("CASCADE : sans dépassement amont, la baseline aval démarre à la fin prévue de l'amont", () => {
+    // A finit pile dans son estimation (5 min, T0→T1) → aucune cascade : la baseline de B
+    // démarre à la fin PRÉVUE de A = T0 + 5min = T1 (et non T2 comme avec dépassement).
+    const snaps: PlanSnapshot[] = [
+      { ts: T0, items: [{ content: "[~5min] A", status: "in_progress" }, { content: "[~5min] B", status: "pending" }] },
+      { ts: T1, items: [{ content: "[~5min] A", status: "completed" }, { content: "[~5min] B", status: "in_progress" }] },
+    ];
+    const tl = derivePlanTimeline(snaps, ms(T2));
+    const a = tl.bars.find((b) => b.content === "[~5min] A")!;
+    const b = tl.bars.find((b) => b.content === "[~5min] B")!;
+    expect(a.overrun).toBe(false);
+    expect(b.baselineStartMs).toBe(ms(T1));
+  });
+
+  it("CASCADE : pas d'estimation amont → pas de cascade (dégradation honnête)", () => {
+    // A SANS estimation déborde (T0→T2). N'ayant pas d'estimé, A ne porte pas de baseline et
+    // ne propage AUCUN décalage : la baseline de B (estimée) s'ancre sur SON propre début réel.
+    const snaps: PlanSnapshot[] = [
+      { ts: T0, items: [{ content: "A", status: "in_progress" }, { content: "[~5min] B", status: "pending" }] },
+      { ts: T2, items: [{ content: "A", status: "completed" }, { content: "[~5min] B", status: "in_progress" }] },
+    ];
+    const tl = derivePlanTimeline(snaps, ms(T2));
+    const a = tl.bars.find((b) => b.content === "A")!;
+    const b = tl.bars.find((b) => b.content === "[~5min] B")!;
+    expect(a.estMs).toBeNull();
+    expect(a.baselineStartMs).toBeNull(); // pas d'estimation → pas de baseline
+    expect(b.baselineStartMs).toBe(b.startMs); // ancrée sur son début réel, non décalée par A
+  });
+
   it("l'ordre des barres suit le dernier snapshot", () => {
     const snaps: PlanSnapshot[] = [
       { ts: T0, items: [{ content: "X", status: "in_progress" }] },

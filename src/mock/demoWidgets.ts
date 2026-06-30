@@ -99,6 +99,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "completed",
       overrun: false,
       estMs: 300_000, // estimé 5 min, fait en 4 → dans les temps
+      baselineStartMs: 0, // 1ʳᵉ tâche estimée : ancrée sur son début réel
     },
     {
       content: "Porter l'identité Atelier/Étagère/Table",
@@ -106,7 +107,8 @@ export const DEMO_TIMELINE: PlanTimeline = {
       endMs: 660_000,
       status: "completed",
       overrun: true,
-      estMs: 360_000, // estimé 6 min, pris 7 → dépassement
+      estMs: 360_000, // estimé 6 min, pris 7 → dépassement (+1 min)
+      baselineStartMs: 300_000, // fin prévue de la tâche 1 (0 + 5 min)
     },
     {
       content: "Implémenter les widgets de la Table",
@@ -115,6 +117,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "in_progress",
       overrun: true,
       estMs: 480_000, // estimé 8 min, déjà au-delà → en retard
+      baselineStartMs: 720_000, // fin prévue tâche 2 (5+6 min) décalée du dépassement (+1 min)
     },
     {
       content: "Brancher l'économie du tour",
@@ -123,6 +126,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "pending",
       overrun: false,
       estMs: 240_000,
+      baselineStartMs: 1_860_000, // poussée par la cascade des dépassements amont (tâches 2 & 3)
     },
     {
       content: "Recette visuelle + gate qualité",
@@ -131,6 +135,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       status: "pending",
       overrun: false,
       estMs: 360_000,
+      baselineStartMs: 2_100_000, // 1_860_000 + 4 min (estimé tâche 4)
     },
   ],
 };

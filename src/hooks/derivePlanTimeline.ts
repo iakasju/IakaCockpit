@@ -28,6 +28,12 @@ export interface TaskBar {
   /** Durée PRÉVISIONNELLE (ms) annoncée par le coordinateur (#9b, option A : `[~5min]`
    *  dans le contenu) ; null si non annoncée → pas de baseline (réalisé seul). */
   estMs: number | null;
+  /** Début (ms) de la baseline PRÉVISIONNELLE après CASCADE des dépassements amont (#9b).
+   *  La 1ʳᵉ tâche estimée est ancrée sur son début réel ; chaque tâche estimée suivante
+   *  démarre à la fin prévue de la précédente, DÉCALÉE du cumul des dépassements amont
+   *  (réalisé > estimé). null si la tâche n'a pas d'estimation → pas de baseline, pas de
+   *  cascade (dégradation honnête, jamais de fausse baseline). */
+  baselineStartMs: number | null;
 }
 
 /**
@@ -110,12 +116,36 @@ export function derivePlanTimeline(
         : estMs != null && e != null
           ? e - s! > estMs // tâche finie mais au-delà de l'estimation
           : false;
-    return { content: k, startMs: s, endMs: e, status: st, overrun, estMs };
+    return {
+      content: k,
+      startMs: s,
+      endMs: e,
+      status: st,
+      overrun,
+      estMs,
+      baselineStartMs: null,
+    };
   });
 
   const allStarts = bars
     .map((b) => b.startMs)
     .filter((v): v is number => v != null);
   const minMs = allStarts.length > 0 ? Math.min(...allStarts) : nowMs;
+
+  // CASCADE de la baseline prévisionnelle (#9b). On chaîne UNIQUEMENT les tâches estimées :
+  // la 1ʳᵉ est ancrée sur son début réel (ou minMs), chaque suivante démarre à la fin prévue
+  // de la précédente + le dépassement réel de celle-ci (réalisé − estimé, plancher 0). Une
+  // tâche sans estimation ne porte pas de baseline et ne propage AUCUN décalage (pas de
+  // fausse donnée). Le réalisé (startMs/endMs) n'est jamais altéré.
+  let cursor: number | null = null;
+  for (const b of bars) {
+    if (b.estMs == null) continue; // pas d'estimation → pas de baseline, pas de cascade
+    if (cursor == null) cursor = b.startMs ?? minMs; // ancrage de la 1ʳᵉ tâche estimée
+    b.baselineStartMs = cursor;
+    const elapsed = b.startMs != null ? (b.endMs ?? nowMs) - b.startMs : 0;
+    const overshoot = Math.max(0, elapsed - b.estMs);
+    cursor += b.estMs + overshoot; // fin prévue + dépassement → départ prévu de la suivante
+  }
+
   return { bars, minMs, nowMs };
 }

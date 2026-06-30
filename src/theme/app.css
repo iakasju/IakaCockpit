@@ -1608,6 +1608,9 @@ button {
   height: 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--text-3) 12%, transparent);
+  /* Une baseline décalée par la cascade peut se projeter au-delà de « maintenant » :
+     on clippe proprement pour ne jamais déborder sur la rangée. */
+  overflow: hidden;
 }
 .gbar {
   position: absolute;

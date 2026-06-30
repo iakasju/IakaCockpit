@@ -4,7 +4,9 @@
  * de statut observées (snapshots L18). Pas d'estimation (#9b) : uniquement le réalisé +
  * une ALERTE de retard (tâche `in_progress` qui dure anormalement). Aucun I/O.
  *
- * Différé (#9b/raffinement) : la baseline PRÉVISIONNELLE + les flèches délégation/user↔agent.
+ * #9b LIVRÉ : la baseline PRÉVISIONNELLE (durée estimée, pointillé) superposée au réalisé +
+ * dépassement→rouge + CASCADE (un dépassement amont décale les baselines aval, cf.
+ * `derivePlanTimeline`). Différé/raffinement : les flèches délégation/user↔agent.
  */
 import { useTranslation } from "react-i18next";
 import type { PlanTimeline } from "../hooks/derivePlanTimeline";
@@ -37,17 +39,23 @@ export function GanttPanel({ timeline }: GanttPanelProps): JSX.Element {
             const endMs = b.endMs ?? nowMs;
             const left = ((start - minMs) / range) * 100;
             const width = Math.max(1.5, ((endMs - start) / range) * 100);
-            // Baseline prévisionnelle (#9b, option A) : largeur = durée estimée.
+            // Baseline prévisionnelle (#9b, option A) : largeur = durée estimée, position =
+            // départ prévu APRÈS cascade des dépassements amont (`baselineStartMs`), et non le
+            // départ réel — c'est ce décalage qui rend la cascade visible.
             const estWidth =
               b.estMs != null ? Math.max(1.5, (b.estMs / range) * 100) : null;
+            const baseLeft =
+              b.baselineStartMs != null
+                ? ((b.baselineStartMs - minMs) / range) * 100
+                : null;
             return (
               <div key={i} className="grow" title={b.content}>
                 <span className="glabel">{b.content}</span>
                 <span className="gtrack">
-                  {estWidth != null && b.startMs != null && (
+                  {estWidth != null && baseLeft != null && (
                     <i
                       className="gbase"
-                      style={{ left: `${left}%`, width: `${estWidth}%` }}
+                      style={{ left: `${baseLeft}%`, width: `${estWidth}%` }}
                     />
                   )}
                   {b.startMs != null && (
