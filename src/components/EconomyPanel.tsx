@@ -28,16 +28,27 @@ export function EconomyPanel({ series }: EconomyPanelProps): JSX.Element {
   const outSub = outTotal - outMain;
   const max = series.reduce((m, p) => Math.max(m, p.output), 1);
 
-  const points =
+  // Multi-ligne (décision mock) : UNE courbe par canal d'agent — coordinateur (tours
+  // principaux) vs délégués (fils sidechain). Chaque courbe relie ses propres tours, sur
+  // l'axe de temps commun (index global). Le « par agent NOMMÉ » complet = corrélation
+  // sidechain→agent, différée.
+  const lineFor = (sidechain: boolean): string =>
     series.length > 1
       ? series
-          .map((p, i) => {
-            const x = (i / (series.length - 1)) * W;
-            const y = H - (p.output / max) * (H - 4) - 2;
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-          })
+          .map((p, i) =>
+            p.sidechain === sidechain
+              ? `${((i / (series.length - 1)) * W).toFixed(1)},${(
+                  H -
+                  (p.output / max) * (H - 4) -
+                  2
+                ).toFixed(1)}`
+              : null,
+          )
+          .filter((s): s is string => s !== null)
           .join(" ")
       : "";
+  const coordLine = lineFor(false);
+  const subLine = lineFor(true);
 
   return (
     <section className="ecopanel" aria-label={t("economy.ariaLabel")}>
@@ -52,11 +63,21 @@ export function EconomyPanel({ series }: EconomyPanelProps): JSX.Element {
       ) : (
         <>
           <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} aria-hidden>
-            {points && (
+            {subLine && (
               <polyline
-                className="ecoline"
+                className="ecoline es-sub"
                 fill="none"
-                points={points}
+                points={subLine}
+                strokeWidth={1.6}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+            {coordLine && (
+              <polyline
+                className="ecoline es-main"
+                fill="none"
+                points={coordLine}
                 strokeWidth={1.8}
                 strokeLinejoin="round"
                 strokeLinecap="round"

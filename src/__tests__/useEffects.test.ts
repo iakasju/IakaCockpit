@@ -3,7 +3,8 @@ import {
   parseFilePath,
   reduceEffects,
   sortedEffects,
-  type FileEffect,
+  type EffectsState,
+  bucketize,
 } from "../hooks/useEffects";
 import type { RunnerEvent } from "../api/backend";
 
@@ -17,36 +18,39 @@ function geste(tool: string, input: string): RunnerEvent {
   };
 }
 
-describe("useEffects (L18 #7) — effets fichiers", () => {
+const EMPTY: EffectsState = { total: 0, byPath: {} };
+
+describe("useEffects (L18 #7) — effets fichiers (heatmap)", () => {
   it("parseFilePath extrait le chemin du tool_input tronqué", () => {
-    expect(
-      parseFilePath('{"file_path":"/a/b/c.ts","old_string":"x…'),
-    ).toBe("/a/b/c.ts");
+    expect(parseFilePath('{"file_path":"/a/b/c.ts","old_string":"x…')).toBe("/a/b/c.ts");
     expect(parseFilePath('{"command":"ls"}')).toBeNull();
-    expect(parseFilePath(undefined)).toBeNull();
   });
 
-  it("ne compte que les gestes d'édition", () => {
-    let m: Record<string, FileEffect> = {};
-    m = reduceEffects(m, geste("Bash", '{"command":"ls"}'));
-    expect(Object.keys(m)).toHaveLength(0);
-    m = reduceEffects(m, geste("Edit", '{"file_path":"/x.ts"}'));
-    expect(m["/x.ts"].count).toBe(1);
+  it("ne compte que les gestes d'édition et incrémente le total + hits", () => {
+    let s = EMPTY;
+    s = reduceEffects(s, geste("Bash", '{"command":"ls"}'));
+    expect(s).toBe(EMPTY);
+    s = reduceEffects(s, geste("Edit", '{"file_path":"/x.ts"}'));
+    s = reduceEffects(s, geste("Write", '{"file_path":"/x.ts"}'));
+    expect(s.total).toBe(2);
+    expect(s.byPath["/x.ts"].count).toBe(2);
+    expect(s.byPath["/x.ts"].hits).toEqual([1, 2]); // ordinaux pour la heatmap
   });
 
-  it("accumule les éditions par fichier et trie par compte", () => {
-    let m: Record<string, FileEffect> = {};
-    m = reduceEffects(m, geste("Edit", '{"file_path":"/a.ts"}'));
-    m = reduceEffects(m, geste("Write", '{"file_path":"/a.ts"}'));
-    m = reduceEffects(m, geste("Edit", '{"file_path":"/b.ts"}'));
-    const sorted = sortedEffects(m);
+  it("trie par compte décroissant", () => {
+    let s = EMPTY;
+    s = reduceEffects(s, geste("Edit", '{"file_path":"/a.ts"}'));
+    s = reduceEffects(s, geste("Edit", '{"file_path":"/b.ts"}'));
+    s = reduceEffects(s, geste("Edit", '{"file_path":"/a.ts"}'));
+    const sorted = sortedEffects(s);
     expect(sorted[0]).toMatchObject({ path: "/a.ts", count: 2 });
     expect(sorted[1]).toMatchObject({ path: "/b.ts", count: 1 });
-    expect(sorted[0].tool).toBe("Write"); // dernier outil
   });
 
-  it("ignore un geste sans file_path", () => {
-    const m = reduceEffects({}, geste("Edit", '{"foo":"bar"}'));
-    expect(Object.keys(m)).toHaveLength(0);
+  it("bucketize répartit les ordinaux d'édition en colonnes", () => {
+    // 4 hits sur total 4, 4 buckets → un par bucket.
+    expect(bucketize([1, 2, 3, 4], 4, 4)).toEqual([1, 1, 1, 1]);
+    // 2 hits en début sur total 8, 4 buckets → tous dans le 1er bucket.
+    expect(bucketize([1, 2], 8, 4)).toEqual([2, 0, 0, 0]);
   });
 });

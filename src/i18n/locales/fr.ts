@@ -16,6 +16,7 @@ export const fr = {
     title: "Mémoire",
     empty: "Contexte non mesuré.",
     used: "{{pct}} % du contexte",
+    compaction: "{{count}} compaction(s)",
   },
 
   effects: {

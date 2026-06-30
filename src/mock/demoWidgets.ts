@@ -37,12 +37,15 @@ export const DEMO_ECONOMY: EcoPoint[] = [
   { input: 94_800, output: 640, sidechain: false },
 ];
 
-/** Effets fichiers de démo : fichiers touchés par la session, triés par usage. */
+/** Effets fichiers de démo : fichiers touchés (avec ordinaux `hits` pour la heatmap). */
 export const DEMO_EFFECTS: FileEffect[] = [
-  { path: "/src/App.tsx", count: 6, tool: "Edit" },
-  { path: "/src/views/WorkingView.tsx", count: 5, tool: "Edit" },
-  { path: "/src/theme/app.css", count: 5, tool: "Edit" },
-  { path: "/src/components/EconomyPanel.tsx", count: 3, tool: "Write" },
-  { path: "/src/hooks/useEconomy.ts", count: 2, tool: "Write" },
-  { path: "/src/i18n/locales/fr.ts", count: 2, tool: "Edit" },
+  { path: "/src/App.tsx", count: 6, tool: "Edit", hits: [1, 5, 9, 14, 18, 22] },
+  { path: "/src/views/WorkingView.tsx", count: 5, tool: "Edit", hits: [2, 6, 11, 16, 21] },
+  { path: "/src/theme/app.css", count: 5, tool: "Edit", hits: [3, 7, 12, 17, 23] },
+  { path: "/src/components/EconomyPanel.tsx", count: 3, tool: "Write", hits: [8, 13, 19] },
+  { path: "/src/hooks/useEconomy.ts", count: 2, tool: "Write", hits: [10, 20] },
+  { path: "/src/i18n/locales/fr.ts", count: 2, tool: "Edit", hits: [4, 15] },
 ];
+
+/** Total d'éditions de démo (borne des buckets de la heatmap). */
+export const DEMO_EFFECTS_TOTAL = 23;

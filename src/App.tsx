@@ -24,7 +24,12 @@ import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
 import { useDemoSeed, DEMO_PROJECT_ID } from "./hooks/useDemoSeed";
-import { DEMO_PLAN, DEMO_ECONOMY, DEMO_EFFECTS } from "./mock/demoWidgets";
+import {
+  DEMO_PLAN,
+  DEMO_ECONOMY,
+  DEMO_EFFECTS,
+  DEMO_EFFECTS_TOTAL,
+} from "./mock/demoWidgets";
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { JournalView } from "./views/JournalView";
@@ -174,9 +179,10 @@ export default function App(): JSX.Element {
   const activeProjectId = conversations.active?.projectId ?? null;
   const demoActive = demoWidgetsOn && activeProjectId === DEMO_PROJECT_ID;
   const liveEconomy = activeProjectId ? economy.seriesFor(activeProjectId) : [];
-  const liveEffects = activeProjectId
-    ? sortedEffects(effects.effectsFor(activeProjectId))
-    : [];
+  const liveEffectsState = activeProjectId
+    ? effects.effectsFor(activeProjectId)
+    : { total: 0, byPath: {} };
+  const liveEffects = sortedEffects(liveEffectsState);
   const planItemsView =
     plan.items && plan.items.length > 0
       ? plan.items
@@ -187,6 +193,12 @@ export default function App(): JSX.Element {
     liveEconomy.length > 0 ? liveEconomy : demoActive ? DEMO_ECONOMY : liveEconomy;
   const effectsView =
     liveEffects.length > 0 ? liveEffects : demoActive ? DEMO_EFFECTS : liveEffects;
+  const effectsTotalView =
+    liveEffects.length > 0
+      ? liveEffectsState.total
+      : demoActive
+        ? DEMO_EFFECTS_TOTAL
+        : liveEffectsState.total;
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
@@ -350,6 +362,7 @@ export default function App(): JSX.Element {
             planItems={planItemsView}
             economySeries={economyView}
             fileEffects={effectsView}
+            fileEffectsTotal={effectsTotalView}
             resolveRunner={resolveRunner}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>

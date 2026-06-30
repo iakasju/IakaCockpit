@@ -51,6 +51,15 @@ export function reduceEconomy(series: EcoPoint[], ev: RunnerEvent): EcoPoint[] {
   return next.length > ECO_MAX_POINTS ? next.slice(next.length - ECO_MAX_POINTS) : next;
 }
 
+/** Index des tours où une COMPACTION est détectée (input chute à < 60 % du précédent). */
+export function compactionFrontiers(series: readonly EcoPoint[]): number[] {
+  const out: number[] = [];
+  for (let i = 1; i < series.length; i++) {
+    if (series[i].input < series[i - 1].input * 0.6) out.push(i);
+  }
+  return out;
+}
+
 const EMPTY: readonly EcoPoint[] = Object.freeze([]);
 
 export interface UseEconomy {

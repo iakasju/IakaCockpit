@@ -105,6 +105,8 @@ export interface WorkingViewProps {
   economySeries?: readonly EcoPoint[];
   /** Effets fichiers (L18 #7) : fichiers touchés (triés) de la session active. */
   fileEffects?: readonly FileEffect[];
+  /** Total d'éditions (borne des buckets de la heatmap). */
+  fileEffectsTotal?: number;
   /**
    * Résout le runner+modèle+coordinateur d'une conversation depuis sa team (L11/P3).
    * `WorkingView` ne code plus `runnerKind="claude-code"` en dur : le coordinateur le
@@ -137,6 +139,7 @@ export function WorkingView({
   planItems,
   economySeries,
   fileEffects,
+  fileEffectsTotal,
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
@@ -431,18 +434,15 @@ export function WorkingView({
             `plan-courante.mjs` sur la main courante (façade L4 → derivePlan).
           */}
           <PlanPanel items={planItems ?? null} />
-          {/* Jauge mémoire (L18 #6) : input du dernier tour ≈ occupation du contexte. */}
-          <MemoryGauge
-            usedTokens={
-              economySeries && economySeries.length > 0
-                ? economySeries[economySeries.length - 1].input
-                : 0
-            }
-          />
+          {/* Jauge mémoire (L18 #6) : input du dernier tour ≈ contexte + frontière compaction. */}
+          <MemoryGauge series={economySeries ?? []} />
           {/* HUD économie du tour (L18 #5) : tokens par tour de la session active. */}
           <EconomyPanel series={economySeries ?? []} />
-          {/* Effets fichiers (L18 #7) : fichiers touchés par les gestes d'édition. */}
-          <EffectsPanel effects={fileEffects ?? []} />
+          {/* Effets fichiers (L18 #7) : heatmap fichiers × tours (gestes d'édition). */}
+          <EffectsPanel
+            effects={fileEffects ?? []}
+            total={fileEffectsTotal ?? 0}
+          />
         </aside>
       )}
     </section>

@@ -1,16 +1,14 @@
 /**
- * useEffects — accumulation des EFFETS FICHIERS de la session (L18 #7).
+ * useEffects — accumulation des EFFETS FICHIERS de la session (L18 #7, variante B heatmap).
  *
  * Les gestes d'édition (`RunnerEvent` `kind:"geste"`, `tool_name` ∈ Edit/Write/…) portent
- * le `file_path` dans `tool_input` (en tête du JSON → survit à la troncature 200). Ce hook
- * accumule, par `projectId`, le nombre d'éditions par fichier → alimente le panneau
- * « effets fichiers ». `reduceEffects` est PUR (testable). Aucune invention : on compte
- * ce que le transcript montre.
+ * le `file_path` dans `tool_input` (en tête → survit à la troncature 200). On accumule, par
+ * `projectId`, pour chaque fichier la SÉQUENCE de ses éditions (ordinaux 1..total) → la
+ * heatmap fichiers × tours bucketise ces ordinaux. `reduceEffects` est PUR (testable).
  */
 import { useCallback, useState } from "react";
 import type { RunnerEvent } from "../api/backend";
 
-/** Outils qui modifient un fichier (effet). */
 const EDIT_TOOLS: ReadonlySet<string> = new Set([
   "Edit",
   "Write",
@@ -18,15 +16,22 @@ const EDIT_TOOLS: ReadonlySet<string> = new Set([
   "NotebookEdit",
 ]);
 
-/** Un fichier touché + son compte d'éditions. */
+/** Un fichier touché : compte + ordinaux d'édition (pour la heatmap) + dernier outil. */
 export interface FileEffect {
-  /** Chemin complet (clé). */
   path: string;
-  /** Nombre d'éditions accumulées. */
   count: number;
-  /** Dernier outil ayant touché le fichier. */
   tool: string;
+  /** Ordinaux globaux (1..total) où ce fichier a été édité. */
+  hits: number[];
 }
+
+/** État par projet : compteur global d'éditions + fichiers. */
+export interface EffectsState {
+  total: number;
+  byPath: Record<string, FileEffect>;
+}
+
+const EMPTY_STATE: EffectsState = Object.freeze({ total: 0, byPath: {} });
 
 /** Extrait `file_path` d'un `tool_input` (JSON compact tronqué). Null si absent. */
 export function parseFilePath(input: string | undefined | null): string | null {
@@ -40,46 +45,58 @@ export function parseFilePath(input: string | undefined | null): string | null {
   }
 }
 
-/** Réduit la map d'effets par un `RunnerEvent` (PUR). Ignore tout sauf un geste d'édition. */
-export function reduceEffects(
-  byPath: Record<string, FileEffect>,
-  ev: RunnerEvent,
-): Record<string, FileEffect> {
-  if (ev.kind !== "geste") return byPath;
+/** Réduit l'état par un `RunnerEvent` (PUR). Ignore tout sauf un geste d'édition. */
+export function reduceEffects(state: EffectsState, ev: RunnerEvent): EffectsState {
+  if (ev.kind !== "geste") return state;
   const tool = ev.tool_name ?? "";
-  if (!EDIT_TOOLS.has(tool)) return byPath;
+  if (!EDIT_TOOLS.has(tool)) return state;
   const path = parseFilePath(ev.tool_input);
-  if (!path) return byPath;
-  const cur = byPath[path];
-  return {
-    ...byPath,
-    [path]: { path, count: (cur?.count ?? 0) + 1, tool },
+  if (!path) return state;
+  const total = state.total + 1;
+  const cur = state.byPath[path];
+  const next: FileEffect = {
+    path,
+    count: (cur?.count ?? 0) + 1,
+    tool,
+    hits: [...(cur?.hits ?? []), total],
   };
+  return { total, byPath: { ...state.byPath, [path]: next } };
 }
 
-/** Effets triés par compte décroissant (puis chemin), pour l'affichage. */
-export function sortedEffects(byPath: Record<string, FileEffect>): FileEffect[] {
-  return Object.values(byPath).sort(
+/** Compte les éditions d'un fichier par bucket (grille fichiers × tours). PUR. */
+export function bucketize(
+  hits: readonly number[],
+  total: number,
+  buckets: number,
+): number[] {
+  const cells = new Array(buckets).fill(0);
+  if (total <= 0) return cells;
+  for (const h of hits) {
+    const b = Math.min(buckets - 1, Math.floor(((h - 1) / total) * buckets));
+    if (b >= 0) cells[b] += 1;
+  }
+  return cells;
+}
+
+/** Fichiers triés par compte décroissant (puis chemin). */
+export function sortedEffects(state: EffectsState): FileEffect[] {
+  return Object.values(state.byPath).sort(
     (a, b) => b.count - a.count || a.path.localeCompare(b.path),
   );
 }
 
-const EMPTY: Readonly<Record<string, FileEffect>> = Object.freeze({});
-
 export interface UseEffects {
   ingest: (projectId: string, ev: RunnerEvent) => void;
-  effectsFor: (projectId: string) => Record<string, FileEffect>;
+  effectsFor: (projectId: string) => EffectsState;
 }
 
 export function useEffects(): UseEffects {
-  const [byProject, setByProject] = useState<
-    Record<string, Record<string, FileEffect>>
-  >({});
+  const [byProject, setByProject] = useState<Record<string, EffectsState>>({});
 
   const ingest = useCallback((projectId: string, ev: RunnerEvent): void => {
     if (ev.kind !== "geste") return; // évite un re-render inutile.
     setByProject((prev) => {
-      const cur = prev[projectId] ?? {};
+      const cur = prev[projectId] ?? EMPTY_STATE;
       const next = reduceEffects(cur, ev);
       if (next === cur) return prev;
       return { ...prev, [projectId]: next };
@@ -87,8 +104,7 @@ export function useEffects(): UseEffects {
   }, []);
 
   const effectsFor = useCallback(
-    (projectId: string): Record<string, FileEffect> =>
-      byProject[projectId] ?? EMPTY,
+    (projectId: string): EffectsState => byProject[projectId] ?? EMPTY_STATE,
     [byProject],
   );
 

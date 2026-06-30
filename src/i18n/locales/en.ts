@@ -17,6 +17,7 @@ export const en: Resources = {
     title: "Memory",
     empty: "Context not measured.",
     used: "{{pct}}% of context",
+    compaction: "{{count}} compaction(s)",
   },
 
   effects: {
