@@ -91,17 +91,27 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
   maxT += pad;
 
   const W = 1000;
-  const L = 140;
+  const L = 200;
   const R = 24;
-  const T = 34;
-  // Anti-collision verticale des bulles (Loki P1-1) : rowH=30 ET rayon plafonné à 12
-  // (Ø max ≈ 24 < rowH) → deux lignes voisines ne se chevauchent plus.
-  const rowH = 30;
-  const B = 16;
+  const T = 60;
+  // Police ×2 (retour terrain) : labels de ligne 22 / axe 18 (cf. app.css). rowH DOUBLÉ (60)
+  // et gouttière de labels élargie (L=200) pour rester lisibles. Anti-collision verticale des
+  // bulles préservée : rayon plafonné à ~21 (Ø max ≈ 42 < rowH) → pas de chevauchement.
+  const rowH = 60;
+  const B = 24;
   const H = T + rows.length * rowH + B;
   const span = maxT - minT || 1;
   const x = (ts: number): number => L + ((ts - minT) / span) * (W - L - R);
-  const rad = (v: number): number => 3 + Math.sqrt(v / maxV) * 9;
+  const rad = (v: number): number => 5 + Math.sqrt(v / maxV) * 16;
+
+  // Max 5 lignes VISIBLES (retour terrain) : au-delà, le surplus reste accessible par SCROLL
+  // vertical — la donnée n'est JAMAIS tronquée (toutes les lignes sont rendues). On borne la
+  // hauteur visible via `aspect-ratio` du conteneur = même base de largeur que le SVG (zéro
+  // mesure JS, robuste à toute largeur) ; le SVG, plus haut, déborde → `overflow-y:auto`.
+  // Choix MVP assumé : tout le bloc scrolle (l'axe X défile avec le corps), pas d'axe figé.
+  const VISIBLE_ROWS = 5;
+  const scrollable = rows.length > VISIBLE_ROWS;
+  const capUnits = T + VISIBLE_ROWS * rowH + B;
 
   // Quadrillage : jours (≤ 45 j) sinon mois.
   const ticks: { px: number; label: string }[] = [];
@@ -134,6 +144,10 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
   return (
     <section className="activity" aria-label={t("activity.title")}>
       {header}
+      <div
+        className={scrollable ? "actscroll on" : "actscroll"}
+        style={scrollable ? { aspectRatio: `${W} / ${capUnits}` } : undefined}
+      >
       <svg
         className="actsvg"
         viewBox={`0 0 ${W} ${H}`}
@@ -150,7 +164,7 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
               y2={H - B}
               className="actgrid"
             />
-            <text x={tk.px + 4} y={T - 10} className="actax">
+            <text x={tk.px + 4} y={T - 14} className="actax">
               {tk.label}
             </text>
           </g>
@@ -159,7 +173,7 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
           const y = T + i * rowH + rowH / 2;
           return (
             <g key={r.name}>
-              <text x={L - 10} y={y + 3} className="actlab" textAnchor="end">
+              <text x={L - 10} y={y + 7} className="actlab" textAnchor="end">
                 {r.name}
               </text>
               <line x1={L} y1={y} x2={W - R} y2={y} className="actrow" />
@@ -187,6 +201,7 @@ export function ActivityTimeline({ activity }: ActivityTimelineProps): JSX.Eleme
           );
         })}
       </svg>
+      </div>
     </section>
   );
 }
