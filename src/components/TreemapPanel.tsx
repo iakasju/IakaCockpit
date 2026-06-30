@@ -39,38 +39,56 @@ export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.
           <p className="ecohint">{t("portfolio.economyPlaceholder")}</p>
         </>
       ) : (
-        <div className="tmap">
-          {items.map((it, i) => {
-            const segTotal = it.segments.reduce((s, x) => s + x.tokens, 0) || 1;
-            return (
-              <div
-                key={it.project}
-                className="tcell"
-                style={{
-                  width: `${40 + (it.tokens / max) * 60}%`,
-                  background: treemapColor(i),
-                }}
-                title={`${it.project} · ${fmtK(it.tokens)}`}
-              >
-                <span className="tnm">{it.project}</span>
-                <span className="tv">
-                  {fmtK(it.tokens)} · {Math.round((it.tokens / (total || 1)) * 100)}%
-                </span>
-                <span className="tseg" aria-hidden>
-                  {it.segments.map((s, j) => (
-                    <i
-                      key={j}
-                      style={{
-                        width: `${(s.tokens / segTotal) * 100}%`,
-                        opacity: 0.9 - j * 0.18,
-                      }}
-                    />
-                  ))}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <>
+          {/* SILHOUETTE MOSAÏQUE 2D (calque mock `portefeuille.html` + `viz.css` .tmap) :
+              cellules en flex-wrap, largeur % ∝ part de tokens (surface ∝ tokens). */}
+          <div className="tmap">
+            {items.map((it, i) => {
+              const segTotal = it.segments.reduce((s, x) => s + x.tokens, 0) || 1;
+              return (
+                <div
+                  key={it.project}
+                  className="tcell"
+                  style={{
+                    // ∝ tokens (borné 34–64 % pour rester lisible ET wrapper en mosaïque).
+                    width: `${34 + (it.tokens / max) * 30}%`,
+                    background: treemapColor(i),
+                  }}
+                  title={`${it.project} · ${fmtK(it.tokens)}`}
+                >
+                  <span className="tnm">{it.project}</span>
+                  <span className="tv">
+                    {fmtK(it.tokens)} · {Math.round((it.tokens / (total || 1)) * 100)}%
+                  </span>
+                  {/* Segments en PILULE (Loki P1-2) : butés bord-à-bord, part par agent. */}
+                  <span className="tseg" aria-hidden>
+                    {it.segments.map((s, j) => (
+                      <i
+                        key={j}
+                        style={{
+                          width: `${(s.tokens / segTotal) * 100}%`,
+                          background: `color-mix(in srgb, #fff ${Math.round(
+                            (0.9 - j * 0.18) * 100,
+                          )}%, transparent)`,
+                        }}
+                      />
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {/* Légende treemap (Loki P1-3) : pastille couleur + nom projet + note de lecture. */}
+          <div className="legend2">
+            {items.map((it, i) => (
+              <span key={it.project}>
+                <i style={{ background: treemapColor(i) }} />
+                {it.project}
+              </span>
+            ))}
+            <span className="legend2note">{t("portfolio.treemapLegendNote")}</span>
+          </div>
+        </>
       )}
     </div>
   );
