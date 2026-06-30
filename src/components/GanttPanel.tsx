@@ -37,10 +37,19 @@ export function GanttPanel({ timeline }: GanttPanelProps): JSX.Element {
             const endMs = b.endMs ?? nowMs;
             const left = ((start - minMs) / range) * 100;
             const width = Math.max(1.5, ((endMs - start) / range) * 100);
+            // Baseline prévisionnelle (#9b, option A) : largeur = durée estimée.
+            const estWidth =
+              b.estMs != null ? Math.max(1.5, (b.estMs / range) * 100) : null;
             return (
               <div key={i} className="grow" title={b.content}>
                 <span className="glabel">{b.content}</span>
                 <span className="gtrack">
+                  {estWidth != null && b.startMs != null && (
+                    <i
+                      className="gbase"
+                      style={{ left: `${left}%`, width: `${estWidth}%` }}
+                    />
+                  )}
                   {b.startMs != null && (
                     <i
                       className={`gbar st-${b.status}${b.overrun ? " ovr" : ""}`}

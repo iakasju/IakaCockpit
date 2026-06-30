@@ -1507,6 +1507,16 @@ button {
 .gbar.ovr {
   background: #d9534f;
 }
+/* Baseline prévisionnelle (#9b) : contour pointillé = durée estimée par le coordinateur. */
+.gbase {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--text-3) 55%, transparent);
+  min-width: 4px;
+}
 .gnow {
   position: absolute;
   right: 0;

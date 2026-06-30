@@ -62,13 +62,15 @@ export const DEMO_TIMELINE: PlanTimeline = {
       endMs: 240_000,
       status: "completed",
       overrun: false,
+      estMs: 300_000, // estimé 5 min, fait en 4 → dans les temps
     },
     {
       content: "Porter l'identité Atelier/Étagère/Table",
       startMs: 240_000,
       endMs: 660_000,
       status: "completed",
-      overrun: false,
+      overrun: true,
+      estMs: 360_000, // estimé 6 min, pris 7 → dépassement
     },
     {
       content: "Implémenter les widgets de la Table",
@@ -76,6 +78,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       endMs: null,
       status: "in_progress",
       overrun: true,
+      estMs: 480_000, // estimé 8 min, déjà au-delà → en retard
     },
     {
       content: "Brancher l'économie du tour",
@@ -83,6 +86,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       endMs: null,
       status: "pending",
       overrun: false,
+      estMs: 240_000,
     },
     {
       content: "Recette visuelle + gate qualité",
@@ -90,6 +94,7 @@ export const DEMO_TIMELINE: PlanTimeline = {
       endMs: null,
       status: "pending",
       overrun: false,
+      estMs: 360_000,
     },
   ],
 };

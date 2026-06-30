@@ -25,6 +25,22 @@ export interface TaskBar {
   status: PlanStatus;
   /** Tâche `in_progress` qui dure anormalement longtemps (alerte de retard). */
   overrun: boolean;
+  /** Durée PRÉVISIONNELLE (ms) annoncée par le coordinateur (#9b, option A : `[~5min]`
+   *  dans le contenu) ; null si non annoncée → pas de baseline (réalisé seul). */
+  estMs: number | null;
+}
+
+/**
+ * Parse une durée prévisionnelle préfixant le contenu (option A du coordinateur, L19) :
+ * `[~5min] …`, `[20m] …`, `[1h] …`. Renvoie les millisecondes, ou null si absente.
+ */
+export function parseEstimate(content: string): number | null {
+  const m = content.match(/^\s*\[\s*~?\s*(\d+)\s*(h|min|m)\b/i);
+  if (!m) return null;
+  const n = Number.parseInt(m[1], 10);
+  if (!Number.isFinite(n)) return null;
+  const unit = m[2].toLowerCase();
+  return unit === "h" ? n * 3_600_000 : n * 60_000;
 }
 
 export interface PlanTimeline {
@@ -82,12 +98,19 @@ export function derivePlanTimeline(
     const s = start.get(k) ?? null;
     const e = end.get(k) ?? null;
     const st = status.get(k) ?? "pending";
+    const estMs = parseEstimate(k);
+    // Dépassement : (a) vs estimation si annoncée (réalisé/écoulé > estimé), sinon
+    // (b) heuristique médiane pour une tâche in_progress qui traîne.
+    const elapsed = s != null ? (e ?? nowMs) - s : 0;
     const overrun =
-      st === "in_progress" &&
-      s != null &&
-      median > 0 &&
-      nowMs - s > median * 1.5;
-    return { content: k, startMs: s, endMs: e, status: st, overrun };
+      st !== "completed" && s != null
+        ? estMs != null
+          ? elapsed > estMs
+          : median > 0 && nowMs - s > median * 1.5
+        : estMs != null && e != null
+          ? e - s! > estMs // tâche finie mais au-delà de l'estimation
+          : false;
+    return { content: k, startMs: s, endMs: e, status: st, overrun, estMs };
   });
 
   const allStarts = bars
