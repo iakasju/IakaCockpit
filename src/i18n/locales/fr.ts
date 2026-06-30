@@ -105,12 +105,18 @@ export const fr = {
     kpiDirty: "Dépôts modifiés",
     kpiEconomy: "Économie · 7 j",
     soon: "à brancher",
+    kdDetected: "{{count}} sous git",
+    kdOnTable: "{{count}} conversation(s) vivante(s)",
+    kdClean: "prêts à poser",
+    kdDirty: "à committer",
+    recentWorkHead: "Travail récent · portefeuille",
     economyAria: "Économie",
     economyTitle: "Économie",
     economyPeriod: "7 j",
     economyCardTitle: "Coût par projet & agent",
     economyPlaceholder:
       "Données de coût (tokens par session) à brancher — prochain incrément.",
+    treemapLegendNote: "surface ∝ tokens · segments = part par agent",
   },
 
   tile: {
@@ -134,7 +140,7 @@ export const fr = {
 
   activity: {
     title: "Travail passé",
-    subtitle: "Tokens par jour et par projet · table",
+    subtitle: "Tokens par jour et par projet · portefeuille",
     empty: "Aucune activité mesurée.",
     bubbleTitle: "{{project}} — {{date}} — {{tokens}} tokens",
   },

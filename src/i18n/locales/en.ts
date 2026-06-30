@@ -106,12 +106,18 @@ export const en: Resources = {
     kpiDirty: "Dirty repos",
     kpiEconomy: "Economy · 7 d",
     soon: "to wire",
+    kdDetected: "{{count}} under git",
+    kdOnTable: "{{count}} live conversation(s)",
+    kdClean: "ready to put",
+    kdDirty: "to commit",
+    recentWorkHead: "Recent work · portfolio",
     economyAria: "Economy",
     economyTitle: "Economy",
     economyPeriod: "7 d",
     economyCardTitle: "Cost by project & agent",
     economyPlaceholder:
       "Cost data (tokens per session) to be wired — next increment.",
+    treemapLegendNote: "area ∝ tokens · segments = share per agent",
   },
 
   tile: {
@@ -135,7 +141,7 @@ export const en: Resources = {
 
   activity: {
     title: "Past work",
-    subtitle: "Tokens per day and project · table",
+    subtitle: "Tokens per day and project · portfolio",
     empty: "No activity measured.",
     bubbleTitle: "{{project}} — {{date}} — {{tokens}} tokens",
   },
