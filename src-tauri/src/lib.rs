@@ -25,6 +25,7 @@ pub mod services;
 pub mod shell;
 pub mod terminal;
 pub mod transcript;
+pub mod voice;
 
 /// Commande de santé minimale — prouve le pont front↔back sans logique métier.
 #[tauri::command]
@@ -79,6 +80,7 @@ pub fn run() {
             notify::n8n_set_token,
             notify::n8n_has_token,
             seed::seed_demo,
+            voice::voice_listen,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");

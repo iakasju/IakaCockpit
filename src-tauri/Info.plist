@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- L16-P1 - pilotage vocal : justification d'acces micro (macOS TCC). Sans
+         cette cle, l'app crashe au premier acces au microphone. La voix est
+         transcrite LOCALEMENT (whisper.cpp), jamais envoyee au cloud. -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>IakaCockpit utilise le microphone pour le pilotage vocal (transcription locale, hors ligne).</string>
+</dict>
+</plist>

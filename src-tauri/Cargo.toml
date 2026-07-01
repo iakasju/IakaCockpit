@@ -30,6 +30,12 @@ uuid = { version = "1", features = ["v4"] }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 dirs = "5"
 # Moteur IA L3 : UN appel HTTP bloquant POST JSON vers l'endpoint OpenAI-compat
-# (LiteLLM/Ollama/cloud). Client synchrone leger, sans TLS en MVP (A3 : http LAN).
-# Pas de tokio/reqwest (sur-dimensionne pour un unique POST). Aligne sur iakaIDE.
-ureq = { version = "2", default-features = false, features = ["json"] }
+# (LiteLLM/Ollama/cloud). Client synchrone leger. `tls` (rustls) ajoute HTTPS,
+# utilise par L16 pour telecharger le modele whisper depuis HuggingFace (le POST
+# LAN http reste possible). Pas de tokio/reqwest (sur-dimensionne). Aligne iakaIDE.
+ureq = { version = "2", default-features = false, features = ["json", "tls"] }
+# Pilotage vocal L16-P1 : capture micro (cpal) + STT LOCAL whisper.cpp (whisper-rs).
+# whisper-rs compile whisper.cpp via CMake (Metal sur Apple Silicon). La voix ne
+# quitte jamais la machine ; modele telecharge au 1er run (non bundle).
+cpal = "0.15"
+whisper-rs = "0.12"
