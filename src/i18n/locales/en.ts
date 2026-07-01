@@ -67,6 +67,14 @@ export const en: Resources = {
     teams: "Teams",
     settings: "Settings",
   },
+  voice: {
+    idle: "Voice command",
+    listen: "Speak",
+    listening: "Listening…",
+    unsupported: "Microphone unavailable",
+    notUnderstood: "Not understood. Try:",
+    heard: "Heard: “{{transcript}}”",
+  },
 
   common: {
     save: "Save",

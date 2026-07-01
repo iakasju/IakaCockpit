@@ -3273,3 +3273,47 @@ select.field {
 .runner-banner.chat-banner {
   margin: 14px 26px 0;
 }
+
+/* ---- Pilotage vocal (L16-P1) : bouton micro du rail + retour visuel ---- */
+.voicemic {
+  width: 100%;
+}
+.voicebtn .vico {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-3);
+}
+.voicebtn.on {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.voicebtn.on .vico {
+  color: var(--accent);
+  animation: voice-pulse 1s ease-in-out infinite;
+}
+.voicebtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@keyframes voice-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.voicehint {
+  margin: 6px 2px 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-3);
+}
+.voicehint ul {
+  margin: 4px 0 0;
+  padding-left: 14px;
+}
+.voicehint li {
+  list-style: disc;
+}

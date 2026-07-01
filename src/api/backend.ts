@@ -383,6 +383,20 @@ export function seedDemo(): Promise<SeedReport> {
   return call<SeedReport>("seed_demo");
 }
 
+// --- Pilotage vocal (L16-P1 — voix → action IHM) ---
+
+/**
+ * Écoute vocale **push-to-talk** : capture micro + STT **LOCAL** (whisper.cpp
+ * côté `voice.rs`) → renvoie le texte transcrit. La voix ne quitte JAMAIS la
+ * machine (offline, aucun envoi cloud). Le front résout ensuite le texte en
+ * action IHM via le dispatcher pur (`src/voice/dispatcher.ts`). Rejette si le
+ * backend natif n'est pas disponible (dev front pur / STT non branché) — le
+ * hook `useVoiceCommand` dégrade proprement.
+ */
+export function voiceListen(): Promise<string> {
+  return call<string>("voice_listen");
+}
+
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
 
 /** Racine du chapeau (défaut calculé par OS si non persistée). */
@@ -660,6 +674,7 @@ export const backend = {
   n8nSetToken,
   n8nHasToken,
   seedDemo,
+  voiceListen,
   ptyOpen,
   ptyWrite,
   ptyResize,

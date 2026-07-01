@@ -66,6 +66,14 @@ export const fr = {
     teams: "Équipes",
     settings: "Réglages",
   },
+  voice: {
+    idle: "Commande vocale",
+    listen: "Parler",
+    listening: "À l'écoute…",
+    unsupported: "Micro indisponible",
+    notUnderstood: "Pas compris. Essayez :",
+    heard: "Entendu : « {{transcript}} »",
+  },
 
   common: {
     save: "Enregistrer",
