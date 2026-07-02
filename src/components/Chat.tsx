@@ -59,6 +59,13 @@ export interface ChatProps {
   hidePensee?: boolean;
   /** Bascule le canal pensée (contrôlé) — voir `hidePensee`. */
   onToggleHidePensee?: () => void;
+  /**
+   * Dictée vocale (L16 reciblé 2026-07-02 : le vocal parle DANS le chat). Statut du
+   * micro + déclencheur push-to-talk. Absent → pas de bouton micro. Le transcript
+   * est auto-envoyé par le parent (décision Stéphane), d'où pas de retour dans `draft`.
+   */
+  voiceStatus?: "idle" | "listening" | "unsupported";
+  onDictate?: () => void;
 }
 
 /** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
@@ -87,6 +94,8 @@ export function Chat({
   onInterrupt,
   hidePensee: hidePenseeProp,
   onToggleHidePensee,
+  voiceStatus,
+  onDictate,
 }: ChatProps): JSX.Element {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -259,6 +268,27 @@ export function Chat({
             }
           }}
         />
+        {onDictate && (
+          <button
+            type="button"
+            className={`btn ghost sm micbtn${voiceStatus === "listening" ? " on" : ""}`}
+            aria-label={t("voice.dictate")}
+            aria-pressed={voiceStatus === "listening"}
+            title={
+              voiceStatus === "unsupported"
+                ? t("voice.unsupported")
+                : t("voice.dictate")
+            }
+            disabled={
+              pending ||
+              voiceStatus === "listening" ||
+              voiceStatus === "unsupported"
+            }
+            onClick={onDictate}
+          >
+            <span aria-hidden>◉</span>
+          </button>
+        )}
         <button
           type="submit"
           className="btn accent sm"

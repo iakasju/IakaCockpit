@@ -74,6 +74,7 @@ export const en: Resources = {
     unsupported: "Microphone unavailable",
     notUnderstood: "Not understood. Try:",
     heard: "Heard: “{{transcript}}”",
+    dictate: "Dictate a message",
   },
 
   common: {

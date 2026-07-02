@@ -3317,3 +3317,11 @@ select.field {
 .voicehint li {
   list-style: disc;
 }
+/* Micro de dictée dans la barre de saisie du chat (L16 reciblé). */
+.micbtn {
+  padding-inline: 10px;
+}
+.micbtn.on {
+  color: var(--accent);
+  animation: voice-pulse 1s ease-in-out infinite;
+}

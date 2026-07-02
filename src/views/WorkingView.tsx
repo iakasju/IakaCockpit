@@ -26,6 +26,7 @@ import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
+import { useVoiceDictation } from "../hooks/useVoiceDictation";
 import { Roster } from "../components/Roster";
 import { TasksPanel } from "../components/TasksPanel";
 import { PlanPanel } from "../components/PlanPanel";
@@ -201,6 +202,11 @@ export function WorkingView({
     onSend(active.projectId, agent, content);
     setDraft(active.projectId, "");
   };
+
+  // Dictée vocale (L16 reciblé) : le micro du chat capture la parole (STT local) et
+  // AUTO-ENVOIE le transcript comme message (décision Stéphane). Garde anti-vide dans
+  // le hook. `onTranscript` lu à jour (ref interne) → toujours le projet/persona actifs.
+  const voice = useVoiceDictation((text) => sendActive(text));
 
   return (
     <section className="view wk" aria-label={t("working.ariaLabel")}>
@@ -421,6 +427,8 @@ export function WorkingView({
                   // Canal pensée masquable persisté (L10b/P3) : contrôlé si fourni.
                   hidePensee={hidePensee}
                   onToggleHidePensee={onToggleHidePensee}
+                  voiceStatus={voice.status}
+                  onDictate={() => void voice.listen()}
                 />
               )}
             </div>

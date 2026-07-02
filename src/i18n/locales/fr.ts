@@ -73,6 +73,7 @@ export const fr = {
     unsupported: "Micro indisponible",
     notUnderstood: "Pas compris. Essayez :",
     heard: "Entendu : « {{transcript}} »",
+    dictate: "Dicter un message",
   },
 
   common: {

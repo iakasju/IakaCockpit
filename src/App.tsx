@@ -28,8 +28,9 @@ import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
 import { useDemoSeed, DEMO_PROJECT_ID } from "./hooks/useDemoSeed";
-import { useVoiceCommand } from "./hooks/useVoiceCommand";
-import { VoiceMic } from "./components/VoiceMic";
+// Nav vocale (L16-P1) DÉBRANCHÉE 2026-07-02 : le vocal sert à parler DANS le chat
+// (dictée, cf. WorkingView/useVoiceDictation), pas à piloter le cockpit. Les fichiers
+// `useVoiceCommand`/`VoiceMic`/`voice/dispatcher` sont conservés (débranché, pas supprimé).
 import {
   DEMO_PLAN,
   DEMO_ECONOMY,
@@ -69,9 +70,6 @@ export default function App(): JSX.Element {
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
-  // Pilotage vocal (L16-P1) : voix → nav. Le hook exécute l'action via la nav
-  // (setActiveView) ; hors natif il passe en mode dégradé sans crash.
-  const voice = useVoiceCommand(grid.setActiveView);
 
   // i18n : applique la langue persistée (ui_lang) au runtime i18next. `useSettings`
   // reste libre d'i18n (séparation) ; ici on synchronise le moteur sur l'état.
@@ -368,14 +366,8 @@ export default function App(): JSX.Element {
           <span className="rlabel">{t("nav.teams")}</span>
         </button>
         <div className="sep" />
-        {/* Pilotage vocal (L16-P1) : push-to-talk → navigation. Discret, au-dessus
-            de Réglages ; dégrade proprement hors contexte natif (STT côté Rust). */}
-        <VoiceMic
-          status={voice.status}
-          notUnderstood={voice.notUnderstood}
-          lastTranscript={voice.lastTranscript}
-          onListen={() => void voice.listen()}
-        />
+        {/* Nav vocale retirée du rail (2026-07-02) : le vocal est désormais une dictée
+            DANS le chat (WorkingView), pas un pilote de navigation. */}
         <button
           type="button"
           className={`railitem${grid.activeView === "settings" ? " on" : ""}`}
