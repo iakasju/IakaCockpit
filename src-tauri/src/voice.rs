@@ -86,8 +86,13 @@ fn model_path() -> Result<PathBuf, String> {
 fn ensure_model() -> Result<PathBuf, String> {
     let path = model_path()?;
     if path.exists() {
+        eprintln!("[voice] modèle présent: {}", path.display());
         return Ok(path);
     }
+    eprintln!(
+        "[voice] modèle absent -> téléchargement (~147 Mo): {}",
+        MODEL_URL
+    );
     let dir = path.parent().ok_or("chemin modèle invalide")?.to_path_buf();
     std::fs::create_dir_all(&dir).map_err(|e| format!("création dossier modèle: {e}"))?;
 
@@ -102,6 +107,7 @@ fn ensure_model() -> Result<PathBuf, String> {
         std::io::copy(&mut reader, &mut file).map_err(|e| format!("écriture modèle: {e}"))?;
     }
     std::fs::rename(&tmp, &path).map_err(|e| format!("finalisation modèle: {e}"))?;
+    eprintln!("[voice] modèle téléchargé: {}", path.display());
     Ok(path)
 }
 
@@ -121,6 +127,13 @@ fn record_window() -> Result<Vec<f32>, String> {
         .map_err(|e| format!("config micro: {e}"))?;
     let src_sr = config.sample_rate().0;
     let channels = config.channels() as usize;
+    eprintln!(
+        "[voice] micro='{}' sr={} ch={} fmt={:?}",
+        device.name().unwrap_or_else(|_| "?".into()),
+        src_sr,
+        channels,
+        config.sample_format()
+    );
 
     let buf: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
     let err_fn = |e| eprintln!("[voice] erreur flux audio: {e}");
@@ -180,7 +193,15 @@ fn record_window() -> Result<Vec<f32>, String> {
         .map_err(|_| "verrou audio empoisonné".to_string())?;
 
     let mono = downmix_to_mono(&raw, channels);
-    Ok(resample_linear(&mono, src_sr, TARGET_SR))
+    let out = resample_linear(&mono, src_sr, TARGET_SR);
+    let peak = out.iter().fold(0f32, |m, &x| m.max(x.abs()));
+    let rms = (out.iter().map(|&x| x * x).sum::<f32>() / out.len().max(1) as f32).sqrt();
+    eprintln!(
+        "[voice] capturé {} échantillons bruts -> {} @16k (peak={peak:.4} rms={rms:.4})",
+        raw.len(),
+        out.len()
+    );
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
@@ -216,7 +237,9 @@ fn transcribe(model: &Path, samples: &[f32]) -> Result<String, String> {
             text.push_str(&seg);
         }
     }
-    Ok(clean_transcript(&text))
+    let out = clean_transcript(&text);
+    eprintln!("[voice] transcription: '{out}'");
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
@@ -226,12 +249,18 @@ fn transcribe(model: &Path, samples: &[f32]) -> Result<String, String> {
 /// Corps bloquant : (modèle prêt) → enregistre (~4 s) → transcrit → texte. Toute
 /// la chaîne (dont le `cpal::Stream` `!Send`) reste sur un seul thread bloquant.
 fn listen_blocking() -> Result<String, String> {
+    eprintln!("[voice] voice_listen: début");
     let model = ensure_model()?;
     let samples = record_window()?;
     if samples.is_empty() {
+        eprintln!("[voice] aucun échantillon capturé");
         return Ok(String::new());
     }
-    transcribe(&model, &samples)
+    let r = transcribe(&model, &samples);
+    if let Err(ref e) = r {
+        eprintln!("[voice] échec: {e}");
+    }
+    r
 }
 
 /// Écoute vocale push-to-talk. **Async + `spawn_blocking`** : l'enregistrement et
