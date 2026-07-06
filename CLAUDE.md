@@ -350,6 +350,21 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       Travail (fuzzy projet/équipe + LLM-secours). **P3 différé** = conversation vocale avec les teams
       (whisper free-form → chat coordinateur ; TTS option). Réutilise nav/Ollama/façade ; modèle non
       bundlé en P1 (téléchargé). Lié à la note `specs/notes/concepts-llm-transcript-ihm.md`.
+      *(**RECIBLÉ 2026-07-02** : Stéphane ne veut PAS piloter le cockpit à la voix mais **dicter dans
+      la conversation d'un projet**. Livré : STT natif `voice.rs` (cpal+whisper-rs, prouvé sur bundle
+      `.app` — cf. `Info.plist` micro ; en `tauri dev` le binaire nu est tué par TCC), `useVoiceDictation`
+      + micro dans le chat (auto-envoi + garde anti-vide), nav vocale du rail **débranchée** (gardée).
+      **Ouvert** : whisper n'entend pas encore la voix en recette (silence/`[Musique]`, mesure peak/rms
+      posée). cmake installé via `pip3 --user` (PATH `~/.zshrc`).)*
+- [ ] **L22** — **« Le Cadre » : GUI de configuration iakaframe** → `specs/instructions/L22-cadre-config-iakaframe.md`
+      *(cadré 2026-07-06, arbitrages AR-1..6 à confirmer ; mock artifact v1→v3).* GUI dans iakacockpit
+      (6ᵉ vue « Cadre ») pour définir le **cadre** d'une équipe, **en conversant**. Modèle à 4 niveaux
+      (verrouillé) : **Règle** typée (interdit/autorisation/obligation/tool/geste/compétence) → **Skill**
+      (paquet nommé de règles) → **Template** d'agent (assemblage skills+règles) → **Agent** nommé dans une
+      team (template + extras + nom) ; + **règles projet** et **chaîne des délégations** (graphe team, à
+      part). P1 = modèle + éditeurs CRUD (sans LLM) ; P2 = conversation-authoring (Ollama + dictée) ;
+      P3 = enforcement runner (`--allowedTools`/`--append-system-prompt`) + garde délégations. Réutilise
+      `useTeams`/config/`ai.rs`/`useVoiceDictation`. Le cockpit édite un cadre consommé par iakaframe.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
