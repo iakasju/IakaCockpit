@@ -72,6 +72,7 @@ pub fn run() {
             codex::codex_tail_start,
             ai::next_step,
             ai::chat,
+            ai::frame_author,
             ai::ai_set_key,
             ai::ai_has_key,
             maincourante::fetch_main_courante,

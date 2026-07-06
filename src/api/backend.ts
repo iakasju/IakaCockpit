@@ -412,6 +412,21 @@ export function frameSave(teamId: string, json: string): Promise<void> {
   return call<void>("frame_save", { teamId, json });
 }
 
+/**
+ * L22-P2 — le LLM embarqué **rédige** un artefact du Cadre : `kind` = `"skill"` (paragraphe
+ * de skill) ou `"agent"` (brief d'agent). `context` = version actuelle (pour réviser).
+ * Réutilise le type `ChatReply` (`content` = texte rédigé, `provider` = litellm|mock).
+ * Mock/dégradation calqués L3/L8. Le front range le texte dans le `frame.json`.
+ */
+export function frameAuthor(
+  kind: "skill" | "agent",
+  name: string,
+  instruction: string,
+  context?: string,
+): Promise<ChatReply> {
+  return call<ChatReply>("frame_author", { kind, name, instruction, context });
+}
+
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
 
 /** Racine du chapeau (défaut calculé par OS si non persistée). */
@@ -692,6 +707,7 @@ export const backend = {
   voiceListen,
   frameLoad,
   frameSave,
+  frameAuthor,
   ptyOpen,
   ptyWrite,
   ptyResize,

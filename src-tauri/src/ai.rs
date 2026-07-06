@@ -570,11 +570,123 @@ pub fn chat(
     parse_chat_reply(&body, Some(model))
 }
 
+// --- L22-P2 : rédaction d'artefacts du Cadre par le LLM embarqué ---
+
+fn build_author_system(kind: &str) -> String {
+    match kind {
+        "agent" => "Tu rédiges le BRIEF d'un agent de la méthode iakaframe (le cadre de \
+travail d'une équipe). Réponds par UN paragraphe concis en français, sans préambule ni \
+titre : ce que cet agent doit faire en propre, en plus de son template."
+            .to_string(),
+        _ => "Tu rédiges la description d'un SKILL de la méthode iakaframe (une capacité \
+réutilisable d'agent). Réponds par UN paragraphe concis en français, sans préambule ni \
+titre : ce que ce skill recouvre et comment il s'applique."
+            .to_string(),
+    }
+}
+
+fn build_author_user(name: &str, instruction: &str, context: Option<&str>) -> String {
+    let mut s = String::new();
+    if !name.trim().is_empty() {
+        s.push_str(&format!("Nom : {name}\n"));
+    }
+    if let Some(ctx) = context {
+        if !ctx.trim().is_empty() {
+            s.push_str(&format!("Version actuelle :\n{ctx}\n\n"));
+        }
+    }
+    s.push_str(&format!("Demande : {instruction}"));
+    s
+}
+
+fn mock_frame_author(kind: &str, name: &str, instruction: &str) -> ChatReply {
+    let label = if kind == "agent" { "Brief" } else { "Skill" };
+    ChatReply {
+        content: format!(
+            "[MOCK — rédaction simulée, aucun appel réseau]\n{label} « {name} » : {instruction}.\n\
+(Configure un endpoint IA dans Réglages pour une rédaction réelle.)"
+        ),
+        provider: "mock".to_string(),
+        model: None,
+        tokens_in: None,
+        tokens_out: None,
+    }
+}
+
+/// L22-P2 : le LLM embarqué **rédige** un artefact du Cadre (paragraphe de skill ou brief
+/// d'agent). UN endpoint, UN appel (calque L3/L8) ; mock si endpoint vide / flag dev (A2).
+/// Dégrade proprement (D6). `frame.json` reste la source ; ce texte y est rangé par le front.
+#[tauri::command]
+pub fn frame_author(
+    app: AppHandle,
+    kind: String,
+    name: String,
+    instruction: String,
+    context: Option<String>,
+) -> Result<ChatReply, String> {
+    if instruction.trim().is_empty() {
+        return Err("précise ce que tu veux rédiger".to_string());
+    }
+    let conn = db::open(&app)?;
+    let endpoint = config::get(&conn, KEY_LITELLM_ENDPOINT)
+        .map_err(|e| e.to_string())?
+        .unwrap_or_default();
+    let model = config::get(&conn, KEY_LITELLM_MODEL)
+        .map_err(|e| e.to_string())?
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+
+    if should_mock(&endpoint) {
+        return Ok(mock_frame_author(&kind, &name, &instruction));
+    }
+
+    let store = KeyringStore::new();
+    let api_key = read_api_key(&store);
+    let system = build_author_system(&kind);
+    let user = build_author_user(&name, &instruction, context.as_deref());
+    let messages = [
+        Msg {
+            role: "system",
+            content: &system,
+        },
+        Msg {
+            role: "user",
+            content: &user,
+        },
+    ];
+    let body = post_chat(&endpoint, &model, api_key.as_deref(), &messages)?;
+    parse_chat_reply(&body, Some(model))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::cell::RefCell;
     use std::collections::HashMap;
+
+    #[test]
+    fn author_system_distingue_skill_et_agent() {
+        assert!(build_author_system("agent").contains("BRIEF"));
+        assert!(build_author_system("skill").contains("SKILL"));
+        assert!(build_author_system("autre").contains("SKILL")); // défaut = skill
+    }
+
+    #[test]
+    fn author_user_inclut_nom_contexte_et_demande() {
+        let u = build_author_user("Git sûr", "ajoute la revue", Some("para v1"));
+        assert!(u.contains("Nom : Git sûr"));
+        assert!(u.contains("Version actuelle"));
+        assert!(u.contains("para v1"));
+        assert!(u.contains("Demande : ajoute la revue"));
+    }
+
+    #[test]
+    fn mock_frame_author_est_marque_mock_et_sans_reseau() {
+        let r = mock_frame_author("skill", "Git sûr", "sécurise git");
+        assert_eq!(r.provider, "mock");
+        assert!(r.content.contains("Git sûr"));
+        assert!(r.content.contains("sécurise git"));
+    }
     use std::fs;
 
     // --- Mock store (réplique du contrat secrets, pour le cloisonnement clé) ---
