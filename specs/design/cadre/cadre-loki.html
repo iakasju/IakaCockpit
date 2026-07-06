@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Cadre — refonte ergonomique (mock Loki)</title>
+<style>
+/* =========================================================================
+   MOCK « Le Cadre » — refonte ergonomique · direction A / studio-clair
+   Self-contained, CSP-safe (aucun asset distant, aucune webfont, aucun JS).
+   Polices : Space Grotesk / Inter en tête de pile, fallback system-ui.
+   Interactions natives CSS uniquement (<details>, ancres, :focus-visible).
+   ========================================================================= */
+:root{
+  --bg:#fbfbfc; --surf:#ffffff; --surf-2:#e7e8ec; --surf-3:#f0f1f4; --field:#f0f1f4;
+  --text:#16181d; --text-2:#5b6270; --text-3:#9aa0ad;
+  --accent:#5b5bd6; --accent-2:#7a78ff; --accent-rgb:91,91,214; --on-accent:#fff;
+  --red:#e5484d; --green:#30a46c; --blue:#3b82f6; --orange:#f5a623; --purple:#8e4ec6;
+  /* couleurs des 6 types de règle (reprises du socle app) */
+  --t-interdit:#b5322b; --t-autorisation:#1f7a52; --t-obligation:#6b57c7;
+  --t-tool:#0d7d84; --t-geste:#b06a12; --t-competence:#5b5bd6;
+  --display:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --rail-w:150px;
+  --shadow-soft:0 1px 0 var(--surf-2),0 16px 36px -28px rgba(20,22,28,.22);
+  --shadow-card:0 1px 0 var(--surf-2),0 22px 48px -34px rgba(20,22,28,.26);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+html{scroll-behavior:smooth}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* ---------------- shell : rail + surface ---------------- */
+.app-shell{display:flex;min-height:100vh}
+.rail{
+  position:sticky;top:0;align-self:flex-start;height:100vh;
+  flex:0 0 var(--rail-w);width:var(--rail-w);
+  background:var(--bg);border-right:1px solid var(--surf-2);
+  display:flex;flex-direction:column;align-items:stretch;padding:18px 12px;gap:4px;z-index:20;
+}
+.rail .brand{
+  align-self:center;width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#fff;font-family:var(--display);font-weight:700;font-size:18px;
+}
+.rail .brandsub{
+  align-self:center;margin:6px 0 16px;font-family:var(--display);font-size:9px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--text-2);
+}
+.rail a{
+  display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:12px;
+  color:var(--text-2);font-family:var(--display);font-weight:600;font-size:13.5px;
+}
+.rail a:hover{background:var(--surf-3);color:var(--text)}
+.rail a.on{background:rgba(var(--accent-rgb),.12);color:var(--accent);font-weight:700}
+.rail .sep{flex:1}
+
+.host{flex:1;min-width:0;overflow-x:hidden}
+.wrap{max-width:1120px;margin:0 auto;padding:34px 40px 60px}
+
+/* ---------------- en-tête ---------------- */
+.eyebrow{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+.head{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-top:8px}
+.head h1{font-family:var(--display);font-weight:600;font-size:33px;letter-spacing:-.02em;line-height:1.05}
+.head .lede{font-size:14.5px;color:var(--text-2);max-width:56ch;line-height:1.6;margin-top:8px}
+.scope{margin-left:auto;display:flex;flex-direction:column;gap:6px}
+.scope .lb{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.scope .pick{
+  display:flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--surf-2);
+  border-radius:12px;padding:9px 14px;box-shadow:var(--shadow-soft);
+}
+.scope .pick b{font-family:var(--display);font-weight:600;font-size:15px}
+.scope .pick .car{color:var(--text-3)}
+
+/* ---------------- LA CHAÎNE (spine) : rend le modèle + le flux évidents ---------------- */
+.spine{
+  margin-top:24px;background:var(--surf);border-radius:18px;box-shadow:var(--shadow-card);
+  padding:18px 20px;
+}
+.spine .recipe{font-size:13px;color:var(--text-2);margin-bottom:15px}
+.spine .recipe b{color:var(--text);font-family:var(--display);font-weight:600}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.stage{
+  flex:1 1 150px;min-width:150px;display:flex;flex-direction:column;gap:5px;
+  padding:12px 13px;border-radius:14px;background:var(--surf-3);
+  border:1px solid transparent;transition:.14s;
+}
+.stage:hover{border-color:var(--surf-2);background:var(--field);transform:translateY(-2px)}
+.stage .num{
+  width:22px;height:22px;border-radius:8px;background:var(--accent);color:#fff;
+  font-family:var(--display);font-weight:700;font-size:12px;display:grid;place-items:center;
+}
+.stage .snm{font-family:var(--display);font-weight:700;font-size:14.5px}
+.stage .sdef{font-size:11.5px;color:var(--text-2);line-height:1.45}
+.stage .scount{font-family:var(--mono);font-size:11px;color:var(--text-3);margin-top:2px}
+.conn{
+  flex:0 0 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--text-3);
+}
+.conn .arw{font-size:17px;line-height:1;color:var(--accent)}
+.conn .cl{font-size:8.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;text-align:center;color:var(--text-3)}
+.apart{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px dashed var(--surf-2)}
+.apart .albl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);align-self:center;font-family:var(--display)}
+.apchip{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border-radius:12px;
+  background:var(--surf-3);border:1px dashed var(--surf-2);font-size:12.5px;color:var(--text-2);
+}
+.apchip b{font-family:var(--display);font-weight:600;color:var(--text)}
+.apchip .n{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+
+/* ---------------- bandes (une par niveau, lues de haut en bas = flux) ---------------- */
+.band{margin-top:14px;background:var(--surf);border-radius:18px;box-shadow:var(--shadow-card);padding:22px 24px;scroll-margin-top:16px}
+.band.apartband{background:linear-gradient(0deg,var(--surf),var(--surf));border:1px dashed var(--surf-2)}
+.bhead{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.bhead .bnum{
+  flex:none;width:34px;height:34px;border-radius:11px;background:var(--accent);color:#fff;
+  font-family:var(--display);font-weight:700;font-size:16px;display:grid;place-items:center;
+}
+.bhead .bnum.side{background:var(--surf-2);color:var(--text-2)}
+.bhead .bt{flex:1;min-width:0}
+.bhead h2{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bhead h2 .eq{font-family:var(--sans);font-weight:500;font-size:13.5px;color:var(--text-2)}
+.bhead .ex{font-size:12.5px;color:var(--text-3);margin-top:4px}
+.bhead .ex b{color:var(--text-2);font-weight:600}
+.bcount{flex:none;font-family:var(--mono);font-size:12px;color:var(--text-3);align-self:center;background:var(--surf-3);padding:4px 10px;border-radius:8px}
+
+/* légende des 6 types */
+.legend{display:flex;flex-wrap:wrap;gap:6px 8px;margin-bottom:15px}
+.lg{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-2);background:var(--surf-3);padding:5px 10px;border-radius:9px}
+.lg i{width:9px;height:9px;border-radius:50%;flex:none}
+.lg small{color:var(--text-3);font-size:10.5px}
+
+/* composer « + Ajouter » — affordance claire */
+.composer{
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  background:var(--surf-3);border:1px solid var(--surf-2);border-radius:13px;padding:11px 12px;margin-bottom:16px;
+}
+.composer .plus{font-family:var(--display);font-weight:700;font-size:12px;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;padding:0 4px}
+.composer select,.composer input{
+  background:var(--surf);border:1px solid var(--surf-2);border-radius:10px;padding:9px 12px;
+  color:var(--text);font:inherit;font-size:13.5px;
+}
+.composer input{flex:1;min-width:200px}
+.composer input::placeholder{color:var(--text-3)}
+.btn{
+  font-family:var(--display);font-weight:600;font-size:13px;border:0;border-radius:11px;padding:9px 16px;
+  background:var(--accent);color:#fff;
+}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;border:1px solid var(--surf-2);color:var(--text-2)}
+
+/* règles groupées par type */
+.rulegroup{margin-bottom:14px}
+.rulegroup:last-child{margin-bottom:0}
+.rgh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rgh i{width:9px;height:9px;border-radius:50%;flex:none}
+.rgh .t{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-2)}
+.rgh .c{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.rules{display:flex;flex-wrap:wrap;gap:8px}
+.rule{
+  display:inline-flex;align-items:center;gap:9px;background:var(--surf-3);border:1px solid var(--surf-2);
+  border-radius:11px;padding:8px 11px;font-size:13px;color:var(--text);
+}
+.rule i{width:8px;height:8px;border-radius:50%;flex:none}
+.rule .x{color:var(--text-3);font-size:15px;line-height:1;padding-left:3px}
+.rule .x:hover{color:var(--red)}
+
+/* cartes de composition (skills / templates / agents) : la décomposition est VISIBLE */
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surf-3);border:1px solid var(--surf-2);border-radius:15px;padding:15px 16px}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.card .badge{
+  flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+  font-family:var(--display);font-weight:700;font-size:13px;color:#fff;
+}
+.card .badge.skill{background:var(--t-tool)}
+.card .badge.tpl{background:var(--accent)}
+.card .badge.agent{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.card .cn{font-family:var(--display);font-weight:600;font-size:15.5px;flex:1;min-width:0}
+.card .cm{font-family:var(--mono);font-size:10.5px;color:var(--text-3)}
+.card .x{color:var(--text-3);font-size:16px;line-height:1}
+.card .x:hover{color:var(--red)}
+.card .cont{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);margin:2px 0 8px;font-family:var(--display)}
+.minichips{display:flex;flex-wrap:wrap;gap:6px}
+.mc{display:inline-flex;align-items:center;gap:6px;background:var(--surf);border:1px solid var(--surf-2);border-radius:9px;padding:5px 9px;font-size:12px;color:var(--text-2)}
+.mc i{width:7px;height:7px;border-radius:50%;flex:none}
+.mc.add{border-style:dashed;color:var(--accent);font-weight:600}
+
+/* template : chaque skill est dépliable (native <details>) → on voit ses règles */
+details.skillrow{background:var(--surf);border:1px solid var(--surf-2);border-radius:10px;margin-bottom:7px;overflow:hidden}
+details.skillrow>summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 11px;font-size:12.5px;
+}
+details.skillrow>summary::-webkit-details-marker{display:none}
+details.skillrow>summary .tri{color:var(--text-3);font-size:10px;transition:.15s;flex:none}
+details.skillrow[open]>summary .tri{transform:rotate(90deg)}
+details.skillrow>summary .sk{font-family:var(--display);font-weight:600;color:var(--text)}
+details.skillrow>summary .badge{width:20px;height:20px;border-radius:6px;font-size:10px}
+details.skillrow>summary .cm{margin-left:auto}
+.skillrow .inner{padding:2px 12px 11px 30px;display:flex;flex-wrap:wrap;gap:6px}
+
+/* agent : héritage résumé */
+.inherit{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px;color:var(--text-2);margin-bottom:9px}
+.inherit .frm{background:rgba(var(--accent-rgb),.12);color:var(--accent);font-family:var(--display);font-weight:600;padding:3px 10px;border-radius:8px;font-size:12px}
+.inherit .via{color:var(--text-3)}
+
+/* à-part : règles projet + délégations, côte à côte */
+.apartgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* graphe de délégation */
+.graph{position:relative;display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;gap:0;padding:6px 0}
+.gnode{
+  display:flex;align-items:center;gap:10px;background:var(--surf-3);border:1px solid var(--surf-2);
+  border-radius:12px;padding:9px 12px;
+}
+.gnode .av{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));flex:none}
+.gnode .gn{font-family:var(--display);font-weight:600;font-size:14px}
+.gnode .gr{font-size:11px;color:var(--text-3)}
+.gcoord{grid-row:1 / span 2}
+.gright{display:flex;flex-direction:column;gap:12px}
+.gsvg{width:54px;height:100%}
+.ghint{font-size:11.5px;color:var(--text-3);margin-top:10px}
+
+/* dock « définir en conversant » (P2, réservé) */
+.dock{
+  margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:var(--surf);border:1px dashed var(--surf-2);border-radius:16px;padding:14px 18px;
+}
+.dock .di{width:36px;height:36px;border-radius:11px;background:var(--surf-3);display:grid;place-items:center;color:var(--text-3);flex:none}
+.dock .dt{flex:1;min-width:200px}
+.dock .dt b{font-family:var(--display);font-weight:600;font-size:14px}
+.dock .dt p{font-size:12.5px;color:var(--text-3);margin-top:2px}
+.dock .soon{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);background:var(--surf-3);padding:5px 11px;border-radius:8px}
+.dock input{flex:1;min-width:220px;background:var(--surf-3);border:1px solid var(--surf-2);border-radius:11px;padding:11px 14px;font:inherit;font-size:13.5px;color:var(--text-3)}
+
+/* connecteur inter-bandes : narre le flux (se regroupent en / s'assemblent en / s'instancient en) */
+.between{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 0 1px;color:var(--text-3)}
+.between .ln{height:1px;width:44px;background:var(--surf-2)}
+.between .tx{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.between .dn{color:var(--accent)}
+
+@media (max-width:820px){
+  :root{--rail-w:64px}
+  .rail a{justify-content:center;font-size:0;padding:12px}
+  .rail a::first-letter{font-size:15px}
+  .apartgrid{grid-template-columns:1fr}
+  .wrap{padding:26px 22px 50px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- RAIL (grammaire app, direction A / identité Atelier) -->
+  <nav class="rail" aria-label="Navigation">
+    <div class="brand">i</div>
+    <div class="brandsub">atelier</div>
+    <a href="#">Étagère</a>
+    <a href="#">Table</a>
+    <a href="#">Journal</a>
+    <a href="#">Équipes</a>
+    <a href="#" class="on" aria-current="page">Cadre</a>
+    <div class="sep"></div>
+    <a href="#">Réglages</a>
+  </nav>
+
+  <main class="host">
+  <div class="wrap">
+
+    <!-- EN-TÊTE -->
+    <div class="eyebrow">Cadre de travail</div>
+    <div class="head">
+      <div>
+        <h1>Le Cadre</h1>
+        <p class="lede">Le cadre définit ce que l'équipe a le droit de faire, doit faire et sait faire.
+          On le construit de la brique vers l'agent&nbsp;: chaque niveau s'emboîte dans le suivant.</p>
+      </div>
+      <div class="scope">
+        <span class="lb">Équipe cadrée</span>
+        <div class="pick"><b>iakaframe</b> <span class="car">▾</span></div>
+      </div>
+    </div>
+
+    <!-- LA CHAÎNE : modèle + point de départ + flux, d'un coup d'œil -->
+    <section class="spine" aria-label="Modèle du cadre">
+      <p class="recipe">Comment lire cet écran&nbsp;: <b>①</b> on écrit des <b>règles</b>, <b>②</b> on les regroupe en <b>skills</b>,
+        <b>③</b> on assemble des <b>templates</b> d'agent, <b>④</b> on nomme les <b>agents</b> de l'équipe.
+        À part&nbsp;: les <b>règles projet</b> et la <b>chaîne de délégation</b>.</p>
+      <div class="flow">
+        <a class="stage" href="#band-rules">
+          <span class="num">1</span>
+          <span class="snm">Règles</span>
+          <span class="sdef">Les briques. Une action typée&nbsp;: interdit, autorisation, obligation, tool…</span>
+          <span class="scount">10 briques</span>
+        </a>
+        <div class="conn"><span class="arw">→</span><span class="cl">groupées&nbsp;en</span></div>
+        <a class="stage" href="#band-skills">
+          <span class="num">2</span>
+          <span class="snm">Skills</span>
+          <span class="sdef">Un paquet nommé de règles réutilisable.</span>
+          <span class="scount">2 paquets</span>
+        </a>
+        <div class="conn"><span class="arw">→</span><span class="cl">assemblés&nbsp;en</span></div>
+        <a class="stage" href="#band-templates">
+          <span class="num">3</span>
+          <span class="snm">Templates</span>
+          <span class="sdef">Un type d'agent&nbsp;: skills + règles réunis.</span>
+          <span class="scount">3 types</span>
+        </a>
+        <div class="conn"><span class="arw">→</span><span class="cl">instanciés&nbsp;en</span></div>
+        <a class="stage" href="#band-agents">
+          <span class="num">4</span>
+          <span class="snm">Agents</span>
+          <span class="sdef">Un template + un nom + des extras.</span>
+          <span class="scount">3 agents</span>
+        </a>
+      </div>
+      <div class="apart">
+        <span class="albl">À part</span>
+        <a class="apchip" href="#band-project"><b>Règles projet</b> <span class="n">portée projet · 1</span></a>
+        <a class="apchip" href="#band-deleg"><b>Chaîne de délégation</b> <span class="n">graphe équipe · 2</span></a>
+      </div>
+    </section>
+
+    <!-- ===================== 1 · RÈGLES ===================== -->
+    <section class="band" id="band-rules">
+      <div class="bhead">
+        <div class="bnum">1</div>
+        <div class="bt">
+          <h2>Règles <span class="eq">= la brique atomique, toujours typée</span></h2>
+          <div class="ex">Exemple&nbsp;: <b>Jamais git push --force</b> (interdit) · <b>Autoriser git commit</b> (autorisation) · <b>Développement front</b> (compétence).</div>
+        </div>
+        <div class="bcount">10 règles</div>
+      </div>
+
+      <div class="legend" aria-label="Les six types de règle">
+        <span class="lg"><i style="background:var(--t-interdit)"></i>Interdit <small>ne jamais faire</small></span>
+        <span class="lg"><i style="background:var(--t-autorisation)"></i>Autorisation <small>a le droit de</small></span>
+        <span class="lg"><i style="background:var(--t-obligation)"></i>Obligation <small>doit faire</small></span>
+        <span class="lg"><i style="background:var(--t-tool)"></i>Tool <small>outil accessible</small></span>
+        <span class="lg"><i style="background:var(--t-geste)"></i>Geste <small>action émise</small></span>
+        <span class="lg"><i style="background:var(--t-competence)"></i>Compétence <small>sait faire</small></span>
+      </div>
+
+      <form class="composer" onsubmit="return false">
+        <span class="plus">+ Ajouter une règle</span>
+        <select aria-label="Type de règle">
+          <option>Interdit</option><option>Autorisation</option><option selected>Obligation</option>
+          <option>Tool</option><option>Geste</option><option>Compétence</option>
+        </select>
+        <input placeholder="Décris la règle, ex. « Lire l'instruction avant de coder »" aria-label="Libellé de la règle">
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+
+      <div class="rulegroup">
+        <div class="rgh"><i style="background:var(--t-interdit)"></i><span class="t">Interdit</span><span class="c">1</span></div>
+        <div class="rules"><span class="rule"><i style="background:var(--t-interdit)"></i>Jamais git push --force<span class="x">×</span></span></div>
+      </div>
+      <div class="rulegroup">
+        <div class="rgh"><i style="background:var(--t-autorisation)"></i><span class="t">Autorisation</span><span class="c">2</span></div>
+        <div class="rules">
+          <span class="rule"><i style="background:var(--t-autorisation)"></i>Autoriser git commit<span class="x">×</span></span>
+          <span class="rule"><i style="background:var(--t-autorisation)"></i>Modifier src/**<span class="x">×</span></span>
+        </div>
+      </div>
+      <div class="rulegroup">
+        <div class="rgh"><i style="background:var(--t-obligation)"></i><span class="t">Obligation</span><span class="c">2</span></div>
+        <div class="rules">
+          <span class="rule"><i style="background:var(--t-obligation)"></i>Commits atomiques<span class="x">×</span></span>
+          <span class="rule"><i style="background:var(--t-obligation)"></i>Lire l'instruction avant de coder<span class="x">×</span></span>
+        </div>
+      </div>
+      <div class="rulegroup">
+        <div class="rgh"><i style="background:var(--t-tool)"></i><span class="t">Tool</span><span class="c">2</span></div>
+        <div class="rules">
+          <span class="rule"><i style="background:var(--t-tool)"></i>Edit<span class="x">×</span></span>
+          <span class="rule"><i style="background:var(--t-tool)"></i>Bash<span class="x">×</span></span>
+        </div>
+      </div>
+      <div class="rulegroup">
+        <div class="rgh"><i style="background:var(--t-competence)"></i><span class="t">Compétence</span><span class="c">2</span></div>
+        <div class="rules">
+          <span class="rule"><i style="background:var(--t-competence)"></i>Développement front<span class="x">×</span></span>
+          <span class="rule"><i style="background:var(--t-competence)"></i>Tests &amp; couverture<span class="x">×</span></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="between"><span class="ln"></span><span class="tx">se regroupent en</span><span class="dn">▼</span><span class="ln"></span></div>
+
+    <!-- ===================== 2 · SKILLS ===================== -->
+    <section class="band" id="band-skills">
+      <div class="bhead">
+        <div class="bnum">2</div>
+        <div class="bt">
+          <h2>Skills <span class="eq">= un paquet nommé de règles, réutilisable</span></h2>
+          <div class="ex">Exemple&nbsp;: <b>Git sûr</b> = autoriser git commit + interdire push --force + commits atomiques.</div>
+        </div>
+        <div class="bcount">2 skills</div>
+      </div>
+
+      <form class="composer" onsubmit="return false">
+        <span class="plus">+ Nouveau skill</span>
+        <input placeholder="Nomme le paquet, ex. « Git sûr »" aria-label="Nom du skill">
+        <button class="btn" type="submit">Créer</button>
+      </form>
+
+      <div class="cardgrid">
+        <div class="card">
+          <div class="ch"><span class="badge skill">S</span><span class="cn">Git sûr</span><span class="cm">3 règles</span><span class="x">×</span></div>
+          <div class="cont">Contient ces règles</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-autorisation)"></i>Autoriser git commit</span>
+            <span class="mc"><i style="background:var(--t-interdit)"></i>Jamais git push --force</span>
+            <span class="mc"><i style="background:var(--t-obligation)"></i>Commits atomiques</span>
+            <span class="mc add">+ règle</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="badge skill">S</span><span class="cn">Dév front</span><span class="cm">3 règles</span><span class="x">×</span></div>
+          <div class="cont">Contient ces règles</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-competence)"></i>Développement front</span>
+            <span class="mc"><i style="background:var(--t-tool)"></i>Edit</span>
+            <span class="mc"><i style="background:var(--t-autorisation)"></i>Modifier src/**</span>
+            <span class="mc add">+ règle</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="between"><span class="ln"></span><span class="tx">s'assemblent en</span><span class="dn">▼</span><span class="ln"></span></div>
+
+    <!-- ===================== 3 · TEMPLATES ===================== -->
+    <section class="band" id="band-templates">
+      <div class="bhead">
+        <div class="bnum">3</div>
+        <div class="bt">
+          <h2>Templates <span class="eq">= un type d'agent (skills + règles assemblés)</span></h2>
+          <div class="ex">Exemple&nbsp;: <b>Développeur</b> = skills « Git sûr » + « Dév front », plus le tool Bash. Déplie un skill pour voir ses règles.</div>
+        </div>
+        <div class="bcount">3 templates</div>
+      </div>
+
+      <form class="composer" onsubmit="return false">
+        <span class="plus">+ Nouveau template</span>
+        <input placeholder="Nomme le type d'agent, ex. « Développeur »" aria-label="Nom du template">
+        <button class="btn" type="submit">Créer</button>
+      </form>
+
+      <div class="cardgrid">
+        <div class="card">
+          <div class="ch"><span class="badge tpl">T</span><span class="cn">Coordinateur</span><span class="cm">1 skill · 1 règle</span><span class="x">×</span></div>
+          <div class="cont">Skills assemblés</div>
+          <details class="skillrow">
+            <summary><span class="tri">▶</span><span class="badge skill">S</span><span class="sk">Git sûr</span><span class="cm">3 règles</span></summary>
+            <div class="inner">
+              <span class="mc"><i style="background:var(--t-autorisation)"></i>Autoriser git commit</span>
+              <span class="mc"><i style="background:var(--t-interdit)"></i>Jamais git push --force</span>
+              <span class="mc"><i style="background:var(--t-obligation)"></i>Commits atomiques</span>
+            </div>
+          </details>
+          <div class="cont" style="margin-top:10px">Règles ajoutées</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-obligation)"></i>Lire l'instruction avant de coder</span>
+            <span class="mc add">+ skill / règle</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><span class="badge tpl">T</span><span class="cn">Développeur</span><span class="cm">2 skills · 1 règle</span><span class="x">×</span></div>
+          <div class="cont">Skills assemblés</div>
+          <details class="skillrow" open>
+            <summary><span class="tri">▶</span><span class="badge skill">S</span><span class="sk">Git sûr</span><span class="cm">3 règles</span></summary>
+            <div class="inner">
+              <span class="mc"><i style="background:var(--t-autorisation)"></i>Autoriser git commit</span>
+              <span class="mc"><i style="background:var(--t-interdit)"></i>Jamais git push --force</span>
+              <span class="mc"><i style="background:var(--t-obligation)"></i>Commits atomiques</span>
+            </div>
+          </details>
+          <details class="skillrow">
+            <summary><span class="tri">▶</span><span class="badge skill">S</span><span class="sk">Dév front</span><span class="cm">3 règles</span></summary>
+            <div class="inner">
+              <span class="mc"><i style="background:var(--t-competence)"></i>Développement front</span>
+              <span class="mc"><i style="background:var(--t-tool)"></i>Edit</span>
+              <span class="mc"><i style="background:var(--t-autorisation)"></i>Modifier src/**</span>
+            </div>
+          </details>
+          <div class="cont" style="margin-top:10px">Règles ajoutées</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-tool)"></i>Bash</span>
+            <span class="mc add">+ skill / règle</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><span class="badge tpl">T</span><span class="cn">Qualité</span><span class="cm">1 skill · 1 règle</span><span class="x">×</span></div>
+          <div class="cont">Skills assemblés</div>
+          <details class="skillrow">
+            <summary><span class="tri">▶</span><span class="badge skill">S</span><span class="sk">Git sûr</span><span class="cm">3 règles</span></summary>
+            <div class="inner">
+              <span class="mc"><i style="background:var(--t-autorisation)"></i>Autoriser git commit</span>
+              <span class="mc"><i style="background:var(--t-interdit)"></i>Jamais git push --force</span>
+              <span class="mc"><i style="background:var(--t-obligation)"></i>Commits atomiques</span>
+            </div>
+          </details>
+          <div class="cont" style="margin-top:10px">Règles ajoutées</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-competence)"></i>Tests &amp; couverture</span>
+            <span class="mc add">+ skill / règle</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="between"><span class="ln"></span><span class="tx">s'instancient en</span><span class="dn">▼</span><span class="ln"></span></div>
+
+    <!-- ===================== 4 · AGENTS ===================== -->
+    <section class="band" id="band-agents">
+      <div class="bhead">
+        <div class="bnum">4</div>
+        <div class="bt">
+          <h2>Agents <span class="eq">= un template nommé, avec des extras propres</span></h2>
+          <div class="ex">Exemple&nbsp;: <b>Gimli</b> est un « Développeur » (il hérite de tout le template) plus une règle à lui.</div>
+        </div>
+        <div class="bcount">3 agents</div>
+      </div>
+
+      <form class="composer" onsubmit="return false">
+        <span class="plus">+ Nommer un agent</span>
+        <input placeholder="Nom de l'agent, ex. « Gimli »" aria-label="Nom de l'agent">
+        <select aria-label="Template de base">
+          <option>Coordinateur</option><option selected>Développeur</option><option>Qualité</option>
+        </select>
+        <button class="btn" type="submit">Ajouter à l'équipe</button>
+      </form>
+
+      <div class="cardgrid">
+        <div class="card">
+          <div class="ch"><span class="badge agent">A</span><span class="cn">Aragorn</span><span class="cm">coordinateur</span><span class="x">×</span></div>
+          <div class="inherit"><span class="via">basé sur</span> <span class="frm">Coordinateur</span> <span class="via">— hérite de 1 skill + 1 règle</span></div>
+          <div class="cont">Extras propres à Aragorn</div>
+          <div class="minichips"><span class="mc add">+ skill / règle</span></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="badge agent">A</span><span class="cn">Gimli</span><span class="cm">développeur</span><span class="x">×</span></div>
+          <div class="inherit"><span class="via">basé sur</span> <span class="frm">Développeur</span> <span class="via">— hérite de 2 skills + 1 règle</span></div>
+          <div class="cont">Extras propres à Gimli</div>
+          <div class="minichips">
+            <span class="mc"><i style="background:var(--t-obligation)"></i>Documentation à jour</span>
+            <span class="mc add">+ skill / règle</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="badge agent">A</span><span class="cn">Legolas</span><span class="cm">qualité</span><span class="x">×</span></div>
+          <div class="inherit"><span class="via">basé sur</span> <span class="frm">Qualité</span> <span class="via">— hérite de 1 skill + 1 règle</span></div>
+          <div class="cont">Extras propres à Legolas</div>
+          <div class="minichips"><span class="mc add">+ skill / règle</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== À PART : projet + délégations ===================== -->
+    <div class="apartgrid">
+      <section class="band apartband" id="band-project">
+        <div class="bhead">
+          <div class="bnum side">·</div>
+          <div class="bt">
+            <h2 style="font-size:18px">Règles projet <span class="eq">à part</span></h2>
+            <div class="ex">Portée <b>projet</b>, pas agent&nbsp;: s'appliquent à tout le monde sur ce projet.</div>
+          </div>
+        </div>
+        <div class="minichips" style="margin-bottom:12px">
+          <span class="mc"><i style="background:var(--t-obligation)"></i>Documentation à jour</span>
+          <span class="mc add">+ règle projet</span>
+        </div>
+        <p class="ghint">Choisis parmi les règles de la bibliothèque celles qui valent pour le projet entier.</p>
+      </section>
+
+      <section class="band apartband" id="band-deleg">
+        <div class="bhead">
+          <div class="bnum side">·</div>
+          <div class="bt">
+            <h2 style="font-size:18px">Chaîne de délégation <span class="eq">à part</span></h2>
+            <div class="ex">Le graphe <b>qui délègue à qui</b>, au niveau de l'équipe.</div>
+          </div>
+        </div>
+        <div class="graph">
+          <div class="gnode gcoord"><span class="av">A</span><div><div class="gn">Aragorn</div><div class="gr">coordinateur</div></div></div>
+          <svg class="gsvg" viewBox="0 0 54 96" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 48 C 26 48, 28 20, 54 20" fill="none" stroke="var(--accent)" stroke-width="2"/>
+            <path d="M0 48 C 26 48, 28 76, 54 76" fill="none" stroke="var(--accent)" stroke-width="2"/>
+            <polygon points="54,20 47,16 47,24" fill="var(--accent)"/>
+            <polygon points="54,76 47,72 47,80" fill="var(--accent)"/>
+          </svg>
+          <div class="gright">
+            <div class="gnode"><span class="av">G</span><div><div class="gn">Gimli</div><div class="gr">développeur</div></div></div>
+            <div class="gnode"><span class="av">L</span><div><div class="gn">Legolas</div><div class="gr">qualité</div></div></div>
+          </div>
+        </div>
+        <div class="minichips" style="margin-top:12px"><span class="mc add">+ délégation</span></div>
+      </section>
+    </div>
+
+    <!-- DOCK réservé à la conversation-authoring (P2) — présent mais inactif -->
+    <div class="dock" aria-label="Définir en conversant (bientôt)">
+      <div class="di" aria-hidden="true">◎</div>
+      <div class="dt">
+        <b>Définir en conversant</b>
+        <p>Bientôt&nbsp;: décris ton besoin, l'assistant propose des règles et skills prêts à valider.</p>
+      </div>
+      <input placeholder="« Crée un agent Qualité qui ne peut jamais forcer un push »" disabled aria-label="Zone de conversation (désactivée)">
+      <span class="soon">Bientôt</span>
+    </div>
+
+  </div>
+  </main>
+</div>
+</body>
+</html>

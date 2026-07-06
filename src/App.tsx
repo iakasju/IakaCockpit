@@ -61,6 +61,8 @@ import "./theme/fonts.css";
 // servi en 'self' via le bundle Vite (build-time) -> CSP intacte, zero inline runtime.
 import "./assets/chartes/chartes.css";
 import "./theme/app.css";
+// Vue « Cadre » (L22) : style scopé sous `.cadre` (refonte ergonomique mock Loki).
+import "./theme/cadre.css";
 
 export default function App(): JSX.Element {
   const { t } = useTranslation();
