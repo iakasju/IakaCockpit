@@ -101,10 +101,13 @@ conversation avec micro de dictée.
   les couches : **Règles** (bibliothèque typée), **Skills** (paquets), **Templates** (assemblage
   groupé par type), **Team** (instances nommées, réutilise `useTeams`), **Règles projet**,
   **Délégations** (éditeur de graphe). Édition directe (pickers/formulaires), **pas de LLM**.
-- **P2 — Conversation-authoring.** Zone de conversation par couche : Ollama (via `ai.rs chat`,
-  sortie JSON contrainte) **propose** une règle/skill/assemblage structuré, l'utilisateur
-  valide/édite ; micro de dictée (`useVoiceDictation`) branché. Anti-duplication (repérer une
-  règle déjà couverte par un skill).
+- **P2 — Définir en conversant (reciblé 2026-07-06).** Un **champ de prompt LLM PAR ÉTAGE** ;
+  le LLM **embarqué** (prompt système app, endpoint OpenAI-compat + mock/dégradation calque L3/L8)
+  **RÉDIGE l'artefact** — il ne propose pas des bouts à cocher. L'**assemblage reste direct/oui-non,
+  SANS IA**. Décisions : **skill = paragraphe LLM versionné EN PLUS des règles** (`Skill.description`
+  + `Skill.versions[]`) ; **agent = brief LLM** (`Agent.brief`) ; **`frame.json` reste la source**,
+  **`agent.md`/skills = EXPORTS** générés. Dictée `useVoiceDictation` sur les champs de prompt.
+  Différé P2b : catégories **hooks/limites** en listbox d'assemblage.
 - **P3 — Enforcement.** Traduire le cadre validé → `--allowedTools` / `--append-system-prompt`
   (runner, `terminal.rs`) + garde de délégations (hook L5). Lecture dans le Journal.
 

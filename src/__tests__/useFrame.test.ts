@@ -142,6 +142,34 @@ describe("useFrame (L22-P1)", () => {
     expect(seed).not.toHaveBeenCalled();
   });
 
+  it("authorSkill pose le paragraphe et empile les versions (P2)", async () => {
+    const api = mockApi();
+    const { result } = await ready(api);
+    let sid = "";
+    act(() => {
+      sid = result.current.addSkill("Git sûr");
+    });
+    act(() => result.current.authorSkill(sid, "para v1"));
+    act(() => result.current.authorSkill(sid, "para v2"));
+    const s = result.current.frame.skills[0];
+    expect(s.description).toBe("para v2");
+    expect(s.versions).toEqual(["para v1", "para v2"]);
+  });
+
+  it("setAgentBrief pose le brief d'un agent (P2)", async () => {
+    const api = mockApi();
+    const { result } = await ready(api);
+    let t = "", a = "";
+    act(() => {
+      t = result.current.addTemplate("T");
+    });
+    act(() => {
+      a = result.current.addAgent("Gimli", t);
+    });
+    act(() => result.current.setAgentBrief(a, "brief de Gimli"));
+    expect(result.current.frame.agents[0].brief).toBe("brief de Gimli");
+  });
+
   it("hors natif : pas d'appel façade, état en mémoire", async () => {
     const frameSave = vi.fn();
     const frameLoad = vi.fn();

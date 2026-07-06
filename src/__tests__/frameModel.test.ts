@@ -120,6 +120,19 @@ describe("frame model (L22-P1)", () => {
     expect(f.agents[0].extraSkillIds).toEqual([]); // défaut
   });
 
+  it("parseFrame lit le paragraphe/versions d'un skill et le brief d'agent (P2)", () => {
+    const f = parseFrame({
+      teamId: "x",
+      skills: [
+        { id: "s1", name: "Git sûr", ruleIds: [], description: "para v2", versions: ["para v1", "para v2"] },
+      ],
+      agents: [{ id: "a1", name: "N", templateId: "t1", brief: "cadre les ajouts" }],
+    });
+    expect(f.skills[0].description).toBe("para v2");
+    expect(f.skills[0].versions).toEqual(["para v1", "para v2"]);
+    expect(f.agents[0].brief).toBe("cadre les ajouts");
+  });
+
   it("parseFrame sur null/undefined → cadre vide en forme", () => {
     const f = parseFrame(undefined, "fb");
     expect(f.teamId).toBe("fb");

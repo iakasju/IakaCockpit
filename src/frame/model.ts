@@ -45,11 +45,20 @@ export interface Rule {
   scope?: RuleScope;
 }
 
-/** Skill : paquet NOMMÉ de règles réutilisable (ex. « Git sûr »). */
+/**
+ * Skill : paquet NOMMÉ de règles réutilisable (ex. « Git sûr »). L22-P2 : gagne un
+ * **paragraphe rédigé par le LLM** (`description`) + son **historique de versions**
+ * (`versions`, plus ancienne → plus récente ; la dernière = `description`). Les règles
+ * typées restent (décision « paragraphe EN PLUS des règles »).
+ */
 export interface Skill {
   id: string;
   name: string;
   ruleIds: string[];
+  /** Paragraphe courant rédigé par le LLM (P2). */
+  description?: string;
+  /** Historique des paragraphes (P2), du plus ancien au plus récent. */
+  versions?: string[];
 }
 
 /** Template d'agent : assemblage de skills + de règles = un type d'agent. */
@@ -64,7 +73,11 @@ export interface AgentTemplate {
   ruleIds: string[];
 }
 
-/** Agent : instance nommée dans une team = template + skills/règles en plus + nom. */
+/**
+ * Agent : instance nommée dans une team = template + skills/règles en plus + nom. L22-P2 :
+ * gagne un **brief rédigé par le LLM** (`brief`) qui cadre ses ajouts propres (exporté dans
+ * l'`agent.md`).
+ */
 export interface AgentInstance {
   id: string;
   /** Nom du persona dans la team (« Gimli »). */
@@ -72,6 +85,8 @@ export interface AgentInstance {
   templateId: string;
   extraSkillIds: string[];
   extraRuleIds: string[];
+  /** Brief rédigé par le LLM cadrant les ajouts propres à l'agent (P2). */
+  brief?: string;
 }
 
 /** Arête du graphe de délégations (qui peut déléguer à qui) — ids d'agents. */
@@ -178,7 +193,10 @@ export function parseFrame(raw: unknown, fallbackTeamId = ""): Frame {
   const skills: Skill[] = Array.isArray(r.skills)
     ? (r.skills as unknown[]).map((x) => {
         const o = (x ?? {}) as Record<string, unknown>;
-        return { id: str(o.id), name: str(o.name), ruleIds: strArr(o.ruleIds) };
+        const skill: Skill = { id: str(o.id), name: str(o.name), ruleIds: strArr(o.ruleIds) };
+        if (typeof o.description === "string") skill.description = o.description;
+        if (Array.isArray(o.versions)) skill.versions = strArr(o.versions);
+        return skill;
       }).filter((x) => x.id !== "")
     : [];
   const templates: AgentTemplate[] = Array.isArray(r.templates)
@@ -197,13 +215,15 @@ export function parseFrame(raw: unknown, fallbackTeamId = ""): Frame {
   const agents: AgentInstance[] = Array.isArray(r.agents)
     ? (r.agents as unknown[]).map((x) => {
         const o = (x ?? {}) as Record<string, unknown>;
-        return {
+        const agent: AgentInstance = {
           id: str(o.id),
           name: str(o.name),
           templateId: str(o.templateId),
           extraSkillIds: strArr(o.extraSkillIds),
           extraRuleIds: strArr(o.extraRuleIds),
         };
+        if (typeof o.brief === "string") agent.brief = o.brief;
+        return agent;
       }).filter((x) => x.id !== "")
     : [];
   const delegations: DelegationEdge[] = Array.isArray(r.delegations)

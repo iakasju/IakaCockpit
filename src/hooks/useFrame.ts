@@ -52,6 +52,10 @@ export interface UseFrame {
   renameSkill: (id: string, name: string) => void;
   removeSkill: (id: string) => void;
   toggleSkillRule: (skillId: string, ruleId: string) => void;
+  /** P2 : pose le paragraphe rédigé (LLM) d'un skill + l'empile dans ses versions. */
+  authorSkill: (skillId: string, description: string) => void;
+  /** P2 : pose le brief rédigé (LLM) d'un agent. */
+  setAgentBrief: (agentId: string, brief: string) => void;
 
   addTemplate: (name: string, roleKey?: string) => string;
   updateTemplate: (id: string, patch: Partial<Omit<AgentTemplate, "id">>) => void;
@@ -229,6 +233,26 @@ export function useFrame(
       })),
     [mutate],
   );
+  const authorSkill = useCallback(
+    (skillId: string, description: string): void =>
+      mutate((f) => ({
+        ...f,
+        skills: f.skills.map((s) =>
+          s.id === skillId
+            ? { ...s, description, versions: [...(s.versions ?? []), description] }
+            : s,
+        ),
+      })),
+    [mutate],
+  );
+  const setAgentBrief = useCallback(
+    (agentId: string, brief: string): void =>
+      mutate((f) => ({
+        ...f,
+        agents: f.agents.map((a) => (a.id === agentId ? { ...a, brief } : a)),
+      })),
+    [mutate],
+  );
 
   // --- Templates ---
   const addTemplate = useCallback(
@@ -363,6 +387,8 @@ export function useFrame(
     renameSkill,
     removeSkill,
     toggleSkillRule,
+    authorSkill,
+    setAgentBrief,
     addTemplate,
     updateTemplate,
     removeTemplate,
