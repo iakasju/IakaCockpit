@@ -13,6 +13,7 @@ pub mod codex;
 pub mod config;
 pub mod db;
 pub mod economy;
+pub mod frame;
 pub mod git;
 pub mod maincourante;
 pub mod notify;
@@ -81,6 +82,8 @@ pub fn run() {
             notify::n8n_has_token,
             seed::seed_demo,
             voice::voice_listen,
+            frame::frame_load,
+            frame::frame_save,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");

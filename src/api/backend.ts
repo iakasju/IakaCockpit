@@ -397,6 +397,21 @@ export function voiceListen(): Promise<string> {
   return call<string>("voice_listen");
 }
 
+// --- Cadre iakaframe (L22 — persistance frame.json par team, AR-1) ---
+
+/**
+ * Charge le `frame.json` d'une team (chaîne JSON brute, ou `null` si absent). Rust est
+ * agnostique du schéma : le front parse via `frame/model.parseFrame`. Non destructif.
+ */
+export function frameLoad(teamId: string): Promise<string | null> {
+  return call<string | null>("frame_load", { teamId });
+}
+
+/** Écrit (atomique) le `frame.json` d'une team. Le front sérialise le `Frame`. */
+export function frameSave(teamId: string, json: string): Promise<void> {
+  return call<void>("frame_save", { teamId, json });
+}
+
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
 
 /** Racine du chapeau (défaut calculé par OS si non persistée). */
@@ -675,6 +690,8 @@ export const backend = {
   n8nHasToken,
   seedDemo,
   voiceListen,
+  frameLoad,
+  frameSave,
   ptyOpen,
   ptyWrite,
   ptyResize,
