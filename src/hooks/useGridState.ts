@@ -20,6 +20,7 @@ export type ViewId =
   | "working"
   | "journal"
   | "teams"
+  | "cadre"
   | "settings";
 
 export interface UseGridState {

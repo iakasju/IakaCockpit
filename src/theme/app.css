@@ -3325,3 +3325,257 @@ select.field {
   color: var(--accent);
   animation: voice-pulse 1s ease-in-out infinite;
 }
+
+/* ---- Vue « Cadre » (L22) — éditeur des 6 couches ---- */
+.view.cadre {
+  padding: 22px 28px 30px;
+  overflow-y: auto;
+}
+.cadrehead {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.cadrehead h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 23px;
+  margin: 0;
+}
+.cadrehead .sub {
+  color: var(--text-3);
+  font-size: 12.5px;
+  margin-top: 3px;
+}
+.scopesel {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.scopesel select,
+.cadreadd select,
+.cadreadd input {
+  background: var(--surf-2);
+  border: 1px solid var(--surf-2);
+  border-radius: 9px;
+  padding: 8px 11px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.cadretabs {
+  display: flex;
+  gap: 3px;
+  margin: 16px 0 0;
+  border-bottom: 1px solid var(--surf-2);
+  flex-wrap: wrap;
+}
+.cadretab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px 12px;
+  margin-bottom: -1px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.cadretab:hover {
+  color: var(--text-2);
+}
+.cadretab.on {
+  color: var(--text);
+  border-bottom-color: var(--text);
+  font-weight: 600;
+}
+.cadretab .n {
+  font-size: 11px;
+  background: var(--surf-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-variant-numeric: tabular-nums;
+}
+.cadretab.on .n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.cadrewarn {
+  margin: 14px 0 0;
+  padding: 9px 13px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.cadrebody {
+  margin-top: 16px;
+}
+.cadreadd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.cadreadd input {
+  min-width: 240px;
+  flex: 1;
+}
+.cadrelist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
+.cadrerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--surf-2);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.cadrecard {
+  border: 1px solid var(--surf-2);
+  border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.cadrecard .cadrerow {
+  border: none;
+  border-radius: 0;
+}
+.cdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.t-interdit {
+  background: #b5322b;
+}
+.t-autorisation {
+  background: #1f7a52;
+}
+.t-obligation {
+  background: #6b57c7;
+}
+.t-tool {
+  background: #0d7d84;
+}
+.t-geste {
+  background: #b06a12;
+}
+.t-competence {
+  background: var(--accent);
+}
+.ctype {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--font-display);
+  min-width: 82px;
+}
+.clabel {
+  flex: 1;
+  font-size: 13px;
+}
+.clabel.strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  flex: 0 1 auto;
+}
+.cmeta {
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+.crm {
+  border: 1px solid var(--surf-2);
+  background: transparent;
+  color: var(--text-3);
+  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.crm:hover {
+  color: #b5322b;
+  border-color: #b5322b;
+}
+.cexp {
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+  width: 18px;
+}
+.cadrepick {
+  padding: 4px 12px 14px 32px;
+}
+.picklbl {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 10px 0 8px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.pickchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--surf-2);
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.pickchip.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+  font-weight: 600;
+}
+.cadreempty {
+  color: var(--text-3);
+  font-size: 12.5px;
+  font-style: italic;
+}
+.tmplpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surf-2);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+}
+.delegarrow {
+  color: var(--text-3);
+}

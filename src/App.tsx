@@ -44,7 +44,9 @@ import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { JournalView } from "./views/JournalView";
 import { TeamsView } from "./views/TeamsView";
+import { CadreView } from "./views/CadreView";
 import { SettingsView } from "./views/SettingsView";
+import { useFrame } from "./hooks/useFrame";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { AvatarMember } from "./components/ProjectCard";
@@ -70,6 +72,9 @@ export default function App(): JSX.Element {
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
+  // Cadre iakaframe (L22) : autorité du frame.json de la team courante (par défaut la
+  // team par défaut ; l'utilisateur change de portée via le sélecteur de la vue Cadre).
+  const frame = useFrame(teams.defaultTeamId);
 
   // i18n : applique la langue persistée (ui_lang) au runtime i18next. `useSettings`
   // reste libre d'i18n (séparation) ; ici on synchronise le moteur sur l'état.
@@ -365,6 +370,14 @@ export default function App(): JSX.Element {
         >
           <span className="rlabel">{t("nav.teams")}</span>
         </button>
+        <button
+          type="button"
+          className={`railitem${grid.activeView === "cadre" ? " on" : ""}`}
+          aria-current={grid.activeView === "cadre" ? "page" : undefined}
+          onClick={() => grid.setActiveView("cadre")}
+        >
+          <span className="rlabel">{t("nav.cadre")}</span>
+        </button>
         <div className="sep" />
         {/* Nav vocale retirée du rail (2026-07-02) : le vocal est désormais une dictée
             DANS le chat (WorkingView), pas un pilote de navigation. */}
@@ -444,6 +457,9 @@ export default function App(): JSX.Element {
         {grid.activeView === "journal" && <JournalView />}
         {grid.activeView === "teams" && (
           <TeamsView teams={teams} theme={settings.theme} />
+        )}
+        {grid.activeView === "cadre" && (
+          <CadreView frame={frame} teams={teams.teams} />
         )}
         {grid.activeView === "settings" && (
           <SettingsView

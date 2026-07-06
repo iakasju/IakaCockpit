@@ -25,6 +25,7 @@ const VIEW_SYNONYMS: Record<ViewId, readonly string[]> = {
   working: ["travail", "working", "table", "chantier"],
   journal: ["journal", "main courante", "mains courantes", "historique", "log", "logs"],
   teams: ["equipes", "equipe", "team", "teams", "roster", "agents"],
+  cadre: ["cadre", "frame", "regles", "regle"],
   settings: [
     "reglages",
     "reglage",
@@ -43,6 +44,7 @@ const VIEW_PRIORITY: readonly ViewId[] = [
   "working",
   "journal",
   "teams",
+  "cadre",
   "settings",
 ];
 
