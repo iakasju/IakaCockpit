@@ -51,7 +51,8 @@ import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { AvatarMember } from "./components/ProjectCard";
 import type { DemoTeamMember } from "./mock/demoTeam";
-import type { Project, RunnerEvent } from "./api/backend";
+import { backend, type Project, type RunnerEvent } from "./api/backend";
+import { makeDemoFrame } from "./mock/demoFrame";
 import "./theme/tokens.css";
 // Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
 // commités et servis en 'self' (CSP intacte, zero origine Google, offline).
@@ -74,7 +75,18 @@ export default function App(): JSX.Element {
   const nextStep = useNextStep();
   // Cadre iakaframe (L22) : autorité du frame.json de la team courante (par défaut la
   // team par défaut ; l'utilisateur change de portée via le sélecteur de la vue Cadre).
-  const frame = useFrame(teams.defaultTeamId);
+  // Semence de démo DEV-gardée (`import.meta.env.DEV`) : si le frame.json de la team par
+  // défaut est absent, on pose le cadre d'exemple (non destructif, zéro seed en prod).
+  const frame = useFrame(teams.defaultTeamId, backend, (tid) =>
+    import.meta.env.DEV && tid !== "" && tid === teams.defaultTeamId
+      ? makeDemoFrame(tid)
+      : null,
+  );
+  // Aligne la portée du Cadre sur la team par défaut dès qu'elle est connue (une fois).
+  const { teamId: frameTeamId, setTeamId: setFrameTeamId } = frame;
+  useEffect(() => {
+    if (teams.defaultTeamId && frameTeamId === "") setFrameTeamId(teams.defaultTeamId);
+  }, [teams.defaultTeamId, frameTeamId, setFrameTeamId]);
 
   // i18n : applique la langue persistée (ui_lang) au runtime i18next. `useSettings`
   // reste libre d'i18n (séparation) ; ici on synchronise le moteur sur l'état.

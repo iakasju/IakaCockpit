@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useFrame } from "../hooks/useFrame";
-import { resolveAgentRules } from "../frame/model";
+import { resolveAgentRules, emptyFrame, type Frame } from "../frame/model";
 import type { Backend } from "../api/backend";
 
 /**
@@ -113,6 +113,33 @@ describe("useFrame (L22-P1)", () => {
     const api = mockApi({ frameLoad: vi.fn().mockResolvedValue(existing) });
     const { result } = await ready(api);
     expect(result.current.frame.rules.map((r) => r.id)).toEqual(["r1"]);
+  });
+
+  it("sème un cadre de démo quand le frame.json est absent (seedFrame)", async () => {
+    const api = mockApi(); // frameLoad -> null
+    const seed: Frame = {
+      version: 1,
+      teamId: "iakaframe",
+      rules: [{ id: "r1", type: "tool", label: "Edit" }],
+      skills: [],
+      templates: [],
+      agents: [],
+      projectRuleIds: [],
+      delegations: [],
+    };
+    const hook = renderHook(() => useFrame("iakaframe", api, () => seed));
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.frame.rules.map((r) => r.id)).toEqual(["r1"]);
+    expect(api.frameSave).toHaveBeenCalled(); // semence persistée
+  });
+
+  it("ne sème PAS si un frame.json existe déjà (non destructif)", async () => {
+    const existing = JSON.stringify(emptyFrame("iakaframe"));
+    const seed = vi.fn().mockReturnValue(null);
+    const api = mockApi({ frameLoad: vi.fn().mockResolvedValue(existing) });
+    const hook = renderHook(() => useFrame("iakaframe", api, seed));
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(seed).not.toHaveBeenCalled();
   });
 
   it("hors natif : pas d'appel façade, état en mémoire", async () => {

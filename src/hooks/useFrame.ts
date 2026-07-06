@@ -70,7 +70,16 @@ export interface UseFrame {
   removeDelegation: (from: string, to: string) => void;
 }
 
-export function useFrame(initialTeamId = "", api: Backend = backend): UseFrame {
+export function useFrame(
+  initialTeamId = "",
+  api: Backend = backend,
+  /**
+   * Semence optionnelle (démo dev) : si le `frame.json` de la team est ABSENT et que
+   * ce callback renvoie un cadre, il est posé PUIS persisté (non destructif — jamais
+   * si un fichier existe déjà). App le garde derrière le flag démo.
+   */
+  seedFrame?: (teamId: string) => Frame | null,
+): UseFrame {
   const [teamId, setTeamId] = useState(initialTeamId);
   const [frame, setFrame] = useState<Frame>(() => emptyFrame(initialTeamId));
   // Démarre à `true` : le cadre est toujours chargé au montage/au changement de team.
@@ -78,6 +87,9 @@ export function useFrame(initialTeamId = "", api: Backend = backend): UseFrame {
   const [error, setError] = useState<string | null>(null);
   // Évite d'écraser le fichier avec le cadre vide initial avant le 1er chargement.
   const loadedRef = useRef(false);
+  // Ref pour appeler la semence À JOUR sans relancer le chargement à chaque render.
+  const seedRef = useRef(seedFrame);
+  seedRef.current = seedFrame;
 
   // (Re)charge le cadre à chaque changement de team.
   useEffect(() => {
@@ -97,7 +109,22 @@ export function useFrame(initialTeamId = "", api: Backend = backend): UseFrame {
         } catch {
           parsed = null;
         }
-        setFrame(parsed ? parseFrame(parsed, teamId) : emptyFrame(teamId));
+        if (parsed) {
+          setFrame(parseFrame(parsed, teamId));
+        } else {
+          // Absent → semence démo si fournie (puis persistée), sinon cadre vide.
+          const seed = seedRef.current?.(teamId) ?? null;
+          if (seed) {
+            setFrame(seed);
+            if (api.isTauri()) {
+              api
+                .frameSave(seed.teamId, JSON.stringify(seed, null, 2))
+                .catch((e) => setError(String(e)));
+            }
+          } else {
+            setFrame(emptyFrame(teamId));
+          }
+        }
       } catch (e) {
         if (!alive) return;
         setError(String(e));
