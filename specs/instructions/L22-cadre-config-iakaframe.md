@@ -2,7 +2,8 @@
 
 > Rédigé au cadrage (2026-07-06), à partir d'une demande de Stéphane + 3 itérations de
 > mock (artifact « Le Cadre » v1→v3). Consommé comme instruction de travail.
-> Statut : **cadré, arbitrages AR-1..6 à confirmer par Stéphane avant P1.**
+> Statut : **cadré. AR-1 + AR-3 TRANCHÉS (2026-07-06) ; AR-2/4/5/6 à confirmer en cours.**
+> AR-1 = `frame.json` versionnable par team. AR-3 = P1 éditeurs seuls, conversation en P2.
 
 ---
 
