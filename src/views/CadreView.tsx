@@ -13,6 +13,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { UseFrame } from "../hooks/useFrame";
+import { useFrameAuthor, type UseFrameAuthor } from "../hooks/useFrameAuthor";
+import { useVoiceDictation } from "../hooks/useVoiceDictation";
 import { RULE_TYPES, type Rule, type RuleType } from "../frame/model";
 
 interface CadreViewProps {
@@ -37,9 +39,73 @@ function Between({ label }: { label: string }): JSX.Element {
   );
 }
 
+/**
+ * AuthorBox — champ de prompt LLM d'un étage (L22-P2). Affiche le texte courant (skill
+ * paragraphe / agent brief) puis un prompt + micro de dictée + « Rédiger ». La dictée
+ * REMPLIT le champ (pas d'auto-envoi ici). Le texte rédigé est rangé par l'appelant.
+ */
+function AuthorBox({
+  label,
+  currentText,
+  versions,
+  busy,
+  onWrite,
+}: {
+  label: string;
+  currentText?: string;
+  versions?: number;
+  busy: boolean;
+  onWrite: (instruction: string) => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const [prompt, setPrompt] = useState("");
+  const voice = useVoiceDictation((text) =>
+    setPrompt((p) => (p ? `${p} ${text}` : text)),
+  );
+  const submit = (): void => {
+    if (!prompt.trim() || busy) return;
+    onWrite(prompt.trim());
+    setPrompt("");
+  };
+  return (
+    <div className="authorbox">
+      {currentText && <p className="authorpara">{currentText}</p>}
+      <form
+        className="authorrow"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <button
+          type="button"
+          className={`micbtn${voice.status === "listening" ? " on" : ""}`}
+          aria-label={t("voice.dictate")}
+          disabled={voice.status === "unsupported"}
+          onClick={() => void voice.listen()}
+        >
+          ◉
+        </button>
+        <input
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={label}
+        />
+        <button className="btn" type="submit" disabled={busy || !prompt.trim()}>
+          {busy ? t("cadre.writing") : t("cadre.write")}
+        </button>
+      </form>
+      {!!versions && versions > 0 && (
+        <span className="cm">{t("cadre.nVersions", { count: versions })}</span>
+      )}
+    </div>
+  );
+}
+
 export function CadreView({ frame, teams }: CadreViewProps): JSX.Element {
   const { t } = useTranslation();
   const f = frame.frame;
+  const authoring = useFrameAuthor();
 
   return (
     <section className="cadre" aria-label={t("cadre.ariaLabel")}>
@@ -143,11 +209,11 @@ export function CadreView({ frame, teams }: CadreViewProps): JSX.Element {
 
         <RulesBand frame={frame} />
         <Between label={t("cadre.betweenGroup")} />
-        <SkillsBand frame={frame} />
+        <SkillsBand frame={frame} authoring={authoring} />
         <Between label={t("cadre.betweenAssemble")} />
         <TemplatesBand frame={frame} />
         <Between label={t("cadre.betweenInstantiate")} />
-        <AgentsBand frame={frame} />
+        <AgentsBand frame={frame} authoring={authoring} />
 
         <div className="apartgrid">
           <ProjectBand frame={frame} />
@@ -285,7 +351,13 @@ function RulesBand({ frame }: { frame: UseFrame }): JSX.Element {
 }
 
 // ---------------- 2 · Skills ----------------
-function SkillsBand({ frame }: { frame: UseFrame }): JSX.Element {
+function SkillsBand({
+  frame,
+  authoring,
+}: {
+  frame: UseFrame;
+  authoring: UseFrameAuthor;
+}): JSX.Element {
   const { t } = useTranslation();
   const f = frame.frame;
   const [name, setName] = useState("");
@@ -367,6 +439,19 @@ function SkillsBand({ frame }: { frame: UseFrame }): JSX.Element {
                   {avail.length === 0 && <span className="ghint">{t("cadre.empty")}</span>}
                 </div>
               )}
+              <AuthorBox
+                label={t("cadre.skillPrompt")}
+                currentText={s.description}
+                versions={s.versions?.length}
+                busy={authoring.busyId === s.id}
+                onWrite={(instr) =>
+                  void authoring
+                    .author(s.id, "skill", s.name, instr, s.description)
+                    .then((txt) => {
+                      if (txt) frame.authorSkill(s.id, txt);
+                    })
+                }
+              />
             </div>
           );
         })}
@@ -519,7 +604,13 @@ function TemplatesBand({ frame }: { frame: UseFrame }): JSX.Element {
 }
 
 // ---------------- 4 · Agents ----------------
-function AgentsBand({ frame }: { frame: UseFrame }): JSX.Element {
+function AgentsBand({
+  frame,
+  authoring,
+}: {
+  frame: UseFrame;
+  authoring: UseFrameAuthor;
+}): JSX.Element {
   const { t } = useTranslation();
   const f = frame.frame;
   const [name, setName] = useState("");
@@ -640,6 +731,18 @@ function AgentsBand({ frame }: { frame: UseFrame }): JSX.Element {
                   )}
                 </div>
               )}
+              <AuthorBox
+                label={t("cadre.agentPrompt")}
+                currentText={a.brief}
+                busy={authoring.busyId === a.id}
+                onWrite={(instr) =>
+                  void authoring
+                    .author(a.id, "agent", a.name, instr, a.brief)
+                    .then((txt) => {
+                      if (txt) frame.setAgentBrief(a.id, txt);
+                    })
+                }
+              />
             </div>
           );
         })}
