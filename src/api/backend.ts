@@ -413,6 +413,18 @@ export function frameSave(teamId: string, json: string): Promise<void> {
 }
 
 /**
+ * L22-P2b — exporte les fichiers markdown du Cadre (un `agent.md` par agent, générés par
+ * le front via `frame/export`) sous `<hat>/.iakacockpit/frames/<team>/`. Renvoie le chemin
+ * du dossier. Rust est agnostique du contenu (il écrit ce que le front lui donne).
+ */
+export function frameExport(
+  teamId: string,
+  files: { name: string; content: string }[],
+): Promise<string> {
+  return call<string>("frame_export", { teamId, files });
+}
+
+/**
  * L22-P2 — le LLM embarqué **rédige** un artefact du Cadre : `kind` = `"skill"` (paragraphe
  * de skill) ou `"agent"` (brief d'agent). `context` = version actuelle (pour réviser).
  * Réutilise le type `ChatReply` (`content` = texte rédigé, `provider` = litellm|mock).
@@ -707,6 +719,7 @@ export const backend = {
   voiceListen,
   frameLoad,
   frameSave,
+  frameExport,
   frameAuthor,
   ptyOpen,
   ptyWrite,

@@ -382,6 +382,20 @@
 .cadre .btn:hover {
   filter: brightness(1.06);
 }
+.cadre .ghostbtn {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--surf-2);
+  border-radius: 10px;
+  padding: 7px 12px;
+  background: var(--surf);
+  color: var(--text-2);
+}
+.cadre .ghostbtn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
 .cadre .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

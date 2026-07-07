@@ -16,6 +16,8 @@ import type { UseFrame } from "../hooks/useFrame";
 import { useFrameAuthor, type UseFrameAuthor } from "../hooks/useFrameAuthor";
 import { useVoiceDictation } from "../hooks/useVoiceDictation";
 import { RULE_TYPES, type Rule, type RuleType } from "../frame/model";
+import { frameExportFiles } from "../frame/export";
+import { backend } from "../api/backend";
 
 interface CadreViewProps {
   frame: UseFrame;
@@ -106,6 +108,27 @@ export function CadreView({ frame, teams }: CadreViewProps): JSX.Element {
   const { t } = useTranslation();
   const f = frame.frame;
   const authoring = useFrameAuthor();
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
+
+  // L22-P2b : génère les agent.md (front, pur) puis les écrit (Rust). frame.json = source.
+  const doExport = async (): Promise<void> => {
+    setExportMsg(null);
+    if (!backend.isTauri()) {
+      setExportMsg(t("cadre.exportUnavailable"));
+      return;
+    }
+    const files = frameExportFiles(f);
+    if (files.length === 0) {
+      setExportMsg(t("cadre.exportEmpty"));
+      return;
+    }
+    try {
+      const dir = await backend.frameExport(frame.teamId, files);
+      setExportMsg(t("cadre.exportDone", { count: files.length, dir }));
+    } catch (e) {
+      setExportMsg(String(e));
+    }
+  };
 
   return (
     <section className="cadre" aria-label={t("cadre.ariaLabel")}>
@@ -132,8 +155,16 @@ export function CadreView({ frame, teams }: CadreViewProps): JSX.Element {
                 </option>
               ))}
             </select>
+            <button type="button" className="btn ghostbtn" onClick={() => void doExport()}>
+              {t("cadre.export")}
+            </button>
           </div>
         </div>
+        {exportMsg && (
+          <div className="cadrewarn" role="status">
+            {exportMsg}
+          </div>
+        )}
 
         {/* La chaîne : modèle + point de départ + flux, d'un coup d'œil */}
         <section className="spine" aria-label={t("cadre.ariaLabel")}>

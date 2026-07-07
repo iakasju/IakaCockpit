@@ -85,6 +85,7 @@ pub fn run() {
             voice::voice_listen,
             frame::frame_load,
             frame::frame_save,
+            frame::frame_export,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");

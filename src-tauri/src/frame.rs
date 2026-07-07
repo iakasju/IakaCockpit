@@ -8,10 +8,20 @@
 
 use std::path::{Path, PathBuf};
 
+use serde::Deserialize;
+
 use crate::pathguard;
 use crate::paths;
 
 const FRAMES_DIR: &str = ".iakacockpit/frames";
+
+/// Un fichier markdown à exporter (L22-P2b). Le CONTENU est généré côté front (agnostique
+/// du schéma) ; Rust ne fait qu'écrire sous un dossier sûr.
+#[derive(Deserialize)]
+pub struct ExportFile {
+    pub name: String,
+    pub content: String,
+}
 
 /// Nom de fichier sûr à partir d'un `team_id` quelconque (le team_id est libre).
 fn slug(team_id: &str) -> String {
@@ -71,6 +81,33 @@ pub fn frame_save(team_id: String, json: String) -> Result<(), String> {
     save_in(&paths::resolve_hat_root(), &team_id, &json)
 }
 
+/// Dossier d'export markdown d'une team : `<hat>/.iakacockpit/frames/<team>/` (à côté du
+/// `<team>.json`). Anti-traversal `pathguard`.
+fn export_dir_in(root: &Path, team_id: &str) -> Result<PathBuf, String> {
+    let base = root.join(FRAMES_DIR);
+    pathguard::safe_path(&base, Path::new(&slug(team_id)))
+        .map_err(|e| format!("dossier export invalide: {e:?}"))
+}
+
+fn export_in(root: &Path, team_id: &str, files: &[ExportFile]) -> Result<String, String> {
+    let dir = export_dir_in(root, team_id)?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("création dossier export: {e}"))?;
+    for f in files {
+        // Chaque nom de fichier est ressluggé + borné sous le dossier (défense).
+        let path = pathguard::safe_path(&dir, Path::new(&slug(&f.name)))
+            .map_err(|e| format!("nom de fichier export invalide: {e:?}"))?;
+        std::fs::write(&path, f.content.as_bytes()).map_err(|e| format!("écriture export: {e}"))?;
+    }
+    Ok(dir.to_string_lossy().to_string())
+}
+
+/// Exporte les fichiers markdown du Cadre (un `agent.md` par agent, générés par le front)
+/// sous `<hat>/.iakacockpit/frames/<team>/`. Renvoie le chemin du dossier.
+#[tauri::command]
+pub fn frame_export(team_id: String, files: Vec<ExportFile>) -> Result<String, String> {
+    export_in(&paths::resolve_hat_root(), &team_id, &files)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -111,6 +148,26 @@ mod tests {
         let json = r#"{"version":1,"teamId":"iakaframe","rules":[]}"#;
         save_in(&root, "iakaframe", json).unwrap();
         assert_eq!(load_in(&root, "iakaframe").unwrap().as_deref(), Some(json));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn export_ecrit_les_md_sous_le_dossier_team() {
+        let root = tmp("export");
+        let files = vec![
+            ExportFile {
+                name: "gimli.md".to_string(),
+                content: "# Agent — Gimli".to_string(),
+            },
+            ExportFile {
+                name: "legolas.md".to_string(),
+                content: "# Agent — Legolas".to_string(),
+            },
+        ];
+        let dir = export_in(&root, "iakaframe", &files).unwrap();
+        assert!(dir.ends_with(".iakacockpit/frames/iakaframe"));
+        let p = std::path::Path::new(&dir).join("gimli.md");
+        assert_eq!(std::fs::read_to_string(p).unwrap(), "# Agent — Gimli");
         let _ = std::fs::remove_dir_all(&root);
     }
 
