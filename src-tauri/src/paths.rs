@@ -14,9 +14,14 @@ use std::path::PathBuf;
 
 /// Nom de la variable d'environnement de surcharge du chapeau.
 pub const HAT_ROOT_ENV: &str = "IAKAFRAME_ROOT";
+/// Surcharge directe du canal de handoff partagé (tests / portable) — miroir de la forge.
+pub const HANDOFF_ROOT_ENV: &str = "IAKA_HANDOFF_ROOT";
 
 /// Sous-dossier par défaut du chapeau, relatif au home de l'utilisateur.
 const HAT_SUBDIR: &str = "work";
+/// Canal de handoff partagé forge↔cockpit, sous le chapeau (H1, Q-B). La forge y ÉCRIT,
+/// le cockpit y LIT.
+const HANDOFF_DIR: &str = "iaka-handoff";
 
 /// Résout la racine du chapeau pour l'OS courant.
 ///
@@ -45,9 +50,42 @@ fn resolve_hat_root_with(env_value: Option<String>, home: Option<PathBuf>) -> Pa
     }
 }
 
+/// Résout la **racine du canal de handoff** (H1, Q-B) : `IAKA_HANDOFF_ROOT` si défini/non
+/// vide, sinon `<chapeau>/iaka-handoff`. Point de rendez-vous PARTAGÉ (la forge écrit, le
+/// cockpit lit) — même chemin des deux côtés.
+pub fn resolve_handoff_root() -> PathBuf {
+    resolve_handoff_root_with(std::env::var(HANDOFF_ROOT_ENV).ok(), resolve_hat_root())
+}
+
+/// Variante testable de `resolve_handoff_root` (env + chapeau injectés).
+fn resolve_handoff_root_with(env_value: Option<String>, hat_root: PathBuf) -> PathBuf {
+    if let Some(v) = env_value {
+        let trimmed = v.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    hat_root.join(HANDOFF_DIR)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn handoff_root_defaut_est_sous_le_chapeau() {
+        let h = resolve_handoff_root_with(None, PathBuf::from("/home/user/work"));
+        assert_eq!(h, PathBuf::from("/home/user/work/iaka-handoff"));
+    }
+
+    #[test]
+    fn handoff_root_env_override_est_respecte() {
+        let h = resolve_handoff_root_with(
+            Some("/tmp/handoff".to_string()),
+            PathBuf::from("/home/user/work"),
+        );
+        assert_eq!(h, PathBuf::from("/tmp/handoff"));
+    }
 
     #[test]
     fn env_override_est_respecte() {

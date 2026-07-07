@@ -439,6 +439,31 @@ export function frameAuthor(
   return call<ChatReply>("frame_author", { kind, name, instruction, context });
 }
 
+// --- Handoff (H1 — réception d'un paquet livré par la forge, canal partagé, LECTURE seule) ---
+
+/** Paquet de handoff brut lu dans le canal (chaînes JSON opaques ; le front tient le schéma). */
+export interface RawHandoffPackage {
+  /** Contenu de `team.json` (Team PURE `@iakaframe/core`), ou `null` si absent. */
+  team_json: string | null;
+  /** Contenu de `handoff.json` (provenance forge), ou `null` si absent. */
+  handoff_json: string | null;
+}
+
+/** Lit le paquet de handoff d'une team depuis le canal partagé `<hat>/iaka-handoff/<teamId>/`. */
+export function handoffRead(teamId: string): Promise<RawHandoffPackage> {
+  return call<RawHandoffPackage>("handoff_read", { teamId });
+}
+
+/** Liste les livraisons disponibles dans le canal (team_ids ayant un `team.json`). */
+export function handoffList(): Promise<string[]> {
+  return call<string[]>("handoff_list");
+}
+
+/** Horloge du backend (epoch ms UTC) — source d'`importedAt` ; jamais `Date.now()` côté JS. */
+export function nowMillis(): Promise<number> {
+  return call<number>("now_millis");
+}
+
 // --- Config (branchée sur le module L0, défaut racine calculé par OS) ---
 
 /** Racine du chapeau (défaut calculé par OS si non persistée). */
@@ -721,6 +746,9 @@ export const backend = {
   frameSave,
   frameExport,
   frameAuthor,
+  handoffRead,
+  handoffList,
+  nowMillis,
   ptyOpen,
   ptyWrite,
   ptyResize,

@@ -15,6 +15,7 @@ pub mod db;
 pub mod economy;
 pub mod frame;
 pub mod git;
+pub mod handoff;
 pub mod maincourante;
 pub mod notify;
 pub mod pathguard;
@@ -86,6 +87,9 @@ pub fn run() {
             frame::frame_load,
             frame::frame_save,
             frame::frame_export,
+            handoff::handoff_read,
+            handoff::handoff_list,
+            handoff::now_millis,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement d'IakaCockpit");
