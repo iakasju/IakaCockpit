@@ -572,17 +572,28 @@ pub fn chat(
 
 // --- L22-P2 : rédaction d'artefacts du Cadre par le LLM embarqué ---
 
+/// Prompt système de rédaction (P2). Contraint le LLM à produire une FICHE autonome (pas
+/// une réponse de conversation) : 3ᵉ personne, sans « tu », sans préambule ni formule
+/// d'ouverture, la demande INTÉGRÉE et non commentée.
 fn build_author_system(kind: &str) -> String {
-    match kind {
-        "agent" => "Tu rédiges le BRIEF d'un agent de la méthode iakaframe (le cadre de \
-travail d'une équipe). Réponds par UN paragraphe concis en français, sans préambule ni \
-titre : ce que cet agent doit faire en propre, en plus de son template."
-            .to_string(),
-        _ => "Tu rédiges la description d'un SKILL de la méthode iakaframe (une capacité \
-réutilisable d'agent). Réponds par UN paragraphe concis en français, sans préambule ni \
-titre : ce que ce skill recouvre et comment il s'applique."
-            .to_string(),
-    }
+    let (objet, sujet) = match kind {
+        "agent" => (
+            "le BRIEF d'un agent d'une équipe : ce que cet agent fait EN PROPRE, en plus de son template",
+            "ce brief",
+        ),
+        _ => (
+            "la description d'un SKILL (une capacité réutilisable d'agent) : ce qu'il recouvre et comment il s'applique",
+            "cette description",
+        ),
+    };
+    format!(
+        "Tu es un rédacteur de fiches pour la méthode iakaframe. Rédige {objet}. \
+Écris UN SEUL paragraphe AUTONOME, à la 3ᵉ personne, en français. \
+INTERDITS : t'adresser au lecteur (jamais « tu » ni « vous »), préambule, titre, \
+méta-commentaire, ni formule d'ouverture (« En effet », « Bien sûr », « Voici »). \
+Intègre la demande dans {sujet} sans la commenter ni y répondre. \
+Commence directement par le contenu."
+    )
 }
 
 fn build_author_user(name: &str, instruction: &str, context: Option<&str>) -> String {
