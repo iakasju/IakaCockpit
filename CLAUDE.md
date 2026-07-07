@@ -356,15 +356,24 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       + micro dans le chat (auto-envoi + garde anti-vide), nav vocale du rail **débranchée** (gardée).
       **Ouvert** : whisper n'entend pas encore la voix en recette (silence/`[Musique]`, mesure peak/rms
       posée). cmake installé via `pip3 --user` (PATH `~/.zshrc`).)*
-- [ ] **L22** — **« Le Cadre » : GUI de configuration iakaframe** → `specs/instructions/L22-cadre-config-iakaframe.md`
-      *(cadré 2026-07-06, arbitrages AR-1..6 à confirmer ; mock artifact v1→v3).* GUI dans iakacockpit
+- [x] **L22** — **« Le Cadre » : GUI de configuration iakaframe** → `specs/instructions/L22-cadre-config-iakaframe.md`
+      *(**LIVRÉ P1+P2+P2b, scellé `v0.16.0`** 2026-07-07 ; recette terrain réelle OK).* GUI dans iakacockpit
       (6ᵉ vue « Cadre ») pour définir le **cadre** d'une équipe, **en conversant**. Modèle à 4 niveaux
       (verrouillé) : **Règle** typée (interdit/autorisation/obligation/tool/geste/compétence) → **Skill**
-      (paquet nommé de règles) → **Template** d'agent (assemblage skills+règles) → **Agent** nommé dans une
-      team (template + extras + nom) ; + **règles projet** et **chaîne des délégations** (graphe team, à
-      part). P1 = modèle + éditeurs CRUD (sans LLM) ; P2 = conversation-authoring (Ollama + dictée) ;
-      P3 = enforcement runner (`--allowedTools`/`--append-system-prompt`) + garde délégations. Réutilise
-      `useTeams`/config/`ai.rs`/`useVoiceDictation`. Le cockpit édite un cadre consommé par iakaframe.
+      (paquet nommé de règles **+ paragraphe LLM versionné**, P2) → **Template** d'agent (assemblage
+      skills+règles) → **Agent** nommé (template + extras + nom **+ brief LLM**, P2) ; + **règles projet**
+      et **chaîne des délégations** (graphe team, à part).
+      **P1 LIVRÉ** : modèle pur (`src/frame/model.ts`) + persistance `frame.json` par team (`frame.rs`, AR-1) +
+      hook `useFrame` + **vue Cadre refondue (design Loki)** — une page lue de haut en bas (chaîne
+      Règles→Skills→Templates→Agents, décomposition visible) + seed démo. Recette : persistance + ergonomie
+      validées. **P2 LIVRÉ** : « définir en conversant » — un **prompt LLM par étage** (commande `ai.rs
+      frame_author`, calque L3/L8, mock/dégradation) **RÉDIGE** le paragraphe du skill / le brief de l'agent
+      (dictée `useVoiceDictation` branchée). Recette réelle : llama3.1 rédige, persisté. **P2b LIVRÉ** :
+      **export `agent.md`** (front génère le markdown, `frame_export` écrit sous `.iakacockpit/frames/<team>/`)
+      — la sortie consommée par iakaframe. Recette : 4 agent.md écrits, contenu propre.
+      **Différés tracés** : **L22-P3** enforcement runner (`--allowedTools`/`--append-system-prompt` + garde
+      délégations L5) ; **P2b** catégories **hooks/limites** en listbox ; arbitrages AR-2/4/5/6. `frame.json`
+      reste la source ; le `.md` est un export. 461 front + 247 Rust verts.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web

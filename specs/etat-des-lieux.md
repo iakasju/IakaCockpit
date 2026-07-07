@@ -1,11 +1,24 @@
-# État des lieux — 2026-07-01
+# État des lieux — 2026-07-07
 
 ## En une phrase
-**v0.15.0 scellée et poussée** (`main` = `cdb9204`, tag `v0.15.0`, `origin/main` sync) : refonte
-Portefeuille/Atelier (L21) + finition Loki + résolution du bug Économie (treemap vide) + recette
-terrain GUI validée. Rien en cours côté dev ; **prochaine étape = L16 pilotage vocal** (cadré, non
-démarré). Seul mouvement de la session courante : correctifs de santé `/doctor` (config, hors dépôt
-pour l'essentiel) — voir « En cours ».
+**`v0.16.0` scellée** : **L22 « Le Cadre »** livré **P1+P2+P2b** (recette terrain réelle OK). GUI
+6ᵉ vue pour définir le cadre d'une équipe (règles typées → skills → templates → agents), **en
+conversant** (le LLM embarqué rédige paragraphes de skills / briefs d'agents via Ollama), avec
+**export `agent.md`** consommable par iakaframe. `frame.json` = source, `.md` = export. Aussi cette
+session : correctifs `/doctor` + **L16 reciblé** en dictée-vocale-dans-le-chat (STT natif livré,
+**point ouvert** : whisper n'entend pas encore la voix). **Prochaine étape au choix** : L22-P3
+(enforcement runner), P2b (hooks/limites + listbox), ou les chantiers IHM en file (filtres chat,
+arbre des délégations).
+
+## Différés / ouverts à la reprise
+- **L16 STT** : whisper rend `'...'`/`'[Musique]'` (audio capté non reconnu) ; mesure peak/rms posée,
+  à lire au prochain essai (bundle `.app` requis pour le micro — TCC tue le binaire nu de `tauri dev`).
+- **L22-P3** (enforcement runner : `--allowedTools`/`--append-system-prompt` + garde délégations L5) ·
+  **P2b** hooks/limites en listbox · **AR-2/4/5/6**.
+- **Chantiers IHM en file** (décidés avant le Cadre) : filtres de canaux du chat · arbre des délégations
+  (Travail + Journal, remplace le Gantt).
+- **Env** : cmake via `pip3 --user` (PATH `~/.zshrc`) requis pour builder whisper.cpp. Ollama hôte up
+  (`localhost:11434`, llama3.1:8b). Relancer services + `npm run tauri dev` (3020) après reboot.
 
 ## Fait récemment
 - **v0.15.0 scellée** (`cdb9204`, tag `v0.15.0`) — L21 refonte Portefeuille/Atelier conforme au mock
@@ -71,6 +84,7 @@ pour l'essentiel) — voir « En cours ».
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-07 | version | v0.16.0 | main | SEAL v0.16.0. **L22 « Le Cadre » LIVRÉ P1+P2+P2b**, recette terrain réelle OK. P1 : modèle pur (`src/frame/model.ts`, 4 niveaux) + persistance `frame.json`/team (`frame.rs`, AR-1) + hook `useFrame` + **vue Cadre refondue design Loki** (une page haut→bas, chaîne Règles→Skills→Templates→Agents, décomposition visible, définitions/exemples/légende) + seed démo ; persistance+ergonomie recettées. P2 « définir en conversant » : **prompt LLM par étage** (`ai.rs frame_author`, calque L3/L8, mock/dégradation) rédige paragraphe de skill (versionné) / brief d'agent + dictée `useVoiceDictation` ; **recette réelle llama3.1** (brief persisté) + prompt système durci (fiche autonome 3e pers.). P2b : **export `agent.md`** (front génère md, `frame_export` écrit sous `.iakacockpit/frames/<team>/`) ; recette : 4 agent.md écrits, contenu propre (identité+brief+skills+règles effectives+délégations). Aussi : correctifs `/doctor` (permission fork-bomb, MCP claude.ai, plugin Windows→Mac) ; **L16 reciblé** dictée-chat (STT natif `voice.rs` cpal+whisper-rs livré, prouvé sur bundle .app ; **ouvert** : whisper n'entend pas la voix). 461 front + 247 Rust verts, lint/typecheck/clippy/build OK. Modèle Cadre + arbitrages : voir mémoires `ontologie-cadre-rules-templates-team`, `l22-p2-conversation-authoring`. Différés : L22-P3 enforcement, P2b hooks/limites, chantiers IHM (filtres chat, arbre délégations). |
 | 2026-07-01 | reprise | v0.15.0 | main | Reprise après seal v0.15.0. Aucun dev en cours. Session = maintenance santé `/doctor` : (1) retiré de `.claude/settings.local.json` la règle deny fork-bomb inexprimable `Bash(:(){ :\|:& };:)` (parenthèses imbriquées, règle ignorée) — **modif non commitée dans l'arbre** ; (2) déconnecté les MCP claude.ai inutilisés (Gmail/Drive/Calendar) via `/mcp`, hors dépôt ; (3) réparé le plugin `rust-analyzer-lsp` « cache-miss » — `~/.claude/plugins/known_marketplaces.json` pointait un chemin Windows `C:\Users\sjupi\…`, repointé sur le chemin macOS réel, hors dépôt. `/doctor` liste vide confirmée. Fil rouge : config `~/.claude` migrée de Windows (chemins en dur). PROCHAINE ÉTAPE = commiter le fix settings (optionnel) puis démarrer L16 pilotage vocal (cadré, non démarré). |
 | 2026-06-30 | version | v0.15.0 | main | SEAL v0.15.0. Branche `fix/portefeuille-recette-terrain` (10 commits) fusionnée en fast-forward dans `main`. Résolution du BUG ÉCONOMIE (treemap vide) : `economy.rs::project_of` coupe sur `/` ET `\` (clés Windows `C:\…` nettoyées, décision Stéphane « tout garder ») + `portfolio_economy()` ne tronque plus à top-8 avant le scope front (`scan_projects_dir(usize::MAX)`) → les petits projets de la table (iaka-demo) ne sont plus jetés. Ajustements recette terrain (front) : Travail récent revenu aux polices std + interligne resserré (rowH 26, anti-collision OK) + 5 visibles/scroll ; corps treemap Économie borné 390px + scrollbar (donnée non tronquée). Gate Legolas PASS (232 Rust + 401 front, fmt/clippy/lint/typecheck OK) ; recette terrain GUI validée (tauri dev recompilé). Doc qualité `docs/qualite/v0.15.0.md`. PROCHAINE ÉTAPE = L16 pilotage vocal. |
 | 2026-06-30 | pause | v0.14.0 (+ branche non scellée) | fix/portefeuille-recette-terrain | PAUSE sur BUG ÉCONOMIE OUVERT. La branche (6 commits sur main=f6713df, tout gate Legolas PASS) porte L21 (refonte Portefeuille/Atelier conforme mock : cartes riches + vignettes superposées + anneau %, lignes Atelier, scoping table, visu « Travail récent » réelle portefeuille-entier) + patch Gantt (--font-mono + chip) + finition Loki (treemap mosaïque/pilule/légende, ombre dark, KPI .kd) + retours terrain (travail récent pleine largeur police×2 cap-5+scroll, rail Économie aligné, EconomyShare retiré=redondant). BUG : treemap Économie vide = top-8 tronqué AVANT scope table (iaka-demo petit hors top-8) + project_of ne coupe pas sur `\` (clés Windows `C:\…` polluent). REPRISE = trancher (a/b/c) reco a → fix economy.rs (normaliser séparateurs + ne pas tronquer avant scope + filtrer portefeuille) → gate → restart app → recette → merge branche→main → seal v0.15.0. Relancer services (ollama/Docker) + `npm run tauri dev` (3020) après reboot. |
