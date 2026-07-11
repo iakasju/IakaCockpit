@@ -740,6 +740,11 @@ button {
 }
 .proj .proj-id {
   min-width: 0;
+  /* Le clip est REQUIS en plus de min-width:0 : sous WebKit (WKWebView macOS), un
+     flex-item qui héberge un bloc en `text-overflow:ellipsis` (h3/.path) ne contraint
+     le bloc à sa largeur rétrécie QUE s'il clippe lui-même. Sans ça, la largeur
+     intrinsèque du nom fuit et pousse `.topright` (chip + bouton retirer) hors carte. */
+  overflow: hidden;
 }
 .proj h3 {
   font-family: var(--font-display);
@@ -898,6 +903,9 @@ button {
 }
 .scanrow .scanid {
   min-width: 0;
+  /* Même exigence WebKit que `.proj .proj-id` : clipper pour que nm/pth s'ellipsent au
+     lieu de pousser `.meta` + le bouton « poser » hors de la ligne. */
+  overflow: hidden;
 }
 .scanrow .nm {
   font-family: var(--font-display);
