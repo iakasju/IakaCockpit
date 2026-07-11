@@ -17,6 +17,8 @@ import { WorkingView, type ResolvedRunner } from "../views/WorkingView";
 import type { Conversation } from "../hooks/useConversations";
 import type { DemoTeamMember } from "../mock/demoTeam";
 import type { UsePty } from "../hooks/usePty";
+import type { Project } from "../api/backend";
+import type { PrepareEntry } from "../hooks/usePrepareResume";
 
 afterEach(cleanup);
 
@@ -56,6 +58,7 @@ function renderView(resolveRunner: (projectId: string) => ResolvedRunner, c = co
       nextStepError={null}
       onOpenProject={() => {}}
       onAddProject={() => {}}
+      onRemoveFromWork={() => {}}
       onSetMode={() => {}}
       onSetAgent={() => {}}
       onSend={() => {}}
@@ -131,6 +134,7 @@ describe("WorkingView — @agent borné à la team (L11/C2)", () => {
         nextStepError={null}
         onOpenProject={() => {}}
         onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
         onSetMode={() => {}}
         onSetAgent={() => {}}
         onSend={onSend}
@@ -166,5 +170,156 @@ describe("WorkingView — @agent borné à la team (L11/C2)", () => {
       "Aragorn",
       "@Sauron : prends le pouvoir",
     );
+  });
+});
+
+// --- L23 : bouton « retirer de la table » + statut de préparation ---
+
+function proj(over: Partial<Project> = {}): Project {
+  return {
+    id: "alpha",
+    path: "/home/u/work/alpha",
+    is_git: true,
+    branch: "main",
+    dirty: false,
+    ahead: 0,
+    behind: 0,
+    last_commit_date: null,
+    last_commit_subject: null,
+    version: null,
+    work_status: "stable",
+    ...over,
+  };
+}
+
+function renderWorklist(
+  props: Partial<Parameters<typeof WorkingView>[0]>,
+) {
+  const p = proj();
+  return rtlRender(
+    <WorkingView
+      worksetProjects={[p]}
+      conversations={[]}
+      active={null}
+      pty={PTY_STUB}
+      nextStepResult={null}
+      nextStepLoading={false}
+      nextStepError={null}
+      onOpenProject={() => {}}
+      onAddProject={() => {}}
+      onRemoveFromWork={() => {}}
+      onSetMode={() => {}}
+      onSetAgent={() => {}}
+      onSend={() => {}}
+      onRequestNextStep={() => {}}
+      resolveRunner={() => ({
+        kind: "claude-code",
+        model: "",
+        coordinator: "Aragorn",
+      })}
+      {...props}
+    />,
+  );
+}
+
+describe("WorkingView — L23 retirer de la table", () => {
+  it("chaque item affiche un bouton « retirer » sans button-in-button", () => {
+    renderWorklist({});
+    // Zone d'ouverture ET bouton retirer sont deux boutons FRÈRES (pas imbriqués).
+    const open = screen.getByRole("button", { name: /Ouvrir le projet alpha/ });
+    const remove = screen.getByRole("button", {
+      name: /Retirer alpha de la table/,
+    });
+    expect(open.tagName).toBe("BUTTON");
+    expect(remove.tagName).toBe("BUTTON");
+    // Anti button-in-button : le bouton retirer n'est PAS un descendant de la zone ouvrir.
+    expect(open.contains(remove)).toBe(false);
+    expect(remove.contains(open)).toBe(false);
+  });
+
+  it("clic « retirer » → onRemoveFromWork(projectId), sans ouvrir le projet", () => {
+    const onRemoveFromWork = vi.fn();
+    const onOpenProject = vi.fn();
+    renderWorklist({ onRemoveFromWork, onOpenProject });
+    fireEvent.click(
+      screen.getByRole("button", { name: /Retirer alpha de la table/ }),
+    );
+    expect(onRemoveFromWork).toHaveBeenCalledWith("alpha");
+    expect(onRemoveFromWork).toHaveBeenCalledTimes(1);
+    // Le clic « retirer » n'ouvre PAS le projet (boutons indépendants).
+    expect(onOpenProject).not.toHaveBeenCalled();
+  });
+
+  it("clic sur la zone « ouvrir » → onOpenProject, sans retirer", () => {
+    const onRemoveFromWork = vi.fn();
+    const onOpenProject = vi.fn();
+    renderWorklist({ onRemoveFromWork, onOpenProject });
+    fireEvent.click(
+      screen.getByRole("button", { name: /Ouvrir le projet alpha/ }),
+    );
+    expect(onOpenProject).toHaveBeenCalledTimes(1);
+    expect(onRemoveFromWork).not.toHaveBeenCalled();
+  });
+
+  it("zone de statut : running → done (prête) affichés, done fermable", () => {
+    const onDismissPrepare = vi.fn();
+    const running: PrepareEntry[] = [
+      { projectId: "alpha", name: "alpha", status: "running" },
+    ];
+    const { rerender } = renderWorklist({
+      prepareEntries: running,
+      onDismissPrepare,
+    });
+    expect(screen.getByText(/préparation de reprise…/)).toBeTruthy();
+    // Pas de bouton fermer tant que running.
+    expect(screen.queryByRole("button", { name: /Masquer le statut/ })).toBeNull();
+
+    const done: PrepareEntry[] = [
+      { projectId: "alpha", name: "alpha", status: "done" },
+    ];
+    rerender(
+      <WorkingView
+        worksetProjects={[proj()]}
+        conversations={[]}
+        active={null}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
+        prepareEntries={done}
+        onDismissPrepare={onDismissPrepare}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={() => {}}
+        onRequestNextStep={() => {}}
+        resolveRunner={() => ({
+          kind: "claude-code",
+          model: "",
+          coordinator: "Aragorn",
+        })}
+      />,
+    );
+    expect(screen.getByText("prête")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Masquer le statut/ }));
+    expect(onDismissPrepare).toHaveBeenCalledWith("alpha");
+  });
+
+  it("zone de statut : hors git → « prête (hors git) », erreur → message lisible", () => {
+    renderWorklist({
+      prepareEntries: [
+        { projectId: "alpha", name: "alpha", status: "done", horsGit: true },
+        {
+          projectId: "beta",
+          name: "beta",
+          status: "error",
+          message: "dossier introuvable",
+        },
+      ],
+    });
+    expect(screen.getByText("prête (hors git)")).toBeTruthy();
+    expect(screen.getByText(/dossier introuvable/)).toBeTruthy();
   });
 });

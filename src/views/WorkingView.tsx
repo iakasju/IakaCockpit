@@ -42,6 +42,7 @@ import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isExecutableRunner, type AgentRunnerKind } from "../hooks/useTeams";
 import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
+import type { PrepareEntry } from "../hooks/usePrepareResume";
 
 /**
  * Mappe le runner CONCEPTUEL du coordinateur (4 valeurs) vers le `kind` PTY du
@@ -84,6 +85,19 @@ export interface WorkingViewProps {
   nextStepError: string | null;
   onOpenProject: (project: Project) => void;
   onAddProject: () => void;
+  /**
+   * Retire un projet de la Table (L23). App orchestre : retrait IMMÉDIAT du set de Work
+   * **puis** déclenchement du job de préparation de reprise (sans await). Le bouton
+   * « retirer de la table » de chaque `.workitem` s'y branche.
+   */
+  onRemoveFromWork: (projectId: string) => void;
+  /**
+   * Statuts transitoires des préparations de reprise (L23, SA-4) — affichés dans une zone
+   * discrète de l'en-tête de la worklist (l'item retiré a disparu, le statut ne peut y vivre).
+   */
+  prepareEntries?: readonly PrepareEntry[];
+  /** Ferme une ligne de statut de préparation (bouton × d'une entrée terminée). */
+  onDismissPrepare?: (projectId: string) => void;
   onSetMode: (projectId: string, mode: ConvMode) => void;
   onSetAgent: (projectId: string, agent: string) => void;
   /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
@@ -134,6 +148,9 @@ export function WorkingView({
   nextStepError,
   onOpenProject,
   onAddProject,
+  onRemoveFromWork,
+  prepareEntries,
+  onDismissPrepare,
   onSetMode,
   onSetAgent,
   onSend,
@@ -228,6 +245,53 @@ export function WorkingView({
             +
           </button>
         </div>
+
+        {/*
+          Zone de statut des préparations de reprise (L23, SA-4) — discrète, sous
+          l'en-tête. L'item retiré disparaît de la liste : son statut vit ICI, transitoire
+          (« préparation… » → « prête »/« prête (hors git) » → fermable ; « échec » lisible).
+        */}
+        {prepareEntries && prepareEntries.length > 0 && (
+          <ul
+            className="wlprep"
+            aria-label={t("working.prepareAria")}
+            aria-live="polite"
+          >
+            {prepareEntries.map((e) => (
+              <li key={e.projectId} className={`prepitem prep-${e.status}`}>
+                <span className="prepdot" aria-hidden />
+                <span className="prepbody">
+                  <span className="prepname">{e.name}</span>
+                  <span className="prepmsg">
+                    {e.status === "running" && t("working.prepareRunning")}
+                    {e.status === "done" &&
+                      (e.horsGit
+                        ? t("working.prepareDoneHorsGit")
+                        : t("working.prepareDone"))}
+                    {e.status === "error" &&
+                      t("working.prepareError", {
+                        message: e.message ?? "",
+                      })}
+                  </span>
+                </span>
+                {e.status !== "running" && onDismissPrepare && (
+                  <button
+                    type="button"
+                    className="prepclose"
+                    aria-label={t("working.prepareDismissAria", {
+                      project: e.name,
+                    })}
+                    title={t("working.prepareDismissAria", { project: e.name })}
+                    onClick={() => onDismissPrepare(e.projectId)}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <div className="wlscroll">
           <div className="wlbl">{t("working.selectedProjects")}</div>
           {worksetProjects.length === 0 && (
@@ -235,19 +299,40 @@ export function WorkingView({
               {t("working.emptyList")}
             </div>
           )}
+          {/*
+            L23 — item RESTRUCTURÉ : `.workitem` n'est plus un `<button>` (interdit
+            d'imbriquer le bouton « retirer » dans un bouton = button-in-button invalide).
+            C'est un conteneur `<div>` avec une zone cliquable « ouvrir » (`.wiopen`) ET un
+            bouton frère « retirer » (`.wirm`). Style/hover/`.active` conservés (sélecteurs
+            adaptés). Les deux sont cliquables indépendamment.
+          */}
           {worksetProjects.map((p) => (
-            <button
+            <div
               key={p.id}
-              type="button"
               className={`workitem${active?.projectId === p.id ? " active" : ""}`}
-              onClick={() => onOpenProject(p)}
             >
-              <span className="av">{p.id.slice(0, 1).toUpperCase()}</span>
-              <span className="mid">
-                <span className="nm">{p.id}</span>
-                <span className="pv">{p.path}</span>
-              </span>
-            </button>
+              <button
+                type="button"
+                className="wiopen"
+                aria-label={t("working.openAria", { project: p.id })}
+                onClick={() => onOpenProject(p)}
+              >
+                <span className="av">{p.id.slice(0, 1).toUpperCase()}</span>
+                <span className="mid">
+                  <span className="nm">{p.id}</span>
+                  <span className="pv">{p.path}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className="wirm"
+                aria-label={t("working.removeAria", { project: p.id })}
+                title={t("working.removeTitle")}
+                onClick={() => onRemoveFromWork(p.id)}
+              >
+                −
+              </button>
+            </div>
           ))}
         </div>
       </aside>

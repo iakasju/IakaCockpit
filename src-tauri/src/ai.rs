@@ -163,7 +163,7 @@ fn head(txt: &str, max: usize) -> String {
 /// On exige qu'il soit un **dossier existant** ; on durcit ensuite l'accès FS via
 /// `pathguard` en n'ouvrant que des sous-chemins relatifs validés sous ce dossier
 /// (`specs/PROJET.md`, `specs/etat-des-lieux.md`) — jamais de remontée `..`.
-fn validate_project_dir(path: &str) -> Result<PathBuf, String> {
+pub(crate) fn validate_project_dir(path: &str) -> Result<PathBuf, String> {
     let p = Path::new(path);
     if path.trim().is_empty() {
         return Err("chemin de projet vide".to_string());

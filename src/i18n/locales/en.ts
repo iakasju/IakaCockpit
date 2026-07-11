@@ -299,6 +299,15 @@ export const en: Resources = {
       "Coordinator {{coordinator}}'s runner “{{kind}}” is not executable yet (step: claude-code). The conversation stays open; the definition is kept.",
     emptyConv: "No conversation open.",
     emptyConvHint: "Pick a project on the table to open its conversation.",
+    openAria: "Open project {{project}}",
+    removeAria: "Remove {{project}} from the table",
+    removeTitle: "Remove from the table (prepares resume in the background)",
+    prepareAria: "Resume preparations in progress",
+    prepareRunning: "preparing resume…",
+    prepareDone: "ready",
+    prepareDoneHorsGit: "ready (no git)",
+    prepareError: "failed: {{message}}",
+    prepareDismissAria: "Dismiss status for {{project}}",
   },
 
   roster: {

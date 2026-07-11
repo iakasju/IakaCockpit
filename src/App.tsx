@@ -23,6 +23,7 @@ import { useNow } from "./hooks/useNow";
 import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
 import { usePortfolioActivity } from "./hooks/usePortfolioActivity";
 import { useWorkset } from "./hooks/useWorkset";
+import { usePrepareResume } from "./hooks/usePrepareResume";
 import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
@@ -71,6 +72,9 @@ export default function App(): JSX.Element {
   const conversations = useConversations();
   const teams = useTeams();
   const workset = useWorkset();
+  // Statut du job « préparation de reprise » par projet (L23), déclenché au retrait de
+  // la Table (le retrait UI n'attend PAS ce job).
+  const prepareResume = usePrepareResume();
   const pty = usePty();
   const settings = useSettings();
   const services = useServices();
@@ -334,6 +338,20 @@ export default function App(): JSX.Element {
     if (project) workset.add(project.id);
   };
 
+  // L23 — « retirer de la table ». Décision 1/2 (VERROUILLÉE) : le retrait est
+  // IMMÉDIAT (l'UI n'attend pas) ET déclenche SYSTÉMATIQUEMENT le job de préparation de
+  // reprise EN TÂCHE DE FOND (sans await — décision 3, aucune échappatoire). L'orchestration
+  // vit ICI (App), pas dans useWorkset (le set d'ids reste front-pur, sans I/O).
+  const removeFromWorkAndPrepare = (projectId: string): void => {
+    const project = worksetProjects.find((p) => p.id === projectId);
+    // 1) Retrait immédiat du set de Work (l'item quitte la liste tout de suite).
+    workset.toggle(projectId);
+    // 2) Job de préparation de reprise, fire-and-forget (le hook tient le statut).
+    if (project) {
+      prepareResume.prepare(project.id, project.id, project.path);
+    }
+  };
+
   return (
     <main className="app-shell" data-navpos={settings.ui.navPos}>
       {/* Direction A : rail de navigation vertical (Portfolio / Working / Journal /
@@ -445,6 +463,9 @@ export default function App(): JSX.Element {
             nextStepError={nextStep.error}
             onOpenProject={openProject}
             onAddProject={() => void addProject()}
+            onRemoveFromWork={removeFromWorkAndPrepare}
+            prepareEntries={prepareResume.entries}
+            onDismissPrepare={prepareResume.dismiss}
             onSetMode={conversations.setMode}
             onSetAgent={conversations.setAgent}
             onSend={handleSend}

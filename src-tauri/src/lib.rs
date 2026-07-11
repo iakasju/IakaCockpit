@@ -21,6 +21,7 @@ pub mod notify;
 pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
+pub mod resume;
 pub mod secrets;
 pub mod seed;
 pub mod services;
@@ -83,6 +84,7 @@ pub fn run() {
             notify::n8n_set_token,
             notify::n8n_has_token,
             seed::seed_demo,
+            resume::prepare_resume,
             voice::voice_listen,
             frame::frame_load,
             frame::frame_save,

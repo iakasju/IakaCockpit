@@ -299,6 +299,15 @@ export const fr = {
     emptyConv: "Aucune conversation ouverte.",
     emptyConvHint:
       "Choisis un projet sur la table pour ouvrir sa conversation.",
+    openAria: "Ouvrir le projet {{project}}",
+    removeAria: "Retirer {{project}} de la table",
+    removeTitle: "Retirer de la table (prépare la reprise en tâche de fond)",
+    prepareAria: "Préparations de reprise en cours",
+    prepareRunning: "préparation de reprise…",
+    prepareDone: "prête",
+    prepareDoneHorsGit: "prête (hors git)",
+    prepareError: "échec : {{message}}",
+    prepareDismissAria: "Masquer le statut de {{project}}",
   },
 
   roster: {

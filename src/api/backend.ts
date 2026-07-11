@@ -156,6 +156,22 @@ export interface SeedReport {
   config_keys_set: string[];
 }
 
+/**
+ * Miroir de `resume::ResumeReport` (Rust, L23) — compte rendu de la préparation de
+ * reprise déclenchée au retrait d'un projet de la Table. `ok:true` = état des lieux
+ * régénéré (vrai même hors git, SA-3). `is_git`/`branch`/`commit_count`/`dirty` = faits
+ * git captés ; `wrote_path` = fichier `specs/etat-des-lieux.md` écrit (lien futur).
+ */
+export interface ResumeReport {
+  ok: boolean;
+  path: string;
+  is_git: boolean;
+  branch: string | null;
+  commit_count: number;
+  dirty: boolean;
+  wrote_path: string;
+}
+
 /** Miroir de `services::ServiceStatus` (Rust). */
 export interface ServiceStatus {
   name: string;
@@ -381,6 +397,24 @@ export function n8nHasToken(): Promise<boolean> {
  */
 export function seedDemo(): Promise<SeedReport> {
   return call<SeedReport>("seed_demo");
+}
+
+// --- Préparation de reprise (L23 — retrait de la Table → état des lieux) ---
+//
+// Déclenchée EN TÂCHE DE FOND au retrait d'un projet de la Table (le retrait UI est
+// immédiat, il n'attend PAS ce job). Régénère `specs/etat-des-lieux.md` à partir des
+// faits git, CÔTÉ RUST (git::capture + std::fs::write, spawn_blocking). AUCUN
+// add/commit/push, aucun réseau, aucun secret. Le front ne fait qu'`invoke` via cette façade.
+
+/**
+ * Prépare la reprise du projet `path` : régénère `specs/etat-des-lieux.md` (branche,
+ * arbre propre/sale, N derniers commits). Résout un `ResumeReport` (`ok:true` même hors
+ * git — état des lieux minimal, SA-3). Rejette avec un message lisible si le dossier est
+ * introuvable ou l'écriture échoue (le hook `usePrepareResume` bascule alors en statut
+ * d'erreur). Ne bloque pas l'UI (async côté Rust).
+ */
+export function prepareResume(path: string): Promise<ResumeReport> {
+  return call<ResumeReport>("prepare_resume", { path });
 }
 
 // --- Pilotage vocal (L16-P1 — voix → action IHM) ---
@@ -741,6 +775,7 @@ export const backend = {
   n8nSetToken,
   n8nHasToken,
   seedDemo,
+  prepareResume,
   voiceListen,
   frameLoad,
   frameSave,
