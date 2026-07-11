@@ -15,8 +15,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
-use crate::paths::resolve_handoff_root;
 use crate::pathguard;
+use crate::paths::resolve_handoff_root;
 
 const TEAM_FILE: &str = "team.json";
 const MANIFEST_FILE: &str = "handoff.json";
@@ -118,7 +118,10 @@ mod tests {
     fn tmp(tag: &str) -> PathBuf {
         let d = std::env::temp_dir().join(format!(
             "iakacockpit-handoff-{tag}-{}",
-            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         ));
         let _ = std::fs::remove_dir_all(&d);
         d
@@ -134,7 +137,12 @@ mod tests {
     #[test]
     fn read_lit_les_deux_fichiers() {
         let root = tmp("read");
-        write_pkg(&root, "iakaframe", r#"{"id":"iakaframe"}"#, r#"{"source":"forge"}"#);
+        write_pkg(
+            &root,
+            "iakaframe",
+            r#"{"id":"iakaframe"}"#,
+            r#"{"source":"forge"}"#,
+        );
         let pkg = read_in(&root, "iakaframe").unwrap();
         assert_eq!(pkg.team_json.as_deref(), Some(r#"{"id":"iakaframe"}"#));
         assert_eq!(pkg.handoff_json.as_deref(), Some(r#"{"source":"forge"}"#));
