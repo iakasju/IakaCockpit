@@ -426,14 +426,9 @@ export default function App(): JSX.Element {
         >
           <span className="rlabel">{t("nav.teams")}</span>
         </button>
-        <button
-          type="button"
-          className={`railitem${grid.activeView === "cadre" ? " on" : ""}`}
-          aria-current={grid.activeView === "cadre" ? "page" : undefined}
-          onClick={() => grid.setActiveView("cadre")}
-        >
-          <span className="rlabel">{t("nav.cadre")}</span>
-        </button>
+        {/* Page « Cadre » débranchée du rail sur demande (2026-07-12) : bouton retiré
+            de la navigation, mais tout le code Cadre est CONSERVÉ (CadreView, useFrame,
+            route, CSS, membre "cadre" de ViewId). Re-poser ce bouton la réactive. */}
         <div className="sep" />
         {/* Nav vocale retirée du rail (2026-07-02) : le vocal est désormais une dictée
             DANS le chat (WorkingView), pas un pilote de navigation. */}
