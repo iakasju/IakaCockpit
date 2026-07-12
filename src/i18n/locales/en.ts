@@ -325,6 +325,7 @@ export const en: Resources = {
     tabCloseAria: "Close {{project}} tab",
     focusToggleEnterAria: "Fullscreen (focus mode)",
     focusToggleExitAria: "Exit fullscreen",
+    focusToggleLabel: "Fullscreen",
     removeAria: "Remove {{project}} from the table",
     removeTitle: "Remove from the table (prepares resume in the background)",
     prepareAria: "Resume preparations in progress",

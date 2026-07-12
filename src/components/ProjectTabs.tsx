@@ -10,13 +10,15 @@
  * Ordre stable = ordre des conversations (ordre d'ouverture / du workset). Anti
  * button-in-button : l'onglet et son « × » sont deux boutons FRÈRES, jamais imbriqués.
  *
- * L26 (révision recette 2026-07-13) — UN toggle « plein écran », À DROITE des onglets :
- * un seul bouton symétrique portant un symbole de plein écran (⤢ = entrer / ⤡ = réduire).
+ * L26 (révision recette v2 2026-07-13) — UN switch coulissant « plein écran », aligné à
+ * DROITE des onglets (`margin-left:auto`) : un interrupteur (piste + pastille qui glisse)
+ * — pastille à GAUCHE = normal (off), à DROITE = focus/plein écran (on). Accompagné d'un
+ * libellé/icône « plein écran » pour rester explicite. `role="switch"` + `aria-checked`.
  * Activer = focus + plein écran OS ; désactiver = normal + sortie du plein écran. Remplace
- * les 2 feux macOS jaune/vert (jugés pas assez explicites). La barre est TOUJOURS rendue
- * sur la vue Travail — même sans onglet, le toggle subsiste (elle ne retourne plus `null`).
- * L'orchestration (état focus + appel façade fullscreen) vit dans `App` ; ici on ne fait
- * qu'appeler `onToggleFocus` (présentationnel D8).
+ * l'ancien bouton-icône `⤢` (trop discret) et, avant lui, les 2 feux macOS. La barre est
+ * TOUJOURS rendue sur la vue Travail — même sans onglet, le switch subsiste (elle ne
+ * retourne plus `null`). L'orchestration (état focus + appel façade fullscreen) vit dans
+ * `App` ; ici on ne fait qu'appeler `onToggleFocus` (présentationnel D8).
  */
 import { useTranslation } from "react-i18next";
 import type { Conversation } from "../hooks/useConversations";
@@ -75,13 +77,15 @@ export function ProjectTabs({
           </div>
         );
       })}
-      {/* L26 (révision recette) — UN toggle « plein écran », toujours à DROITE des
-          onglets. Symbole expand (⤢) en mode normal, compress (⤡) en mode focus.
-          Symétrique : App gère focus + fullscreen d'un seul geste. */}
+      {/* L26 (révision recette v2) — SWITCH coulissant « plein écran », toujours à DROITE
+          des onglets (`margin-left:auto`). Pastille à gauche = off, à droite = on ; piste
+          colorée en `on`. Libellé + glyphe pour rester explicite. Symétrique : App gère
+          focus + fullscreen d'un seul geste. */}
       <button
         type="button"
-        className={`fsbtn${focus ? " active" : ""}`}
-        aria-pressed={focus}
+        role="switch"
+        aria-checked={focus}
+        className={`fsswitch${focus ? " on" : ""}`}
         aria-label={
           focus
             ? t("working.focusToggleExitAria")
@@ -94,7 +98,13 @@ export function ProjectTabs({
         }
         onClick={onToggleFocus}
       >
-        <span aria-hidden>{focus ? "⤡" : "⤢"}</span>
+        <span className="fsswitch-label" aria-hidden>
+          <span className="fsswitch-ico">⤢</span>
+          {t("working.focusToggleLabel")}
+        </span>
+        <span className="fsswitch-track" aria-hidden>
+          <span className="fsswitch-knob" />
+        </span>
       </button>
     </div>
   );

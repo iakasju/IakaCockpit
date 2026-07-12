@@ -452,9 +452,10 @@ describe("WorkingView — mode focus L26", () => {
     expect(container.querySelector(".wk.wk--focus")).not.toBeNull();
     // Colonne de widgets droite CONSERVÉE (exigence explicite).
     expect(container.querySelector(".wkright")).not.toBeNull();
-    // Onglets + toggle plein écran TOUJOURS présents.
+    // Onglets + switch plein écran TOUJOURS présents.
     expect(container.querySelector(".projtabs")).not.toBeNull();
-    expect(container.querySelector(".fsbtn")).not.toBeNull();
+    expect(container.querySelector(".fsswitch")).not.toBeNull();
+    expect(container.querySelector('[role="switch"]')).not.toBeNull();
     // Toggle Shell/Conversation conservé.
     expect(container.querySelector(".modetoggle")).not.toBeNull();
     // La worklist reste dans le DOM (masquée par CSS, non démontée).
@@ -467,11 +468,11 @@ describe("WorkingView — mode focus L26", () => {
     expect(container.querySelector(".wk")).not.toBeNull();
   });
 
-  it("clic sur le toggle plein écran → onToggleFocus", () => {
+  it("clic sur le switch plein écran → onToggleFocus", () => {
     const onToggleFocus = vi.fn();
     renderFocus(false, onToggleFocus);
     fireEvent.click(
-      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
+      screen.getByRole("switch", { name: /Plein écran \(mode focus\)/ }),
     );
     expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });

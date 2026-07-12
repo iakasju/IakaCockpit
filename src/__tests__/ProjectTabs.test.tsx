@@ -40,10 +40,11 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
         {...FOCUS_DEFAULTS}
       />,
     );
-    // La barre est TOUJOURS rendue (le toggle focus y vit), même sans onglet.
+    // La barre est TOUJOURS rendue (le switch focus y vit), même sans onglet.
     expect(container.querySelector(".projtabs")).not.toBeNull();
     expect(screen.queryAllByRole("tab")).toHaveLength(0);
-    expect(container.querySelector(".fsbtn")).not.toBeNull();
+    expect(container.querySelector(".fsswitch")).not.toBeNull();
+    expect(container.querySelector(".fsbtn")).toBeNull();
   });
 
   it("rend un onglet par conversation (libellé = titre du projet)", () => {
@@ -138,7 +139,7 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
   });
 });
 
-describe("ProjectTabs — toggle plein écran de mode focus (L26 révision)", () => {
+describe("ProjectTabs — switch plein écran de mode focus (L26 révision v2)", () => {
   function renderToggle(over: Partial<Parameters<typeof ProjectTabs>[0]> = {}) {
     return render(
       <ProjectTabs
@@ -153,35 +154,45 @@ describe("ProjectTabs — toggle plein écran de mode focus (L26 révision)", ()
     );
   }
 
-  it("rend UN seul toggle plein écran (libellé « Plein écran ») quand off", () => {
+  it("rend UN seul switch plein écran (role=switch, libellé « Plein écran ») quand off", () => {
     const { container } = renderToggle();
     expect(
-      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
+      screen.getByRole("switch", { name: /Plein écran \(mode focus\)/ }),
     ).toBeTruthy();
-    // Un seul bouton toggle, pas de feux.
-    expect(container.querySelectorAll(".fsbtn")).toHaveLength(1);
+    // Un seul switch, pas d'ancien bouton-icône `.fsbtn` ni de feux.
+    expect(container.querySelectorAll(".fsswitch")).toHaveLength(1);
+    expect(container.querySelector(".fsbtn")).toBeNull();
     expect(container.querySelector(".feu")).toBeNull();
+    // Le libellé visible « Plein écran » accompagne le switch (explicite).
+    expect(container.querySelector(".fsswitch-label")?.textContent).toContain(
+      "Plein écran",
+    );
+    // La pastille qui glisse est présente.
+    expect(container.querySelector(".fsswitch-knob")).not.toBeNull();
   });
 
-  it("aria-pressed reflète l'état focus (false quand off)", () => {
-    renderToggle({ focus: false });
-    const btn = screen.getByRole("button", {
+  it("aria-checked reflète l'état focus (false quand off)", () => {
+    const { container } = renderToggle({ focus: false });
+    const sw = screen.getByRole("switch", {
       name: /Plein écran \(mode focus\)/,
     });
-    expect(btn.getAttribute("aria-pressed")).toBe("false");
+    expect(sw.getAttribute("aria-checked")).toBe("false");
+    // Pastille à gauche = pas de classe `on`.
+    expect(container.querySelector(".fsswitch.on")).toBeNull();
   });
 
-  it("en focus : aria-pressed=true et libellé « Quitter le plein écran »", () => {
-    renderToggle({ focus: true });
-    const btn = screen.getByRole("button", { name: /Quitter le plein écran/ });
-    expect(btn.getAttribute("aria-pressed")).toBe("true");
+  it("en focus : aria-checked=true, classe `on` (pastille à droite) et libellé « Quitter le plein écran »", () => {
+    const { container } = renderToggle({ focus: true });
+    const sw = screen.getByRole("switch", { name: /Quitter le plein écran/ });
+    expect(sw.getAttribute("aria-checked")).toBe("true");
+    expect(container.querySelector(".fsswitch.on")).not.toBeNull();
   });
 
   it("clic → onToggleFocus (off → on)", () => {
     const onToggleFocus = vi.fn();
     renderToggle({ focus: false, onToggleFocus });
     fireEvent.click(
-      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
+      screen.getByRole("switch", { name: /Plein écran \(mode focus\)/ }),
     );
     expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });
@@ -190,7 +201,7 @@ describe("ProjectTabs — toggle plein écran de mode focus (L26 révision)", ()
     const onToggleFocus = vi.fn();
     renderToggle({ focus: true, onToggleFocus });
     fireEvent.click(
-      screen.getByRole("button", { name: /Quitter le plein écran/ }),
+      screen.getByRole("switch", { name: /Quitter le plein écran/ }),
     );
     expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });

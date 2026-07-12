@@ -1728,35 +1728,73 @@ button {
   color: var(--text);
 }
 
-/* L26 (révision recette) — UN toggle « plein écran » poussé à DROITE de la barre
-   d'onglets. Un seul bouton symétrique (⤢ entrer / ⤡ réduire) remplaçant les 2 feux. */
-.fsbtn {
+/* L26 (révision recette v2) — SWITCH coulissant « plein écran » poussé à DROITE de la
+   barre d'onglets (`margin-left:auto`). Piste + pastille qui glisse : off = pastille à
+   gauche / piste neutre ; on = pastille à droite / piste accent. Libellé + glyphe pour
+   rester explicite. Remplace l'ancien bouton-icône `.fsbtn`. */
+.fsswitch {
   margin-left: auto;
   align-self: center;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 26px;
+  gap: 8px;
   margin: 0 2px 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
   color: var(--text-2);
-  font-size: 15px;
-  line-height: 1;
   cursor: pointer;
   flex: none;
-  transition: 0.15s;
 }
-.fsbtn:hover {
+.fsswitch:hover {
   color: var(--text);
-  background: var(--surf);
 }
-.fsbtn.active {
+.fsswitch.on {
   color: var(--text);
-  background: var(--surf);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.fsswitch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.fsswitch-ico {
+  font-size: 14px;
+  line-height: 1;
+}
+/* Piste ~36×20, pastille ~14 qui translate gauche→droite via transform. */
+.fsswitch-track {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--surf-2, var(--line));
+  box-shadow: 0 0 0 1px var(--line) inset;
+  transition: background 0.18s ease;
+  flex: none;
+}
+.fsswitch.on .fsswitch-track {
+  background: var(--accent);
+  box-shadow: none;
+}
+.fsswitch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 22, 28, 0.25);
+  transform: translateX(0);
+  transition: transform 0.18s ease;
+}
+.fsswitch.on .fsswitch-knob {
+  transform: translateX(16px);
 }
 
 /* L26 — mode focus : masquer les 2 colonnes de gauche. Le rail (colonne n°1) vit dans
