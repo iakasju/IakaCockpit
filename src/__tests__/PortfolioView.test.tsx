@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { PortfolioView } from "../views/PortfolioView";
 import type { Project } from "../api/backend";
 import type { TreemapItem } from "../components/TreemapPanel";
@@ -107,5 +107,54 @@ describe("PortfolioView — Étagère conforme au mock (L21)", () => {
     expect(
       screen.getByText(/Aucun projet sur la table/),
     ).toBeTruthy();
+  });
+
+  // L16-F1 — toggle Liste ↔ Tuiles de l'atelier (atelier seul, défaut = Liste).
+  describe("toggle Liste/Tuiles de l'atelier (L16-F1)", () => {
+    it("défaut = Liste : le projet rangé est rendu en ligne `.scanrow` (pas en carte)", () => {
+      const { container } = renderView({
+        projects: [project("gamma")],
+        worksetIds: new Set(),
+        worksetCount: 0,
+      });
+      expect(container.querySelector(".scanrow")).toBeTruthy();
+      // Aucune carte `.proj` (table vide + atelier en liste).
+      expect(container.querySelector(".proj")).toBeNull();
+      // Toggle visible avec « Liste » actif.
+      const list = screen.getByRole("button", { name: "Liste" });
+      expect(list.getAttribute("aria-pressed")).toBe("true");
+    });
+
+    it("bascule sur « Tuiles » : le projet rangé passe en carte `.proj`, plus de `.scanrow`", () => {
+      const { container } = renderView({
+        projects: [project("gamma")],
+        worksetIds: new Set(),
+        worksetCount: 0,
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Tuiles" }));
+      expect(container.querySelector(".proj")).toBeTruthy();
+      expect(container.querySelector(".scanrow")).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Tuiles" }).getAttribute("aria-pressed"),
+      ).toBe("true");
+    });
+
+    it("tuile d'atelier : action « + poser » appelle onToggleWork, tokens « — » (zéro fausse donnée)", () => {
+      const onToggleWork = vi.fn();
+      renderView({
+        projects: [project("gamma")],
+        worksetIds: new Set(),
+        worksetCount: 0,
+        onToggleWork,
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Tuiles" }));
+      // Bouton d'action de la tuile atelier = « poser sur la table ».
+      const put = screen.getByRole("button", { name: "Poser gamma sur la table" });
+      expect(put.textContent).toBe("+");
+      fireEvent.click(put);
+      expect(onToggleWork).toHaveBeenCalledWith("gamma");
+      // Tokens neutres « — » (projet hors table → pas de coût scopé).
+      expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
+    });
   });
 });

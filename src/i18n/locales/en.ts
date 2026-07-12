@@ -242,6 +242,10 @@ export const en: Resources = {
     economyCardTitle: "Cost by project & agent",
     economyPlaceholder: "No cost measured yet.",
     treemapLegendNote: "area ∝ tokens · segments = share per agent",
+    treemapOpenHint: "double-click → open in Work",
+    shelfViewAria: "Studio display",
+    shelfViewList: "List",
+    shelfViewTiles: "Tiles",
   },
 
   tile: {
@@ -260,6 +264,7 @@ export const en: Resources = {
     noCommit: "—",
     tokens: "tokens",
     putOnTable: "↗ Put on the table",
+    putOnTableAria: "Put {{project}} on the table",
     removeAria: "Put {{project}} back on the shelf",
   },
 

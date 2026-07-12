@@ -356,6 +356,34 @@ button {
   line-height: 1.15;
   letter-spacing: -0.01em;
 }
+/* Toggle segmenté « Liste / Tuiles » de l'atelier (L16-F1) — 2 boutons collés, l'actif
+   surligné. Sans bord dur, aligné sur la grammaire aérée de la direction A. */
+.segtoggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--surf-2);
+}
+.segtoggle button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 4px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: 0.12s;
+}
+.segtoggle button:hover {
+  color: var(--text);
+}
+.segtoggle button.on {
+  background: var(--surf);
+  color: var(--text);
+}
 .tilegrid {
   display: grid;
   /* Responsive au CONTENEUR (pas à la fenêtre) : auto-fill → 3 colonnes en grand, moins

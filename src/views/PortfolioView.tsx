@@ -11,6 +11,7 @@
  *  - Scoping (tranche C) : anneau % ET treemap partagent le MÊME dénominateur = Σ tokens des
  *    projets de la TABLE uniquement.
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Project, ProjectActivity } from "../api/backend";
 import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
@@ -38,6 +39,12 @@ export interface PortfolioViewProps {
   /** Ventilation tokens/jour/projet (L21 D / AR-5 révisé) ; échelle PORTEFEUILLE ENTIER
    *  (non filtrée par la table) → scatter-timeline « Travail récent · portefeuille ». */
   activity?: readonly ProjectActivity[];
+  /**
+   * L16-F2 — double-clic sur une cellule de la treemap Économie : bascule sur Travail avec
+   * le projet au premier plan (navigation + focus, AUCUNE mutation du workset). Câblé par
+   * `App` (`openProject` + `setActiveView("working")`).
+   */
+  onOpenInWork?: (projectId: string) => void;
 }
 
 const NO_AVATARS: AvatarMember[] = [];
@@ -55,8 +62,13 @@ export function PortfolioView({
   avatarsForProject,
   economy = [],
   activity = [],
+  onOpenInWork,
 }: PortfolioViewProps): JSX.Element {
   const { t } = useTranslation();
+
+  // L16-F1 — mode d'affichage de l'ATELIER SEUL (la table reste toujours en tuiles).
+  // Défaut = « Liste » (aucune régression visuelle) ; état local UI, sans persistance (MVP).
+  const [shelfView, setShelfView] = useState<"list" | "tiles">("list");
 
   // KPIs RÉELS (dérivés des props, purs) — le coût/tokens reste un placeholder.
   const cleanCount = projects.filter((p) => p.is_git && !p.dirty).length;
@@ -196,17 +208,60 @@ export function PortfolioView({
                 ))}
               </div>
 
-              {/* Rangés dans l'atelier — lignes compactes. */}
+              {/* Rangés dans l'atelier — liste (défaut) OU tuiles (toggle L16-F1). */}
               <div className="rowhead">
                 <h2>
                   {t("portfolio.shelfHead")} · {shelfProjects.length}
                 </h2>
+                <div
+                  className="segtoggle"
+                  role="group"
+                  aria-label={t("portfolio.shelfViewAria")}
+                >
+                  <button
+                    type="button"
+                    className={shelfView === "list" ? "on" : ""}
+                    aria-pressed={shelfView === "list"}
+                    onClick={() => setShelfView("list")}
+                  >
+                    {t("portfolio.shelfViewList")}
+                  </button>
+                  <button
+                    type="button"
+                    className={shelfView === "tiles" ? "on" : ""}
+                    aria-pressed={shelfView === "tiles"}
+                    onClick={() => setShelfView("tiles")}
+                  >
+                    {t("portfolio.shelfViewTiles")}
+                  </button>
+                </div>
               </div>
-              <div className="scan">
-                {shelfProjects.map((p) => (
-                  <ShelfRow key={p.id} project={p} onPut={onToggleWork} />
-                ))}
-              </div>
+              {shelfView === "list" ? (
+                <div className="scan">
+                  {shelfProjects.map((p) => (
+                    <ShelfRow key={p.id} project={p} onPut={onToggleWork} />
+                  ))}
+                </div>
+              ) : (
+                // Tuiles atelier : grammaire `.proj` réutilisée (variant "shelf") — tokens
+                // « — » + anneau NEUTRE (hors table → pas de coût scopé, zéro fausse donnée),
+                // avatars de la team, action « + poser sur la table ».
+                <div className="cards">
+                  {shelfProjects.map((p) => (
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      variant="shelf"
+                      live={false}
+                      avatars={avatarsForProject?.(p.id) ?? NO_AVATARS}
+                      tokens={null}
+                      ringPct={null}
+                      ringColor="var(--text-3)"
+                      onRemove={onToggleWork}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <aside className="folioside" aria-label={t("portfolio.economyAria")}>
@@ -216,7 +271,10 @@ export function PortfolioView({
               </div>
               {/* Treemap coût par projet & agent (L18 #5b) — SCOPÉE à la table (tranche C) :
                   EST le « coût par projet & agent » (segments coordinateur/délégués par projet). */}
-              <TreemapPanel items={scope.tableEconomy} />
+              <TreemapPanel
+                items={scope.tableEconomy}
+                onOpenInWork={onOpenInWork}
+              />
             </aside>
           </div>
         </div>

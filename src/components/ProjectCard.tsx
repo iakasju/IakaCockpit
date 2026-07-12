@@ -32,8 +32,15 @@ export interface ProjectCardProps {
   ringPct: number | null;
   /** Couleur de l'anneau (alignée sur la treemap pour le même projet). */
   ringColor: string;
-  /** Retire le projet de la table (le range sur l'étagère). */
+  /** Bascule le projet table↔atelier (toggle). Sur `table` = retirer, sur `shelf` = poser. */
   onRemove: (projectId: string) => void;
+  /**
+   * Contexte de rendu de la carte (L16-F1) :
+   *  - `"table"` (défaut) : projet POSÉ sur la table → action « − retirer » ;
+   *  - `"shelf"` : projet RANGÉ dans l'atelier, rendu en TUILE via le toggle Liste/Tuiles →
+   *    action « + poser sur la table ». Même grammaire `.proj`, seule l'action est échangée.
+   */
+  variant?: "table" | "shelf";
 }
 
 /** Nombre max d'avatars affichés avant le badge `+N` (mock en montre 1–3). */
@@ -78,8 +85,10 @@ export function ProjectCard({
   ringPct,
   ringColor,
   onRemove,
+  variant = "table",
 }: ProjectCardProps): JSX.Element {
   const { t } = useTranslation();
+  const isShelf = variant === "shelf";
   const shown = avatars.slice(0, AVATAR_CAP);
   const overflow = avatars.length - shown.length;
 
@@ -108,11 +117,19 @@ export function ProjectCard({
           <button
             type="button"
             className="cardrm"
-            aria-label={t("card.removeAria", { project: project.id })}
-            title={t("card.removeAria", { project: project.id })}
+            aria-label={
+              isShelf
+                ? t("card.putOnTableAria", { project: project.id })
+                : t("card.removeAria", { project: project.id })
+            }
+            title={
+              isShelf
+                ? t("card.putOnTableAria", { project: project.id })
+                : t("card.removeAria", { project: project.id })
+            }
             onClick={() => onRemove(project.id)}
           >
-            −
+            {isShelf ? "+" : "−"}
           </button>
         </div>
       </div>
