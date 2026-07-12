@@ -167,6 +167,37 @@ describe("useConversations — 1 conversation/projet (L8, migré L10b)", () => {
     expect(result.current.conversations[0].history).toHaveLength(2);
   });
 
+  // --- Fermeture au retrait de la Table (L23, incrément 2026-07-12) ---
+
+  it("closeConversation retire la conversation et, si c'était l'active, met active/activeProjectId à null", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() => result.current.openConversation("p2", "p2", "/root/p2"));
+    // p2 est l'active (dernière ouverte).
+    expect(result.current.active?.projectId).toBe("p2");
+
+    // Fermer un projet NON actif : il disparaît, l'active est préservée.
+    act(() => result.current.closeConversation("p1"));
+    expect(result.current.conversations).toHaveLength(1);
+    expect(result.current.conversations[0].projectId).toBe("p2");
+    expect(result.current.active?.projectId).toBe("p2");
+    expect(result.current.activeProjectId).toBe("p2");
+
+    // Fermer l'active : elle disparaît ET active/activeProjectId retombent à null.
+    act(() => result.current.closeConversation("p2"));
+    expect(result.current.conversations).toHaveLength(0);
+    expect(result.current.active).toBeNull();
+    expect(result.current.activeProjectId).toBeNull();
+  });
+
+  it("closeConversation d'un projet inconnu est un no-op (aucune conv retirée, active intacte)", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    act(() => result.current.closeConversation("absent"));
+    expect(result.current.conversations).toHaveLength(1);
+    expect(result.current.active?.projectId).toBe("p1");
+  });
+
   it("appendTurn FIGE l'émetteur par-tour : changer l'agent courant ne le modifie pas (L9)", () => {
     const { result } = renderHook(() => useConversations());
     act(() => result.current.openConversation("p1", "p1", "/root/p1"));

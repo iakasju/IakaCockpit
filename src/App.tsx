@@ -53,6 +53,7 @@ import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { AvatarMember } from "./components/ProjectCard";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import { backend, type Project, type RunnerEvent } from "./api/backend";
+import { removeFromWork } from "./app/removeFromWork";
 import { makeDemoFrame } from "./mock/demoFrame";
 import "./theme/tokens.css";
 // Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
@@ -355,12 +356,24 @@ export default function App(): JSX.Element {
   // vit ICI (App), pas dans useWorkset (le set d'ids reste front-pur, sans I/O).
   const removeFromWorkAndPrepare = (projectId: string): void => {
     const project = worksetProjects.find((p) => p.id === projectId);
-    // 1) Retrait immédiat du set de Work (l'item quitte la liste tout de suite).
-    workset.toggle(projectId);
-    // 2) Job de préparation de reprise, fire-and-forget (le hook tient le statut).
-    if (project) {
-      prepareResume.prepare(project.id, project.id, project.path);
-    }
+    // Capturer la conversation AVANT de la retirer (pour lire son ptySessionId).
+    const conv = conversations.conversations.find(
+      (c) => c.projectId === projectId,
+    );
+    // Orchestration pure (retrait + reprise + fermeture PTY/conversation, cf.
+    // removeFromWork). Fermer le PTY EXPLICITEMENT puis retirer la conversation :
+    // le PtyTerminal se démonte APRÈS la fermeture (plus de PTY orphelin). Garde
+    // L10 non violée : ce chemin explicite libère la garde de spawn R-L10b-1 ; le
+    // toggle/nav ne ferme jamais.
+    removeFromWork({
+      projectId,
+      project,
+      conversation: conv,
+      toggleWork: workset.toggle,
+      prepareResume: prepareResume.prepare,
+      closePty: pty.close,
+      closeConversation: conversations.closeConversation,
+    });
   };
 
   return (

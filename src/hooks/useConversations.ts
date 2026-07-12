@@ -138,6 +138,15 @@ export interface UseConversations {
    * absent) retombe le `pending` (le chef a répondu). Borné à l'ajout (pas d'I/O).
    */
   appendTurn: (projectId: string, turn: ChatTurn) => void;
+  /**
+   * Ferme (retire) la conversation d'un projet — geste EXPLICITE de retrait de la Table
+   * (L23, incrément 2026-07-12). Retire la conversation du tableau ; si c'était l'active,
+   * remet `activeProjectId → null`. **Aucun I/O** ici : la fermeture du PTY (`usePty.close`)
+   * est faite par l'appelant AVANT ce retrait (l'ordre importe : lire `ptySessionId` puis
+   * fermer le runner, PUIS démonter la vue). Ne concerne PAS le toggle/navigation (garde
+   * L10 : le `PtyTerminal` survit — la fermeture n'a lieu qu'au retrait explicite).
+   */
+  closeConversation: (projectId: string) => void;
 }
 
 let seq = 0;
@@ -251,6 +260,14 @@ export function useConversations(): UseConversations {
     [patch],
   );
 
+  const closeConversation = useCallback((projectId: string): void => {
+    // Retire la conversation du tableau (miroir convRef mis à jour au prochain render
+    // par l'affectation `convRef.current = conversations`). État pur, aucun I/O.
+    setConversations((prev) => prev.filter((c) => c.projectId !== projectId));
+    // Si on fermait l'active, plus d'active (l'utilisateur rouvre depuis la worklist).
+    setActiveProjectId((cur) => (cur === projectId ? null : cur));
+  }, []);
+
   const active =
     conversations.find((c) => c.projectId === activeProjectId) ?? null;
 
@@ -264,5 +281,6 @@ export function useConversations(): UseConversations {
     setAgent,
     echoUser,
     appendTurn,
+    closeConversation,
   };
 }
