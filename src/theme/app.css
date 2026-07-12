@@ -1678,7 +1678,7 @@ button {
   display: flex;
   align-items: stretch;
   gap: 4px;
-  padding: 8px 14px 0;
+  padding: 8px 0 0 14px;
   overflow-x: auto;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--line);
@@ -1737,7 +1737,7 @@ button {
   align-self: center;
   display: inline-flex;
   align-items: center;
-  margin: 0 2px 8px 12px;
+  margin: 0 0 8px 12px;
   padding: 4px 6px;
   border: none;
   background: transparent;
