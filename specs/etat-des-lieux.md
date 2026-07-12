@@ -1,17 +1,16 @@
 # État des lieux — 2026-07-12
 
 ## En une phrase
-**`v0.17.0` scellée** : jalon **IHM Portefeuille + retours terrain** (2 gates Legolas PASS, 538
-front + 274 Rust). **L16** livré — page Étagère : **toggle Liste/Tuiles** de l'Atelier (F1),
-**double-clic Économie → Travail** projet au premier plan (F2), **tuile enrichie** (description
-gras depuis `specs/PROJET.md`, ligne `next :`, méta version/retard/étapes — F3), **pastille
-d'urgence** dérivée du backlog (🔴/🟠/🟢/gris — F4/F4-bis, identique liste↔tuile). Scellés avec :
-**L23-incrément** (retrait de la Table ferme PTY+conversation), **page Cadre débranchée** du rail
-et **statut de reprise débranché** (code/job conservés), règle Cadre **`obligation`** « le
-coordinateur maintient la def projet dans `PROJET.md` » (aussi en mémoire + contrats de rôle), et
-**fix vignettes** « Aragorn = Gandalf » (team par défaut legacy réalignée au chargement, non
-destructif). **Prochaine étape au choix** : L16 vocal (whisper), L22-P3 enforcement runner, ou les
-chantiers IHM en file (filtres chat, arbre des délégations).
+**`v0.18.0` scellée** : jalon **vue Travail — fenêtres toujours ouvertes + onglets par projet**
+(**L24**, 2 gates Legolas PASS, 550 front, Rust non touché). Tous les projets de la Table gardent
+leur fenêtre vivante : **ouverture eager** à la pose (F1), **barre d'onglets par projet**
+(`ProjectTabs`, worklist gauche conservée — F2), toggle Shell/Conversation par onglet + garde L10
+intacte (F3) ; + **fix en-tête** conversation (fin du double « Aragorn », collision bouton esc
+corrigée). **Cadré et prêt** : **L25** — *s'attacher à la session vivante* d'un projet (tail du
+transcript le plus récent, vue live lecture seule, sans PTY) → **voir la conversation en cours**
+(cible v0.19.0). *(Précédent : `v0.17.0` = IHM Portefeuille L16 + retours terrain + fix vignettes,
+poussée sur Forgejo.)* **Prochaine étape au choix** : L25 (attacher session vivante), L16 vocal,
+L22-P3 enforcement, ou chantiers IHM (filtres chat, arbre des délégations).
 
 ## Différés / ouverts à la reprise
 - **L16 STT** : whisper rend `'...'`/`'[Musique]'` (audio capté non reconnu) ; mesure peak/rms posée,
@@ -48,22 +47,24 @@ chantiers IHM en file (filtres chat, arbre des délégations).
 ## Jalons (gates)
 | Jalon | Statut |
 |---|---|
-| Instructions cadrées | oui (L0→L23 dans `specs/instructions/` ; L16 LIVRÉ) |
-| Tests verts | oui (538 front + 274 Rust au seal v0.17.0 ; typecheck/lint/fmt/clippy OK) |
-| Recette stage | PASS (Legolas, 2 gates v0.17.0) |
-| Recette terrain GUI | partielle (recette écran en cours côté Stéphane ; fix vignettes se répare au relancement) |
-| Seal v0.17.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
+| Instructions cadrées | oui (L0→L25 dans `specs/instructions/` ; L16/L24 LIVRÉS, L25 cadré non démarré) |
+| Tests verts | oui (550 front au seal v0.18.0 ; Rust inchangé 274 ; typecheck/lint OK) |
+| Recette stage | PASS (Legolas, gates L24 + fix en-tête) |
+| Recette terrain GUI | partielle (recette écran L24 en cours ; recette visuelle en-tête à confirmer) |
+| Seal v0.17.0 | **oui** (tag posé, **poussé** sur `origin/main`) |
+| Seal v0.18.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
 | Feu vert prod | n/a (app desktop, pas de bascule stage→prod à ce jour) |
 
 ## Prochaine étape
-1. **Push** de `v0.17.0` (+ les 14 commits d'avance) sur `origin/main` — **en attente du feu vert de
-   Stéphane** (action sortante). Le tag `v0.17.0` est posé localement.
-2. **Recette terrain** à l'écran (`npm run tauri dev`) : toggle Liste/Tuiles, double-clic Économie,
-   tuile enrichie + pastille d'urgence identique liste↔tuile, vignette Aragorn≠Gandalf réparée au
-   relancement, retrait qui ferme shell+conversation, page Cadre absente du rail.
-3. **Au choix pour la suite** : L16 vocal (whisper n'entend pas encore la voix), **L22-P3** enforcement
-   runner (matérialiser l'obligation coordinateur au lancement), ou chantiers IHM en file (filtres de
-   canaux du chat, arbre des délégations).
+1. **Push** de `v0.18.0` (commit de seal + tag `v0.18.0`) sur `origin/main` — **en attente du feu vert
+   de Stéphane** (action sortante). `v0.17.0` déjà poussée.
+2. **Recette terrain** à l'écran (`npm run tauri dev`) : poser 2-3 projets **liés** sur la Table →
+   onglets par projet + fenêtres vivantes + switch sans tuer les runners + « × » qui ferme ; en-tête
+   sans double « Aragorn » et sans collision du bouton esc en mode Shell.
+3. **L25 — s'attacher à la session vivante** (`specs/instructions/L25-…`, cadré, non démarré) : ouvrir
+   un projet affiche sa conversation en cours (tail du dernier transcript, vue live lecture seule). À
+   confirmer AR-2/AR-3 (lecture seule ; plus récente sans seuil). Cible `v0.19.0`.
+4. **Autres au choix** : L16 vocal, L22-P3 enforcement, chantiers IHM (filtres chat, arbre des délégations).
 
 ## Points d'attention
 - **Config `~/.claude` migrée depuis Windows** : origine des deux soucis `/doctor` (plugin + chemins en
@@ -89,6 +90,7 @@ chantiers IHM en file (filtres chat, arbre des délégations).
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-12 | version | v0.18.0 | main | SEAL v0.18.0. Jalon **vue Travail — fenêtres toujours ouvertes + onglets par projet** (**L24**), cadré+coordonné par 🟠 Aragorn, 3 commits, gates Legolas PASS (550 front, Rust non touché). **L24** : F1 ouverture **eager** (dès la pose sur la Table, projets liés ; helper pur `reconcileEagerOpen` + effet App convergence anti-boucle, anti-empilement popups AR-3) ; F2 **barre d'onglets par projet** (`ProjectTabs` : un onglet/conversation, actif mis en évidence, « × » = retrait via L23-inc), **worklist gauche conservée** (AR-1, synchronisée) ; F3 toggle Shell/Conversation par onglet, **garde L10 intacte** (PtyTerminal jamais démonté au switch/toggle). + **fix en-tête** conversation (recette) : coordinateur affiché **seulement s'il diffère** de l'interlocuteur (fin du double « Aragorn » empilé) + en-tête sur **une seule ligne** (chip runner tronqué, toggle/esc jamais clipés, `convtitle` `flex-wrap:nowrap`). Front seul, Rust non touché. Doc qualité `docs/qualite/v0.18.0.md`. Cadré et prêt pour la suite : **L25** (s'attacher à la session vivante). Différés : DnD onglets, garde perf N runners, bouton + dans la barre. |
 | 2026-07-12 | version | v0.17.0 | main | SEAL v0.17.0. Jalon **IHM Portefeuille + retours terrain**, cadré+coordonné par 🟠 Aragorn, 11 commits, **2 gates Legolas PASS** (538 front + 274 Rust, couverture ~75 %). **L16** (page Étagère) : **F1** toggle Liste/Tuiles de l'Atelier (défaut Liste, table en tuiles) ; **F2** double-clic widget Économie (treemap) → bascule Travail + projet au premier plan (sans mutation workset, scoping AR-4 conservé) ; **F3** tuile enrichie — description **gras** (source `specs/PROJET.md` prioritaire, AR-6=B), ligne `next :` (1er `- [ ]` du backlog), méta version/retard/étapes (étend `portfolio.rs` : `read_description`/`read_backlog` + 3 champs `Project`) ; **F4** pastille d'urgence dérivée de `backlog_remaining` (🔴≥5/🟠1-4/🟢0/gris, AR-7, `read_backlog` renvoie `Some(0)` si tout coché) ; **F4-bis** pastille **partagée identique** liste↔tuile (helper `urgency.ts`). Scellés avec : **L23-inc** (retrait Table ferme PTY+conversation via `closeConversation`+`pty.close`, job reprise conservé, garde L10 intacte) ; **page Cadre débranchée** du rail (code conservé) ; **affichage statut reprise débranché** (job conservé) ; règle Cadre **`obligation oblig-def-projet`** (obligation coordinateur : maintenir la def projet dans `PROJET.md`, aussi mémoire + contrats aragorn/odin) ; **fix vignettes** « Aragorn=Gandalf » — team par défaut legacy (`Aragorn.roleIndex=2`) réalignée au chargement (`reconcileDefaultTeamCasting`, bornée `DEFAULT_TEAM_ID`, non destructif, idempotent) + garde anti-récidive TeamsEditor. Doc qualité `docs/qualite/v0.17.0.md`. Rust confiné à `portfolio.rs`. Différés : persistance toggle, a11y clavier treemap, confirmation retrait, enforcement runner de l'obligation (L22-P3), L16 vocal. |
 | 2026-07-07 | version | v0.16.0 | main | SEAL v0.16.0. **L22 « Le Cadre » LIVRÉ P1+P2+P2b**, recette terrain réelle OK. P1 : modèle pur (`src/frame/model.ts`, 4 niveaux) + persistance `frame.json`/team (`frame.rs`, AR-1) + hook `useFrame` + **vue Cadre refondue design Loki** (une page haut→bas, chaîne Règles→Skills→Templates→Agents, décomposition visible, définitions/exemples/légende) + seed démo ; persistance+ergonomie recettées. P2 « définir en conversant » : **prompt LLM par étage** (`ai.rs frame_author`, calque L3/L8, mock/dégradation) rédige paragraphe de skill (versionné) / brief d'agent + dictée `useVoiceDictation` ; **recette réelle llama3.1** (brief persisté) + prompt système durci (fiche autonome 3e pers.). P2b : **export `agent.md`** (front génère md, `frame_export` écrit sous `.iakacockpit/frames/<team>/`) ; recette : 4 agent.md écrits, contenu propre (identité+brief+skills+règles effectives+délégations). Aussi : correctifs `/doctor` (permission fork-bomb, MCP claude.ai, plugin Windows→Mac) ; **L16 reciblé** dictée-chat (STT natif `voice.rs` cpal+whisper-rs livré, prouvé sur bundle .app ; **ouvert** : whisper n'entend pas la voix). 461 front + 247 Rust verts, lint/typecheck/clippy/build OK. Modèle Cadre + arbitrages : voir mémoires `ontologie-cadre-rules-templates-team`, `l22-p2-conversation-authoring`. Différés : L22-P3 enforcement, P2b hooks/limites, chantiers IHM (filtres chat, arbre délégations). |
 | 2026-07-01 | reprise | v0.15.0 | main | Reprise après seal v0.15.0. Aucun dev en cours. Session = maintenance santé `/doctor` : (1) retiré de `.claude/settings.local.json` la règle deny fork-bomb inexprimable `Bash(:(){ :\|:& };:)` (parenthèses imbriquées, règle ignorée) — **modif non commitée dans l'arbre** ; (2) déconnecté les MCP claude.ai inutilisés (Gmail/Drive/Calendar) via `/mcp`, hors dépôt ; (3) réparé le plugin `rust-analyzer-lsp` « cache-miss » — `~/.claude/plugins/known_marketplaces.json` pointait un chemin Windows `C:\Users\sjupi\…`, repointé sur le chemin macOS réel, hors dépôt. `/doctor` liste vide confirmée. Fil rouge : config `~/.claude` migrée de Windows (chemins en dur). PROCHAINE ÉTAPE = commiter le fix settings (optionnel) puis démarrer L16 pilotage vocal (cadré, non démarré). |

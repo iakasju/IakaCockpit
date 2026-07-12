@@ -366,6 +366,27 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **fix vignettes** (team par défaut legacy `Aragorn.roleIndex=2` → réalignement canonique one-shot
       non destructif + garde anti-récidive TeamsEditor). Différés : persistance du toggle, a11y clavier treemap,
       confirmation au retrait. *(Remplace le contenu vocal de la case L16 — cf. lot vocal ci-dessous, conservé.)*
+- [x] **L24** — **Onglets par projet + fenêtres de travail toujours ouvertes** (vue Travail)
+      → `specs/instructions/L24-onglets-projet-table-fenetres-ouvertes.md`
+      *(**LIVRÉ, scellé `v0.18.0`** 2026-07-12 ; doc qualité `docs/qualite/v0.18.0.md` ; 2 gates Legolas PASS,
+      550 front verts, Rust non touché. Cadré+coordonné par 🟠 Aragorn, AR-1..3 tranchés).* Tous les projets
+      de la Table gardent leur fenêtre vivante : **(F1)** ouverture **eager** dès la pose sur la Table (projets
+      liés ; helper pur `reconcileEagerOpen` + effet App anti-boucle/anti-popup) ; **(F2)** **barre d'onglets
+      par projet** (`ProjectTabs`, nom du projet, actif mis en évidence, « × » = retrait via L23-inc), worklist
+      gauche conservée (AR-1) ; **(F3)** toggle Shell/Conversation par onglet, **garde L10 intacte** (PtyTerminal
+      jamais démonté au switch). + **fix en-tête** conversation (fin du double « Aragorn » : coordinateur affiché
+      seulement s'il diffère de l'interlocuteur ; collision bouton esc corrigée, en-tête sur une ligne). Front
+      seul. Différés : DnD onglets, garde perf N runners, bouton + dans la barre, **L25** (s'attacher à la session
+      vivante — cible v0.19.0).
+- [ ] **L25** — **S'attacher à la session vivante d'un projet (vue live du transcript)**
+      → `specs/instructions/L25-attacher-session-vivante-vue-live.md`
+      *(cadré 2026-07-12 par 🟠 Aragorn, décision Stéphane ; non démarré).* Ouvrir un projet **s'attache à sa
+      session vivante** (tail du transcript le plus récent du cwd, **vue live lecture seule, sans PTY**) au lieu
+      de spawner une session vierge → on voit **la conversation en cours** (ex. celle du terminal). F1 commande
+      Rust `latest_transcript(cwd)` ; F2 mode conversation **« attached »** (tail sans PTY) vs **« owned »** ;
+      F3 UI attachée (badge « session vivante · lecture seule », saisie désactivée, bouton « démarrer un runner »).
+      Réalise la vision terminal-source/chat-vue pour les sessions **externes**. Différés : reprise typable
+      `--resume`, sélecteur multi-sessions, seuil de fraîcheur.
 - [ ] **(Re-tracé, ex-L16)** — **Pilotage / dictée vocale d'iakacockpit** → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
       *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
       cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher
