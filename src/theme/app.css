@@ -766,8 +766,23 @@ button {
   background: var(--surf-3);
   flex: none;
 }
-/* Pastille d'urgence (F4, AR-7) : point coloré dérivé du backlog restant, dans le
-   slot `.ic`. Calque des pastilles `.dot` de l'atelier (rond plein tokénisé). */
+/* Pastille d'urgence (F4 / F4-bis, AR-7) : SOURCE DE VÉRITÉ VISUELLE UNIQUE partagée
+   entre la tuile (`.proj .ic.urg`) et la liste (`.scanrow .dot.urg`). Le niveau ne fait
+   que poser `--dotcolor` (mêmes couleurs partout) ; chaque emplacement peint son point de
+   MÊME taille (`--urg-dot-size`) via `--dotcolor`. Zéro divergence liste ↔ tuile. */
+.urg-none {
+  --dotcolor: var(--text-3);
+}
+.urg-done {
+  --dotcolor: var(--green);
+}
+.urg-mid {
+  --dotcolor: var(--orange);
+}
+.urg-high {
+  --dotcolor: var(--red);
+}
+/* Tuile : le point coloré occupe le slot carré `.ic` via un `::after` centré. */
 .proj .ic.urg {
   display: flex;
   align-items: center;
@@ -775,22 +790,10 @@ button {
 }
 .proj .ic.urg::after {
   content: "";
-  width: 12px;
-  height: 12px;
+  width: var(--urg-dot-size, 12px);
+  height: var(--urg-dot-size, 12px);
   border-radius: 50%;
   background: var(--dotcolor, var(--text-3));
-}
-.proj .ic.urg-none {
-  --dotcolor: var(--text-3);
-}
-.proj .ic.urg-done {
-  --dotcolor: var(--green);
-}
-.proj .ic.urg-mid {
-  --dotcolor: var(--orange);
-}
-.proj .ic.urg-high {
-  --dotcolor: var(--red);
 }
 .proj .proj-id {
   min-width: 0;
@@ -1028,12 +1031,21 @@ button {
   border-radius: 50%;
   flex: none;
 }
+/* Pastille d'urgence de la liste (F4-bis) : MÊME point que la tuile — mêmes couleurs
+   (`--dotcolor` posé par `.urg-<level>`) et MÊME taille (`--urg-dot-size`, 12px). Remplace
+   l'ancien statut git `.dot.i/.o` (débranché ci-dessous, conservé pour référence). */
+.scanrow .dot.urg {
+  width: var(--urg-dot-size, 12px);
+  height: var(--urg-dot-size, 12px);
+  background: var(--dotcolor, var(--text-3));
+}
+/* Débranché F4-bis (plus référencé par ShelfRow) — conservé au cas où :
 .scanrow .dot.i {
   background: var(--text-3);
 }
 .scanrow .dot.o {
   background: var(--orange);
-}
+} */
 .add {
   border: 1px solid var(--surf-2);
   background: transparent;
