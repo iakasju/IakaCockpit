@@ -403,22 +403,12 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       la pastille (`role="switch"`, toggle **symétrique** : sortie fullscreen incluse — AR-1 supersédé). Fix
       structurel : switch sorti du conteneur `overflow-x:auto` (`.projtabs-list` scrollable + `.fsswitch`
       frère). **Vérifié en CDP réel** : `gapRight=0` (collé à droite). Commits `3a4f408`→`4270a34`.
-- [ ] **(Re-tracé, ex-L16)** — **Pilotage / dictée vocale d'iakacockpit** → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
-      *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
-      cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher
-      d'intent (règles d'abord, LLM Ollama en secours) → action IHM`. STT **côté Rust** (WKWebView sans
-      Web Speech fiable), **offline** (voix jamais au cloud). **P1 = barre de commande IHM / navigation**
-      (`voice.rs` cpal+whisper-rs, push-to-talk, dispatcher règles pur, façade `voiceListen()`,
-      `useVoiceCommand`, UI micro) — prouve la chaîne voix→action sans LLM. **P2 différé** = lancer le
-      Travail (fuzzy projet/équipe + LLM-secours). **P3 différé** = conversation vocale avec les teams
-      (whisper free-form → chat coordinateur ; TTS option). Réutilise nav/Ollama/façade ; modèle non
-      bundlé en P1 (téléchargé). Lié à la note `specs/notes/concepts-llm-transcript-ihm.md`.
-      *(**RECIBLÉ 2026-07-02** : Stéphane ne veut PAS piloter le cockpit à la voix mais **dicter dans
-      la conversation d'un projet**. Livré : STT natif `voice.rs` (cpal+whisper-rs, prouvé sur bundle
-      `.app` — cf. `Info.plist` micro ; en `tauri dev` le binaire nu est tué par TCC), `useVoiceDictation`
-      + micro dans le chat (auto-envoi + garde anti-vide), nav vocale du rail **débranchée** (gardée).
-      **Ouvert** : whisper n'entend pas encore la voix en recette (silence/`[Musique]`, mesure peak/rms
-      posée). cmake installé via `pip3 --user` (PATH `~/.zshrc`).)*
+- [x] **L27** — **Filtres de canaux au-dessus du chat** (chantier IHM A) → `specs/instructions/L27-filtres-canaux-chat.md`
+      *(**LIVRÉ, scellé `v0.22.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.22.0.md` ; gate Legolas PASS —
+      575 front, Rust intact).* Barre de chips (**Parole/Geste/Délégation/Activité/Pensée**) au-dessus du fil
+      du chat : toggle de visibilité par canal, généralise le toggle `pensée` existant (Pensée **persistée**,
+      4 autres canaux locaux MVP) ; messages utilisateur toujours visibles. Front seul (`Chat.tsx`). Commit
+      `b382c89`. Reste chantier IHM : **L28 arbre des délégations** (remplace le Gantt, Travail + Journal).
 - [x] **L22** — **« Le Cadre » : GUI de configuration iakaframe** → `specs/instructions/L22-cadre-config-iakaframe.md`
       *(**LIVRÉ P1+P2+P2b, scellé `v0.16.0`** 2026-07-07 ; recette terrain réelle OK).* GUI dans iakacockpit
       (6ᵉ vue « Cadre ») pour définir le **cadre** d'une équipe, **en conversant**. Modèle à 4 niveaux
