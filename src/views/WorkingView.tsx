@@ -376,8 +376,10 @@ export function WorkingView({
                 </span>
                 {activeRunner && (
                   <span className="ct-runner" title={t("working.runnerTitle")}>
-                    {activeRunner.coordinator} · {activeRunner.kind} ·{" "}
-                    {activeRunner.model || t("working.runnerModelDefault")}
+                    {activeRunner.coordinator.toLowerCase() !==
+                    active.agent.toLowerCase()
+                      ? `${activeRunner.coordinator} · ${activeRunner.kind} · ${activeRunner.model || t("working.runnerModelDefault")}`
+                      : `${activeRunner.kind} · ${activeRunner.model || t("working.runnerModelDefault")}`}
                   </span>
                 )}
               </div>

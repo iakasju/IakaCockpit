@@ -1769,9 +1769,10 @@ button {
   gap: 10px;
   min-width: 0;
   flex: 1 1 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .convtitle .ct-runner {
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1782,18 +1783,21 @@ button {
   flex: 0 0 auto;
 }
 .convtitle .ct-nm {
+  flex: 0 0 auto;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 15px;
   color: var(--text);
 }
 .convtitle .ct-agent {
+  flex: 0 0 auto;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--accent);
   padding: 3px 10px;
   border-radius: 99px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+  white-space: nowrap;
 }
 .convtitle .ct-runner {
   font-family: var(--mono);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, within } from "@testing-library/react";
 
 // Mock PtyTerminal (xterm lourd / jsdom) : stub qui expose runnerKind + model.
 vi.mock("../components/PtyTerminal", () => ({
@@ -104,13 +104,32 @@ describe("WorkingView — runner du coordinateur (L11/P3)", () => {
     expect(pty.getAttribute("data-model")).toBe("gpt-5-codex");
   });
 
-  it("convhead affiche coordinateur · runner · modèle", () => {
+  it("convhead : interlocuteur == coordinateur → nom affiché UNE seule fois (pas de doublon)", () => {
+    // conv() par défaut : agent = "Aragorn" ; coordinateur = "Aragorn".
     renderView(() => ({
       kind: "claude-code",
       model: "opus",
       coordinator: "Aragorn",
     }));
-    // L'indicateur du coordinateur est présent (édition via Réglages → Teams).
+    // Le chip runner n'inclut PAS le nom du coordinateur (déjà porté par ct-agent).
+    const runner = screen.getByText("claude-code · opus");
+    expect(runner).toBeTruthy();
+    // Un seul « Aragorn » dans l'EN-TÊTE de conversation (celui de l'interlocuteur),
+    // pas répété par le chip runner (le Roster à droite peut le porter aussi).
+    const head = runner.closest(".convtitle") as HTMLElement;
+    expect(within(head).getAllByText(/Aragorn/)).toHaveLength(1);
+  });
+
+  it("convhead : interlocuteur != coordinateur (@agent) → coordinateur affiché dans le chip runner", () => {
+    // Interlocuteur changé via @agent (ex. Gandalf) ≠ coordinateur (Aragorn).
+    renderView(
+      () => ({
+        kind: "claude-code",
+        model: "opus",
+        coordinator: "Aragorn",
+      }),
+      conv({ agent: "Gandalf" }),
+    );
     const head = screen.getByText(/Aragorn · claude-code · opus/);
     expect(head).toBeTruthy();
   });
