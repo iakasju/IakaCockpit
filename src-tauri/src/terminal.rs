@@ -541,14 +541,81 @@ fn escape_cwd(cwd: &str) -> String {
         .collect()
 }
 
+/// Dossier de transcripts de session d'un `cwd` : `<home>/.claude/projects/<escaped>/`.
+/// UNIQUE point de composition de ce dossier (réutilise `escape_cwd`) — partagé par
+/// `transcript_path` (chemin d'UNE session) et `latest_transcript` (scan de la session
+/// vivante, L25). Pur/testable.
+fn transcript_dir(home: &Path, cwd: &str) -> PathBuf {
+    home.join(".claude").join("projects").join(escape_cwd(cwd))
+}
+
 /// Chemin PRÉVU du transcript JSONL pour `(cwd, session_id)` :
 /// `<home>/.claude/projects/<escaped>/<session_id>.jsonl`. Pur/testable (le tailer L10b
 /// le consommera ; ici on le renvoie au front au titre du critère L10a).
 fn transcript_path(home: &Path, cwd: &str, session_id: &str) -> PathBuf {
-    home.join(".claude")
-        .join("projects")
-        .join(escape_cwd(cwd))
-        .join(format!("{session_id}.jsonl"))
+    transcript_dir(home, cwd).join(format!("{session_id}.jsonl"))
+}
+
+/// Session VIVANTE détectée sur disque pour un `cwd` (L25 F1). `session_id` = nom du
+/// fichier transcript sans extension (clef PTY/tailer ↔ transcript) ; `path` = chemin
+/// absolu du `.jsonl` ; `mtime_epoch` = date de dernière modification (epoch secondes).
+/// Miroir TS `LatestTranscript` (snake_case, D7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct LatestTranscript {
+    pub session_id: String,
+    pub path: String,
+    pub mtime_epoch: u64,
+}
+
+/// Cherche le transcript `*.jsonl` le PLUS RÉCEMMENT MODIFIÉ (mtime) dans `dir` — la
+/// **session vivante** du projet (L25). `None` si le dossier est absent/vide ou ne
+/// contient aucun `.jsonl`. Lecture de répertoire seule (aucun I/O réseau). PUR/testable
+/// (le dossier est passé en paramètre : pas de dépendance au `home` de la machine).
+fn latest_transcript_in(dir: &Path) -> Option<LatestTranscript> {
+    let mut best: Option<(std::time::SystemTime, PathBuf)> = None;
+    for entry in std::fs::read_dir(dir).ok()?.flatten() {
+        let path = entry.path();
+        // On ne retient QUE les `*.jsonl` (les autres fichiers du dossier sont ignorés).
+        if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+            continue;
+        }
+        let meta = match entry.metadata() {
+            Ok(m) if m.is_file() => m,
+            _ => continue,
+        };
+        let mtime = match meta.modified() {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        let is_better = best.as_ref().map(|(m, _)| mtime > *m).unwrap_or(true);
+        if is_better {
+            best = Some((mtime, path));
+        }
+    }
+    let (mtime, path) = best?;
+    let session_id = path.file_stem()?.to_string_lossy().into_owned();
+    let mtime_epoch = mtime
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    Some(LatestTranscript {
+        session_id,
+        path: path.to_string_lossy().into_owned(),
+        mtime_epoch,
+    })
+}
+
+/// Détecte la **session vivante** d'un `cwd` (L25 F1) : le transcript `*.jsonl` le plus
+/// récemment modifié dans `<home>/.claude/projects/<escaped>/` (même échappement que
+/// `transcript_path`, réutilisé via `transcript_dir` — pas de constante chemin en dur,
+/// cross-OS socle L0). Renvoie `None` si aucune session sur disque. **Lecture seule**,
+/// aucun I/O réseau : le front l'appelle AVANT d'ouvrir un projet pour s'ATTACHER à la
+/// conversation en cours (vue live) plutôt que spawner un runner vierge. Aucun risque de
+/// traversal : `escape_cwd` remplace tout caractère non alphanumérique (dont `/`, `.`,
+/// `..`) par `-`, donc le nom de dossier composé ne peut pas s'évader de `projects/`.
+#[tauri::command]
+pub fn latest_transcript(cwd: String) -> Result<Option<LatestTranscript>, String> {
+    Ok(latest_transcript_in(&transcript_dir(&home_dir(), &cwd)))
 }
 
 /// Ouvre un **chef-runner** dans un PTY : `claude` en TUI native (kind `claude-code`,
@@ -1076,5 +1143,94 @@ mod tests {
             Path::new("/Users/sjupin/.claude/projects/-Users-sjupin-work-iaka-demo")
                 .join(format!("{SID}.jsonl"))
         );
+    }
+
+    // ===================================================================
+    // L25 F1 — détection de la session vivante (`latest_transcript`)
+    // ===================================================================
+
+    #[test]
+    fn transcript_dir_compose_le_dossier_avec_l_echappement() {
+        // Réutilise EXACTEMENT `escape_cwd` (underscore/espace → `-`) : le dossier de
+        // scan de la session vivante = celui où Claude Code écrit les transcripts.
+        let home = Path::new("/Users/sjupin");
+        assert_eq!(
+            transcript_dir(home, "/Users/sjupin/work/iaka-demo"),
+            Path::new("/Users/sjupin/.claude/projects/-Users-sjupin-work-iaka-demo")
+        );
+        assert_eq!(
+            transcript_dir(home, "/Users/u/work/iaka_probe underscore"),
+            Path::new("/Users/sjupin/.claude/projects/-Users-u-work-iaka-probe-underscore")
+        );
+    }
+
+    /// Crée une arène de transcripts temporaire UNIQUE (isolation entre tests parallèles).
+    fn unique_transcripts_dir() -> std::path::PathBuf {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let n = SEQ.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "iaka-latest-{}-{}-{n}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// Écrit un `.jsonl` (nom `<stem>.jsonl`) et fixe son mtime à `epoch` secondes
+    /// (déterministe : pas de dépendance à un `sleep` fragile entre écritures).
+    fn write_jsonl_with_mtime(dir: &Path, stem: &str, epoch: u64) -> std::path::PathBuf {
+        let path = dir.join(format!("{stem}.jsonl"));
+        let f = std::fs::File::create(&path).unwrap();
+        let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(epoch);
+        f.set_modified(when).unwrap();
+        path
+    }
+
+    #[test]
+    fn latest_transcript_in_rend_le_plus_recemment_modifie() {
+        let dir = unique_transcripts_dir();
+        write_jsonl_with_mtime(&dir, "sid-old", 1_000);
+        write_jsonl_with_mtime(&dir, "sid-live", 3_000); // le plus récent
+        write_jsonl_with_mtime(&dir, "sid-mid", 2_000);
+
+        let found = latest_transcript_in(&dir).expect("une session vivante");
+        assert_eq!(found.session_id, "sid-live");
+        assert_eq!(found.mtime_epoch, 3_000);
+        assert!(found.path.ends_with("sid-live.jsonl"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn latest_transcript_in_ignore_les_non_jsonl() {
+        let dir = unique_transcripts_dir();
+        // Un fichier NON `.jsonl` PLUS récent ne doit PAS l'emporter.
+        let other = dir.join("notes.txt");
+        let f = std::fs::File::create(&other).unwrap();
+        f.set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(9_000))
+            .unwrap();
+        write_jsonl_with_mtime(&dir, "sid-real", 2_000);
+
+        let found = latest_transcript_in(&dir).expect("le seul .jsonl gagne");
+        assert_eq!(found.session_id, "sid-real");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn latest_transcript_in_dossier_vide_rend_none() {
+        let dir = unique_transcripts_dir();
+        assert_eq!(latest_transcript_in(&dir), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn latest_transcript_in_dossier_absent_rend_none() {
+        // Dossier jamais créé (projet sans aucune session) → None, pas d'erreur.
+        let dir = std::env::temp_dir().join("iaka-latest-absent-xyz-jamais-cree");
+        assert_eq!(latest_transcript_in(&dir), None);
     }
 }

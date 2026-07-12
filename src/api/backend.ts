@@ -615,6 +615,30 @@ export function ptyRunnerOpen(
   });
 }
 
+// --- Session vivante : s'attacher à la conversation en cours (L25 F1) ---
+
+/**
+ * Miroir de `terminal::LatestTranscript` (Rust, L25). Session RÉELLEMENT présente sur
+ * disque pour un cwd : `session_id` = clef PTY/tailer ↔ transcript (nom du `.jsonl` sans
+ * extension), `path` = chemin absolu du transcript, `mtime_epoch` = mtime (epoch secondes).
+ */
+export interface LatestTranscript {
+  session_id: string;
+  path: string;
+  mtime_epoch: number;
+}
+
+/**
+ * Détecte la **session vivante** du projet `cwd` (L25) : le transcript `*.jsonl` le plus
+ * récemment modifié dans `~/.claude/projects/<escaped>/` (lecture seule, côté Rust).
+ * Renvoie `null` si aucune session sur disque (le projet s'ouvre alors en runner vierge
+ * `owned`). Sert à OUVRIR un projet en mode `attached` (vue live) plutôt que spawner un
+ * `claude` neuf. Ne rejette pas hors Tauri (l'appelant dégrade en `owned`).
+ */
+export function latestTranscript(cwd: string): Promise<LatestTranscript | null> {
+  return call<LatestTranscript | null>("latest_transcript", { cwd });
+}
+
 // --- Tailer du transcript JSONL → vues filtrées (L10b) ---
 //
 // Le tailer (côté Rust, transcript.rs) lit le transcript JSONL que Claude Code écrit
@@ -795,6 +819,7 @@ export const backend = {
   ptyResize,
   ptyClose,
   ptyRunnerOpen,
+  latestTranscript,
   transcriptTailStart,
   transcriptTailStop,
   codexTailStart,
