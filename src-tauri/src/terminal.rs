@@ -618,6 +618,18 @@ pub fn latest_transcript(cwd: String) -> Result<Option<LatestTranscript>, String
     Ok(latest_transcript_in(&transcript_dir(&home_dir(), &cwd)))
 }
 
+/// L26 — bascule le **plein écran OS** de la fenêtre courante (mode focus de la Table).
+/// Passe par NOTRE commande (façade unique D7) plutôt que par le plugin window JS : évite
+/// la config de capabilities côté front et garde tout l'accès backend dans `backend.ts`.
+/// `on=true` = plein écran (vert / entrée en focus), `on=false` = fenêtré. Idempotent
+/// (Tauri no-op si déjà dans l'état demandé). AR-1 : le feu jaune ne l'appelle PAS — la
+/// sortie du plein écran reste au contrôle natif macOS. NON testé unitairement : les
+/// commandes de fenêtre exigent un runtime Tauri (pas de `WebviewWindow` hors app).
+#[tauri::command]
+pub fn set_fullscreen(window: tauri::WebviewWindow, on: bool) -> Result<(), String> {
+    window.set_fullscreen(on).map_err(|e| e.to_string())
+}
+
 /// Ouvre un **chef-runner** dans un PTY : `claude` en TUI native (kind `claude-code`,
 /// défaut) ou le shell legacy (kind `shell`). `session_id` (uuid) est **pré-généré ici**
 /// AVANT le spawn, passé au runner ET renvoyé au front. Le `cwd` (si fourni) DOIT rester

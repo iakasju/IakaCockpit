@@ -70,6 +70,7 @@ pub fn run() {
             terminal::pty_close,
             terminal::pty_runner_open,
             terminal::latest_transcript,
+            terminal::set_fullscreen,
             transcript::transcript_tail_start,
             transcript::transcript_tail_stop,
             codex::codex_tail_start,
