@@ -149,6 +149,16 @@ export interface WorkingViewProps {
   hidePensee?: boolean;
   /** Bascule + persiste l'état du canal pensée (L10b/P3). */
   onToggleHidePensee?: () => void;
+  /**
+   * L26 — mode focus de la Table : masque la worklist (colonne gauche n°2) et agrandit
+   * le workpane. Le rail (colonne n°1) est masqué par `App` (l'état vit au niveau App).
+   * Défaut `false` (layout normal).
+   */
+  focus?: boolean;
+  /** L26 — feu VERT (entrer en focus + plein écran) — orchestré par App. */
+  onEnterFocus?: () => void;
+  /** L26 — feu JAUNE (sortir du focus, colonnes seules). */
+  onExitFocus?: () => void;
 }
 
 export function WorkingView({
@@ -181,6 +191,9 @@ export function WorkingView({
   resolveRunner,
   hidePensee,
   onToggleHidePensee,
+  focus = false,
+  onEnterFocus,
+  onExitFocus,
 }: WorkingViewProps): JSX.Element {
   const { t } = useTranslation();
   // Props liées à l'affichage du statut de reprise : DÉBRANCHÉ (2026-07-12) mais conservé.
@@ -245,7 +258,10 @@ export function WorkingView({
   const voice = useVoiceDictation((text) => sendActive(text));
 
   return (
-    <section className="view wk" aria-label={t("working.ariaLabel")}>
+    <section
+      className={`view wk${focus ? " wk--focus" : ""}`}
+      aria-label={t("working.ariaLabel")}
+    >
       <aside className="worklist">
         <div className="wlhead">
           <div className="mid">
@@ -372,6 +388,9 @@ export function WorkingView({
           activeProjectId={active?.projectId ?? null}
           onSelect={onSelectConversation}
           onClose={onRemoveFromWork}
+          focus={focus}
+          onEnterFocus={onEnterFocus ?? (() => {})}
+          onExitFocus={onExitFocus ?? (() => {})}
         />
         {active ? (
           <>

@@ -411,3 +411,69 @@ describe("WorkingView — session attachée L25 (lecture seule)", () => {
     ).toBeNull();
   });
 });
+
+// --- L26 : mode focus de la Table (feux macOS) ---
+
+describe("WorkingView — mode focus L26", () => {
+  function renderFocus(focus: boolean, onEnterFocus = vi.fn(), onExitFocus = vi.fn()) {
+    const c = conv({ mode: "chat" });
+    return rtlRender(
+      <WorkingView
+        worksetProjects={[]}
+        conversations={[c]}
+        active={c}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
+        onSelectConversation={() => {}}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={() => {}}
+        onStartRunner={() => {}}
+        onRequestNextStep={() => {}}
+        resolveRunner={() => ({
+          kind: "claude-code",
+          model: "",
+          coordinator: "Aragorn",
+        })}
+        focus={focus}
+        onEnterFocus={onEnterFocus}
+        onExitFocus={onExitFocus}
+      />,
+    );
+  }
+
+  it("focus → la section porte `wk--focus` (masque worklist en CSS), et garde `.wkright` + onglets", () => {
+    const { container } = renderFocus(true);
+    // La classe qui pilote le masquage (worklist) via CSS est bien posée.
+    expect(container.querySelector(".wk.wk--focus")).not.toBeNull();
+    // Colonne de widgets droite CONSERVÉE (exigence explicite).
+    expect(container.querySelector(".wkright")).not.toBeNull();
+    // Onglets + feux TOUJOURS présents.
+    expect(container.querySelector(".projtabs")).not.toBeNull();
+    expect(container.querySelector(".projfocus")).not.toBeNull();
+    // Toggle Shell/Conversation conservé.
+    expect(container.querySelector(".modetoggle")).not.toBeNull();
+    // La worklist reste dans le DOM (masquée par CSS, non démontée).
+    expect(container.querySelector(".worklist")).not.toBeNull();
+  });
+
+  it("normal (focus=false) → pas de `wk--focus`", () => {
+    const { container } = renderFocus(false);
+    expect(container.querySelector(".wk--focus")).toBeNull();
+    expect(container.querySelector(".wk")).not.toBeNull();
+  });
+
+  it("clic vert (feu vert des onglets) → onEnterFocus", () => {
+    const onEnterFocus = vi.fn();
+    renderFocus(false, onEnterFocus);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Agrandir la zone de travail/ }),
+    );
+    expect(onEnterFocus).toHaveBeenCalledTimes(1);
+  });
+});

@@ -201,6 +201,20 @@ export default function App(): JSX.Element {
   // Popup de liaison projet↔team (L11) : projet en attente de choix de team.
   const [pickerProject, setPickerProject] = useState<Project | null>(null);
 
+  // L26 — mode focus de la Table (feux macOS des onglets). `true` = colonnes de gauche
+  // masquées (rail App + worklist WorkingView) + zone de travail agrandie. Transitoire
+  // (pas de persistance — hors lot). Vert = entrer en focus ET passer en plein écran OS
+  // (via la façade unique `set_fullscreen`, D7) ; jaune = SORTIR du focus SEULEMENT — ne
+  // touche PAS au plein écran (AR-1 : la sortie du plein écran reste au feu natif macOS).
+  const [workFocus, setWorkFocus] = useState(false);
+  const enterWorkFocus = useCallback((): void => {
+    setWorkFocus(true);
+    void backend.setFullscreen(true);
+  }, []);
+  const exitWorkFocus = useCallback((): void => {
+    setWorkFocus(false);
+  }, []);
+
   // Team du projet ACTIF (L11) : pilote les vignettes ET le roster. Hors conversation
   // active → team par défaut (`teamForProject("")` retombe sur le défaut).
   const activeTeam = useMemo(
@@ -452,7 +466,10 @@ export default function App(): JSX.Element {
   };
 
   return (
-    <main className="app-shell" data-navpos={settings.ui.navPos}>
+    <main
+      className={`app-shell${workFocus ? " app-shell--focus" : ""}`}
+      data-navpos={settings.ui.navPos}
+    >
       {/* Direction A : rail de navigation vertical (Portfolio / Working / Journal /
           Teams en TEXTE + Réglages en icône ⚙, en pied) — REMPLACE la barre
           d'onglets-pilule. La nav reste pilotée par useGridState (ViewId inchangé) ;
@@ -584,6 +601,9 @@ export default function App(): JSX.Element {
             onToggleHidePensee={() =>
               void settings.setHidePensee(!settings.hidePensee)
             }
+            focus={workFocus}
+            onEnterFocus={enterWorkFocus}
+            onExitFocus={exitWorkFocus}
           />
         )}
         {grid.activeView === "journal" && <JournalView />}

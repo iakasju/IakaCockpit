@@ -639,6 +639,20 @@ export function latestTranscript(cwd: string): Promise<LatestTranscript | null> 
   return call<LatestTranscript | null>("latest_transcript", { cwd });
 }
 
+// --- Mode focus plein écran (L26) ---
+
+/**
+ * Bascule le **plein écran OS** de la fenêtre (mode focus de la Table, L26). Passe par
+ * NOTRE commande Rust (`set_fullscreen`) — façade unique D7, aucune capability plugin
+ * window côté JS. `on=true` = plein écran (feu vert), `on=false` = fenêtré. Idempotent.
+ * Le feu jaune (sortie du focus) NE l'appelle PAS (AR-1) : la sortie du plein écran OS
+ * reste au contrôle natif macOS. Rejette hors Tauri (fenêtre absente) — l'appelant
+ * (`App`) l'ignore via `void` (le layout focus fonctionne quand même en dev front pur).
+ */
+export function setFullscreen(on: boolean): Promise<void> {
+  return call<void>("set_fullscreen", { on });
+}
+
 // --- Tailer du transcript JSONL → vues filtrées (L10b) ---
 //
 // Le tailer (côté Rust, transcript.rs) lit le transcript JSONL que Claude Code écrit
@@ -820,6 +834,7 @@ export const backend = {
   ptyClose,
   ptyRunnerOpen,
   latestTranscript,
+  setFullscreen,
   transcriptTailStart,
   transcriptTailStop,
   codexTailStart,

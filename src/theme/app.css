@@ -1727,6 +1727,52 @@ button {
 .projtab .pt-close:hover {
   color: var(--text);
 }
+
+/* L26 — feux macOS (mode focus de la Table), poussés à DROITE de la barre d'onglets.
+   Vert = agrandir (focus + plein écran OS) ; jaune = revenir à la normale. Pas de rouge. */
+.projfocus {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  gap: 8px;
+  padding: 0 4px 8px 12px;
+  flex: none;
+}
+.projfocus .feu {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  padding: 0;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.projfocus .feu-green {
+  background: #28c840;
+}
+.projfocus .feu-yellow {
+  background: #febc2e;
+}
+.projfocus .feu:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: scale(1.12);
+}
+.projfocus .feu:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* L26 — mode focus : masquer les 2 colonnes de gauche. Le rail (colonne n°1) vit dans
+   App (`.app-shell--focus`) ; la worklist (colonne n°2) dans WorkingView (`.wk--focus`).
+   Le `.workpane` étant `flex: 1`, il s'agrandit tout seul une fois la worklist masquée.
+   La colonne de widgets droite (`.wkright`), les onglets et le toggle Shell/Conversation
+   restent intacts. */
+.app-shell--focus .rail {
+  display: none;
+}
+.wk--focus .worklist {
+  display: none;
+}
 .workbody {
   flex: 1;
   display: flex;
