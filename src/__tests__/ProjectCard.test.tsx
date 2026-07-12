@@ -17,6 +17,9 @@ const project = (over: Partial<Project> = {}): Project =>
     last_commit_date: null,
     last_commit_subject: "feat: refonte de l'Étagère",
     version: null,
+    description: null,
+    backlog_remaining: null,
+    backlog_next: null,
     work_status: "stable",
     ...over,
   }) as Project;
@@ -106,5 +109,58 @@ describe("ProjectCard — carte riche de la table (L21/A)", () => {
     renderCard({ onRemove });
     fireEvent.click(screen.getByLabelText(/Ranger iaka-demo/));
     expect(onRemove).toHaveBeenCalledWith("iaka-demo");
+  });
+});
+
+describe("ProjectCard — contenu enrichi F3 (description / next / méta)", () => {
+  it("description dédiée rendue en gras (prioritaire sur le sujet de commit)", () => {
+    renderCard({ project: project({ description: "Cockpit chapeau-rooted iakaProject" }) });
+    const subject = screen.getByText("Cockpit chapeau-rooted iakaProject");
+    expect(subject).toBeTruthy();
+    expect(subject.tagName.toLowerCase()).toBe("b");
+    // le sujet de commit n'est plus affiché quand la description existe
+    expect(screen.queryByText("feat: refonte de l'Étagère")).toBeNull();
+  });
+
+  it("fallback : sujet de commit si description = null", () => {
+    renderCard({ project: project({ description: null }) });
+    expect(screen.getByText("feat: refonte de l'Étagère")).toBeTruthy();
+  });
+
+  it("ligne « next : » présente si backlog_next, absente sinon", () => {
+    const { rerender } = renderCard({
+      project: project({ backlog_next: "Câbler le runner ollama" }),
+    });
+    expect(screen.getByText(/next\s*:\s*Câbler le runner ollama/)).toBeTruthy();
+    rerender(
+      <ProjectCard
+        project={project({ backlog_next: null })}
+        live={false}
+        avatars={avatars}
+        tokens={1000}
+        ringPct={50}
+        ringColor="x"
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/^next\s*:/)).toBeNull();
+  });
+
+  it("méta version / retard / étapes affichée seulement si la donnée existe", () => {
+    renderCard({
+      project: project({ version: "v0.16.0", behind: 3, backlog_remaining: 2 }),
+    });
+    expect(screen.getByText("v0.16.0")).toBeTruthy();
+    expect(screen.getByText("3 en retard")).toBeTruthy();
+    expect(screen.getByText("2 étape(s) restante(s)")).toBeTruthy();
+  });
+
+  it("méta masquée quand la donnée est absente / nulle (zéro fausse donnée)", () => {
+    renderCard({
+      project: project({ version: null, behind: 0, backlog_remaining: null }),
+    });
+    expect(screen.queryByText(/v0\./)).toBeNull();
+    expect(screen.queryByText(/en retard/)).toBeNull();
+    expect(screen.queryByText(/restante/)).toBeNull();
   });
 });

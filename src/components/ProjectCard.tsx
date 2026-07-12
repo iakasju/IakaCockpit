@@ -135,7 +135,29 @@ export function ProjectCard({
       </div>
 
       <div className="desc">
-        {project.last_commit_subject ?? t("card.noCommit")}
+        {/* Sujet en GRAS (F3, AR-4/AR-6) : description dédiée du projet, fallback
+            honnête sur le sujet du dernier commit puis « — » (zéro fausse donnée). */}
+        <b className="desc-subject">
+          {project.description ?? project.last_commit_subject ?? t("card.noCommit")}
+        </b>
+        {/* Prochaine étape statique du backlog CLAUDE.md (F3, AR-5) — masquée si absente. */}
+        {project.backlog_next && (
+          <div className="desc-next">
+            {t("card.next", { text: project.backlog_next })}
+          </div>
+        )}
+        {/* Ligne méta discrète (F3) : chaque item n'apparaît que si sa donnée existe. */}
+        <div className="cardmeta">
+          {project.version && <span className="metachip">{project.version}</span>}
+          {project.behind > 0 && (
+            <span className="metachip">{t("card.behind", { count: project.behind })}</span>
+          )}
+          {project.backlog_remaining !== null && project.backlog_remaining > 0 && (
+            <span className="metachip">
+              {t("card.remainingSteps", { count: project.backlog_remaining })}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="foot">

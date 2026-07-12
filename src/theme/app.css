@@ -837,6 +837,33 @@ button {
   min-height: 54px;
   overflow-wrap: anywhere;
 }
+/* F3 — sujet en gras (description dédiée / fallback commit). */
+.proj .desc .desc-subject {
+  display: block;
+  font-weight: 600;
+  color: var(--text-1);
+}
+/* F3 — prochaine étape du backlog, en normal, sous le sujet. */
+.proj .desc .desc-next {
+  margin-top: 4px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+/* F3 — ligne méta discrète (version / retard / étapes restantes). */
+.proj .desc .cardmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.proj .desc .cardmeta .metachip {
+  font-size: 11px;
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--text-3) 10%, transparent);
+  border-radius: 6px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
 .proj .foot {
   display: flex;
   align-items: center;

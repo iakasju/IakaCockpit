@@ -187,6 +187,9 @@ function proj(over: Partial<Project> = {}): Project {
     last_commit_date: null,
     last_commit_subject: null,
     version: null,
+    description: null,
+    backlog_remaining: null,
+    backlog_next: null,
     work_status: "stable",
     ...over,
   };

@@ -265,6 +265,9 @@ export const fr = {
     putOnTable: "↗ Poser sur la table",
     putOnTableAria: "Poser {{project}} sur la table",
     removeAria: "Ranger {{project}} sur l'étagère",
+    next: "next : {{text}}",
+    behind: "{{count}} en retard",
+    remainingSteps: "{{count}} étape(s) restante(s)",
   },
 
   activity: {

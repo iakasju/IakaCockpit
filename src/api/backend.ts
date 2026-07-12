@@ -51,6 +51,12 @@ export interface Project {
   last_commit_date: string | null;
   last_commit_subject: string | null;
   version: string | null;
+  /** Description dédiée du projet (F3, AR-6) — sujet en gras de la tuile ; `null` → fallback commit. */
+  description: string | null;
+  /** Nb d'items `- [ ]` non cochés du backlog `CLAUDE.md` (F3) ; `null` si 0/absent. */
+  backlog_remaining: number | null;
+  /** Texte du 1er `- [ ]` du backlog `CLAUDE.md` (F3) ; distinct de la NextStep LLM (L3). */
+  backlog_next: string | null;
   work_status: WorkStatus;
 }
 

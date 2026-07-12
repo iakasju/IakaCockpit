@@ -14,6 +14,9 @@ const proj: Project = {
   last_commit_date: null,
   last_commit_subject: "init",
   version: "0.1.0",
+  description: null,
+  backlog_remaining: null,
+  backlog_next: null,
   work_status: "stable",
 };
 

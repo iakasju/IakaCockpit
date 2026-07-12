@@ -266,6 +266,9 @@ export const en: Resources = {
     putOnTable: "↗ Put on the table",
     putOnTableAria: "Put {{project}} on the table",
     removeAria: "Put {{project}} back on the shelf",
+    next: "next: {{text}}",
+    behind: "{{count}} behind",
+    remainingSteps: "{{count}} step(s) remaining",
   },
 
   activity: {

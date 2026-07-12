@@ -25,6 +25,17 @@ pub struct Project {
     pub last_commit_date: Option<String>,
     pub last_commit_subject: Option<String>,
     pub version: Option<String>,
+    /// Description dédiée du projet (AR-6, F3) : 1ʳᵉ ligne de `## Ce qu'est ce
+    /// projet` de `CLAUDE.md`, sinon 1ʳᵉ ligne significative de `specs/PROJET.md`,
+    /// sinon `None`. Sert de sujet en gras de la tuile (fallback front =
+    /// `last_commit_subject`).
+    pub description: Option<String>,
+    /// Nb d'items `- [ ]` NON cochés du backlog de `CLAUDE.md` (F3). `None` si 0 /
+    /// pas de backlog (le front masque alors la donnée — zéro fausse donnée).
+    pub backlog_remaining: Option<u32>,
+    /// Texte du 1er item `- [ ]` non coché du backlog de `CLAUDE.md` (F3), nettoyé
+    /// du marqueur et du markdown de tête. **Distinct** de la `NextStep` LLM (L3).
+    pub backlog_next: Option<String>,
     /// "work pending" | "stable" | "hors git"
     pub work_status: String,
 }
@@ -64,6 +75,132 @@ fn read_version(dir: &Path) -> Option<String> {
     None
 }
 
+/// Première ligne « significative » d'un doc markdown : saute un éventuel bloc de
+/// frontmatter YAML en tête (délimité par `---`), puis ignore lignes vides, titres
+/// `#` et citations `>`.
+fn first_significant_line(txt: &str) -> Option<String> {
+    let mut lines = txt.lines().peekable();
+    // Frontmatter : si le premier contenu non vide est `---`, on saute tout le bloc
+    // jusqu'au `---` de fermeture (corps du frontmatter inclus).
+    while let Some(l) = lines.peek() {
+        if l.trim().is_empty() {
+            lines.next();
+        } else {
+            break;
+        }
+    }
+    if lines.peek().map(|l| l.trim() == "---").unwrap_or(false) {
+        lines.next(); // consomme le `---` ouvrant
+        for l in lines.by_ref() {
+            if l.trim() == "---" {
+                break; // `---` fermant consommé
+            }
+        }
+    }
+    for line in lines {
+        let l = line.trim();
+        if l.is_empty() || l == "---" || l.starts_with('#') || l.starts_with('>') {
+            continue;
+        }
+        return Some(l.to_string());
+    }
+    None
+}
+
+/// Description dédiée du projet (F3, ordre AR-6) : (1) 1ʳᵉ ligne de texte de la
+/// section `## Ce qu'est ce projet` de `CLAUDE.md` ; (2) sinon 1ʳᵉ ligne
+/// significative de `specs/PROJET.md` ; (3) sinon `None`. Parse tolérant (niveau
+/// de `#` et casse de l'entête indifférents).
+fn read_description(dir: &Path) -> Option<String> {
+    // (1) section « ## Ce qu'est ce projet » de CLAUDE.md.
+    if let Ok(txt) = std::fs::read_to_string(dir.join("CLAUDE.md")) {
+        let mut in_section = false;
+        for line in txt.lines() {
+            let l = line.trim();
+            if l.starts_with('#') {
+                if in_section {
+                    // Nouvelle section atteinte sans texte : abandon de la piste (1).
+                    break;
+                }
+                let heading = l.trim_start_matches('#').trim();
+                if heading.eq_ignore_ascii_case("Ce qu'est ce projet") {
+                    in_section = true;
+                }
+                continue;
+            }
+            if in_section {
+                if l.is_empty() || l == "---" || l.starts_with('>') {
+                    continue;
+                }
+                return Some(l.to_string());
+            }
+        }
+    }
+    // (2) 1ʳᵉ ligne significative de specs/PROJET.md.
+    if let Ok(txt) = std::fs::read_to_string(dir.join("specs").join("PROJET.md")) {
+        if let Some(s) = first_significant_line(&txt) {
+            return Some(s);
+        }
+    }
+    // (3) rien.
+    None
+}
+
+/// Parse tolérant d'une ligne de checklist markdown. Renvoie `Some((checked, texte))`
+/// si la ligne est un item `- [ ]` / `- [x]` (puce `-`/`*`/`+`, casse du `x`
+/// indifférente, indentation tolérée), texte nettoyé du markdown de tête ; `None`
+/// sinon.
+fn parse_checkbox(line: &str) -> Option<(bool, String)> {
+    let t = line.trim_start();
+    let rest = t
+        .strip_prefix("- ")
+        .or_else(|| t.strip_prefix("* "))
+        .or_else(|| t.strip_prefix("+ "))?;
+    let rest = rest.trim_start();
+    let bytes = rest.as_bytes();
+    if bytes.len() < 3 || bytes[0] != b'[' || bytes[2] != b']' {
+        return None;
+    }
+    let checked = match bytes[1] {
+        b' ' => false,
+        b'x' | b'X' => true,
+        _ => return None,
+    };
+    let text = rest[3..]
+        .trim()
+        .trim_start_matches(['*', '_', '`', ' '])
+        .to_string();
+    Some((checked, text))
+}
+
+/// Backlog statique du projet (F3) : compte les items `- [ ]` NON cochés de
+/// `CLAUDE.md` et capte le texte du premier, en UN passage. Renvoie
+/// `(backlog_remaining, backlog_next)`. `remaining == 0` (ou fichier absent) →
+/// `None` (le front masque). **Distinct** du moteur LLM « prochaine étape » (L3).
+fn read_backlog(dir: &Path) -> (Option<u32>, Option<String>) {
+    let txt = match std::fs::read_to_string(dir.join("CLAUDE.md")) {
+        Ok(t) => t,
+        Err(_) => return (None, None),
+    };
+    let mut remaining: u32 = 0;
+    let mut next: Option<String> = None;
+    for line in txt.lines() {
+        if let Some((checked, text)) = parse_checkbox(line) {
+            if !checked {
+                remaining += 1;
+                if next.is_none() && !text.is_empty() {
+                    next = Some(text);
+                }
+            }
+        }
+    }
+    if remaining == 0 {
+        (None, None)
+    } else {
+        (Some(remaining), next)
+    }
+}
+
 /// Rang de tri d'un statut de travail (work pending → stable → hors git).
 fn rank(s: &str) -> u8 {
     match s {
@@ -81,6 +218,8 @@ fn read_project(path: &Path) -> Project {
     let path_str = path.to_string_lossy().to_string();
     let is_git = path.join(".git").exists();
     let version = read_version(path);
+    let description = read_description(path);
+    let (backlog_remaining, backlog_next) = read_backlog(path);
 
     if !is_git {
         return Project {
@@ -94,6 +233,9 @@ fn read_project(path: &Path) -> Project {
             last_commit_date: None,
             last_commit_subject: None,
             version,
+            description,
+            backlog_remaining,
+            backlog_next,
             work_status: "hors git".to_string(),
         };
     }
@@ -138,6 +280,9 @@ fn read_project(path: &Path) -> Project {
         last_commit_date,
         last_commit_subject,
         version,
+        description,
+        backlog_remaining,
+        backlog_next,
         work_status,
     }
 }
@@ -333,7 +478,122 @@ mod tests {
             last_commit_date: None,
             last_commit_subject: None,
             version: None,
+            description: None,
+            backlog_remaining: None,
+            backlog_next: None,
             work_status: status.to_string(),
         }
+    }
+
+    // --- F3 : description dédiée + backlog statique ---
+
+    /// Crée un dossier temporaire vierge avec `specs/` prêt (fixtures F3).
+    fn tmp_dir(tag: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("iakacockpit-f3-{tag}"));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("specs")).unwrap();
+        dir
+    }
+
+    #[test]
+    fn read_description_lit_la_section_claude_md() {
+        let d = tmp_dir("desc-claude");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "# CLAUDE.md\n\n## Ce qu'est ce projet\n\nUn cockpit chapeau-rooted de l'écosystème.\n\n## Autre\ntexte\n",
+        )
+        .unwrap();
+        assert_eq!(
+            read_description(&d),
+            Some("Un cockpit chapeau-rooted de l'écosystème.".to_string())
+        );
+    }
+
+    #[test]
+    fn read_description_fallback_sur_projet_md() {
+        let d = tmp_dir("desc-projet");
+        // CLAUDE.md sans la section → on tombe sur PROJET.md.
+        std::fs::write(d.join("CLAUDE.md"), "# CLAUDE.md\n\n## Backlog\n- [ ] x\n").unwrap();
+        std::fs::write(
+            d.join("specs").join("PROJET.md"),
+            "---\ntitre: x\n---\n\n# Titre\n\n> une citation\n\nLa vision réelle du projet.\n",
+        )
+        .unwrap();
+        assert_eq!(
+            read_description(&d),
+            Some("La vision réelle du projet.".to_string())
+        );
+    }
+
+    #[test]
+    fn read_description_absente_donne_none() {
+        let d = tmp_dir("desc-none");
+        std::fs::write(d.join("CLAUDE.md"), "# CLAUDE.md\n\n## Backlog\n- [ ] x\n").unwrap();
+        // pas de PROJET.md
+        assert_eq!(read_description(&d), None);
+        // dossier totalement vide
+        let empty = tmp_dir("desc-empty");
+        assert_eq!(read_description(&empty), None);
+    }
+
+    #[test]
+    fn read_backlog_compte_les_non_coches_et_capte_le_premier() {
+        let d = tmp_dir("backlog-mixte");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "## Backlog\n- [x] fait A\n- [ ] **L16** — Toggle tuiles\n- [X] fait B\n- [ ] Documenter\n",
+        )
+        .unwrap();
+        let (remaining, next) = read_backlog(&d);
+        assert_eq!(remaining, Some(2));
+        // texte nettoyé du markdown de tête (`**`).
+        assert_eq!(next, Some("L16** — Toggle tuiles".to_string()));
+    }
+
+    #[test]
+    fn read_backlog_tout_coche_donne_none() {
+        let d = tmp_dir("backlog-done");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "## Backlog\n- [x] fait A\n- [X] fait B\n",
+        )
+        .unwrap();
+        assert_eq!(read_backlog(&d), (None, None));
+    }
+
+    #[test]
+    fn read_backlog_absent_donne_none() {
+        let d = tmp_dir("backlog-absent");
+        // pas de CLAUDE.md du tout
+        assert_eq!(read_backlog(&d), (None, None));
+        // CLAUDE.md sans aucune case
+        std::fs::write(d.join("CLAUDE.md"), "# Titre\ntexte sans checklist\n").unwrap();
+        assert_eq!(read_backlog(&d), (None, None));
+    }
+
+    #[test]
+    fn parse_checkbox_est_tolerant() {
+        assert_eq!(
+            parse_checkbox("- [ ] tâche"),
+            Some((false, "tâche".to_string()))
+        );
+        assert_eq!(
+            parse_checkbox("- [x] fait"),
+            Some((true, "fait".to_string()))
+        );
+        assert_eq!(
+            parse_checkbox("- [X] fait"),
+            Some((true, "fait".to_string()))
+        );
+        assert_eq!(
+            parse_checkbox("  - [ ] indenté"),
+            Some((false, "indenté".to_string()))
+        );
+        assert_eq!(
+            parse_checkbox("* [ ] puce étoile"),
+            Some((false, "puce étoile".to_string()))
+        );
+        assert_eq!(parse_checkbox("texte normal"), None);
+        assert_eq!(parse_checkbox("- pas une case"), None);
     }
 }
