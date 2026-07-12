@@ -378,9 +378,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       seulement s'il diffère de l'interlocuteur ; collision bouton esc corrigée, en-tête sur une ligne). Front
       seul. Différés : DnD onglets, garde perf N runners, bouton + dans la barre, **L25** (s'attacher à la session
       vivante — cible v0.19.0).
-- [ ] **L25** — **S'attacher à la session vivante d'un projet (vue live du transcript)**
+- [x] **L25** — **S'attacher à la session vivante d'un projet (vue live du transcript)**
       → `specs/instructions/L25-attacher-session-vivante-vue-live.md`
-      *(cadré 2026-07-12 par 🟠 Aragorn, décision Stéphane ; non démarré).* Ouvrir un projet **s'attache à sa
+      *(**LIVRÉ, scellé `v0.19.0`** 2026-07-12 ; doc qualité `docs/qualite/v0.19.0.md` ; gate Legolas PASS —
+      563 front + 279 Rust verts, fmt/clippy OK. Cadré+coordonné par 🟠 Aragorn, AR-1..3 tranchés ; branche
+      `feat/L25-…` fusionnée ff dans main).* Ouvrir un projet **s'attache à sa
       session vivante** (tail du transcript le plus récent du cwd, **vue live lecture seule, sans PTY**) au lieu
       de spawner une session vierge → on voit **la conversation en cours** (ex. celle du terminal). F1 commande
       Rust `latest_transcript(cwd)` ; F2 mode conversation **« attached »** (tail sans PTY) vs **« owned »** ;
