@@ -25,10 +25,10 @@ pub struct Project {
     pub last_commit_date: Option<String>,
     pub last_commit_subject: Option<String>,
     pub version: Option<String>,
-    /// Description dédiée du projet (AR-6, F3) : 1ʳᵉ ligne de `## Ce qu'est ce
-    /// projet` de `CLAUDE.md`, sinon 1ʳᵉ ligne significative de `specs/PROJET.md`,
-    /// sinon `None`. Sert de sujet en gras de la tuile (fallback front =
-    /// `last_commit_subject`).
+    /// Description dédiée du projet (AR-6=B, F3) : 1ʳᵉ ligne significative de
+    /// `specs/PROJET.md` (PRIORITAIRE), sinon 1ʳᵉ ligne de `## Ce qu'est ce
+    /// projet` de `CLAUDE.md`, sinon `None`. Sert de sujet en gras de la tuile
+    /// (fallback front = `last_commit_subject`).
     pub description: Option<String>,
     /// Nb d'items `- [ ]` NON cochés du backlog de `CLAUDE.md` (F3). `None` si 0 /
     /// pas de backlog (le front masque alors la donnée — zéro fausse donnée).
@@ -107,19 +107,25 @@ fn first_significant_line(txt: &str) -> Option<String> {
     None
 }
 
-/// Description dédiée du projet (F3, ordre AR-6) : (1) 1ʳᵉ ligne de texte de la
-/// section `## Ce qu'est ce projet` de `CLAUDE.md` ; (2) sinon 1ʳᵉ ligne
-/// significative de `specs/PROJET.md` ; (3) sinon `None`. Parse tolérant (niveau
-/// de `#` et casse de l'entête indifférents).
+/// Description dédiée du projet (F3, ordre AR-6=B) : (1) 1ʳᵉ ligne significative
+/// de `specs/PROJET.md` (PRIORITAIRE) ; (2) sinon 1ʳᵉ ligne de texte de la
+/// section `## Ce qu'est ce projet` de `CLAUDE.md` ; (3) sinon `None`. Parse
+/// tolérant (niveau de `#` et casse de l'entête indifférents).
 fn read_description(dir: &Path) -> Option<String> {
-    // (1) section « ## Ce qu'est ce projet » de CLAUDE.md.
+    // (1) 1ʳᵉ ligne significative de specs/PROJET.md (PRIORITAIRE, AR-6=B).
+    if let Ok(txt) = std::fs::read_to_string(dir.join("specs").join("PROJET.md")) {
+        if let Some(s) = first_significant_line(&txt) {
+            return Some(s);
+        }
+    }
+    // (2) fallback : section « ## Ce qu'est ce projet » de CLAUDE.md.
     if let Ok(txt) = std::fs::read_to_string(dir.join("CLAUDE.md")) {
         let mut in_section = false;
         for line in txt.lines() {
             let l = line.trim();
             if l.starts_with('#') {
                 if in_section {
-                    // Nouvelle section atteinte sans texte : abandon de la piste (1).
+                    // Nouvelle section atteinte sans texte : abandon de la piste (2).
                     break;
                 }
                 let heading = l.trim_start_matches('#').trim();
@@ -134,12 +140,6 @@ fn read_description(dir: &Path) -> Option<String> {
                 }
                 return Some(l.to_string());
             }
-        }
-    }
-    // (2) 1ʳᵉ ligne significative de specs/PROJET.md.
-    if let Ok(txt) = std::fs::read_to_string(dir.join("specs").join("PROJET.md")) {
-        if let Some(s) = first_significant_line(&txt) {
-            return Some(s);
         }
     }
     // (3) rien.
@@ -496,24 +496,9 @@ mod tests {
     }
 
     #[test]
-    fn read_description_lit_la_section_claude_md() {
-        let d = tmp_dir("desc-claude");
-        std::fs::write(
-            d.join("CLAUDE.md"),
-            "# CLAUDE.md\n\n## Ce qu'est ce projet\n\nUn cockpit chapeau-rooted de l'écosystème.\n\n## Autre\ntexte\n",
-        )
-        .unwrap();
-        assert_eq!(
-            read_description(&d),
-            Some("Un cockpit chapeau-rooted de l'écosystème.".to_string())
-        );
-    }
-
-    #[test]
-    fn read_description_fallback_sur_projet_md() {
+    fn read_description_lit_projet_md_en_priorite() {
+        // AR-6=B : PROJET.md est PRIORITAIRE sur CLAUDE.md.
         let d = tmp_dir("desc-projet");
-        // CLAUDE.md sans la section → on tombe sur PROJET.md.
-        std::fs::write(d.join("CLAUDE.md"), "# CLAUDE.md\n\n## Backlog\n- [ ] x\n").unwrap();
         std::fs::write(
             d.join("specs").join("PROJET.md"),
             "---\ntitre: x\n---\n\n# Titre\n\n> une citation\n\nLa vision réelle du projet.\n",
@@ -522,6 +507,43 @@ mod tests {
         assert_eq!(
             read_description(&d),
             Some("La vision réelle du projet.".to_string())
+        );
+    }
+
+    #[test]
+    fn read_description_projet_md_gagne_sur_claude_md() {
+        // AR-6=B : même si CLAUDE.md a une section « ## Ce qu'est ce projet »,
+        // PROJET.md l'emporte.
+        let d = tmp_dir("desc-priorite");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "# CLAUDE.md\n\n## Ce qu'est ce projet\n\nDescription CLAUDE.md (perdante).\n",
+        )
+        .unwrap();
+        std::fs::write(
+            d.join("specs").join("PROJET.md"),
+            "# Titre\n\nLa vision réelle du projet.\n",
+        )
+        .unwrap();
+        assert_eq!(
+            read_description(&d),
+            Some("La vision réelle du projet.".to_string())
+        );
+    }
+
+    #[test]
+    fn read_description_fallback_sur_claude_md() {
+        // Sans PROJET.md significatif → fallback sur la section CLAUDE.md.
+        let d = tmp_dir("desc-claude");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "# CLAUDE.md\n\n## Ce qu'est ce projet\n\nUn cockpit chapeau-rooted de l'écosystème.\n\n## Autre\ntexte\n",
+        )
+        .unwrap();
+        // pas de specs/PROJET.md
+        assert_eq!(
+            read_description(&d),
+            Some("Un cockpit chapeau-rooted de l'écosystème.".to_string())
         );
     }
 
