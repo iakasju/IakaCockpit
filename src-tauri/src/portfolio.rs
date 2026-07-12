@@ -173,19 +173,27 @@ fn parse_checkbox(line: &str) -> Option<(bool, String)> {
     Some((checked, text))
 }
 
-/// Backlog statique du projet (F3) : compte les items `- [ ]` NON cochés de
+/// Backlog statique du projet (F3/F4) : compte les items `- [ ]` NON cochés de
 /// `CLAUDE.md` et capte le texte du premier, en UN passage. Renvoie
-/// `(backlog_remaining, backlog_next)`. `remaining == 0` (ou fichier absent) →
-/// `None` (le front masque). **Distinct** du moteur LLM « prochaine étape » (L3).
+/// `(backlog_remaining, backlog_next)`.
+///
+/// Sémantique F4 (pastille d'urgence) — `backlog_remaining` distingue « fini » de
+/// « pas de backlog » : `Some(count_unchecked)` **dès qu'au moins UNE case**
+/// (`- [ ]` OU `- [x]`) existe → `Some(0)` possible quand tout est coché ; `None`
+/// **uniquement** s'il n'y a aucune case du tout / pas de `CLAUDE.md`.
+/// `backlog_next` = texte du 1er `- [ ]` non coché, ou `None` si tout coché /
+/// absent. **Distinct** du moteur LLM « prochaine étape » (L3).
 fn read_backlog(dir: &Path) -> (Option<u32>, Option<String>) {
     let txt = match std::fs::read_to_string(dir.join("CLAUDE.md")) {
         Ok(t) => t,
         Err(_) => return (None, None),
     };
+    let mut has_checkbox = false;
     let mut remaining: u32 = 0;
     let mut next: Option<String> = None;
     for line in txt.lines() {
         if let Some((checked, text)) = parse_checkbox(line) {
+            has_checkbox = true;
             if !checked {
                 remaining += 1;
                 if next.is_none() && !text.is_empty() {
@@ -194,10 +202,10 @@ fn read_backlog(dir: &Path) -> (Option<u32>, Option<String>) {
             }
         }
     }
-    if remaining == 0 {
-        (None, None)
-    } else {
+    if has_checkbox {
         (Some(remaining), next)
+    } else {
+        (None, None)
     }
 }
 
@@ -573,18 +581,36 @@ mod tests {
     }
 
     #[test]
-    fn read_backlog_tout_coche_donne_none() {
+    fn read_backlog_tout_coche_donne_some_zero_et_next_none() {
+        // F4 : backlog PRÉSENT mais tout coché → `Some(0)` (pastille verte « fini »),
+        // distinct du gris « pas de backlog ». `next` reste `None`.
         let d = tmp_dir("backlog-done");
         std::fs::write(
             d.join("CLAUDE.md"),
             "## Backlog\n- [x] fait A\n- [X] fait B\n",
         )
         .unwrap();
-        assert_eq!(read_backlog(&d), (None, None));
+        assert_eq!(read_backlog(&d), (Some(0), None));
+    }
+
+    #[test]
+    fn read_backlog_mix_donne_some_k_et_premier_non_coche() {
+        // F4 : mix coché / non coché → `Some(k)` (k = nb de non cochés) + `next` = 1er
+        // item non coché (peu importe qu'il vienne après des cochés).
+        let d = tmp_dir("backlog-mix");
+        std::fs::write(
+            d.join("CLAUDE.md"),
+            "## Backlog\n- [x] fait A\n- [ ] premier restant\n- [x] fait B\n- [ ] second restant\n",
+        )
+        .unwrap();
+        let (remaining, next) = read_backlog(&d);
+        assert_eq!(remaining, Some(2));
+        assert_eq!(next, Some("premier restant".to_string()));
     }
 
     #[test]
     fn read_backlog_absent_donne_none() {
+        // F4 : `None` UNIQUEMENT si aucune case du tout / pas de CLAUDE.md.
         let d = tmp_dir("backlog-absent");
         // pas de CLAUDE.md du tout
         assert_eq!(read_backlog(&d), (None, None));

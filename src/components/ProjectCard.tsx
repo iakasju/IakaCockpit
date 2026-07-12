@@ -46,6 +46,29 @@ export interface ProjectCardProps {
 /** Nombre max d'avatars affichés avant le badge `+N` (mock en montre 1–3). */
 const AVATAR_CAP = 4;
 
+/**
+ * Seuil (AR-7) au-delà duquel le backlog restant est jugé « urgent » (pastille
+ * rouge). `>= URGENCY_HIGH` étapes restantes → rouge ; `1..URGENCY_HIGH-1` → ambre.
+ */
+const URGENCY_HIGH = 5;
+
+/** Niveau d'urgence de la tuile (F4), dérivé du backlog restant (donnée pure). */
+type UrgencyLevel = "none" | "done" | "mid" | "high";
+
+/**
+ * Niveau d'urgence pur dérivé de `backlog_remaining` (AR-7) :
+ *  - `null` (pas de backlog du tout) → `"none"` (gris/neutre) ;
+ *  - `0` (backlog présent, tout coché) → `"done"` (vert, fini) ;
+ *  - `1..URGENCY_HIGH-1` → `"mid"` (ambre, en cours) ;
+ *  - `>= URGENCY_HIGH` → `"high"` (rouge, urgent).
+ */
+function urgencyLevel(remaining: number | null): UrgencyLevel {
+  if (remaining === null) return "none";
+  if (remaining === 0) return "done";
+  if (remaining >= URGENCY_HIGH) return "high";
+  return "mid";
+}
+
 /** Formate un total de tokens à la française : 148200 → « 148,2k » (calque mock). */
 function fmtTokens(n: number): string {
   if (n >= 1000) {
@@ -92,6 +115,19 @@ export function ProjectCard({
   const shown = avatars.slice(0, AVATAR_CAP);
   const overflow = avatars.length - shown.length;
 
+  // Pastille d'urgence (F4, AR-7) : niveau pur dérivé du backlog restant + libellé
+  // i18n décrivant l'état (la pastille n'est plus décorative → title + aria-label).
+  const remaining = project.backlog_remaining;
+  const level = urgencyLevel(remaining);
+  const urgencyLabel =
+    level === "high"
+      ? t("card.urgencyHigh", { count: remaining ?? 0 })
+      : level === "mid"
+        ? t("card.urgencyMid", { count: remaining ?? 0 })
+        : level === "done"
+          ? t("card.urgencyDone")
+          : t("card.urgencyNone");
+
   // Anneau : conic-gradient % rempli (couleur projet) + reste neutre. Pas de tokens →
   // anneau NEUTRE (gris plein), aucun % affiché (zéro fausse donnée).
   const pct = ringPct;
@@ -105,7 +141,14 @@ export function ProjectCard({
   return (
     <article className="proj">
       <div className="top">
-        <div className="ic" aria-hidden />
+        {/* Pastille d'urgence (F4, AR-7) : point coloré dérivé du backlog restant.
+            N'est plus décorative → title + aria-label i18n décrivant le niveau. */}
+        <div
+          className={`ic urg urg-${level}`}
+          role="img"
+          aria-label={urgencyLabel}
+          title={urgencyLabel}
+        />
         <div className="proj-id">
           <h3>{project.id}</h3>
           <div className="path">{project.path}</div>

@@ -268,6 +268,10 @@ export const fr = {
     next: "next : {{text}}",
     behind: "{{count}} en retard",
     remainingSteps: "{{count}} étape(s) restante(s)",
+    urgencyHigh: "Urgent : {{count}} étape(s) restante(s)",
+    urgencyMid: "En cours : {{count}} étape(s) restante(s)",
+    urgencyDone: "Backlog terminé : rien en attente",
+    urgencyNone: "Pas de backlog",
   },
 
   activity: {

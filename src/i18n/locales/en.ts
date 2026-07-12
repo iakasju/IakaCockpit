@@ -269,6 +269,10 @@ export const en: Resources = {
     next: "next: {{text}}",
     behind: "{{count}} behind",
     remainingSteps: "{{count}} step(s) remaining",
+    urgencyHigh: "Urgent: {{count}} step(s) remaining",
+    urgencyMid: "In progress: {{count}} step(s) remaining",
+    urgencyDone: "Backlog complete: nothing pending",
+    urgencyNone: "No backlog",
   },
 
   activity: {

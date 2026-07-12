@@ -164,3 +164,63 @@ describe("ProjectCard — contenu enrichi F3 (description / next / méta)", () =
     expect(screen.queryByText(/restante/)).toBeNull();
   });
 });
+
+describe("ProjectCard — pastille d'urgence F4 (AR-7)", () => {
+  /** Récupère la pastille d'urgence via sa classe (le rôle img est partagé avec
+   *  les avatars → on cible le slot `.ic.urg` sans ambiguïté). */
+  const urg = (container: HTMLElement): HTMLElement =>
+    container.querySelector<HTMLElement>(".ic.urg")!;
+
+  it("backlog absent (null) → niveau gris/neutre + libellé « pas de backlog »", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: null }) });
+    const dot = urg(container);
+    expect(dot.className).toContain("urg-none");
+    expect(dot.getAttribute("aria-label")).toMatch(/[Pp]as de backlog/);
+    expect(dot.getAttribute("title")).toMatch(/[Pp]as de backlog/);
+  });
+
+  it("backlog tout coché (0) → niveau vert « done »", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: 0 }) });
+    const dot = urg(container);
+    expect(dot.className).toContain("urg-done");
+    expect(dot.getAttribute("aria-label")).toMatch(/rien en attente/);
+  });
+
+  it("1..4 étapes restantes → niveau ambre « mid »", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: 3 }) });
+    const dot = urg(container);
+    expect(dot.className).toContain("urg-mid");
+    expect(dot.getAttribute("aria-label")).toMatch(/3 étape\(s\) restante\(s\)/);
+  });
+
+  it(">= 5 étapes restantes → niveau rouge « high »", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: 7 }) });
+    const dot = urg(container);
+    expect(dot.className).toContain("urg-high");
+    expect(dot.getAttribute("aria-label")).toMatch(/Urgent/);
+    expect(dot.getAttribute("aria-label")).toMatch(/7 étape\(s\) restante\(s\)/);
+  });
+
+  it("seuil : 4 → ambre, 5 → rouge", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: 4 }) });
+    expect(urg(container).className).toContain("urg-mid");
+    cleanup();
+    const r2 = renderCard({ project: project({ backlog_remaining: 5 }) });
+    expect(urg(r2.container).className).toContain("urg-high");
+  });
+
+  it("Some(0) : pastille verte MAIS méta « N étapes restantes » masquée (non-régression F3)", () => {
+    const { container } = renderCard({ project: project({ backlog_remaining: 0 }) });
+    expect(urg(container).className).toContain("urg-done");
+    // la méta reste masquée pour 0 (seule la pastille distingue 0 vs absent)
+    expect(screen.queryByText(/restante/)).toBeNull();
+  });
+
+  it("vaut pour la variante atelier (shelf) comme pour la table", () => {
+    const { container } = renderCard({
+      project: project({ backlog_remaining: 7 }),
+      variant: "shelf",
+    });
+    expect(urg(container).className).toContain("urg-high");
+  });
+});

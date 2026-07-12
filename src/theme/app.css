@@ -766,6 +766,32 @@ button {
   background: var(--surf-3);
   flex: none;
 }
+/* Pastille d'urgence (F4, AR-7) : point coloré dérivé du backlog restant, dans le
+   slot `.ic`. Calque des pastilles `.dot` de l'atelier (rond plein tokénisé). */
+.proj .ic.urg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.proj .ic.urg::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dotcolor, var(--text-3));
+}
+.proj .ic.urg-none {
+  --dotcolor: var(--text-3);
+}
+.proj .ic.urg-done {
+  --dotcolor: var(--green);
+}
+.proj .ic.urg-mid {
+  --dotcolor: var(--orange);
+}
+.proj .ic.urg-high {
+  --dotcolor: var(--red);
+}
 .proj .proj-id {
   min-width: 0;
   /* Le clip est REQUIS en plus de min-width:0 : sous WebKit (WKWebView macOS), un
