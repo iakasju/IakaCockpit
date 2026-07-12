@@ -53,36 +53,43 @@ export function ProjectTabs({
   const { t } = useTranslation();
   return (
     <div className="projtabs" role="tablist" aria-label={t("working.tabsAria")}>
-      {conversations.map((c) => {
-        const on = c.projectId === activeProjectId;
-        return (
-          <div key={c.projectId} className={`projtab${on ? " active" : ""}`}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={on}
-              className="pt-open"
-              onClick={() => onSelect(c.projectId)}
-            >
-              {c.title}
-            </button>
-            <button
-              type="button"
-              className="pt-close"
-              aria-label={t("working.tabCloseAria", { project: c.title })}
-              title={t("working.tabCloseAria", { project: c.title })}
-              onClick={() => onClose(c.projectId)}
-            >
-              ×
-            </button>
-          </div>
-        );
-      })}
-      {/* L26 (révision recette v3) — SWITCH coulissant « plein écran », toujours à DROITE
-          des onglets (`margin-left:auto`). Pastille à gauche = off, à droite = on ; piste
-          colorée en `on`. Le glyphe `⤢` vit DANS la pastille (voyage avec elle) — plus de
-          libellé texte. Accessibilité via `aria-label`/`title` i18n. Symétrique : App gère
-          focus + fullscreen d'un seul geste. */}
+      {/* L26 (recette v5) — SEULS les onglets scrollent horizontalement. Le switch est
+          SORTI de cette zone (frère ci-dessous) : dans un conteneur à `overflow-x:auto`,
+          `margin-left:auto` ne pousse pas jusqu'au bout ; en le sortant, le switch se pose
+          naturellement à droite (`.projtabs-list` en `flex:1`, switch en `flex:0 0 auto`). */}
+      <div className="projtabs-list">
+        {conversations.map((c) => {
+          const on = c.projectId === activeProjectId;
+          return (
+            <div key={c.projectId} className={`projtab${on ? " active" : ""}`}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={on}
+                className="pt-open"
+                onClick={() => onSelect(c.projectId)}
+              >
+                {c.title}
+              </button>
+              <button
+                type="button"
+                className="pt-close"
+                aria-label={t("working.tabCloseAria", { project: c.title })}
+                title={t("working.tabCloseAria", { project: c.title })}
+                onClick={() => onClose(c.projectId)}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {/* L26 (recette v5) — SWITCH coulissant « plein écran », FRÈRE de `.projtabs-list`
+          (hors zone scrollable) → il se pose collé au BORD DROIT de la barre (padding-right
+          0 de `.projtabs`). Pastille à gauche = off, à droite = on ; piste colorée en `on`.
+          Le glyphe `⤢` vit DANS la pastille (voyage avec elle) — plus de libellé texte.
+          Accessibilité via `aria-label`/`title` i18n. Symétrique : App gère focus +
+          fullscreen d'un seul geste. */}
       <button
         type="button"
         role="switch"

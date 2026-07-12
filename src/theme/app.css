@@ -1674,14 +1674,24 @@ button {
 /* L24 — barre d'onglets par projet de la Table, en tête de la zone conversation
    (au-dessus de `.convhead`). Un onglet par conversation ouverte ; onglet actif mis
    en évidence ; « × » de fermeture (= retirer de la Table). Coexiste avec la worklist. */
+/* L26 (recette v5) — barre NON scrollable : conteneur flex de 2 frères, `.projtabs-list`
+   (les onglets, en `flex:1` + scroll horizontal si trop d'onglets) et `.fsswitch` (en
+   `flex:0 0 auto`). Le switch se pose ainsi COLLÉ au bord droit (padding-right 0). */
 .projtabs {
   display: flex;
   align-items: stretch;
-  gap: 4px;
   padding: 8px 0 0 14px;
-  overflow-x: auto;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--line);
+}
+/* Seuls les onglets défilent horizontalement (le switch reste hors de cette zone). */
+.projtabs-list {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .projtab {
   display: inline-flex;
@@ -1733,17 +1743,18 @@ button {
    gauche / piste neutre ; on = pastille à droite / piste accent. Le glyphe `⤢` vit DANS
    la pastille et voyage avec elle (plus de libellé texte). Remplace l'ancien `.fsbtn`. */
 .fsswitch {
-  margin-left: auto;
   align-self: center;
   display: inline-flex;
   align-items: center;
+  /* Frère de `.projtabs-list` (recette v5) : plus besoin de `margin-left:auto` — le
+     switch est déjà collé à droite. On garde 12px de respiration à gauche des onglets. */
   margin: 0 0 8px 12px;
   padding: 4px 6px;
   border: none;
   background: transparent;
   color: var(--text-2);
   cursor: pointer;
-  flex: none;
+  flex: 0 0 auto;
 }
 .fsswitch:hover {
   color: var(--text);
