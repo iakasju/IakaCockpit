@@ -219,6 +219,59 @@ describe("useConversations — 1 conversation/projet (L8, migré L10b)", () => {
   });
 });
 
+describe("useConversations — source attachée / owned (L25)", () => {
+  it("ouverture SANS attach → source owned, pas de coordonnées d'attache", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    const c = result.current.active!;
+    expect(c.source).toBe("owned");
+    expect(c.attachedSessionId).toBeNull();
+    expect(c.attachedTranscriptPath).toBeNull();
+  });
+
+  it("ouverture AVEC attach → source attached + session/transcript externes portés", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() =>
+      result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", [], {
+        sessionId: "ext-123",
+        transcriptPath: "/home/u/.claude/projects/-root-p1/ext-123.jsonl",
+      }),
+    );
+    const c = result.current.active!;
+    expect(c.source).toBe("attached");
+    expect(c.attachedSessionId).toBe("ext-123");
+    expect(c.attachedTranscriptPath).toBe(
+      "/home/u/.claude/projects/-root-p1/ext-123.jsonl",
+    );
+  });
+
+  it("convertToOwned : attaché → owned et vide les coordonnées d'attache", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() =>
+      result.current.openConversation("p1", "p1", "/root/p1", "Aragorn", [], {
+        sessionId: "ext-123",
+        transcriptPath: "/x/ext-123.jsonl",
+      }),
+    );
+    act(() => result.current.convertToOwned("p1"));
+    const c = result.current.active!;
+    expect(c.source).toBe("owned");
+    expect(c.attachedSessionId).toBeNull();
+    expect(c.attachedTranscriptPath).toBeNull();
+    // Le ptySessionId (clef de montage) reste stable (aucune régression clef).
+    expect(c.ptySessionId).toBeTruthy();
+  });
+
+  it("convertToOwned : no-op idempotent sur une conversation déjà owned", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1"));
+    const before = result.current.active;
+    act(() => result.current.convertToOwned("p1"));
+    // Même référence d'objet (patch renvoie `c` inchangé → pas de nouvel objet).
+    expect(result.current.active).toBe(before);
+  });
+});
+
 describe("useConversations — helpers @agent (D3/D6)", () => {
   it("mentionPrefix produit `@<Agent> : `", () => {
     expect(mentionPrefix("Gandalf")).toBe("@Gandalf : ");

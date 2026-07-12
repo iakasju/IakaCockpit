@@ -293,18 +293,46 @@ export default function App(): JSX.Element {
   );
 
   // Ouvre la conversation d'un projet en routant vers le COORDINATEUR de sa team.
+  // L25 — AVANT d'ouvrir, on détecte la SESSION VIVANTE du projet (`latest_transcript`) :
+  //   - un transcript existe → ouverture en mode **`attached`** (vue live LECTURE SEULE,
+  //     SANS `pty_runner_open` : le tailer démarre sur ce transcript externe) ;
+  //   - aucun → comportement historique `owned` (spawn du runner par `PtyTerminal`).
+  // Idempotent : si la conversation existe déjà, on la ré-active sans re-détecter (évite un
+  // appel façade inutile + préserve l'ouverture eager L24). Async ; hors Tauri, la façade
+  // retombe en erreur → capturée → ouverture `owned` (aucune régression front pur/tests).
   const openConversationFor = useCallback(
-    (project: Project, teamId?: string): void => {
+    async (project: Project, teamId?: string): Promise<void> => {
+      const already = conversations.conversations.some(
+        (c) => c.projectId === project.id,
+      );
+      if (already) {
+        conversations.setActive(project.id);
+        grid.setActiveView("working");
+        return;
+      }
       const team = teamId
         ? (teams.teams.find((t) => t.id === teamId) ??
           teams.teamForProject(project.id))
         : teams.teamForProject(project.id);
       const coord = teams.coordinatorOf(team);
+
+      let attach: { sessionId: string; transcriptPath: string } | undefined;
+      try {
+        const latest = await backend.latestTranscript(project.path);
+        if (latest) {
+          attach = { sessionId: latest.session_id, transcriptPath: latest.path };
+        }
+      } catch {
+        // Hors Tauri / erreur : pas d'attache → ouverture owned (dégradation propre).
+      }
+
       conversations.openConversation(
         project.id,
         project.id,
         project.path,
         coord?.name,
+        undefined,
+        attach,
       );
       grid.setActiveView("working");
     },
@@ -318,7 +346,7 @@ export default function App(): JSX.Element {
       setPickerProject(project);
       return;
     }
-    openConversationFor(project);
+    void openConversationFor(project);
   };
 
   // L24 F1 — Ouverture EAGER des fenêtres de travail. Réconcilie `workset → conversations`
@@ -365,8 +393,28 @@ export default function App(): JSX.Element {
       (c) => c.projectId === projectId,
     );
     if (!conv) return;
+    // L25 — LECTURE SEULE STRICTE en `attached` : on n'écrit JAMAIS vers une session
+    // externe (zéro conflit deux-process). La saisie chat est déjà désactivée côté UI ;
+    // cette garde verrouille le contrat même si un chemin d'envoi était appelé.
+    if (conv.source === "attached") return;
     conversations.echoUser(projectId, agent, content);
     void pty.write(conv.ptySessionId, `${content}\r`);
+  };
+
+  // L25 — « démarrer un runner du cockpit » : bascule une conversation `attached` en
+  // `owned`. On ARRÊTE d'abord le tailer externe (`transcript_tail_stop`), puis on flippe
+  // la source → au prochain rendu, `WorkingView` monte le `PtyTerminal` (spawn du runner)
+  // et `useRunnerViews` démarre le tailer de la NOUVELLE session. Reste sur la conversation
+  // active. Aucun `pty.close` (l'attaché n'avait pas de PTY).
+  const startRunnerForActive = (projectId: string): void => {
+    const conv = conversations.conversations.find(
+      (c) => c.projectId === projectId,
+    );
+    if (!conv || conv.source !== "attached") return;
+    if (conv.attachedSessionId) {
+      void backend.transcriptTailStop(conv.attachedSessionId);
+    }
+    conversations.convertToOwned(projectId);
   };
 
   // Bouton + de Working : import d'un dossier existant → portfolio + set de Work.
@@ -397,6 +445,8 @@ export default function App(): JSX.Element {
       toggleWork: workset.toggle,
       prepareResume: prepareResume.prepare,
       closePty: pty.close,
+      // L25 — session attachée : arrêt du tailer externe (jamais de pty.close).
+      stopTailer: backend.transcriptTailStop,
       closeConversation: conversations.closeConversation,
     });
   };
@@ -515,6 +565,7 @@ export default function App(): JSX.Element {
             onSetMode={conversations.setMode}
             onSetAgent={conversations.setAgent}
             onSend={handleSend}
+            onStartRunner={startRunnerForActive}
             onRequestNextStep={(path) => void nextStep.request(path)}
             resolveAvatar={resolveAvatar}
             rosterMembers={rosterMembers}
@@ -568,7 +619,7 @@ export default function App(): JSX.Element {
             // N'écrit RIEN : ouvre avec la team par défaut ; le popup reviendra.
             const project = pickerProject;
             setPickerProject(null);
-            openConversationFor(project);
+            void openConversationFor(project);
           }}
           onManageTeams={() => {
             setPickerProject(null);

@@ -308,6 +308,15 @@ export const fr = {
       "est défini sur un runner pas encore exécutable. Étape actuelle : claude-code (terminal-source). La définition est conservée ; adresse les agents en chat (",
     bannerChat:
       "Runner « {{kind}} » du coordinateur {{coordinator}} non encore exécutable (étape : claude-code). La conversation reste ouverte ; la définition est conservée.",
+    attachedBadge: "session vivante · lecture seule",
+    attachedBadgeTitle:
+      "Vue live d'une session en cours détectée sur disque — lecture seule (aucun runner lancé par le cockpit).",
+    attachedChatNotice:
+      "Session vivante attachée (lecture seule). Pour interagir, démarre un runner du cockpit (nouvelle session).",
+    attachedShellStrong: "Session externe : pas de shell typable ici.",
+    attachedShellBody:
+      "Cette conversation est attachée à une session en cours (vue live, lecture seule). Le terminal réel de cette session vit ailleurs.",
+    startRunner: "Démarrer un runner du cockpit",
     emptyConv: "Aucune conversation ouverte.",
     emptyConvHint:
       "Choisis un projet sur la table pour ouvrir sa conversation.",
@@ -351,6 +360,7 @@ export const fr = {
       "Discute avec {{agent}} à propos de ce projet (contexte : specs + état des lieux + git). Clique un agent du roster pour t'adresser directement à lui. Sans endpoint IA configuré, une réponse mockée est renvoyée.",
     inputAria: "Saisie de message",
     placeholder: "Message à {{agent}}…",
+    readOnlyPlaceholder: "Lecture seule — démarre un runner du cockpit pour interagir",
     send: "Envoyer",
     evGeste: "⚙ geste",
     evDelegation: "➜ délègue",

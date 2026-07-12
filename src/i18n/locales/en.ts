@@ -309,6 +309,15 @@ export const en: Resources = {
       "is set to a runner that is not executable yet. Current step: claude-code (terminal-source). The definition is kept; address agents in chat (",
     bannerChat:
       "Coordinator {{coordinator}}'s runner “{{kind}}” is not executable yet (step: claude-code). The conversation stays open; the definition is kept.",
+    attachedBadge: "live session · read-only",
+    attachedBadgeTitle:
+      "Live view of an in-progress session found on disk — read-only (no runner launched by the cockpit).",
+    attachedChatNotice:
+      "Live session attached (read-only). To interact, start a cockpit runner (new session).",
+    attachedShellStrong: "External session: no typable shell here.",
+    attachedShellBody:
+      "This conversation is attached to an in-progress session (live view, read-only). The real terminal for this session lives elsewhere.",
+    startRunner: "Start a cockpit runner",
     emptyConv: "No conversation open.",
     emptyConvHint: "Pick a project on the table to open its conversation.",
     openAria: "Open project {{project}}",
@@ -351,6 +360,7 @@ export const en: Resources = {
       "Chat with {{agent}} about this project (context: specs + status + git). Click an agent in the roster to address them directly. With no AI endpoint configured, a mocked reply is returned.",
     inputAria: "Message input",
     placeholder: "Message to {{agent}}…",
+    readOnlyPlaceholder: "Read-only — start a cockpit runner to interact",
     send: "Send",
     evGeste: "⚙ gesture",
     evDelegation: "➜ delegates",

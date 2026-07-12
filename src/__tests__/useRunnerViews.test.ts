@@ -27,6 +27,9 @@ const conv = (projectId: string, ptySessionId: string): Conversation => ({
   mode: "chat",
   agent: "Aragorn",
   ptySessionId,
+  source: "owned",
+  attachedSessionId: null,
+  attachedTranscriptPath: null,
   history: [],
   pending: false,
   error: null,
@@ -37,6 +40,18 @@ const ptySession = (
   runnerSessionId?: string,
   transcriptPath?: string,
 ): UsePtySession => ({ id, ready: true, closed: false, runnerSessionId, transcriptPath });
+
+/** Conversation ATTACHÉE (L25) : session externe vivante, sans PTY propre. */
+const attachedConv = (
+  projectId: string,
+  attachedSessionId: string,
+  attachedTranscriptPath: string,
+): Conversation => ({
+  ...conv(projectId, `pty-${projectId}`),
+  source: "attached",
+  attachedSessionId,
+  attachedTranscriptPath,
+});
 
 /** Vide la file de microtâches (l'abonnement puis le démarrage du tailer sont chaînés). */
 const flush = (): Promise<void> =>
@@ -94,6 +109,56 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
       1782566546000,
     );
     expect(api.transcriptTailStart).not.toHaveBeenCalled();
+  });
+
+  it("L25 attaché : démarre transcriptTailStart sur le transcript EXTERNE, SANS aucune session PTY", async () => {
+    const api = makeApi();
+    renderHook(() =>
+      useRunnerViews({
+        api,
+        conversations: [
+          attachedConv("p1", "ext-sid", "/home/u/.claude/projects/-root-p1/ext-sid.jsonl"),
+        ],
+        // Aucune session PTY : l'attaché n'a pas de PTY propre (garde L10).
+        ptySessions: {},
+        appendTurn: vi.fn(),
+      }),
+    );
+    await flush();
+    expect(api.onRunnerEvent).toHaveBeenCalledWith("ext-sid", expect.any(Function));
+    expect(api.transcriptTailStart).toHaveBeenCalledWith(
+      "ext-sid",
+      "/home/u/.claude/projects/-root-p1/ext-sid.jsonl",
+    );
+    // Jamais Codex pour une session attachée.
+    expect(api.codexTailStart).not.toHaveBeenCalled();
+  });
+
+  it("L25 attaché : route les events de la session externe vers appendTurn de sa conversation", () => {
+    const holder: { emit: ((e: RunnerEvent) => void) | null } = { emit: null };
+    const api = makeApi((_sid, cb) => {
+      holder.emit = cb;
+    });
+    const appendTurn = vi.fn();
+    renderHook(() =>
+      useRunnerViews({
+        api,
+        conversations: [attachedConv("p1", "ext-sid", "/t/ext-sid.jsonl")],
+        ptySessions: {},
+        appendTurn,
+      }),
+    );
+    holder.emit?.({
+      kind: "parole",
+      role: "assistant",
+      is_sidechain: false,
+      text: "conversation en cours",
+    });
+    expect(appendTurn).toHaveBeenCalledWith("p1", {
+      role: "assistant",
+      content: "conversation en cours",
+      kind: "parole",
+    });
   });
 
   it("ne démarre RIEN tant que le runnerSessionId/transcriptPath sont absents (repli shell)", () => {

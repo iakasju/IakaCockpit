@@ -66,6 +66,12 @@ export interface ChatProps {
    */
   voiceStatus?: "idle" | "listening" | "unsupported";
   onDictate?: () => void;
+  /**
+   * Lecture seule (L25 — conversation `attached`, session externe vivante) : la saisie,
+   * l'envoi et le micro sont désactivés (on ne tape jamais dans un process qui tourne
+   * ailleurs). L'historique reste rendu en direct (vue live). Défaut `false`.
+   */
+  readOnly?: boolean;
 }
 
 /** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
@@ -96,6 +102,7 @@ export function Chat({
   onToggleHidePensee,
   voiceStatus,
   onDictate,
+  readOnly = false,
 }: ChatProps): JSX.Element {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -144,6 +151,7 @@ export function Chat({
   }, [history.length, pending]);
 
   const submit = (): void => {
+    if (readOnly) return; // lecture seule (attaché L25) : aucun envoi.
     if (pending) return;
     if (draft.trim().length === 0) return;
     onSend(draft);
@@ -255,9 +263,11 @@ export function Chat({
         <textarea
           className="chatfield"
           rows={1}
-          placeholder={t("chat.placeholder", { agent })}
+          placeholder={
+            readOnly ? t("chat.readOnlyPlaceholder") : t("chat.placeholder", { agent })
+          }
           value={draft}
-          disabled={pending}
+          disabled={pending || readOnly}
           aria-label={t("chat.inputAria")}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => {
@@ -281,6 +291,7 @@ export function Chat({
             }
             disabled={
               pending ||
+              readOnly ||
               voiceStatus === "listening" ||
               voiceStatus === "unsupported"
             }
@@ -292,7 +303,7 @@ export function Chat({
         <button
           type="submit"
           className="btn accent sm"
-          disabled={pending || draft.trim().length === 0}
+          disabled={pending || readOnly || draft.trim().length === 0}
         >
           {t("chat.send")}
         </button>

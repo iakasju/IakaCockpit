@@ -39,6 +39,9 @@ function conv(over: Partial<Conversation> = {}): Conversation {
     mode: "shell",
     agent: "Aragorn",
     ptySessionId: "s1",
+    source: "owned",
+    attachedSessionId: null,
+    attachedTranscriptPath: null,
     history: [],
     pending: false,
     error: null,
@@ -63,6 +66,7 @@ function renderView(resolveRunner: (projectId: string) => ResolvedRunner, c = co
       onSetMode={() => {}}
       onSetAgent={() => {}}
       onSend={() => {}}
+      onStartRunner={() => {}}
       onRequestNextStep={() => {}}
       resolveRunner={resolveRunner}
     />,
@@ -159,6 +163,7 @@ describe("WorkingView — @agent borné à la team (L11/C2)", () => {
         onSetMode={() => {}}
         onSetAgent={() => {}}
         onSend={onSend}
+        onStartRunner={() => {}}
         onRequestNextStep={() => {}}
         rosterMembers={ROSTER}
         resolveRunner={() => ({
@@ -236,6 +241,7 @@ function renderWorklist(
       onSetMode={() => {}}
       onSetAgent={() => {}}
       onSend={() => {}}
+      onStartRunner={() => {}}
       onRequestNextStep={() => {}}
       resolveRunner={() => ({
         kind: "claude-code",
@@ -316,5 +322,92 @@ describe("WorkingView — L23 retirer de la table", () => {
     });
     expect(screen.queryByText("prête (hors git)")).toBeNull();
     expect(screen.queryByText(/dossier introuvable/)).toBeNull();
+  });
+});
+
+// --- L25 : conversation attachée (session vivante, vue live lecture seule) ---
+
+function renderAttached(
+  over: Partial<Conversation>,
+  onStartRunner = vi.fn(),
+) {
+  const c = conv({
+    source: "attached",
+    attachedSessionId: "ext-sid",
+    attachedTranscriptPath: "/t/ext-sid.jsonl",
+    ...over,
+  });
+  const utils = rtlRender(
+    <WorkingView
+      worksetProjects={[]}
+      conversations={[c]}
+      active={c}
+      pty={PTY_STUB}
+      nextStepResult={null}
+      nextStepLoading={false}
+      nextStepError={null}
+      onOpenProject={() => {}}
+      onAddProject={() => {}}
+      onRemoveFromWork={() => {}}
+      onSelectConversation={() => {}}
+      onSetMode={() => {}}
+      onSetAgent={() => {}}
+      onSend={() => {}}
+      onStartRunner={onStartRunner}
+      onRequestNextStep={() => {}}
+      resolveRunner={() => ({
+        kind: "claude-code",
+        model: "",
+        coordinator: "Aragorn",
+      })}
+    />,
+  );
+  return { ...utils, onStartRunner };
+}
+
+describe("WorkingView — session attachée L25 (lecture seule)", () => {
+  it("chat attaché : badge « session vivante · lecture seule » + saisie désactivée", () => {
+    renderAttached({ mode: "chat" });
+    // Badge présent dans la convhead (texte exact, distinct de la notice de chat).
+    expect(screen.getByText("session vivante · lecture seule")).toBeTruthy();
+    // Saisie chat désactivée (aucun write vers la session externe).
+    const field = screen.getByLabelText("Saisie de message") as HTMLTextAreaElement;
+    expect(field.disabled).toBe(true);
+    const send = screen.getByRole("button", { name: "Envoyer" }) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+  });
+
+  it("chat attaché : le bouton « démarrer un runner » bascule en owned", () => {
+    const { onStartRunner } = renderAttached({ mode: "chat" });
+    fireEvent.click(
+      screen.getByRole("button", { name: /Démarrer un runner du cockpit/ }),
+    );
+    expect(onStartRunner).toHaveBeenCalledWith("demo");
+  });
+
+  it("attaché : AUCUN PtyTerminal monté (pas de PTY, garde L10)", () => {
+    renderAttached({ mode: "shell" });
+    expect(screen.queryByTestId("pty")).toBeNull();
+  });
+
+  it("shell attaché : bannière « session externe » + bouton démarrer un runner", () => {
+    const { onStartRunner } = renderAttached({ mode: "shell" });
+    expect(screen.getByText(/session externe/i)).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Démarrer un runner du cockpit/ }),
+    );
+    expect(onStartRunner).toHaveBeenCalledWith("demo");
+  });
+
+  it("owned (non attaché) : ni badge lecture seule ni bouton démarrer un runner", () => {
+    renderView(() => ({
+      kind: "claude-code",
+      model: "opus",
+      coordinator: "Aragorn",
+    }));
+    expect(screen.queryByText(/lecture seule/i)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Démarrer un runner du cockpit/ }),
+    ).toBeNull();
   });
 });

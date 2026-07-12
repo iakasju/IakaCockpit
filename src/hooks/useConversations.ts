@@ -21,6 +21,25 @@ import { useCallback, useRef, useState } from "react";
 
 export type ConvMode = "chat" | "shell";
 
+/**
+ * Source d'une conversation (L25), DISTINCTE du toggle d'affichage `mode` (chat|shell) :
+ *   - `owned` : le cockpit possède le runner (PTY `claude`/`codex` lancé par lui) — Shell
+ *     typable, Chat = vue du transcript de SON runner (comportement historique) ;
+ *   - `attached` : le cockpit **tail** un transcript EXISTANT (session externe vivante),
+ *     **sans PTY propre** → vue **LECTURE SEULE** (on ne tape jamais dans un process qui
+ *     tourne déjà ailleurs). Pour interagir, l'utilisateur « démarre un runner du cockpit »
+ *     (bascule en `owned`, cf. `convertToOwned`).
+ */
+export type ConvSource = "owned" | "attached";
+
+/** Coordonnées d'attache d'une conversation `attached` (session externe vivante, L25). */
+export interface AttachInfo {
+  /** `session_id` externe = nom du transcript sans extension (clef du tailer). */
+  sessionId: string;
+  /** Chemin absolu du transcript `.jsonl` externe à tailer (lecture seule). */
+  transcriptPath: string;
+}
+
 /** Canal d'un tour de chat (vue filtrée L10b). Défaut/absent = `parole` (rétro-compat). */
 export type ChatTurnKind =
   | "parole"
@@ -61,8 +80,21 @@ export interface Conversation {
   mode: ConvMode;
   /** Interlocuteur courant (persona) — défaut = responsable (D3). */
   agent: string;
-  /** Id de session PTY stable (survit au toggle, D4). */
+  /** Id de session PTY stable (survit au toggle, D4). Non spawné si `source:"attached"`. */
   ptySessionId: string;
+  /**
+   * Source de la conversation (L25) — `owned` (runner du cockpit) ou `attached` (tail
+   * d'une session externe, lecture seule). Défaut `owned` (rétro-compat L8/L24).
+   */
+  source: ConvSource;
+  /**
+   * `session_id` externe de la session attachée (clef du tailer `runner://event`) —
+   * présent UNIQUEMENT si `source:"attached"`. `null` sinon (owned : le tailer dérive
+   * du PTY via `usePty.sessions`).
+   */
+  attachedSessionId: string | null;
+  /** Chemin du transcript externe tailé en lecture seule — présent si `attached`, `null` sinon. */
+  attachedTranscriptPath: string | null;
   /** Historique chat multi-tours (mémoire MVP, D3). */
   history: ChatTurn[];
   /** Un tour de chat est en vol (UI : saisie désactivée + statut roster). */
@@ -110,6 +142,8 @@ export interface UseConversations {
    * Dédoublonne par `projectId` (calque `useGridState.openTab`). `agent` optionnel
    * = responsable par défaut. `initialHistory` optionnel (L9) précharge l'historique
    * à la création SEULEMENT (rétro-compat : défaut `[]` ; ignoré si la conv existe).
+   * `attach` optionnel (L25) : si fourni → conversation `attached` (tail d'une session
+   * externe, LECTURE SEULE, sans PTY propre) ; absent → `owned` (runner du cockpit).
    * Renvoie le `ptySessionId` (stable).
    */
   openConversation: (
@@ -118,6 +152,7 @@ export interface UseConversations {
     cwd: string,
     agent?: string,
     initialHistory?: ChatTurn[],
+    attach?: AttachInfo,
   ) => string;
   /** Sélectionne une conversation existante comme active. */
   setActive: (projectId: string) => void;
@@ -138,6 +173,15 @@ export interface UseConversations {
    * absent) retombe le `pending` (le chef a répondu). Borné à l'ajout (pas d'I/O).
    */
   appendTurn: (projectId: string, turn: ChatTurn) => void;
+  /**
+   * Bascule une conversation `attached` en `owned` (L25) — geste « démarrer un runner du
+   * cockpit ». Vide les coordonnées d'attache (`attachedSessionId`/`attachedTranscriptPath`)
+   * et passe `source:"owned"` → au prochain rendu, `WorkingView` monte le `PtyTerminal`
+   * (spawn du runner), le tailer démarre sur la NOUVELLE session. L'arrêt du tailer externe
+   * (`transcriptTailStop`) est fait par l'appelant AVANT ce basculement (aucun I/O ici).
+   * No-op si la conversation est déjà `owned` (idempotent).
+   */
+  convertToOwned: (projectId: string) => void;
   /**
    * Ferme (retire) la conversation d'un projet — geste EXPLICITE de retrait de la Table
    * (L23, incrément 2026-07-12). Retire la conversation du tableau ; si c'était l'active,
@@ -181,6 +225,7 @@ export function useConversations(): UseConversations {
       cwd: string,
       agent: string = DEFAULT_RESPONSIBLE,
       initialHistory: ChatTurn[] = [],
+      attach?: AttachInfo,
     ): string => {
       const existing = convRef.current.find((c) => c.projectId === projectId);
       if (existing) {
@@ -195,12 +240,21 @@ export function useConversations(): UseConversations {
         mode: "chat", // défaut = chat (AR-2)
         agent,
         ptySessionId,
+        // L25 : `attached` si des coordonnées d'attache sont fournies (session externe
+        // vivante), sinon `owned` (runner du cockpit — comportement historique).
+        source: attach ? "attached" : "owned",
+        attachedSessionId: attach?.sessionId ?? null,
+        attachedTranscriptPath: attach?.transcriptPath ?? null,
         // L9 : copie défensive (rétro-compat : défaut `[]` → comportement L8 inchangé).
         history: [...initialHistory],
         pending: false,
         error: null,
       };
-      setConversations((prev) => [...prev, conv]);
+      // Ajout IDEMPOTENT par projectId (garde StrictMode / ouverture eager async L24/L25 :
+      // deux appels quasi-synchrones avant commit ne créent qu'UNE conversation).
+      setConversations((prev) =>
+        prev.some((c) => c.projectId === projectId) ? prev : [...prev, conv],
+      );
       setActiveProjectId(projectId);
       return ptySessionId;
     },
@@ -260,6 +314,22 @@ export function useConversations(): UseConversations {
     [patch],
   );
 
+  const convertToOwned = useCallback(
+    (projectId: string): void => {
+      patch(projectId, (c) =>
+        c.source === "owned"
+          ? c
+          : {
+              ...c,
+              source: "owned",
+              attachedSessionId: null,
+              attachedTranscriptPath: null,
+            },
+      );
+    },
+    [patch],
+  );
+
   const closeConversation = useCallback((projectId: string): void => {
     // Retire la conversation du tableau (miroir convRef mis à jour au prochain render
     // par l'affectation `convRef.current = conversations`). État pur, aucun I/O.
@@ -281,6 +351,7 @@ export function useConversations(): UseConversations {
     setAgent,
     echoUser,
     appendTurn,
+    convertToOwned,
     closeConversation,
   };
 }

@@ -72,19 +72,41 @@ export function useRunnerViews({
   const startedRef = useRef<Set<string>>(new Set());
   const unlistenRef = useRef<Record<string, UnlistenFn>>({});
 
+  // Signature STABLE de l'ensemble des sessions ATTACHÉES (L25) : `attachedSessionId|path`
+  // par conversation `attached`. Sert de dépendance d'effet — une conversation attachée
+  // n'a PAS de session PTY (`ptySessions` ne bouge pas quand elle apparaît), il faut donc
+  // ce déclencheur pour démarrer son tailer. Ignore l'historique (pas de re-souscription
+  // à chaque tour ajouté par le tailer lui-même).
+  const attachedKey = conversations
+    .filter((c) => c.source === "attached" && c.attachedSessionId)
+    .map((c) => `${c.attachedSessionId}:${c.attachedTranscriptPath}`)
+    .join("|");
+
   useEffect(() => {
     const unl = unlistenRef.current;
 
     for (const conv of convRef.current) {
-      const sess = ptySessions[conv.ptySessionId];
-      const sid = sess?.runnerSessionId;
+      // L25 — source « attachée » (session externe vivante) : le tailer démarre sur le
+      // transcript EXISTANT (clef = `attachedSessionId`), SANS aucun PTY. Toujours un
+      // transcript Claude (détecté par `latest_transcript`), jamais Codex ici.
+      const attached =
+        conv.source === "attached" && conv.attachedSessionId
+          ? {
+              sid: conv.attachedSessionId,
+              path: conv.attachedTranscriptPath ?? "",
+            }
+          : null;
+
+      const sess = attached ? undefined : ptySessions[conv.ptySessionId];
+      const sid = attached ? attached.sid : sess?.runnerSessionId;
       if (!sid) continue; // pas (encore) de chef-runner / repli shell.
 
       // Dispatch « source de vues » par runner (frontière `ConversationSource`) : Codex se
       // tail par DÉCOUVERTE du rollout (cwd + récence) ; Claude par chemin de transcript
       // déterministe. `runnerKind` absent ⇒ comportement transcript (rétro-compatible).
-      const isCodex = sess?.runnerKind === "codex";
-      const path = sess?.transcriptPath;
+      // Une session attachée est TOUJOURS un transcript (jamais Codex).
+      const isCodex = !attached && sess?.runnerKind === "codex";
+      const path = attached ? attached.path : sess?.transcriptPath;
       const cwd = sess?.cwd;
       // Garde de démarrage : claude exige un transcriptPath ; codex exige un cwd.
       if (isCodex ? !cwd : !path) continue;
@@ -135,7 +157,8 @@ export function useRunnerViews({
         delete unl[sid];
       }
     };
-    // Dépend des sessions PTY (apparition d'un runnerSessionId) ; les conversations
+    // Dépend des sessions PTY (apparition d'un runnerSessionId) ET de `attachedKey`
+    // (apparition/retrait d'une session ATTACHÉE, L25 — sans PTY) ; les conversations
     // sont lues via réf miroir pour ne pas réabonner à chaque changement d'historique.
-  }, [api, ptySessions]);
+  }, [api, ptySessions, attachedKey]);
 }

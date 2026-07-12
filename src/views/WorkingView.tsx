@@ -109,6 +109,12 @@ export interface WorkingViewProps {
   onSetAgent: (projectId: string, agent: string) => void;
   /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
   onSend: (projectId: string, agent: string, content: string) => void;
+  /**
+   * L25 — « démarrer un runner du cockpit » pour une conversation `attached` (vue live
+   * lecture seule) : bascule en `owned` (spawn d'un runner neuf) pour interagir. Câblé par
+   * `App` (arrêt du tailer externe + `convertToOwned`).
+   */
+  onStartRunner: (projectId: string) => void;
   onRequestNextStep: (path: string) => void;
   /** Résolveur d'avatar par nom d'agent (L9) — vignettes roster + chat. */
   resolveAvatar?: AvatarResolver;
@@ -162,6 +168,7 @@ export function WorkingView({
   onSetMode,
   onSetAgent,
   onSend,
+  onStartRunner,
   onRequestNextStep,
   resolveAvatar,
   rosterMembers,
@@ -374,12 +381,21 @@ export function WorkingView({
                 <span className="ct-agent" title={t("working.interlocutorTitle")}>
                   {active.agent}
                 </span>
-                {activeRunner && (
+                {activeRunner && active.source === "owned" && (
                   <span className="ct-runner" title={t("working.runnerTitle")}>
                     {activeRunner.coordinator.toLowerCase() !==
                     active.agent.toLowerCase()
                       ? `${activeRunner.coordinator} · ${activeRunner.kind} · ${activeRunner.model || t("working.runnerModelDefault")}`
                       : `${activeRunner.kind} · ${activeRunner.model || t("working.runnerModelDefault")}`}
+                  </span>
+                )}
+                {/* L25 — badge « session vivante · lecture seule » (attaché). */}
+                {active.source === "attached" && (
+                  <span
+                    className="ct-live"
+                    title={t("working.attachedBadgeTitle")}
+                  >
+                    {t("working.attachedBadge")}
                   </span>
                 )}
               </div>
@@ -407,7 +423,8 @@ export function WorkingView({
                   {t("working.shell")}
                 </button>
               </div>
-              {active.mode === "shell" && (
+              {/* Interruption : owned uniquement (attaché = lecture seule, aucun write). */}
+              {active.mode === "shell" && active.source === "owned" && (
                 <button
                   type="button"
                   className="btn sm"
@@ -465,6 +482,33 @@ export function WorkingView({
               {conversations.map((c) => {
                 const visible =
                   c.projectId === active.projectId && c.mode === "shell";
+                // L25 — conversation ATTACHÉE : pas de PTY → jamais de PtyTerminal (garde
+                // L10 : un tailer attaché n'ouvre AUCUN PTY). En Shell, on affiche une
+                // bannière honnête (session externe non typable) + « démarrer un runner ».
+                if (c.source === "attached") {
+                  return (
+                    <div
+                      key={c.ptySessionId}
+                      className="termwrap runner-banner-wrap"
+                      style={{ display: visible ? "block" : "none" }}
+                      aria-hidden={!visible}
+                    >
+                      <div className="runner-banner" role="status">
+                        <strong>{t("working.attachedShellStrong")}</strong>
+                        <br />
+                        {t("working.attachedShellBody")}
+                        <br />
+                        <button
+                          type="button"
+                          className="btn sm accent"
+                          onClick={() => onStartRunner(c.projectId)}
+                        >
+                          {t("working.startRunner")}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
                 const runner = resolveRunner(c.projectId);
                 // RÈGLE D'EXÉCUTION HONNÊTE (L11 § 8) : le terminal-source réel n'est
                 // spawné QUE si le runner du coordinateur est claude-code. Sinon
@@ -516,12 +560,31 @@ export function WorkingView({
                 );
               })}
 
-              {active.mode === "chat" && !activeExecutable && activeRunner && (
-                <div className="runner-banner chat-banner" role="status">
-                  {t("working.bannerChat", {
-                    kind: activeRunner.kind,
-                    coordinator: activeRunner.coordinator,
-                  })}
+              {active.mode === "chat" &&
+                active.source === "owned" &&
+                !activeExecutable &&
+                activeRunner && (
+                  <div className="runner-banner chat-banner" role="status">
+                    {t("working.bannerChat", {
+                      kind: activeRunner.kind,
+                      coordinator: activeRunner.coordinator,
+                    })}
+                  </div>
+                )}
+              {/* L25 — bandeau lecture seule + « démarrer un runner » (attaché, en chat). */}
+              {active.mode === "chat" && active.source === "attached" && (
+                <div
+                  className="runner-banner chat-banner attached-banner"
+                  role="status"
+                >
+                  {t("working.attachedChatNotice")}{" "}
+                  <button
+                    type="button"
+                    className="btn sm accent"
+                    onClick={() => onStartRunner(active.projectId)}
+                  >
+                    {t("working.startRunner")}
+                  </button>
                 </div>
               )}
               {active.mode === "chat" && (
@@ -534,10 +597,15 @@ export function WorkingView({
                   onDraftChange={(v) => setDraft(active.projectId, v)}
                   onSend={sendActive}
                   resolveAvatar={resolveAvatar}
+                  // L25 — attaché = LECTURE SEULE : saisie/mic désactivés (aucun write vers
+                  // la session externe). L'interaction passe par « démarrer un runner ».
+                  readOnly={active.source === "attached"}
                   // Affordance esc côté chat (L10b/#4) : envoie `esc` au PTY du
-                  // chef-runner (EN PLUS de l'esc natif de la TUI).
-                  onInterrupt={() =>
-                    void pty.write(active.ptySessionId, "\x1b")
+                  // chef-runner (EN PLUS de l'esc natif de la TUI). Owned uniquement.
+                  onInterrupt={
+                    active.source === "owned"
+                      ? () => void pty.write(active.ptySessionId, "\x1b")
+                      : undefined
                   }
                   // Canal pensée masquable persisté (L10b/P3) : contrôlé si fourni.
                   hidePensee={hidePensee}

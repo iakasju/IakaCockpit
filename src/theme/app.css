@@ -1808,6 +1808,17 @@ button {
   background: var(--surf-2);
   white-space: nowrap;
 }
+/* L25 — badge « session vivante · lecture seule » (conversation attachée). */
+.convtitle .ct-live {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ok, #2e9e5b);
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ok, #2e9e5b) 14%, transparent);
+  white-space: nowrap;
+}
 .modetoggle {
   display: inline-flex;
   border-radius: 11px;
@@ -3570,6 +3581,19 @@ select.field {
 }
 .runner-banner.chat-banner {
   margin: 14px 26px 0;
+}
+/* L25 — bandeau lecture seule (attaché) : le bouton « démarrer un runner » aligné. */
+.runner-banner.attached-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.runner-banner .btn {
+  margin-top: 8px;
+}
+.runner-banner.attached-banner .btn {
+  margin-top: 0;
 }
 
 /* ---- Pilotage vocal (L16-P1) : bouton micro du rail + retour visuel ---- */
