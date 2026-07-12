@@ -368,6 +368,12 @@ export const en: Resources = {
     evDelegation: "➜ delegates",
     evActivite: "✓ activity",
     evPensee: "🜂 thinking",
+    chanFilterAria: "Channel filters",
+    chanParole: "Speech",
+    chanGeste: "Gesture",
+    chanDelegation: "Delegation",
+    chanActivite: "Activity",
+    chanPensee: "Thinking",
   },
 
   nextStep: {

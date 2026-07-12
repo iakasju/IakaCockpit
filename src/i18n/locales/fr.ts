@@ -368,6 +368,12 @@ export const fr = {
     evDelegation: "➜ délègue",
     evActivite: "✓ activité",
     evPensee: "🜂 pensée",
+    chanFilterAria: "Filtres de canaux",
+    chanParole: "Parole",
+    chanGeste: "Geste",
+    chanDelegation: "Délégation",
+    chanActivite: "Activité",
+    chanPensee: "Pensée",
   },
 
   nextStep: {

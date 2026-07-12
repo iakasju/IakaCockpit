@@ -26,6 +26,27 @@ function evLabel(kind: Exclude<ChatTurnKind, "parole">, t: TFunction): string {
   return t(key);
 }
 
+/** Ordre d'affichage stable des chips de filtre de canaux (L27). */
+const CHANNEL_ORDER: ChatTurnKind[] = [
+  "parole",
+  "geste",
+  "delegation",
+  "activite",
+  "pensee",
+];
+
+/** Libellé i18n d'un chip de filtre de canal (L27). */
+function chanLabel(kind: ChatTurnKind, t: TFunction): string {
+  const key = {
+    parole: "chat.chanParole",
+    geste: "chat.chanGeste",
+    delegation: "chat.chanDelegation",
+    activite: "chat.chanActivite",
+    pensee: "chat.chanPensee",
+  }[kind];
+  return t(key);
+}
+
 export interface ChatProps {
   /** Historique multi-tours (mémoire MVP). */
   history: ChatTurn[];
@@ -116,10 +137,49 @@ export function Chat({
     else setInternalHide((v) => !v);
   };
 
-  // Présence d'au moins une pensée → afficher le bouton de masquage.
-  const hasPensee = useMemo(
-    () => history.some((turn) => turn.kind === "pensee"),
-    [history],
+  // L27 — filtres de canaux. Pensée reste câblée sur `hidePensee`/`togglePensee`
+  // (persisté, cf. ci-dessus). Les 4 autres canaux ont un état local (MVP non
+  // persisté) : un canal ∈ `hiddenKinds` est masqué.
+  const [hiddenKinds, setHiddenKinds] = useState<Set<ChatTurnKind>>(
+    () => new Set(),
+  );
+
+  // Canaux réellement PRÉSENTS dans l'historique (calque `hasPensee`) → un chip
+  // par canal, dans l'ordre stable. La barre est masquée s'il y a ≤1 canal.
+  const presentChannels = useMemo(() => {
+    const present = new Set<ChatTurnKind>();
+    for (const turn of history) present.add(turn.kind ?? "parole");
+    return CHANNEL_ORDER.filter((c) => present.has(c));
+  }, [history]);
+
+  // Un canal est-il masqué ? Pensée → réglage persisté ; autres → état local.
+  const isHidden = (kind: ChatTurnKind): boolean =>
+    kind === "pensee" ? hidePensee : hiddenKinds.has(kind);
+
+  const toggleChannel = (kind: ChatTurnKind): void => {
+    if (kind === "pensee") {
+      togglePensee();
+      return;
+    }
+    setHiddenKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  };
+
+  // Historique effectivement rendu : masque les tours des canaux filtrés. Un tour
+  // `user` (message de l'utilisateur) reste TOUJOURS visible (pas un canal). Le
+  // regroupement d'attribution et l'auto-scroll dérivent de CET historique filtré.
+  const visibleHistory = useMemo(
+    () =>
+      history.filter((turn) => {
+        if (turn.role === "user") return true;
+        const kind = turn.kind ?? "parole";
+        return !(kind === "pensee" ? hidePensee : hiddenKinds.has(kind));
+      }),
+    [history, hidePensee, hiddenKinds],
   );
 
   // Gouttière d'attribution (décision IHM variante C, L17 #2) : on regroupe les bulles
@@ -129,7 +189,7 @@ export function Chat({
   const firstOfRun = useMemo(() => {
     const flags: boolean[] = [];
     let prev: string | null = null;
-    for (const turn of history) {
+    for (const turn of visibleHistory) {
       const isAssistantParole =
         turn.role === "assistant" && (turn.kind ?? "parole") === "parole";
       if (isAssistantParole) {
@@ -142,13 +202,13 @@ export function Chat({
       }
     }
     return flags;
-  }, [history, agent]);
+  }, [visibleHistory, agent]);
 
-  // Auto-scroll en bas à chaque nouveau tour / pending.
+  // Auto-scroll en bas à chaque nouveau tour / pending (sur l'historique filtré).
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [history.length, pending]);
+  }, [visibleHistory.length, pending]);
 
   const submit = (): void => {
     if (readOnly) return; // lecture seule (attaché L25) : aucun envoi.
@@ -159,41 +219,57 @@ export function Chat({
 
   return (
     <div className="chat" aria-label={t("chat.ariaLabel")}>
-      {(onInterrupt || hasPensee) && (
+      {onInterrupt && (
         <div className="chatbar">
-          {hasPensee && (
-            <button
-              type="button"
-              className={`btn xs${hidePensee ? "" : " accent"}`}
-              aria-pressed={!hidePensee}
-              onClick={togglePensee}
-            >
-              {hidePensee ? t("chat.showThought") : t("chat.hideThought")}
-            </button>
-          )}
-          {onInterrupt && (
-            <button
-              type="button"
-              className="btn xs"
-              title={t("chat.interruptTitle")}
-              onClick={onInterrupt}
-            >
-              {t("chat.interrupt")}
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn xs"
+            title={t("chat.interruptTitle")}
+            onClick={onInterrupt}
+          >
+            {t("chat.interrupt")}
+          </button>
+        </div>
+      )}
+      {/* L27 — barre de filtres de canaux : un chip par canal présent, masquée si
+          ≤1 canal. Chip actif = canal affiché ; chip atténué = canal masqué. La
+          pensée reste câblée sur le réglage persisté (`hidePensee`). */}
+      {presentChannels.length > 1 && (
+        <div
+          className="chanfilter"
+          role="group"
+          aria-label={t("chat.chanFilterAria")}
+        >
+          {presentChannels.map((kind) => {
+            const label = chanLabel(kind, t);
+            return (
+              <button
+                key={kind}
+                type="button"
+                className="chanchip"
+                aria-pressed={!isHidden(kind)}
+                title={label}
+                aria-label={label}
+                onClick={() => toggleChannel(kind)}
+              >
+                <span className={`chandot ${kind}`} aria-hidden />
+                {label}
+              </button>
+            );
+          })}
         </div>
       )}
       <div className="chatlog" ref={scrollRef}>
         {history.length === 0 && !pending && (
           <div className="chatempty">{t("chat.empty", { agent })}</div>
         )}
-        {history.map((turn, i) => {
+        {visibleHistory.map((turn, i) => {
           const kind = turn.kind ?? "parole";
 
           // Vues dérivées du transcript (L10b) : geste/délégation/activité/pensée
-          // rendues en LIGNES d'événement (pas des bulles). La pensée est masquable.
+          // rendues en LIGNES d'événement (pas des bulles). Le filtrage des canaux
+          // masqués (dont la pensée) est déjà appliqué en amont (`visibleHistory`).
           if (kind !== "parole") {
-            if (kind === "pensee" && hidePensee) return null;
             const evAgent = turn.agent ?? null;
             return (
               <div key={i} className={`evline ev-${kind}`}>

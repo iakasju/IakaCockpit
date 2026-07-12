@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  within,
+} from "@testing-library/react";
 import { Chat } from "../components/Chat";
 import type { ChatTurn } from "../hooks/useConversations";
 
@@ -312,16 +318,18 @@ describe("Chat — vues filtrées du transcript (L10b)", () => {
     expect(screen.getByText("gandalf")).toBeTruthy();
   });
 
-  it("la pensée est MASQUÉE par défaut et révélable via le bouton", () => {
+  it("la pensée est MASQUÉE par défaut et révélable via le chip de canal (L27)", () => {
     const history: ChatTurn[] = [
+      { role: "assistant", content: "réponse parlée", kind: "parole" },
       { role: "assistant", content: "je réfléchis", kind: "pensee" },
     ];
     render(<Chat {...baseProps} history={history} />);
     // Masquée par défaut.
     expect(screen.queryByText("je réfléchis")).toBeNull();
-    // Bouton de révélation présent.
-    const toggle = screen.getByRole("button", { name: "Afficher la pensée" });
-    fireEvent.click(toggle);
+    // Le chip Pensée est atténué (aria-pressed=false) ; le clic la révèle.
+    const chip = screen.getByRole("button", { name: "Pensée" });
+    expect(chip.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(chip);
     expect(screen.getByText("je réfléchis")).toBeTruthy();
   });
 
@@ -339,12 +347,13 @@ describe("Chat — vues filtrées du transcript (L10b)", () => {
     expect(container.querySelector(".chatbar")).toBeNull();
   });
 
-  it("L10b/P3 : toggle pensée CONTRÔLÉ — le clic appelle onToggleHidePensee (persisté)", () => {
+  it("L10b/P3 + L27 : chip Pensée CONTRÔLÉ — le clic appelle onToggleHidePensee (persisté)", () => {
     const onToggle = vi.fn();
     const history: ChatTurn[] = [
+      { role: "assistant", content: "réponse parlée", kind: "parole" },
       { role: "assistant", content: "je réfléchis", kind: "pensee" },
     ];
-    // hidePensee=false (contrôlé) → la pensée est visible et le libellé propose de masquer.
+    // hidePensee=false (contrôlé) → la pensée est visible et le chip est actif.
     render(
       <Chat
         {...baseProps}
@@ -354,7 +363,71 @@ describe("Chat — vues filtrées du transcript (L10b)", () => {
       />,
     );
     expect(screen.getByText("je réfléchis")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Masquer la pensée" }));
+    const chip = screen.getByRole("button", { name: "Pensée" });
+    expect(chip.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(chip);
     expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Chat — filtres de canaux (L27)", () => {
+  const baseProps = {
+    agent: "Aragorn",
+    pending: false,
+    error: null,
+    draft: "",
+    onDraftChange: () => {},
+    onSend: () => {},
+  };
+
+  const MULTI: ChatTurn[] = [
+    { role: "user", content: "salut" },
+    { role: "assistant", content: "réponse parlée", kind: "parole", agent: "Aragorn" },
+    { role: "assistant", content: "Bash — ls", kind: "geste" },
+    {
+      role: "assistant",
+      content: "délègue à gandalf",
+      kind: "delegation",
+      agent: "gandalf",
+    },
+  ];
+
+  it("affiche un chip par canal présent, dans l'ordre stable", () => {
+    render(<Chat {...baseProps} history={MULTI} />);
+    const bar = screen.getByRole("group", { name: "Filtres de canaux" });
+    const chips = within(bar)
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+    expect(chips).toEqual(["Parole", "Geste", "Délégation"]);
+  });
+
+  it("masquer un canal (geste) retire ses tours ; le ré-afficher les ramène", () => {
+    render(<Chat {...baseProps} history={MULTI} />);
+    expect(screen.getByText("Bash — ls")).toBeTruthy();
+    const chip = screen.getByRole("button", { name: "Geste" });
+    fireEvent.click(chip); // masque
+    expect(screen.queryByText("Bash — ls")).toBeNull();
+    expect(chip.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(chip); // ré-affiche
+    expect(screen.getByText("Bash — ls")).toBeTruthy();
+    expect(chip.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("les tours utilisateur restent visibles même si le canal Parole est masqué", () => {
+    render(<Chat {...baseProps} history={MULTI} />);
+    fireEvent.click(screen.getByRole("button", { name: "Parole" }));
+    // Le message user reste visible…
+    expect(screen.getByText("salut")).toBeTruthy();
+    // …mais la parole ASSISTANT disparaît.
+    expect(screen.queryByText("réponse parlée")).toBeNull();
+  });
+
+  it("non-régression : pas de barre si un seul canal présent", () => {
+    render(
+      <Chat {...baseProps} history={[{ role: "user", content: "x" }]} />,
+    );
+    expect(
+      screen.queryByRole("group", { name: "Filtres de canaux" }),
+    ).toBeNull();
   });
 });

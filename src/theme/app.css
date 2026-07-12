@@ -1960,6 +1960,66 @@ button {
   gap: 8px;
   padding: 10px 26px 0;
 }
+/* L27 — barre de filtres de canaux au-dessus du fil. Grammaire des chips alignée
+   sur les pills de canaux du Journal (.cf), logique locale au Chat. */
+.chanfilter {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 26px 0;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+}
+.chanchip {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: var(--surf-2);
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  border: none;
+}
+/* Chip actif = canal AFFICHÉ (plein) ; chip atténué = canal MASQUÉ. */
+.chanchip[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--bg);
+}
+.chanchip[aria-pressed="false"] {
+  opacity: 0.5;
+}
+.chandot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-3);
+}
+.chandot.parole {
+  background: var(--blue);
+}
+.chandot.geste {
+  background: var(--text-3);
+}
+.chandot.delegation {
+  background: var(--accent);
+}
+.chandot.activite {
+  background: var(--green);
+}
+.chandot.pensee {
+  background: var(--purple);
+}
+.chanchip[aria-pressed="true"] .chandot {
+  box-shadow: 0 0 0 2px var(--bg);
+}
 .chatlog {
   flex: 1;
   min-height: 0;
