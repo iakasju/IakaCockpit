@@ -24,6 +24,13 @@ export function makeDemoFrame(teamId: string): Frame {
       { id: "r-instr", type: "obligation", label: "Lire l'instruction avant de coder" },
       { id: "r-tests", type: "competence", label: "Tests & couverture" },
       { id: "r-doc", type: "obligation", label: "Documentation à jour", scope: "projet" },
+      {
+        id: "oblig-def-projet",
+        type: "obligation",
+        label:
+          "Le coordinateur maintient la ligne de définition du projet dans `specs/PROJET.md` : il la pose à la création, la met à jour si la définition évolue en conversation, et fait valider le changement par l'utilisateur.",
+        scope: "agent",
+      },
     ],
     skills: [
       { id: "s-git", name: "Git sûr", ruleIds: ["r-commit", "r-noforce", "r-atomic"] },
@@ -35,7 +42,7 @@ export function makeDemoFrame(teamId: string): Frame {
       { id: "t-qa", name: "Qualité", roleKey: "tests", skillIds: ["s-git"], ruleIds: ["r-tests"] },
     ],
     agents: [
-      { id: "a-aragorn", name: "Aragorn", templateId: "t-coord", extraSkillIds: [], extraRuleIds: [] },
+      { id: "a-aragorn", name: "Aragorn", templateId: "t-coord", extraSkillIds: [], extraRuleIds: ["oblig-def-projet"] },
       { id: "a-gimli", name: "Gimli", templateId: "t-dev", extraSkillIds: [], extraRuleIds: [] },
       { id: "a-legolas", name: "Legolas", templateId: "t-qa", extraSkillIds: [], extraRuleIds: [] },
     ],
