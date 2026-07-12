@@ -6,7 +6,7 @@
  * Aucun `invoke`/`listen` ici (ni nulle part hors `backend.ts`). Les vues sont
  * présentationnelles ; les seuls effets I/O passent par les hooks/façade.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "./i18n";
 import { usePortfolio } from "./hooks/usePortfolio";
@@ -54,6 +54,7 @@ import type { AvatarMember } from "./components/ProjectCard";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import { backend, type Project, type RunnerEvent } from "./api/backend";
 import { removeFromWork } from "./app/removeFromWork";
+import { projectsToEagerOpen } from "./app/reconcileEagerOpen";
 import { makeDemoFrame } from "./mock/demoFrame";
 import "./theme/tokens.css";
 // Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
@@ -320,6 +321,30 @@ export default function App(): JSX.Element {
     openConversationFor(project);
   };
 
+  // L24 F1 — Ouverture EAGER des fenêtres de travail. Réconcilie `workset → conversations`
+  // ouvertes : dès qu'un projet DÉJÀ LIÉ est posé sur la Table sans conversation, on ouvre
+  // sa fenêtre (runner/PTY vivant) sans attendre un clic. Bornes (anti-boucle / anti-popup) :
+  //   - seulement les projets LIÉS (`hasBinding`) → un projet non lié garde sa présence en
+  //     worklist mais n'ouvre le `TeamPicker` qu'au clic (AR-3, pas d'empilement de popups) ;
+  //   - seulement ceux SANS conversation (`liveProjectIds`) → idempotent : la conversation
+  //     créée retombe dans `liveProjectIds` au tour suivant → toOpen se vide (convergence) ;
+  //   - un retrait (removeFromWorkAndPrepare) sort le projet de `worksetProjects` AVANT que
+  //     l'effet ne rejoue → aucune réouverture dans le même tour.
+  // `openProject` n'est pas mémoïsé : on le lit via ref pour ne pas le mettre en dépendance
+  // (sinon l'effet se ré-abonnerait à chaque render). Réconcilie `useDemoSeed` : `iaka-demo`
+  // est ouvert par le seed AVANT d'entrer dans le workset → déjà dans `liveProjectIds` →
+  // jamais rouvert ici (pas de double ouverture, reste sur Portfolio — AR-4 préservé).
+  const openProjectRef = useRef(openProject);
+  openProjectRef.current = openProject;
+  useEffect(() => {
+    const toOpen = projectsToEagerOpen({
+      worksetProjects,
+      openConversationIds: liveProjectIds,
+      hasBinding: teams.hasBinding,
+    });
+    for (const p of toOpen) openProjectRef.current(p);
+  }, [worksetProjects, liveProjectIds, teams.hasBinding]);
+
   // L16-F2 — double-clic sur une cellule de la treemap Économie (Portefeuille) : bascule sur
   // Travail avec le projet au premier plan. Navigation + focus SEULEMENT (la treemap est
   // scopée table → le projet est déjà sur la table ; AUCUNE mutation du workset). Réutilise
@@ -486,6 +511,7 @@ export default function App(): JSX.Element {
             onRemoveFromWork={removeFromWorkAndPrepare}
             prepareEntries={prepareResume.entries}
             onDismissPrepare={prepareResume.dismiss}
+            onSelectConversation={conversations.setActive}
             onSetMode={conversations.setMode}
             onSetAgent={conversations.setAgent}
             onSend={handleSend}

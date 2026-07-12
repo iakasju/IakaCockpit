@@ -59,6 +59,7 @@ function renderView(resolveRunner: (projectId: string) => ResolvedRunner, c = co
       onOpenProject={() => {}}
       onAddProject={() => {}}
       onRemoveFromWork={() => {}}
+      onSelectConversation={() => {}}
       onSetMode={() => {}}
       onSetAgent={() => {}}
       onSend={() => {}}
@@ -135,6 +136,7 @@ describe("WorkingView — @agent borné à la team (L11/C2)", () => {
         onOpenProject={() => {}}
         onAddProject={() => {}}
         onRemoveFromWork={() => {}}
+        onSelectConversation={() => {}}
         onSetMode={() => {}}
         onSetAgent={() => {}}
         onSend={onSend}
@@ -211,6 +213,7 @@ function renderWorklist(
       onOpenProject={() => {}}
       onAddProject={() => {}}
       onRemoveFromWork={() => {}}
+      onSelectConversation={() => {}}
       onSetMode={() => {}}
       onSetAgent={() => {}}
       onSend={() => {}}

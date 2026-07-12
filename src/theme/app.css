@@ -1670,6 +1670,63 @@ button {
   overflow: hidden;
   background: var(--surf);
 }
+
+/* L24 — barre d'onglets par projet de la Table, en tête de la zone conversation
+   (au-dessus de `.convhead`). Un onglet par conversation ouverte ; onglet actif mis
+   en évidence ; « × » de fermeture (= retirer de la Table). Coexiste avec la worklist. */
+.projtabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 14px 0;
+  overflow-x: auto;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--line);
+}
+.projtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+  background: var(--bg);
+  max-width: 220px;
+}
+.projtab.active {
+  background: var(--surf);
+  box-shadow: 0 -2px 8px rgba(20, 22, 28, 0.04);
+}
+.projtab .pt-open {
+  border: none;
+  background: transparent;
+  padding: 8px 6px 8px 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.projtab.active .pt-open {
+  color: var(--text);
+}
+.projtab .pt-close {
+  border: none;
+  background: transparent;
+  padding: 4px 8px 4px 2px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.projtab .pt-close:hover {
+  color: var(--text);
+}
 .workbody {
   flex: 1;
   display: flex;

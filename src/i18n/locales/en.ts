@@ -312,6 +312,8 @@ export const en: Resources = {
     emptyConv: "No conversation open.",
     emptyConvHint: "Pick a project on the table to open its conversation.",
     openAria: "Open project {{project}}",
+    tabsAria: "Open project tabs",
+    tabCloseAria: "Close {{project}} tab",
     removeAria: "Remove {{project}} from the table",
     removeTitle: "Remove from the table (prepares resume in the background)",
     prepareAria: "Resume preparations in progress",

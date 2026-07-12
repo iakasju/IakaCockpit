@@ -24,6 +24,7 @@ import { mentionPrefix, parseMention } from "../hooks/useConversations";
 import { deriveWorkingAgents } from "../hooks/runnerView";
 import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
+import { ProjectTabs } from "../components/ProjectTabs";
 import { NextStepPanel } from "../components/NextStepPanel";
 import { Chat } from "../components/Chat";
 import { useVoiceDictation } from "../hooks/useVoiceDictation";
@@ -98,6 +99,12 @@ export interface WorkingViewProps {
   prepareEntries?: readonly PrepareEntry[];
   /** Ferme une ligne de statut de préparation (bouton × d'une entrée terminée). */
   onDismissPrepare?: (projectId: string) => void;
+  /**
+   * Sélectionne la conversation d'un projet depuis la barre d'onglets (L24 F2) —
+   * `App` branche `useConversations.setActive`. Bascule l'`active` sans rien démonter
+   * (garde L10 : le `PtyTerminal` de chaque projet survit au switch d'onglet).
+   */
+  onSelectConversation: (projectId: string) => void;
   onSetMode: (projectId: string, mode: ConvMode) => void;
   onSetAgent: (projectId: string, agent: string) => void;
   /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
@@ -151,6 +158,7 @@ export function WorkingView({
   onRemoveFromWork,
   prepareEntries,
   onDismissPrepare,
+  onSelectConversation,
   onSetMode,
   onSetAgent,
   onSend,
@@ -346,6 +354,18 @@ export function WorkingView({
       </aside>
 
       <div className="workpane">
+        {/*
+          Barre d'onglets par projet (L24 F2) : un onglet par conversation ouverte,
+          en tête de la zone conversation. Coexiste avec la worklist gauche (AR-1) ;
+          les deux pilotent le même `active`. Le « × » d'un onglet retire le projet de
+          la Table (ferme PTY + conversation, L23-inc) — jamais un simple switch.
+        */}
+        <ProjectTabs
+          conversations={conversations}
+          activeProjectId={active?.projectId ?? null}
+          onSelect={onSelectConversation}
+          onClose={onRemoveFromWork}
+        />
         {active ? (
           <>
             <div className="convhead">
