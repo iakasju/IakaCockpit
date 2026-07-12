@@ -389,6 +389,15 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       F3 UI attachée (badge « session vivante · lecture seule », saisie désactivée, bouton « démarrer un runner »).
       Réalise la vision terminal-source/chat-vue pour les sessions **externes**. Différés : reprise typable
       `--resume`, sélecteur multi-sessions, seuil de fraîcheur.
+- [x] **L26** — **Mode focus plein écran de la Table** (feux macOS jaune/vert)
+      → `specs/instructions/L26-mode-focus-plein-ecran-table.md`
+      *(**LIVRÉ, scellé `v0.20.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.20.0.md` ; gate Legolas PASS —
+      571 front + 279 Rust verts, fmt/clippy OK. Cadré+coordonné par 🟠 Aragorn, AR-1 tranché).* Deux **feux
+      macOS** (vert=agrandir, jaune=restaurer) à droite des onglets : **vert** masque le rail + la worklist,
+      agrandit `.workpane`, **garde** la colonne widgets droite + onglets + toggle Shell/Conversation, ET passe
+      l'app en **fullscreen** (commande façade Rust `set_fullscreen`) ; **jaune** = rétablit les colonnes
+      **seulement** (AR-1, sortie fullscreen via feu natif macOS). Front + 1 commande Rust ; barre d'onglets
+      rendue même à 0 onglet. Différés : icône hover, bouton rouge, raccourci clavier, persistance.
 - [ ] **(Re-tracé, ex-L16)** — **Pilotage / dictée vocale d'iakacockpit** → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
       *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
       cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher

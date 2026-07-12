@@ -1,15 +1,14 @@
 # État des lieux — 2026-07-12
 
 ## En une phrase
-**`v0.19.0` scellée** : **L25 — s'attacher à la session vivante** d'un projet (gate Legolas PASS,
-563 front + 279 Rust). Ouvrir un projet **tail le transcript le plus récent** du cwd et affiche la
-conversation **en direct, lecture seule, sans PTY** (`latest_transcript` Rust + mode conversation
-**attached** vs **owned** ; badge « session vivante · lecture seule » + bouton « démarrer un
-runner » pour interagir). Réalise la vision terminal-source/chat-vue pour les sessions **externes**
-(ex. celle du terminal). *(Précédents poussés sur Forgejo : `v0.17.0` IHM Portefeuille L16 + fix
-vignettes ; `v0.18.0` vue Travail L24 onglets + fenêtres ouvertes.)* **Prochaine étape au choix** :
-recette réelle L25 (`tauri dev`, voir la session live), L16 vocal, L22-P3 enforcement, ou chantiers
-IHM (filtres chat, arbre des délégations).
+**`v0.20.0` scellée** : **L26 — mode focus plein écran de la Table** (feux macOS jaune/vert ; gate
+Legolas PASS, 571 front + 279 Rust). À droite des onglets, **vert** = masquer rail + worklist,
+agrandir la zone de travail (garder widgets droite + onglets + toggle) + **fullscreen OS**
+(commande façade `set_fullscreen`) ; **jaune** = rétablir les colonnes seulement (AR-1). *(Précédents
+poussés sur Forgejo : `v0.17.0` IHM Portefeuille L16 + fix vignettes ; `v0.18.0` L24 onglets +
+fenêtres ouvertes ; `v0.19.0` L25 s'attacher à la session vivante.)* **Prochaine étape au choix** :
+recette réelle (L25 session live + L26 feux/fullscreen à l'écran), L16 vocal, L22-P3 enforcement, ou
+chantiers IHM (filtres chat, arbre des délégations).
 
 ## Différés / ouverts à la reprise
 - **L16 STT** : whisper rend `'...'`/`'[Musique]'` (audio capté non reconnu) ; mesure peak/rms posée,
@@ -46,23 +45,22 @@ IHM (filtres chat, arbre des délégations).
 ## Jalons (gates)
 | Jalon | Statut |
 |---|---|
-| Instructions cadrées | oui (L0→L25 dans `specs/instructions/` ; L16/L24/L25 LIVRÉS) |
-| Tests verts | oui (563 front + 279 Rust au seal v0.19.0 ; typecheck/lint/fmt/clippy OK) |
-| Recette stage | PASS (Legolas, gate L25) |
-| Recette terrain GUI | partielle (recette réelle L25 à faire : ouvrir un projet → voir la session live) |
-| Seal v0.17.0 / v0.18.0 | **oui** (tags posés, **poussés** sur `origin/main`) |
-| Seal v0.19.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
+| Instructions cadrées | oui (L0→L26 dans `specs/instructions/` ; L16/L24/L25/L26 LIVRÉS) |
+| Tests verts | oui (571 front + 279 Rust au seal v0.20.0 ; typecheck/lint/fmt/clippy OK) |
+| Recette stage | PASS (Legolas, gate L26) |
+| Recette terrain GUI | partielle (recette réelle L25 session live + L26 feux/fullscreen à faire à l'écran) |
+| Seal v0.17.0 / v0.18.0 / v0.19.0 | **oui** (tags posés, **poussés** sur `origin/main`) |
+| Seal v0.20.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
 | Feu vert prod | n/a (app desktop, pas de bascule stage→prod à ce jour) |
 
 ## Prochaine étape
-1. **Push** de `v0.19.0` (commit de seal + tag `v0.19.0`) sur `origin/main` — **en attente du feu vert
-   de Stéphane** (action sortante). `v0.17.0` et `v0.18.0` déjà poussées.
-2. **Recette réelle L25** (`npm run tauri dev`) : ouvrir **IakaCockpit** pendant qu'une session tourne
-   dans le terminal → le Chat doit afficher **la conversation en cours** (lecture seule, badge « session
-   vivante ») ; le bouton « démarrer un runner » bascule en owned typable.
-3. **Recette L24** restante : poser 2-3 projets **liés** → onglets + fenêtres vivantes + switch sans
-   tuer les runners.
-4. **Autres au choix** : L16 vocal, L22-P3 enforcement, chantiers IHM (filtres chat, arbre des délégations).
+1. **Push** de `v0.20.0` (commit de seal + tag `v0.20.0`) sur `origin/main` — **en attente du feu vert
+   de Stéphane**. `v0.17.0`/`v0.18.0`/`v0.19.0` déjà poussées.
+2. **Recette réelle à l'écran** (`npm run tauri dev`) : **L26** feux jaune/vert (vert = masque colonnes
+   gauche + fullscreen, garde widgets droite + onglets + toggle ; jaune = rétablit colonnes) ; **L25**
+   ouvrir IakaCockpit → voir la conversation en cours (lecture seule) ; **L24** plusieurs projets liés →
+   onglets + fenêtres vivantes.
+3. **Autres au choix** : L16 vocal, L22-P3 enforcement, chantiers IHM (filtres chat, arbre des délégations).
 
 ## Points d'attention
 - **Config `~/.claude` migrée depuis Windows** : origine des deux soucis `/doctor` (plugin + chemins en
@@ -88,6 +86,7 @@ IHM (filtres chat, arbre des délégations).
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-13 | version | v0.20.0 | main | SEAL v0.20.0. **L26 — mode focus plein écran de la Table** (feux macOS jaune/vert), cadré+coordonné par 🟠 Aragorn, 2 commits, gate Legolas PASS (571 front + 279 Rust, fmt/clippy OK). Dans `ProjectTabs`, à droite des onglets, 2 pastilles style feux macOS : **vert** (`enterWorkFocus`) = `workFocus=true` + `backend.setFullscreen(true)` → masque `.rail` (classe `app-shell--focus`) + `.worklist` (classe `wk--focus`), `.workpane` `flex:1` s'agrandit, **garde** `.wkright` (widgets droite) + `ProjectTabs` + `.convhead` (toggle Shell/Conversation) ; **jaune** (`exitWorkFocus`) = `workFocus=false` **seulement** (rétablit les colonnes, **ne touche pas** au fullscreen — AR-1, sortie via feu natif macOS). **Façade unique** : commande Rust `set_fullscreen(window,on)` (`terminal.rs`, enregistrée `lib.rs`), miroir `backend.ts`, aucun plugin window JS. Barre d'onglets rendue **même à 0 onglet**. Présentationnel D8 (appel façade dans callbacks App). Non-régression L24/L25 (props focus requises sur ProjectTabs, optionnelles sur WorkingView). Doc qualité `docs/qualite/v0.20.0.md`. Différés : icône hover, bouton rouge, raccourci clavier, persistance ; recette visuelle manuelle. |
 | 2026-07-12 | version | v0.19.0 | main | SEAL v0.19.0. **L25 — s'attacher à la session vivante** d'un projet (vue live lecture seule), cadré+coordonné par 🟠 Aragorn, branche `feat/L25-attacher-session-vivante` fusionnée **ff** dans main, gate Legolas PASS (563 front + 279 Rust, fmt/clippy OK). Ouvrir un projet **tail le transcript le plus récent** du cwd (`latest_transcript(cwd)` Rust, helper `transcript_dir` partagé avec `transcript_path`, échappement `escape_cwd` réutilisé, anti-traversal, cross-OS) et affiche la conversation **en direct SANS PTY**. Modèle : `Conversation.source` **owned** (runner actuel) vs **attached** (tail sans PTY). À l'ouverture : `latestTranscript` Some → attached ; None/hors-Tauri → owned. **Lecture seule STRICTE** (AR-2 : `handleSend` no-op si attached, Chat readOnly → jamais de `pty.write` vers la session externe). **Garde L10** : attached ne monte AUCUN PtyTerminal ; multi-mount owned (L24) non régressé ; `useRunnerViews` tail l'attaché sans `ptySessions`. UI : badge « session vivante · lecture seule », bannière Shell, bouton « démarrer un runner » (`convertToOwned` → spawn). « × » attaché = `transcriptTailStop` (pas de `pty.close`). Façade unique (1 commande), i18n parité (7 clés). Doc qualité `docs/qualite/v0.19.0.md`. Différés : reprise typable `--resume` (P2), sélecteur multi-sessions (écarté), seuil de fraîcheur, **recette réelle manuelle** (ouvrir un projet → voir la session live). |
 | 2026-07-12 | version | v0.18.0 | main | SEAL v0.18.0. Jalon **vue Travail — fenêtres toujours ouvertes + onglets par projet** (**L24**), cadré+coordonné par 🟠 Aragorn, 3 commits, gates Legolas PASS (550 front, Rust non touché). **L24** : F1 ouverture **eager** (dès la pose sur la Table, projets liés ; helper pur `reconcileEagerOpen` + effet App convergence anti-boucle, anti-empilement popups AR-3) ; F2 **barre d'onglets par projet** (`ProjectTabs` : un onglet/conversation, actif mis en évidence, « × » = retrait via L23-inc), **worklist gauche conservée** (AR-1, synchronisée) ; F3 toggle Shell/Conversation par onglet, **garde L10 intacte** (PtyTerminal jamais démonté au switch/toggle). + **fix en-tête** conversation (recette) : coordinateur affiché **seulement s'il diffère** de l'interlocuteur (fin du double « Aragorn » empilé) + en-tête sur **une seule ligne** (chip runner tronqué, toggle/esc jamais clipés, `convtitle` `flex-wrap:nowrap`). Front seul, Rust non touché. Doc qualité `docs/qualite/v0.18.0.md`. Cadré et prêt pour la suite : **L25** (s'attacher à la session vivante). Différés : DnD onglets, garde perf N runners, bouton + dans la barre. |
 | 2026-07-12 | version | v0.17.0 | main | SEAL v0.17.0. Jalon **IHM Portefeuille + retours terrain**, cadré+coordonné par 🟠 Aragorn, 11 commits, **2 gates Legolas PASS** (538 front + 274 Rust, couverture ~75 %). **L16** (page Étagère) : **F1** toggle Liste/Tuiles de l'Atelier (défaut Liste, table en tuiles) ; **F2** double-clic widget Économie (treemap) → bascule Travail + projet au premier plan (sans mutation workset, scoping AR-4 conservé) ; **F3** tuile enrichie — description **gras** (source `specs/PROJET.md` prioritaire, AR-6=B), ligne `next :` (1er `- [ ]` du backlog), méta version/retard/étapes (étend `portfolio.rs` : `read_description`/`read_backlog` + 3 champs `Project`) ; **F4** pastille d'urgence dérivée de `backlog_remaining` (🔴≥5/🟠1-4/🟢0/gris, AR-7, `read_backlog` renvoie `Some(0)` si tout coché) ; **F4-bis** pastille **partagée identique** liste↔tuile (helper `urgency.ts`). Scellés avec : **L23-inc** (retrait Table ferme PTY+conversation via `closeConversation`+`pty.close`, job reprise conservé, garde L10 intacte) ; **page Cadre débranchée** du rail (code conservé) ; **affichage statut reprise débranché** (job conservé) ; règle Cadre **`obligation oblig-def-projet`** (obligation coordinateur : maintenir la def projet dans `PROJET.md`, aussi mémoire + contrats aragorn/odin) ; **fix vignettes** « Aragorn=Gandalf » — team par défaut legacy (`Aragorn.roleIndex=2`) réalignée au chargement (`reconcileDefaultTeamCasting`, bornée `DEFAULT_TEAM_ID`, non destructif, idempotent) + garde anti-récidive TeamsEditor. Doc qualité `docs/qualite/v0.17.0.md`. Rust confiné à `portfolio.rs`. Différés : persistance toggle, a11y clavier treemap, confirmation retrait, enforcement runner de l'obligation (L22-P3), L16 vocal. |
