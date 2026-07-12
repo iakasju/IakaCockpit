@@ -264,53 +264,23 @@ describe("WorkingView — L23 retirer de la table", () => {
     expect(onRemoveFromWork).not.toHaveBeenCalled();
   });
 
-  it("zone de statut : running → done (prête) affichés, done fermable", () => {
+  // Affichage du statut de reprise DÉBRANCHÉ (2026-07-12) : le job prepareResume tourne
+  // toujours et les props restent passées, mais la zone n'est plus rendue dans la worklist.
+  it("zone de statut débranchée : running/done ne s'affichent plus (props ignorées au rendu)", () => {
     const onDismissPrepare = vi.fn();
-    const running: PrepareEntry[] = [
+    const entries: PrepareEntry[] = [
       { projectId: "alpha", name: "alpha", status: "running" },
+      { projectId: "beta", name: "beta", status: "done" },
     ];
-    const { rerender } = renderWorklist({
-      prepareEntries: running,
-      onDismissPrepare,
-    });
-    expect(screen.getByText(/préparation de reprise…/)).toBeTruthy();
-    // Pas de bouton fermer tant que running.
-    expect(screen.queryByRole("button", { name: /Masquer le statut/ })).toBeNull();
-
-    const done: PrepareEntry[] = [
-      { projectId: "alpha", name: "alpha", status: "done" },
-    ];
-    rerender(
-      <WorkingView
-        worksetProjects={[proj()]}
-        conversations={[]}
-        active={null}
-        pty={PTY_STUB}
-        nextStepResult={null}
-        nextStepLoading={false}
-        nextStepError={null}
-        onOpenProject={() => {}}
-        onAddProject={() => {}}
-        onRemoveFromWork={() => {}}
-        prepareEntries={done}
-        onDismissPrepare={onDismissPrepare}
-        onSetMode={() => {}}
-        onSetAgent={() => {}}
-        onSend={() => {}}
-        onRequestNextStep={() => {}}
-        resolveRunner={() => ({
-          kind: "claude-code",
-          model: "",
-          coordinator: "Aragorn",
-        })}
-      />,
-    );
-    expect(screen.getByText("prête")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Masquer le statut/ }));
-    expect(onDismissPrepare).toHaveBeenCalledWith("alpha");
+    renderWorklist({ prepareEntries: entries, onDismissPrepare });
+    expect(screen.queryByText(/préparation de reprise…/)).toBeNull();
+    expect(screen.queryByText("prête")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Masquer le statut/ }),
+    ).toBeNull();
   });
 
-  it("zone de statut : hors git → « prête (hors git) », erreur → message lisible", () => {
+  it("zone de statut débranchée : hors git / erreur ne s'affichent plus", () => {
     renderWorklist({
       prepareEntries: [
         { projectId: "alpha", name: "alpha", status: "done", horsGit: true },
@@ -322,7 +292,7 @@ describe("WorkingView — L23 retirer de la table", () => {
         },
       ],
     });
-    expect(screen.getByText("prête (hors git)")).toBeTruthy();
-    expect(screen.getByText(/dossier introuvable/)).toBeTruthy();
+    expect(screen.queryByText("prête (hors git)")).toBeNull();
+    expect(screen.queryByText(/dossier introuvable/)).toBeNull();
   });
 });

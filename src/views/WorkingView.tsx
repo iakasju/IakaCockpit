@@ -168,6 +168,10 @@ export function WorkingView({
   onToggleHidePensee,
 }: WorkingViewProps): JSX.Element {
   const { t } = useTranslation();
+  // Props liées à l'affichage du statut de reprise : DÉBRANCHÉ (2026-07-12) mais conservé.
+  // Le job prepareResume tourne toujours (App), seules ces props ne sont plus rendues.
+  void prepareEntries;
+  void onDismissPrepare;
   // Saisie par conversation (préfixe @agent au clic roster, D6).
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
@@ -251,6 +255,9 @@ export function WorkingView({
           l'en-tête. L'item retiré disparaît de la liste : son statut vit ICI, transitoire
           (« préparation… » → « prête »/« prête (hors git) » → fermable ; « échec » lisible).
         */}
+        {/* Zone de statut de reprise débranchée sur demande 2026-07-12 (garder le code).
+            Le job prepareResume continue de tourner. */}
+        {/*
         {prepareEntries && prepareEntries.length > 0 && (
           <ul
             className="wlprep"
@@ -291,6 +298,7 @@ export function WorkingView({
             ))}
           </ul>
         )}
+        */}
 
         <div className="wlscroll">
           <div className="wlbl">{t("working.selectedProjects")}</div>
