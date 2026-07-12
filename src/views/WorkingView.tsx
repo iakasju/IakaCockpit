@@ -155,10 +155,11 @@ export interface WorkingViewProps {
    * Défaut `false` (layout normal).
    */
   focus?: boolean;
-  /** L26 — feu VERT (entrer en focus + plein écran) — orchestré par App. */
-  onEnterFocus?: () => void;
-  /** L26 — feu JAUNE (sortir du focus, colonnes seules). */
-  onExitFocus?: () => void;
+  /**
+   * L26 (révision recette) — bascule le mode focus (toggle symétrique focus+fullscreen),
+   * orchestré par App. Transmis à `ProjectTabs`.
+   */
+  onToggleFocus?: () => void;
 }
 
 export function WorkingView({
@@ -192,8 +193,7 @@ export function WorkingView({
   hidePensee,
   onToggleHidePensee,
   focus = false,
-  onEnterFocus,
-  onExitFocus,
+  onToggleFocus,
 }: WorkingViewProps): JSX.Element {
   const { t } = useTranslation();
   // Props liées à l'affichage du statut de reprise : DÉBRANCHÉ (2026-07-12) mais conservé.
@@ -389,8 +389,7 @@ export function WorkingView({
           onSelect={onSelectConversation}
           onClose={onRemoveFromWork}
           focus={focus}
-          onEnterFocus={onEnterFocus ?? (() => {})}
-          onExitFocus={onExitFocus ?? (() => {})}
+          onToggleFocus={onToggleFocus ?? (() => {})}
         />
         {active ? (
           <>

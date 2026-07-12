@@ -26,12 +26,11 @@ function conv(over: Partial<Conversation> = {}): Conversation {
 // Props focus par défaut (L26) — les tests L24 n'en dépendent pas.
 const FOCUS_DEFAULTS = {
   focus: false,
-  onEnterFocus: () => {},
-  onExitFocus: () => {},
+  onToggleFocus: () => {},
 };
 
 describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
-  it("aucune conversation → rend quand même la barre (avec les feux L26)", () => {
+  it("aucune conversation → rend quand même la barre (avec le toggle L26)", () => {
     const { container } = render(
       <ProjectTabs
         conversations={[]}
@@ -41,10 +40,10 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
         {...FOCUS_DEFAULTS}
       />,
     );
-    // La barre est TOUJOURS rendue (les feux focus y vivent), même sans onglet.
+    // La barre est TOUJOURS rendue (le toggle focus y vit), même sans onglet.
     expect(container.querySelector(".projtabs")).not.toBeNull();
     expect(screen.queryAllByRole("tab")).toHaveLength(0);
-    expect(container.querySelector(".projfocus")).not.toBeNull();
+    expect(container.querySelector(".fsbtn")).not.toBeNull();
   });
 
   it("rend un onglet par conversation (libellé = titre du projet)", () => {
@@ -139,8 +138,8 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
   });
 });
 
-describe("ProjectTabs — feux macOS de mode focus (L26)", () => {
-  function renderFeux(over: Partial<Parameters<typeof ProjectTabs>[0]> = {}) {
+describe("ProjectTabs — toggle plein écran de mode focus (L26 révision)", () => {
+  function renderToggle(over: Partial<Parameters<typeof ProjectTabs>[0]> = {}) {
     return render(
       <ProjectTabs
         conversations={[conv({ projectId: "alpha", title: "alpha" })]}
@@ -148,62 +147,51 @@ describe("ProjectTabs — feux macOS de mode focus (L26)", () => {
         onSelect={() => {}}
         onClose={() => {}}
         focus={false}
-        onEnterFocus={() => {}}
-        onExitFocus={() => {}}
+        onToggleFocus={() => {}}
         {...over}
       />,
     );
   }
 
-  it("rend les 2 feux (vert = agrandir, jaune = revenir à la normale)", () => {
-    renderFeux();
+  it("rend UN seul toggle plein écran (libellé « Plein écran ») quand off", () => {
+    const { container } = renderToggle();
     expect(
-      screen.getByRole("button", { name: /Agrandir la zone de travail/ }),
+      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /Revenir à la normale/ }),
-    ).toBeTruthy();
+    // Un seul bouton toggle, pas de feux.
+    expect(container.querySelectorAll(".fsbtn")).toHaveLength(1);
+    expect(container.querySelector(".feu")).toBeNull();
   });
 
-  it("clic vert → onEnterFocus", () => {
-    const onEnterFocus = vi.fn();
-    renderFeux({ onEnterFocus });
+  it("aria-pressed reflète l'état focus (false quand off)", () => {
+    renderToggle({ focus: false });
+    const btn = screen.getByRole("button", {
+      name: /Plein écran \(mode focus\)/,
+    });
+    expect(btn.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("en focus : aria-pressed=true et libellé « Quitter le plein écran »", () => {
+    renderToggle({ focus: true });
+    const btn = screen.getByRole("button", { name: /Quitter le plein écran/ });
+    expect(btn.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("clic → onToggleFocus (off → on)", () => {
+    const onToggleFocus = vi.fn();
+    renderToggle({ focus: false, onToggleFocus });
     fireEvent.click(
-      screen.getByRole("button", { name: /Agrandir la zone de travail/ }),
+      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
     );
-    expect(onEnterFocus).toHaveBeenCalledTimes(1);
+    expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });
 
-  it("clic jaune → onExitFocus", () => {
-    const onExitFocus = vi.fn();
-    renderFeux({ focus: true, onExitFocus });
+  it("clic → onToggleFocus (on → off, symétrique)", () => {
+    const onToggleFocus = vi.fn();
+    renderToggle({ focus: true, onToggleFocus });
     fireEvent.click(
-      screen.getByRole("button", { name: /Revenir à la normale/ }),
+      screen.getByRole("button", { name: /Quitter le plein écran/ }),
     );
-    expect(onExitFocus).toHaveBeenCalledTimes(1);
-  });
-
-  it("état normal : le jaune est désactivé (déjà à l'état courant), le vert actif", () => {
-    renderFeux({ focus: false });
-    const green = screen.getByRole("button", {
-      name: /Agrandir la zone de travail/,
-    }) as HTMLButtonElement;
-    const yellow = screen.getByRole("button", {
-      name: /Revenir à la normale/,
-    }) as HTMLButtonElement;
-    expect(green.disabled).toBe(false);
-    expect(yellow.disabled).toBe(true);
-  });
-
-  it("état focus : le vert est désactivé (déjà à l'état courant), le jaune actif", () => {
-    renderFeux({ focus: true });
-    const green = screen.getByRole("button", {
-      name: /Agrandir la zone de travail/,
-    }) as HTMLButtonElement;
-    const yellow = screen.getByRole("button", {
-      name: /Revenir à la normale/,
-    }) as HTMLButtonElement;
-    expect(green.disabled).toBe(true);
-    expect(yellow.disabled).toBe(false);
+    expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });
 });

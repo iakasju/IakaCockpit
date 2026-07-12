@@ -10,12 +10,13 @@
  * Ordre stable = ordre des conversations (ordre d'ouverture / du workset). Anti
  * button-in-button : l'onglet et son « × » sont deux boutons FRÈRES, jamais imbriqués.
  *
- * L26 — « feux macOS » de mode focus, À DROITE des onglets : vert = agrandir la zone de
- * travail (masquer les 2 colonnes de gauche + plein écran OS), jaune = revenir à la
- * normale. Le feu déjà à l'état courant est atténué/désactivé (les deux restent visibles).
- * La barre est TOUJOURS rendue sur la vue Travail — même sans onglet, les feux subsistent
- * (elle ne retourne plus `null`). L'orchestration (état focus + appel façade fullscreen)
- * vit dans `App` ; ici on ne fait qu'appeler les callbacks (présentationnel D8).
+ * L26 (révision recette 2026-07-13) — UN toggle « plein écran », À DROITE des onglets :
+ * un seul bouton symétrique portant un symbole de plein écran (⤢ = entrer / ⤡ = réduire).
+ * Activer = focus + plein écran OS ; désactiver = normal + sortie du plein écran. Remplace
+ * les 2 feux macOS jaune/vert (jugés pas assez explicites). La barre est TOUJOURS rendue
+ * sur la vue Travail — même sans onglet, le toggle subsiste (elle ne retourne plus `null`).
+ * L'orchestration (état focus + appel façade fullscreen) vit dans `App` ; ici on ne fait
+ * qu'appeler `onToggleFocus` (présentationnel D8).
  */
 import { useTranslation } from "react-i18next";
 import type { Conversation } from "../hooks/useConversations";
@@ -31,10 +32,11 @@ export interface ProjectTabsProps {
   onClose: (projectId: string) => void;
   /** L26 — la Table est-elle en mode focus (colonnes gauche masquées) ? */
   focus: boolean;
-  /** L26 — feu VERT : entre en mode focus + plein écran OS (orchestré par App). */
-  onEnterFocus: () => void;
-  /** L26 — feu JAUNE : sort du mode focus (colonnes seules — ne touche PAS au plein écran). */
-  onExitFocus: () => void;
+  /**
+   * L26 (révision recette) — bascule le mode focus. Toggle SYMÉTRIQUE orchestré par App :
+   * activer = focus + plein écran OS ; désactiver = normal + sortie du plein écran.
+   */
+  onToggleFocus: () => void;
 }
 
 export function ProjectTabs({
@@ -43,8 +45,7 @@ export function ProjectTabs({
   onSelect,
   onClose,
   focus,
-  onEnterFocus,
-  onExitFocus,
+  onToggleFocus,
 }: ProjectTabsProps): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -74,33 +75,27 @@ export function ProjectTabs({
           </div>
         );
       })}
-      {/* L26 — feux macOS (mode focus), toujours à DROITE des onglets. Pas de bouton
-          rouge (non demandé). Le feu déjà à l'état courant est désactivé/atténué mais
-          reste visible. */}
-      <div
-        className="projfocus"
-        role="group"
-        aria-label={t("working.focusGroupAria")}
+      {/* L26 (révision recette) — UN toggle « plein écran », toujours à DROITE des
+          onglets. Symbole expand (⤢) en mode normal, compress (⤡) en mode focus.
+          Symétrique : App gère focus + fullscreen d'un seul geste. */}
+      <button
+        type="button"
+        className={`fsbtn${focus ? " active" : ""}`}
+        aria-pressed={focus}
+        aria-label={
+          focus
+            ? t("working.focusToggleExitAria")
+            : t("working.focusToggleEnterAria")
+        }
+        title={
+          focus
+            ? t("working.focusToggleExitAria")
+            : t("working.focusToggleEnterAria")
+        }
+        onClick={onToggleFocus}
       >
-        <button
-          type="button"
-          className="feu feu-green"
-          disabled={focus}
-          aria-pressed={focus}
-          aria-label={t("working.focusEnterAria")}
-          title={t("working.focusEnterAria")}
-          onClick={onEnterFocus}
-        />
-        <button
-          type="button"
-          className="feu feu-yellow"
-          disabled={!focus}
-          aria-pressed={!focus}
-          aria-label={t("working.focusExitAria")}
-          title={t("working.focusExitAria")}
-          onClick={onExitFocus}
-        />
-      </div>
+        <span aria-hidden>{focus ? "⤡" : "⤢"}</span>
+      </button>
     </div>
   );
 }

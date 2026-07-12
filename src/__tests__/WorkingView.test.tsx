@@ -412,10 +412,10 @@ describe("WorkingView — session attachée L25 (lecture seule)", () => {
   });
 });
 
-// --- L26 : mode focus de la Table (feux macOS) ---
+// --- L26 (révision recette) : mode focus de la Table (toggle plein écran) ---
 
 describe("WorkingView — mode focus L26", () => {
-  function renderFocus(focus: boolean, onEnterFocus = vi.fn(), onExitFocus = vi.fn()) {
+  function renderFocus(focus: boolean, onToggleFocus = vi.fn()) {
     const c = conv({ mode: "chat" });
     return rtlRender(
       <WorkingView
@@ -441,8 +441,7 @@ describe("WorkingView — mode focus L26", () => {
           coordinator: "Aragorn",
         })}
         focus={focus}
-        onEnterFocus={onEnterFocus}
-        onExitFocus={onExitFocus}
+        onToggleFocus={onToggleFocus}
       />,
     );
   }
@@ -453,9 +452,9 @@ describe("WorkingView — mode focus L26", () => {
     expect(container.querySelector(".wk.wk--focus")).not.toBeNull();
     // Colonne de widgets droite CONSERVÉE (exigence explicite).
     expect(container.querySelector(".wkright")).not.toBeNull();
-    // Onglets + feux TOUJOURS présents.
+    // Onglets + toggle plein écran TOUJOURS présents.
     expect(container.querySelector(".projtabs")).not.toBeNull();
-    expect(container.querySelector(".projfocus")).not.toBeNull();
+    expect(container.querySelector(".fsbtn")).not.toBeNull();
     // Toggle Shell/Conversation conservé.
     expect(container.querySelector(".modetoggle")).not.toBeNull();
     // La worklist reste dans le DOM (masquée par CSS, non démontée).
@@ -468,12 +467,12 @@ describe("WorkingView — mode focus L26", () => {
     expect(container.querySelector(".wk")).not.toBeNull();
   });
 
-  it("clic vert (feu vert des onglets) → onEnterFocus", () => {
-    const onEnterFocus = vi.fn();
-    renderFocus(false, onEnterFocus);
+  it("clic sur le toggle plein écran → onToggleFocus", () => {
+    const onToggleFocus = vi.fn();
+    renderFocus(false, onToggleFocus);
     fireEvent.click(
-      screen.getByRole("button", { name: /Agrandir la zone de travail/ }),
+      screen.getByRole("button", { name: /Plein écran \(mode focus\)/ }),
     );
-    expect(onEnterFocus).toHaveBeenCalledTimes(1);
+    expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });
 });

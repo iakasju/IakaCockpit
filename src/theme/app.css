@@ -1728,38 +1728,35 @@ button {
   color: var(--text);
 }
 
-/* L26 — feux macOS (mode focus de la Table), poussés à DROITE de la barre d'onglets.
-   Vert = agrandir (focus + plein écran OS) ; jaune = revenir à la normale. Pas de rouge. */
-.projfocus {
+/* L26 (révision recette) — UN toggle « plein écran » poussé à DROITE de la barre
+   d'onglets. Un seul bouton symétrique (⤢ entrer / ⤡ réduire) remplaçant les 2 feux. */
+.fsbtn {
   margin-left: auto;
   align-self: center;
   display: inline-flex;
-  gap: 8px;
-  padding: 0 4px 8px 12px;
-  flex: none;
-}
-.projfocus .feu {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  padding: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 26px;
+  margin: 0 2px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1;
   cursor: pointer;
+  flex: none;
   transition: 0.15s;
 }
-.projfocus .feu-green {
-  background: #28c840;
+.fsbtn:hover {
+  color: var(--text);
+  background: var(--surf);
 }
-.projfocus .feu-yellow {
-  background: #febc2e;
-}
-.projfocus .feu:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: scale(1.12);
-}
-.projfocus .feu:disabled {
-  opacity: 0.32;
-  cursor: default;
+.fsbtn.active {
+  color: var(--text);
+  background: var(--surf);
+  box-shadow: 0 0 0 1px var(--accent) inset;
 }
 
 /* L26 — mode focus : masquer les 2 colonnes de gauche. Le rail (colonne n°1) vit dans

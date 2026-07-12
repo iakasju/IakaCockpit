@@ -201,18 +201,19 @@ export default function App(): JSX.Element {
   // Popup de liaison projet↔team (L11) : projet en attente de choix de team.
   const [pickerProject, setPickerProject] = useState<Project | null>(null);
 
-  // L26 — mode focus de la Table (feux macOS des onglets). `true` = colonnes de gauche
-  // masquées (rail App + worklist WorkingView) + zone de travail agrandie. Transitoire
-  // (pas de persistance — hors lot). Vert = entrer en focus ET passer en plein écran OS
-  // (via la façade unique `set_fullscreen`, D7) ; jaune = SORTIR du focus SEULEMENT — ne
-  // touche PAS au plein écran (AR-1 : la sortie du plein écran reste au feu natif macOS).
+  // L26 — mode focus de la Table (toggle plein écran des onglets). `true` = colonnes de
+  // gauche masquées (rail App + worklist WorkingView) + zone de travail agrandie. Transitoire
+  // (pas de persistance — hors lot). UN seul toggle SYMÉTRIQUE (révision recette
+  // 2026-07-13) : activer = entrer en focus ET passer en plein écran OS ; désactiver =
+  // colonnes rétablies ET sortie du plein écran (via la façade unique `set_fullscreen`,
+  // D7). L'état `workFocus` pilote colonnes et fullscreen d'un seul geste.
   const [workFocus, setWorkFocus] = useState(false);
-  const enterWorkFocus = useCallback((): void => {
-    setWorkFocus(true);
-    void backend.setFullscreen(true);
-  }, []);
-  const exitWorkFocus = useCallback((): void => {
-    setWorkFocus(false);
+  const toggleWorkFocus = useCallback((): void => {
+    setWorkFocus((prev) => {
+      const next = !prev;
+      void backend.setFullscreen(next);
+      return next;
+    });
   }, []);
 
   // Team du projet ACTIF (L11) : pilote les vignettes ET le roster. Hors conversation
@@ -602,8 +603,7 @@ export default function App(): JSX.Element {
               void settings.setHidePensee(!settings.hidePensee)
             }
             focus={workFocus}
-            onEnterFocus={enterWorkFocus}
-            onExitFocus={exitWorkFocus}
+            onToggleFocus={toggleWorkFocus}
           />
         )}
         {grid.activeView === "journal" && <JournalView />}
