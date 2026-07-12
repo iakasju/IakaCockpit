@@ -24,7 +24,17 @@ function fmtK(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 }
 
-export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.Element {
+export function TreemapPanel({
+  items,
+  onOpenInWork,
+}: {
+  items: readonly TreemapItem[];
+  /**
+   * L16-F2 — double-clic sur une cellule : ouvre le projet dans Travail (au premier plan).
+   * Présentationnel PUR : le composant se contente de REMONTER le geste ; App fait l'I/O.
+   */
+  onOpenInWork?: (project: string) => void;
+}): JSX.Element {
   const { t } = useTranslation();
   const total = items.reduce((s, it) => s + it.tokens, 0);
   const max = items.reduce((m, it) => Math.max(m, it.tokens), 1);
@@ -62,8 +72,16 @@ export function TreemapPanel({ items }: { items: readonly TreemapItem[] }): JSX.
                     // ∝ tokens (borné 34–64 % pour rester lisible ET wrapper en mosaïque).
                     width: `${34 + (it.tokens / max) * 30}%`,
                     background: treemapColor(i),
+                    ...(onOpenInWork ? { cursor: "pointer" } : {}),
                   }}
-                  title={`${it.project} · ${fmtK(it.tokens)}`}
+                  title={
+                    onOpenInWork
+                      ? `${it.project} · ${fmtK(it.tokens)} · ${t("portfolio.treemapOpenHint")}`
+                      : `${it.project} · ${fmtK(it.tokens)}`
+                  }
+                  onDoubleClick={
+                    onOpenInWork ? () => onOpenInWork(it.project) : undefined
+                  }
                 >
                   <span className="tnm">{it.project}</span>
                   <span className="tv">

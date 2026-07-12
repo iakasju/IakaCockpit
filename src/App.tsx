@@ -319,6 +319,17 @@ export default function App(): JSX.Element {
     openConversationFor(project);
   };
 
+  // L16-F2 — double-clic sur une cellule de la treemap Économie (Portefeuille) : bascule sur
+  // Travail avec le projet au premier plan. Navigation + focus SEULEMENT (la treemap est
+  // scopée table → le projet est déjà sur la table ; AUCUNE mutation du workset). Réutilise
+  // `openProject` (ouvre/active la conversation) puis force la vue Travail.
+  const openInWork = (projectId: string): void => {
+    const project = worksetProjects.find((p) => p.id === projectId);
+    if (!project) return;
+    openProject(project);
+    grid.setActiveView("working");
+  };
+
   // Entrée partagée (L10b/§5.1) : la saisie chat ÉCHOTE (tour user) ET PILOTE le chef
   // (stdin du PTY : la frappe + `\r` pour soumettre la TUI native). Le `@agent` est un
   // préfixe VERBATIM (arbitrage #5) : `content` est écrit tel quel au PTY, aucune
@@ -450,6 +461,7 @@ export default function App(): JSX.Element {
                   ? DEMO_PORTFOLIO_ACTIVITY
                   : []
             }
+            onOpenInWork={openInWork}
           />
         )}
         {grid.activeView === "working" && (

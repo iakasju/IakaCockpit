@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "../i18n";
 import { TreemapPanel } from "../components/TreemapPanel";
 
@@ -34,5 +34,38 @@ describe("TreemapPanel (L18 #5b)", () => {
       />,
     );
     expect(screen.getByText(/surface ∝ tokens · segments = part par agent/)).toBeTruthy();
+  });
+
+  // L16-F2 — double-clic sur une cellule → onOpenInWork(projectId).
+  it("double-clic sur une cellule appelle onOpenInWork avec le bon projectId", () => {
+    const onOpenInWork = vi.fn();
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+          { project: "autre", tokens: 50_000, segments: [{ label: "b", tokens: 50_000 }] },
+        ]}
+        onOpenInWork={onOpenInWork}
+      />,
+    );
+    const cells = container.querySelectorAll(".tcell");
+    expect(cells.length).toBe(2);
+    fireEvent.doubleClick(cells[1]);
+    expect(onOpenInWork).toHaveBeenCalledTimes(1);
+    expect(onOpenInWork).toHaveBeenCalledWith("autre");
+  });
+
+  it("sans onOpenInWork : le double-clic est inerte (pas de handler câblé)", () => {
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+        ]}
+      />,
+    );
+    // Ne doit pas lever : aucun handler attaché.
+    expect(() =>
+      fireEvent.doubleClick(container.querySelector(".tcell")!),
+    ).not.toThrow();
   });
 });
