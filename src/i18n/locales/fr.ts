@@ -325,7 +325,6 @@ export const fr = {
     tabCloseAria: "Fermer l'onglet {{project}}",
     focusToggleEnterAria: "Plein écran (mode focus)",
     focusToggleExitAria: "Quitter le plein écran",
-    focusToggleLabel: "Plein écran",
     removeAria: "Retirer {{project}} de la table",
     removeTitle: "Retirer de la table (prépare la reprise en tâche de fond)",
     prepareAria: "Préparations de reprise en cours",

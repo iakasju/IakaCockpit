@@ -154,7 +154,7 @@ describe("ProjectTabs — switch plein écran de mode focus (L26 révision v2)",
     );
   }
 
-  it("rend UN seul switch plein écran (role=switch, libellé « Plein écran ») quand off", () => {
+  it("rend UN seul switch plein écran (role=switch, glyphe dans la pastille, sans libellé) quand off", () => {
     const { container } = renderToggle();
     expect(
       screen.getByRole("switch", { name: /Plein écran \(mode focus\)/ }),
@@ -163,12 +163,15 @@ describe("ProjectTabs — switch plein écran de mode focus (L26 révision v2)",
     expect(container.querySelectorAll(".fsswitch")).toHaveLength(1);
     expect(container.querySelector(".fsbtn")).toBeNull();
     expect(container.querySelector(".feu")).toBeNull();
-    // Le libellé visible « Plein écran » accompagne le switch (explicite).
-    expect(container.querySelector(".fsswitch-label")?.textContent).toContain(
+    // Plus de libellé texte : le mot « Plein écran » ne doit pas être VISIBLE.
+    expect(container.querySelector(".fsswitch-label")).toBeNull();
+    expect(container.querySelector(".fsswitch")?.textContent).not.toContain(
       "Plein écran",
     );
-    // La pastille qui glisse est présente.
-    expect(container.querySelector(".fsswitch-knob")).not.toBeNull();
+    // Le glyphe `⤢` vit DANS la pastille qui glisse.
+    const knob = container.querySelector(".fsswitch-knob");
+    expect(knob).not.toBeNull();
+    expect(knob?.querySelector(".fsswitch-ico")?.textContent).toBe("⤢");
   });
 
   it("aria-checked reflète l'état focus (false quand off)", () => {

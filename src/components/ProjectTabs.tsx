@@ -10,10 +10,11 @@
  * Ordre stable = ordre des conversations (ordre d'ouverture / du workset). Anti
  * button-in-button : l'onglet et son « × » sont deux boutons FRÈRES, jamais imbriqués.
  *
- * L26 (révision recette v2 2026-07-13) — UN switch coulissant « plein écran », aligné à
+ * L26 (révision recette v3 2026-07-13) — UN switch coulissant « plein écran », aligné à
  * DROITE des onglets (`margin-left:auto`) : un interrupteur (piste + pastille qui glisse)
- * — pastille à GAUCHE = normal (off), à DROITE = focus/plein écran (on). Accompagné d'un
- * libellé/icône « plein écran » pour rester explicite. `role="switch"` + `aria-checked`.
+ * — pastille à GAUCHE = normal (off), à DROITE = focus/plein écran (on). Le glyphe `⤢`
+ * vit DANS la pastille et voyage avec elle ; plus de libellé texte (accessibilité par
+ * `aria-label`/`title` i18n). `role="switch"` + `aria-checked`.
  * Activer = focus + plein écran OS ; désactiver = normal + sortie du plein écran. Remplace
  * l'ancien bouton-icône `⤢` (trop discret) et, avant lui, les 2 feux macOS. La barre est
  * TOUJOURS rendue sur la vue Travail — même sans onglet, le switch subsiste (elle ne
@@ -77,9 +78,10 @@ export function ProjectTabs({
           </div>
         );
       })}
-      {/* L26 (révision recette v2) — SWITCH coulissant « plein écran », toujours à DROITE
+      {/* L26 (révision recette v3) — SWITCH coulissant « plein écran », toujours à DROITE
           des onglets (`margin-left:auto`). Pastille à gauche = off, à droite = on ; piste
-          colorée en `on`. Libellé + glyphe pour rester explicite. Symétrique : App gère
+          colorée en `on`. Le glyphe `⤢` vit DANS la pastille (voyage avec elle) — plus de
+          libellé texte. Accessibilité via `aria-label`/`title` i18n. Symétrique : App gère
           focus + fullscreen d'un seul geste. */}
       <button
         type="button"
@@ -98,12 +100,10 @@ export function ProjectTabs({
         }
         onClick={onToggleFocus}
       >
-        <span className="fsswitch-label" aria-hidden>
-          <span className="fsswitch-ico">⤢</span>
-          {t("working.focusToggleLabel")}
-        </span>
         <span className="fsswitch-track" aria-hidden>
-          <span className="fsswitch-knob" />
+          <span className="fsswitch-knob">
+            <span className="fsswitch-ico">⤢</span>
+          </span>
         </span>
       </button>
     </div>
