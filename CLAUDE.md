@@ -398,6 +398,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       l'app en **fullscreen** (commande façade Rust `set_fullscreen`) ; **jaune** = rétablit les colonnes
       **seulement** (AR-1, sortie fullscreen via feu natif macOS). Front + 1 commande Rust ; barre d'onglets
       rendue même à 0 onglet. Différés : icône hover, bouton rouge, raccourci clavier, persistance.
+      **Itération recette → scellé `v0.21.0`** (2026-07-13, gate PASS, 571 front, Rust intact) : les 2 feux
+      (pas assez explicites) sont remplacés par un **switch coulissant collé à droite** avec l'icône `⤢` sur
+      la pastille (`role="switch"`, toggle **symétrique** : sortie fullscreen incluse — AR-1 supersédé). Fix
+      structurel : switch sorti du conteneur `overflow-x:auto` (`.projtabs-list` scrollable + `.fsswitch`
+      frère). **Vérifié en CDP réel** : `gapRight=0` (collé à droite). Commits `3a4f408`→`4270a34`.
 - [ ] **(Re-tracé, ex-L16)** — **Pilotage / dictée vocale d'iakacockpit** → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
       *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
       cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher

@@ -1,14 +1,14 @@
 # État des lieux — 2026-07-12
 
 ## En une phrase
-**`v0.20.0` scellée** : **L26 — mode focus plein écran de la Table** (feux macOS jaune/vert ; gate
-Legolas PASS, 571 front + 279 Rust). À droite des onglets, **vert** = masquer rail + worklist,
-agrandir la zone de travail (garder widgets droite + onglets + toggle) + **fullscreen OS**
-(commande façade `set_fullscreen`) ; **jaune** = rétablir les colonnes seulement (AR-1). *(Précédents
-poussés sur Forgejo : `v0.17.0` IHM Portefeuille L16 + fix vignettes ; `v0.18.0` L24 onglets +
-fenêtres ouvertes ; `v0.19.0` L25 s'attacher à la session vivante.)* **Prochaine étape au choix** :
-recette réelle (L25 session live + L26 feux/fullscreen à l'écran), L16 vocal, L22-P3 enforcement, ou
-chantiers IHM (filtres chat, arbre des délégations).
+**`v0.21.0` scellée** : itération recette du **contrôle plein écran** de la Table — les 2 feux
+macOS (v0.20.0, pas assez explicites) deviennent un **switch coulissant collé à droite** (icône
+`⤢` sur la pastille, `role="switch"`, toggle symétrique). Fix structurel (switch sorti du conteneur
+`overflow-x:auto`), **vérifié en CDP réel** (`gapRight=0`, collé à droite). Gate PASS, 571 front,
+Rust intact. *(Précédents poussés sur Forgejo : `v0.17.0` L16 Portefeuille + fix vignettes ;
+`v0.18.0` L24 onglets ; `v0.19.0` L25 session vivante ; `v0.20.0` L26 mode focus plein écran.)*
+**Prochaine étape au choix** : recette réelle (L25 session live, L24 multi-projets), L16 vocal,
+L22-P3 enforcement, ou chantiers IHM (filtres chat, arbre des délégations).
 
 ## Différés / ouverts à la reprise
 - **L16 STT** : whisper rend `'...'`/`'[Musique]'` (audio capté non reconnu) ; mesure peak/rms posée,
@@ -49,8 +49,8 @@ chantiers IHM (filtres chat, arbre des délégations).
 | Tests verts | oui (571 front + 279 Rust au seal v0.20.0 ; typecheck/lint/fmt/clippy OK) |
 | Recette stage | PASS (Legolas, gate L26) |
 | Recette terrain GUI | partielle (recette réelle L25 session live + L26 feux/fullscreen à faire à l'écran) |
-| Seal v0.17.0 / v0.18.0 / v0.19.0 | **oui** (tags posés, **poussés** sur `origin/main`) |
-| Seal v0.20.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
+| Seal v0.17.0 → v0.20.0 | **oui** (tags posés, **poussés** sur `origin/main`) |
+| Seal v0.21.0 | **oui** (tag posé ; push origin/main en cours) |
 | Feu vert prod | n/a (app desktop, pas de bascule stage→prod à ce jour) |
 
 ## Prochaine étape
@@ -86,6 +86,7 @@ chantiers IHM (filtres chat, arbre des délégations).
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-13 | version | v0.21.0 | main | SEAL v0.21.0. **Itération recette du contrôle plein écran** (L26), front seul, gate Legolas PASS (571 front, aucun `src-tauri/` touché). Les 2 feux macOS (v0.20.0, pas assez explicites — retour terrain) → **switch coulissant** (`role="switch"`, `aria-checked`) avec l'icône `⤢` **sur la pastille** (`.fsswitch-knob`, sans libellé), **collé au bord droit**, toggle **symétrique** (activer = focus + fullscreen ; désactiver = normal + sortie fullscreen — AR-1 supersédé). **Fix structurel décisif** : le switch était dans `.projtabs` en `overflow-x:auto` où `margin-left:auto` ne le poussait PAS au bout (mesuré `gapRight=950` à gauche) → restructuration `.projtabs` (non scrollable) = `.projtabs-list` (onglets, `overflow-x:auto`, `flex:1`) + `.fsswitch` (frère, `flex:0 0 auto`) → **collé à droite vérifié en CDP réel** (`gapRight=0`, `swRight=1440`=bord viewport, + capture). Façade unique (`backend.setFullscreen`, aucune nouvelle commande). Commits `3a4f408`/`35465ac`/`0f99442`/`f512f8c`/`4270a34`. Doc qualité `docs/qualite/v0.21.0.md`. Méthode : vérification terrain par pilotage Chrome CDP (mesure rects + screenshot), plus fiable que la lecture CSS. |
 | 2026-07-13 | version | v0.20.0 | main | SEAL v0.20.0. **L26 — mode focus plein écran de la Table** (feux macOS jaune/vert), cadré+coordonné par 🟠 Aragorn, 2 commits, gate Legolas PASS (571 front + 279 Rust, fmt/clippy OK). Dans `ProjectTabs`, à droite des onglets, 2 pastilles style feux macOS : **vert** (`enterWorkFocus`) = `workFocus=true` + `backend.setFullscreen(true)` → masque `.rail` (classe `app-shell--focus`) + `.worklist` (classe `wk--focus`), `.workpane` `flex:1` s'agrandit, **garde** `.wkright` (widgets droite) + `ProjectTabs` + `.convhead` (toggle Shell/Conversation) ; **jaune** (`exitWorkFocus`) = `workFocus=false` **seulement** (rétablit les colonnes, **ne touche pas** au fullscreen — AR-1, sortie via feu natif macOS). **Façade unique** : commande Rust `set_fullscreen(window,on)` (`terminal.rs`, enregistrée `lib.rs`), miroir `backend.ts`, aucun plugin window JS. Barre d'onglets rendue **même à 0 onglet**. Présentationnel D8 (appel façade dans callbacks App). Non-régression L24/L25 (props focus requises sur ProjectTabs, optionnelles sur WorkingView). Doc qualité `docs/qualite/v0.20.0.md`. Différés : icône hover, bouton rouge, raccourci clavier, persistance ; recette visuelle manuelle. |
 | 2026-07-12 | version | v0.19.0 | main | SEAL v0.19.0. **L25 — s'attacher à la session vivante** d'un projet (vue live lecture seule), cadré+coordonné par 🟠 Aragorn, branche `feat/L25-attacher-session-vivante` fusionnée **ff** dans main, gate Legolas PASS (563 front + 279 Rust, fmt/clippy OK). Ouvrir un projet **tail le transcript le plus récent** du cwd (`latest_transcript(cwd)` Rust, helper `transcript_dir` partagé avec `transcript_path`, échappement `escape_cwd` réutilisé, anti-traversal, cross-OS) et affiche la conversation **en direct SANS PTY**. Modèle : `Conversation.source` **owned** (runner actuel) vs **attached** (tail sans PTY). À l'ouverture : `latestTranscript` Some → attached ; None/hors-Tauri → owned. **Lecture seule STRICTE** (AR-2 : `handleSend` no-op si attached, Chat readOnly → jamais de `pty.write` vers la session externe). **Garde L10** : attached ne monte AUCUN PtyTerminal ; multi-mount owned (L24) non régressé ; `useRunnerViews` tail l'attaché sans `ptySessions`. UI : badge « session vivante · lecture seule », bannière Shell, bouton « démarrer un runner » (`convertToOwned` → spawn). « × » attaché = `transcriptTailStop` (pas de `pty.close`). Façade unique (1 commande), i18n parité (7 clés). Doc qualité `docs/qualite/v0.19.0.md`. Différés : reprise typable `--resume` (P2), sélecteur multi-sessions (écarté), seuil de fraîcheur, **recette réelle manuelle** (ouvrir un projet → voir la session live). |
 | 2026-07-12 | version | v0.18.0 | main | SEAL v0.18.0. Jalon **vue Travail — fenêtres toujours ouvertes + onglets par projet** (**L24**), cadré+coordonné par 🟠 Aragorn, 3 commits, gates Legolas PASS (550 front, Rust non touché). **L24** : F1 ouverture **eager** (dès la pose sur la Table, projets liés ; helper pur `reconcileEagerOpen` + effet App convergence anti-boucle, anti-empilement popups AR-3) ; F2 **barre d'onglets par projet** (`ProjectTabs` : un onglet/conversation, actif mis en évidence, « × » = retrait via L23-inc), **worklist gauche conservée** (AR-1, synchronisée) ; F3 toggle Shell/Conversation par onglet, **garde L10 intacte** (PtyTerminal jamais démonté au switch/toggle). + **fix en-tête** conversation (recette) : coordinateur affiché **seulement s'il diffère** de l'interlocuteur (fin du double « Aragorn » empilé) + en-tête sur **une seule ligne** (chip runner tronqué, toggle/esc jamais clipés, `convtitle` `flex-wrap:nowrap`). Front seul, Rust non touché. Doc qualité `docs/qualite/v0.18.0.md`. Cadré et prêt pour la suite : **L25** (s'attacher à la session vivante). Différés : DnD onglets, garde perf N runners, bouton + dans la barre. |
