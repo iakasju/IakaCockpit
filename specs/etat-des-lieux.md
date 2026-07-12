@@ -1,14 +1,17 @@
-# État des lieux — 2026-07-07
+# État des lieux — 2026-07-12
 
 ## En une phrase
-**`v0.16.0` scellée** : **L22 « Le Cadre »** livré **P1+P2+P2b** (recette terrain réelle OK). GUI
-6ᵉ vue pour définir le cadre d'une équipe (règles typées → skills → templates → agents), **en
-conversant** (le LLM embarqué rédige paragraphes de skills / briefs d'agents via Ollama), avec
-**export `agent.md`** consommable par iakaframe. `frame.json` = source, `.md` = export. Aussi cette
-session : correctifs `/doctor` + **L16 reciblé** en dictée-vocale-dans-le-chat (STT natif livré,
-**point ouvert** : whisper n'entend pas encore la voix). **Prochaine étape au choix** : L22-P3
-(enforcement runner), P2b (hooks/limites + listbox), ou les chantiers IHM en file (filtres chat,
-arbre des délégations).
+**`v0.17.0` scellée** : jalon **IHM Portefeuille + retours terrain** (2 gates Legolas PASS, 538
+front + 274 Rust). **L16** livré — page Étagère : **toggle Liste/Tuiles** de l'Atelier (F1),
+**double-clic Économie → Travail** projet au premier plan (F2), **tuile enrichie** (description
+gras depuis `specs/PROJET.md`, ligne `next :`, méta version/retard/étapes — F3), **pastille
+d'urgence** dérivée du backlog (🔴/🟠/🟢/gris — F4/F4-bis, identique liste↔tuile). Scellés avec :
+**L23-incrément** (retrait de la Table ferme PTY+conversation), **page Cadre débranchée** du rail
+et **statut de reprise débranché** (code/job conservés), règle Cadre **`obligation`** « le
+coordinateur maintient la def projet dans `PROJET.md` » (aussi en mémoire + contrats de rôle), et
+**fix vignettes** « Aragorn = Gandalf » (team par défaut legacy réalignée au chargement, non
+destructif). **Prochaine étape au choix** : L16 vocal (whisper), L22-P3 enforcement runner, ou les
+chantiers IHM en file (filtres chat, arbre des délégations).
 
 ## Différés / ouverts à la reprise
 - **L16 STT** : whisper rend `'...'`/`'[Musique]'` (audio capté non reconnu) ; mesure peak/rms posée,
@@ -45,20 +48,22 @@ arbre des délégations).
 ## Jalons (gates)
 | Jalon | Statut |
 |---|---|
-| Instructions cadrées | oui (L0→L21 dans `specs/instructions/` ; L16 cadré, non démarré) |
-| Tests verts | oui (401 front + 232 Rust au seal v0.15.0 ; `quality.sh` OK) |
-| Recette stage | PASS (Legolas, v0.15.0) |
-| Recette terrain GUI | PASS (Portefeuille/Atelier + économie non vide, validé Stéphane) |
-| Seal v0.15.0 | **oui** (tag posé, poussé sur `origin/main`) |
+| Instructions cadrées | oui (L0→L23 dans `specs/instructions/` ; L16 LIVRÉ) |
+| Tests verts | oui (538 front + 274 Rust au seal v0.17.0 ; typecheck/lint/fmt/clippy OK) |
+| Recette stage | PASS (Legolas, 2 gates v0.17.0) |
+| Recette terrain GUI | partielle (recette écran en cours côté Stéphane ; fix vignettes se répare au relancement) |
+| Seal v0.17.0 | **oui** (tag posé ; **push origin/main en attente de feu vert Stéphane**) |
 | Feu vert prod | n/a (app desktop, pas de bascule stage→prod à ce jour) |
 
 ## Prochaine étape
-1. **(Optionnel, propreté)** Commiter la modif `.claude/settings.local.json` (`chore(config): retirer la
-   règle deny fork-bomb inexprimable signalée par /doctor`) — sinon elle reste dans l'arbre. Petit,
-   sans risque ; à faire quand Stéphane veut.
-2. **Démarrer L16 — pilotage vocal d'iakacockpit** (`specs/instructions/L16-pilotage-vocal-iakacockpit.md`) :
-   P1 = barre de commande IHM / navigation (STT local Rust whisper.cpp, push-to-talk, dispatcher règles
-   pur, façade `voiceListen()`, `useVoiceCommand`, UI micro). P2/P3 différés. Cadré, arbitrages tranchés.
+1. **Push** de `v0.17.0` (+ les 14 commits d'avance) sur `origin/main` — **en attente du feu vert de
+   Stéphane** (action sortante). Le tag `v0.17.0` est posé localement.
+2. **Recette terrain** à l'écran (`npm run tauri dev`) : toggle Liste/Tuiles, double-clic Économie,
+   tuile enrichie + pastille d'urgence identique liste↔tuile, vignette Aragorn≠Gandalf réparée au
+   relancement, retrait qui ferme shell+conversation, page Cadre absente du rail.
+3. **Au choix pour la suite** : L16 vocal (whisper n'entend pas encore la voix), **L22-P3** enforcement
+   runner (matérialiser l'obligation coordinateur au lancement), ou chantiers IHM en file (filtres de
+   canaux du chat, arbre des délégations).
 
 ## Points d'attention
 - **Config `~/.claude` migrée depuis Windows** : origine des deux soucis `/doctor` (plugin + chemins en
@@ -84,6 +89,7 @@ arbre des délégations).
 ## Journal de reprise
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-12 | version | v0.17.0 | main | SEAL v0.17.0. Jalon **IHM Portefeuille + retours terrain**, cadré+coordonné par 🟠 Aragorn, 11 commits, **2 gates Legolas PASS** (538 front + 274 Rust, couverture ~75 %). **L16** (page Étagère) : **F1** toggle Liste/Tuiles de l'Atelier (défaut Liste, table en tuiles) ; **F2** double-clic widget Économie (treemap) → bascule Travail + projet au premier plan (sans mutation workset, scoping AR-4 conservé) ; **F3** tuile enrichie — description **gras** (source `specs/PROJET.md` prioritaire, AR-6=B), ligne `next :` (1er `- [ ]` du backlog), méta version/retard/étapes (étend `portfolio.rs` : `read_description`/`read_backlog` + 3 champs `Project`) ; **F4** pastille d'urgence dérivée de `backlog_remaining` (🔴≥5/🟠1-4/🟢0/gris, AR-7, `read_backlog` renvoie `Some(0)` si tout coché) ; **F4-bis** pastille **partagée identique** liste↔tuile (helper `urgency.ts`). Scellés avec : **L23-inc** (retrait Table ferme PTY+conversation via `closeConversation`+`pty.close`, job reprise conservé, garde L10 intacte) ; **page Cadre débranchée** du rail (code conservé) ; **affichage statut reprise débranché** (job conservé) ; règle Cadre **`obligation oblig-def-projet`** (obligation coordinateur : maintenir la def projet dans `PROJET.md`, aussi mémoire + contrats aragorn/odin) ; **fix vignettes** « Aragorn=Gandalf » — team par défaut legacy (`Aragorn.roleIndex=2`) réalignée au chargement (`reconcileDefaultTeamCasting`, bornée `DEFAULT_TEAM_ID`, non destructif, idempotent) + garde anti-récidive TeamsEditor. Doc qualité `docs/qualite/v0.17.0.md`. Rust confiné à `portfolio.rs`. Différés : persistance toggle, a11y clavier treemap, confirmation retrait, enforcement runner de l'obligation (L22-P3), L16 vocal. |
 | 2026-07-07 | version | v0.16.0 | main | SEAL v0.16.0. **L22 « Le Cadre » LIVRÉ P1+P2+P2b**, recette terrain réelle OK. P1 : modèle pur (`src/frame/model.ts`, 4 niveaux) + persistance `frame.json`/team (`frame.rs`, AR-1) + hook `useFrame` + **vue Cadre refondue design Loki** (une page haut→bas, chaîne Règles→Skills→Templates→Agents, décomposition visible, définitions/exemples/légende) + seed démo ; persistance+ergonomie recettées. P2 « définir en conversant » : **prompt LLM par étage** (`ai.rs frame_author`, calque L3/L8, mock/dégradation) rédige paragraphe de skill (versionné) / brief d'agent + dictée `useVoiceDictation` ; **recette réelle llama3.1** (brief persisté) + prompt système durci (fiche autonome 3e pers.). P2b : **export `agent.md`** (front génère md, `frame_export` écrit sous `.iakacockpit/frames/<team>/`) ; recette : 4 agent.md écrits, contenu propre (identité+brief+skills+règles effectives+délégations). Aussi : correctifs `/doctor` (permission fork-bomb, MCP claude.ai, plugin Windows→Mac) ; **L16 reciblé** dictée-chat (STT natif `voice.rs` cpal+whisper-rs livré, prouvé sur bundle .app ; **ouvert** : whisper n'entend pas la voix). 461 front + 247 Rust verts, lint/typecheck/clippy/build OK. Modèle Cadre + arbitrages : voir mémoires `ontologie-cadre-rules-templates-team`, `l22-p2-conversation-authoring`. Différés : L22-P3 enforcement, P2b hooks/limites, chantiers IHM (filtres chat, arbre délégations). |
 | 2026-07-01 | reprise | v0.15.0 | main | Reprise après seal v0.15.0. Aucun dev en cours. Session = maintenance santé `/doctor` : (1) retiré de `.claude/settings.local.json` la règle deny fork-bomb inexprimable `Bash(:(){ :\|:& };:)` (parenthèses imbriquées, règle ignorée) — **modif non commitée dans l'arbre** ; (2) déconnecté les MCP claude.ai inutilisés (Gmail/Drive/Calendar) via `/mcp`, hors dépôt ; (3) réparé le plugin `rust-analyzer-lsp` « cache-miss » — `~/.claude/plugins/known_marketplaces.json` pointait un chemin Windows `C:\Users\sjupi\…`, repointé sur le chemin macOS réel, hors dépôt. `/doctor` liste vide confirmée. Fil rouge : config `~/.claude` migrée de Windows (chemins en dur). PROCHAINE ÉTAPE = commiter le fix settings (optionnel) puis démarrer L16 pilotage vocal (cadré, non démarré). |
 | 2026-06-30 | version | v0.15.0 | main | SEAL v0.15.0. Branche `fix/portefeuille-recette-terrain` (10 commits) fusionnée en fast-forward dans `main`. Résolution du BUG ÉCONOMIE (treemap vide) : `economy.rs::project_of` coupe sur `/` ET `\` (clés Windows `C:\…` nettoyées, décision Stéphane « tout garder ») + `portfolio_economy()` ne tronque plus à top-8 avant le scope front (`scan_projects_dir(usize::MAX)`) → les petits projets de la table (iaka-demo) ne sont plus jetés. Ajustements recette terrain (front) : Travail récent revenu aux polices std + interligne resserré (rowH 26, anti-collision OK) + 5 visibles/scroll ; corps treemap Économie borné 390px + scrollbar (donnée non tronquée). Gate Legolas PASS (232 Rust + 401 front, fmt/clippy/lint/typecheck OK) ; recette terrain GUI validée (tauri dev recompilé). Doc qualité `docs/qualite/v0.15.0.md`. PROCHAINE ÉTAPE = L16 pilotage vocal. |

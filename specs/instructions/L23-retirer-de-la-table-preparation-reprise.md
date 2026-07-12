@@ -232,6 +232,61 @@ gate) ~0,25–0,5 j.
 
 ---
 
+## Incrément 2026-07-12 — Fermer les fenêtres de travail au retrait (cadré 🟠 Aragorn)
+
+> Retour terrain de Stéphane : « quand avec le bouton − on enlève le projet de la table, il faut
+> **fermer les fenêtres de travail shell et conversation** ». Le L23 initial retire du workset +
+> lance la reprise, mais **laisse tourner le PTY et vivante la conversation**. Cet incrément
+> ferme les deux. **Front seul** (aucun Rust).
+
+### Constat (code réel)
+- `App.removeFromWorkAndPrepare(projectId)` fait aujourd'hui : `workset.toggle(id)` + `prepareResume.prepare(...)`.
+  **Il ne ferme rien.**
+- `usePty` **expose déjà `close(id)`** (désabonnement + `ptyClose`, libère la garde de spawn R-L10b-1) —
+  c'est le **chemin de fermeture explicite** sanctionné. La garde L10 (« PTY survit ») ne vise que le
+  **démontage passif** (navigation/toggle), pas un geste explicite de retrait → **pas de violation**.
+- `useConversations` **n'a AUCUNE** méthode de fermeture (seulement open/setActive/setMode/…). → à ajouter.
+- Chaque `Conversation` porte `projectId` + `ptySessionId` (l'id du PTY/runner).
+
+### Ce que fait l'incrément
+1. **`useConversations` : nouvelle méthode `closeConversation(projectId)`** — retire la conversation du
+   tableau ; si c'était l'active, `activeProjectId → null` (WorkingView gère déjà `active = null`).
+   Pure logique d'état, aucun I/O.
+2. **`App.removeFromWorkAndPrepare`** enchaîne, dans l'ordre :
+   a. capturer la conversation du projet **avant** de la retirer (pour lire son `ptySessionId`) ;
+   b. `workset.toggle(id)` (retrait immédiat — inchangé) ;
+   c. `prepareResume.prepare(...)` (job de reprise — inchangé) ;
+   d. si une conversation existe : `void pty.close(conv.ptySessionId)` (ferme le shell/runner) **puis**
+      `conversations.closeConversation(id)` (retire la conversation → le `PtyTerminal` se démonte APRÈS
+      la fermeture explicite, plus de PTY orphelin).
+3. **`App` passe `pty` + `conversations.closeConversation`** au handler (déjà disponibles dans le scope App).
+
+### Décisions (défauts alignés L23, non bloquants)
+- **Perte de l'historique de chat** au retrait = **assumée** (historique en mémoire MVP, D3) ; l'état de
+  reprise est capté par le job `prepare_resume` (faits git), pas le chat. Cohérent avec « ranger = pause ».
+- **Pas de confirmation** (calque SA-7 : geste direct, réversible en reposant le projet depuis l'Étagère —
+  une **nouvelle** conversation/PTY sera ouverte à la réouverture).
+- **Active après retrait** : `null` si on a fermé l'active (l'utilisateur rouvre depuis la worklist). Pas
+  d'auto-sélection d'un autre projet en MVP.
+
+### Périmètre FERMÉ (incrément)
+DANS : `useConversations.closeConversation` + son câblage dans `App.removeFromWorkAndPrepare` (ferme PTY via
+`pty.close` + retire la conversation). HORS : toucher au job `prepare_resume` (inchangé), au Rust, à
+l'Étagère, ajouter une confirmation, persister l'historique.
+
+### Critères d'acceptation (incrément)
+- Retirer un projet de la Table **ferme son PTY** : `pty.close(ptySessionId)` est appelé **une fois** avec
+  le bon id. *(test front : spy sur `pty.close`)*
+- La **conversation disparaît** de `conversations` après retrait ; si c'était l'active, `active` devient
+  `null`. *(test `useConversations.closeConversation`)*
+- Le **retrait immédiat** et le **job de reprise systématique** (critères L23 existants) restent verts
+  (non-régression). *(tests L23 conservés)*
+- `PtyTerminal` reste **non démonté au toggle/navigation** (garde L10 intacte) — la fermeture n'a lieu
+  **qu'au retrait explicite**. *(revue + tests PTY existants inchangés)*
+- `npm run typecheck` + `lint` + `test` verts ; **Rust non touché**.
+
+---
+
 ### Sources (faits externes vérifiés)
 
 - [Long-running backend async tasks in Tauri v2 — sneaky crow](https://sneakycrow.dev/blog/2024-05-12-running-async-tasks-in-tauri-v2)

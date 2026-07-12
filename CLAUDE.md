@@ -340,7 +340,33 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       enrichie (tous widgets pertinents, fallback dev-gardé, zéro fausse donnée prod). Instructions
       `specs/instructions/L17/L18/L19`. Différés : recettes live, flèches Gantt, #5b treemap cross-projet,
       widgets Journal, économie par agent nommé.
-- [ ] **L16** — **Pilotage vocal d'iakacockpit** (voix → action IHM) → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
+- [x] **L16** — **Portefeuille : toggle Liste/Tuiles de l'Atelier + navigation Économie + tuile enrichie + pastille d'urgence**
+      → `specs/instructions/L16-portefeuille-toggle-tuiles-eco-navigation.md`
+      *(**LIVRÉ, scellé `v0.17.0`** 2026-07-12 ; doc qualité `docs/qualite/v0.17.0.md` ; 2 gates Legolas PASS —
+      538 front + 274 Rust verts, couverture ~75 %. Cadré + coordonné par 🟠 Aragorn, arbitrages AR-1..7 tranchés
+      par Stéphane).* Évolutions IHM de la
+      page Portefeuille (Étagère) : **(F1)** un **toggle Liste↔Tuiles**
+      sur la section **Atelier** (projets rangés hors table) — mode Tuiles = cartes `.proj` réutilisées, action
+      « poser sur la table », tokens « — » + anneau neutre, avatars team ; défaut = Liste ; portée **atelier
+      seul** (la table reste en tuiles). **(F2)** **double-clic** sur une cellule du **widget Économie** (treemap)
+      ⇒ **bascule sur Travail avec le projet au premier plan** (`openProject` + `setActiveView("working")`),
+      **sans** mutation du workset ni élargissement du scoping (**AR-4 conservé**). **(F3, incrément post-gate)**
+      contenu enrichi de la **tuile projet** : **description dédiée en gras** (nouvelle donnée Rust
+      `portfolio.rs`) + ligne **`next :`** = 1er item non coché `- [ ]` du backlog `CLAUDE.md` + méta
+      **version / N commits de retard / N étapes restantes** (chaque item masqué si absent, zéro fausse donnée).
+      F1/F2 = pur front ; **F3 étend le scan Rust** (struct `Project` + `read_description`/`read_backlog` +
+      tests) et son miroir `backend.ts` ; **AR-6=B** description = `specs/PROJET.md` prioritaire.
+      **(F4)** **pastille d'urgence** à gauche du titre dérivée de `backlog_remaining` (🔴≥5 / 🟠1-4 / 🟢0 / gris),
+      `read_backlog` renvoie `Some(0)` si tout coché (AR-7, seuil N=5) ; **(F4-bis)** pastille **partagée et
+      identique** liste↔tuile (helper `urgency.ts`). Réutilisation (façade D7, `scan_portfolio` existant,
+      présentationnel D8, CSP, i18n fr/en). **Scellé avec, dans `v0.17.0`** : **L23-incrément** (retrait de la
+      Table ferme PTY+conversation, job de reprise conservé) · **page Cadre débranchée** du rail (code conservé) ·
+      **affichage statut de reprise débranché** (job conservé) · règle Cadre **`obligation oblig-def-projet`**
+      (obligation coordinateur : maintenir la def projet dans `PROJET.md`, aussi en mémoire + contrats de rôle) ·
+      **fix vignettes** (team par défaut legacy `Aragorn.roleIndex=2` → réalignement canonique one-shot
+      non destructif + garde anti-récidive TeamsEditor). Différés : persistance du toggle, a11y clavier treemap,
+      confirmation au retrait. *(Remplace le contenu vocal de la case L16 — cf. lot vocal ci-dessous, conservé.)*
+- [ ] **(Re-tracé, ex-L16)** — **Pilotage / dictée vocale d'iakacockpit** → `specs/instructions/L16-pilotage-vocal-iakacockpit.md`
       *(cadré 2026-06-29, décisions tranchées par Stéphane ; non démarré).* But **unique** : piloter le
       cockpit à la **voix**. Pipeline `🎤 → capture audio → STT LOCAL (Rust, whisper.cpp) → dispatcher
       d'intent (règles d'abord, LLM Ollama en secours) → action IHM`. STT **côté Rust** (WKWebView sans
