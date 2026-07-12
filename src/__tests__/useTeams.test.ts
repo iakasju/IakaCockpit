@@ -243,6 +243,84 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     expect(changed).toBe(false);
     expect(teams).toBe(complete);
   });
+
+  it("reconcileDefaultTeamCasting : team iakaframe legacy (Aragorn=Gandalf) → réparée", () => {
+    // Artefact legacy : Aragorn en collision (roleIndex 2/royaume doc) avec Gandalf,
+    // coordinateur corrompu = gandalf, + un agent CUSTOM ajouté par l'utilisateur.
+    const full = defaultTeamFromDemo("lotr");
+    const custom: Agent = AGENT({
+      id: "boromir",
+      name: "Boromir",
+      royaume: "GONDOR",
+      roleIndex: 9,
+    });
+    const stale: Team = {
+      ...full,
+      coordinator: "gandalf",
+      agents: [
+        ...full.agents.map((a) =>
+          a.id === "aragorn"
+            ? { ...a, roleIndex: 2, royaume: "doc" }
+            : a,
+        ),
+        custom,
+      ],
+    };
+    // Une team catalogue lotr en plus — elle NE doit PAS bouger.
+    const lotr = teamFromCatalog(TEAM_CATALOG.find((c) => c.id === "lotr")!);
+
+    const { teams, changed } = reconcileDefaultTeamCasting([stale, lotr]);
+    expect(changed).toBe(true);
+
+    const iaka = teams.find((t) => t.id === DEFAULT_TEAM_ID)!;
+    const aragorn = iaka.agents.find((a) => a.id === "aragorn")!;
+    // (2) Aragorn réaligné sur sa valeur canonique.
+    expect(aragorn.roleIndex).toBe(1);
+    expect(aragorn.royaume).toBe("coordination");
+    // Aucun roleIndex dupliqué parmi les agents canoniques (ids ∈ DEMO_TEAM).
+    const canonIds = new Set([
+      "odin",
+      "aragorn",
+      "gandalf",
+      "gimli",
+      "legolas",
+      "loki",
+      "nathalie",
+    ]);
+    const canonIdx = iaka.agents
+      .filter((a) => canonIds.has(a.id))
+      .map((a) => a.roleIndex);
+    expect(new Set(canonIdx).size).toBe(canonIdx.length);
+    // (3) Coordinateur réparé gandalf → aragorn.
+    expect(iaka.coordinator).toBe("aragorn");
+    // (4) L'agent custom (id hors DEMO_TEAM) est strictement inchangé.
+    const boromir = iaka.agents.find((a) => a.id === "boromir")!;
+    expect(boromir).toEqual(custom);
+    expect(boromir.roleIndex).toBe(9);
+    expect(boromir.royaume).toBe("GONDOR");
+    // (5) La team catalogue lotr n'est pas touchée (même référence).
+    const lotrAfter = teams.find((t) => t.id === "lotr")!;
+    expect(lotrAfter).toBe(lotr);
+
+    // (6) Idempotence : 2ᵉ passe → changed=false, même référence.
+    const second = reconcileDefaultTeamCasting(teams);
+    expect(second.changed).toBe(false);
+    expect(second.teams).toBe(teams);
+  });
+
+  it("reconcileDefaultTeamCasting : coordinateur CUSTOM (id hors DEMO_TEAM) NON écrasé", () => {
+    const full = defaultTeamFromDemo("lotr");
+    const custom: Agent = AGENT({ id: "boromir", name: "Boromir", roleIndex: 9 });
+    const withCustomCoord: Team = {
+      ...full,
+      coordinator: "boromir", // choix délibéré de l'utilisateur
+      agents: [...full.agents, custom],
+    };
+    const { teams, changed } = reconcileDefaultTeamCasting([withCustomCoord]);
+    // Rien à réaligner + coordinateur custom laissé intact → no-op.
+    expect(changed).toBe(false);
+    expect(teams[0].coordinator).toBe("boromir");
+  });
 });
 
 describe("useTeams — bootstrap & chargement", () => {

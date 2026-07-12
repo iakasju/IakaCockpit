@@ -249,14 +249,37 @@ export function teamFromCatalog(cat: CatalogTeam): Team {
   };
 }
 
+/** Coordinateur canonique de la team par défaut (répare un `coordinator` legacy). */
+const CANONICAL_COORDINATOR = "aragorn";
+
+/** Table canonique `id → {roleIndex, royaume}` dérivée de la graine `DEMO_TEAM`. */
+const CANONICAL_CASTING: ReadonlyMap<
+  string,
+  { roleIndex: number; royaume: string }
+> = new Map(
+  DEMO_TEAM.map((m) => [
+    m.agent.toLowerCase(),
+    { roleIndex: m.roleIndex, royaume: m.royaume },
+  ]),
+);
+
 /**
- * Réconcilie le **casting canonique** de la team par défaut `iakaframe` : si une team
- * `iakaframe` persistée (config antérieure) a perdu des agents de la graine `DEMO_TEAM`
- * (ex. team à 5 d'avant le modèle 7-rôles → **Loki/graphisme + Nathalie/doc** manquants),
- * on **AJOUTE les agents manquants** (par id), sans jamais modifier/supprimer un agent
- * existant ni changer le coordinateur. **Additif, idempotent, non destructif** : ne
- * touche QUE la team par défaut (pas les 11 teams L15 ni une team éditée). Réordonne par
- * `roleIndex` uniquement si on a ajouté quelque chose. Renvoie le tableau + flag `changed`.
+ * Réconcilie ET **répare** le **casting canonique** de la SEULE team par défaut
+ * `iakaframe` (jamais les 11 teams catalogue ni une team custom) :
+ *   1. **réaligne** chaque agent canonique existant (id ∈ `DEMO_TEAM`) sur sa valeur
+ *      canonique `roleIndex`/`royaume` (répare un artefact legacy où, p. ex.,
+ *      `Aragorn.roleIndex = 2` en collision avec Gandalf → même vignette) ;
+ *   2. **ajoute** les agents canoniques manquants (comportement historique, ex. team à
+ *      5 d'avant le modèle 7-rôles → Loki/Nathalie ajoutés) ;
+ *   3. **répare le coordinateur** legacy : si `team.coordinator` pointe sur un agent
+ *      **canonique** (∈ `DEMO_TEAM`) autre qu'`aragorn`, on le ramène à `aragorn`
+ *      (répare `gandalf` → `aragorn`) ; un coordinateur custom est laissé intact.
+ *
+ * **Non destructif** : un agent dont l'`id` n'est PAS dans `DEMO_TEAM` (agent ajouté par
+ * l'utilisateur) n'est jamais touché ; un coordinateur custom n'est jamais écrasé.
+ * **Idempotent** : `changed = true` seulement si une valeur diffère réellement (sinon
+ * même référence, pas de réécriture ni de boucle de persistance). Réordonne par
+ * `roleIndex`. Renvoie le tableau + flag `changed`.
  */
 export function reconcileDefaultTeamCasting(existing: Team[]): {
   teams: Team[];
@@ -265,9 +288,22 @@ export function reconcileDefaultTeamCasting(existing: Team[]): {
   const idx = existing.findIndex((t) => t.id === DEFAULT_TEAM_ID);
   if (idx < 0) return { teams: existing, changed: false };
   const team = existing[idx];
-  const present = new Set(team.agents.map((a) => a.id));
+
+  let changed = false;
+
+  // 1) Réaligner les agents canoniques existants (id ∈ DEMO_TEAM) ; laisser les
+  //    agents custom (id ∉ DEMO_TEAM) strictement inchangés.
+  const realigned = team.agents.map((a) => {
+    const canon = CANONICAL_CASTING.get(a.id);
+    if (!canon) return a; // agent custom → non destructif
+    if (a.roleIndex === canon.roleIndex && a.royaume === canon.royaume) return a;
+    changed = true;
+    return { ...a, roleIndex: canon.roleIndex, royaume: canon.royaume };
+  });
+
+  // 2) Ajouter les agents canoniques manquants.
+  const present = new Set(realigned.map((a) => a.id));
   const missing = DEMO_TEAM.filter((m) => !present.has(m.agent.toLowerCase()));
-  if (missing.length === 0) return { teams: existing, changed: false };
   const added: Agent[] = missing.map((m) => ({
     id: m.agent.toLowerCase(),
     name: m.agent,
@@ -277,11 +313,27 @@ export function reconcileDefaultTeamCasting(existing: Team[]): {
     model: "",
     skills: skillsForAgent(m.agent),
   }));
-  const agents = [...team.agents, ...added].sort(
+  if (added.length > 0) changed = true;
+
+  // 3) Réparer le coordinateur legacy pointant sur un agent canonique ≠ aragorn.
+  const allIds = new Set([...present, ...added.map((a) => a.id)]);
+  let coordinator = team.coordinator;
+  if (
+    team.coordinator !== CANONICAL_COORDINATOR &&
+    CANONICAL_CASTING.has(team.coordinator) &&
+    allIds.has(CANONICAL_COORDINATOR)
+  ) {
+    coordinator = CANONICAL_COORDINATOR;
+    changed = true;
+  }
+
+  if (!changed) return { teams: existing, changed: false };
+
+  const agents = [...realigned, ...added].sort(
     (a, b) => a.roleIndex - b.roleIndex,
   );
   const next = [...existing];
-  next[idx] = { ...team, agents };
+  next[idx] = { ...team, agents, coordinator };
   return { teams: next, changed: true };
 }
 

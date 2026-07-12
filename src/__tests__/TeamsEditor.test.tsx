@@ -82,6 +82,51 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     );
   });
 
+  it("garde B : le menu de rôle PILOTE roleIndex (doc → royaume doc + roleIndex 6)", () => {
+    const upsertAgent = vi.fn(async () => {});
+    render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Rôle de gimli") as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "doc" } });
+    // Sélectionner « doc » (canonique, roleIndex 6) fixe royaume ET roleIndex.
+    expect(upsertAgent).toHaveBeenCalledWith(
+      DEFAULT_TEAM_ID,
+      expect.objectContaining({ id: "gimli", royaume: "doc", roleIndex: 6 }),
+    );
+  });
+
+  it("garde B : une valeur de rôle hors-liste ne touche QUE le royaume (roleIndex manuel)", () => {
+    const upsertAgent = vi.fn(async () => {});
+    const team: Team = defaultTeamFromDemo("lotr");
+    team.agents = team.agents.map((a) =>
+      a.id === "gimli" ? { ...a, royaume: "GALADRIEL", roleIndex: 3 } : a,
+    );
+    render(<TeamsEditor teams={makeTeams({ teams: [team], upsertAgent })} />);
+    selectAgent("gimli");
+    const select = screen.getByLabelText("Rôle de gimli") as HTMLSelectElement;
+    // Re-sélectionner la valeur hors-liste ne PILOTE pas roleIndex : il reste manuel (3).
+    fireEvent.change(select, { target: { value: "GALADRIEL" } });
+    expect(upsertAgent).toHaveBeenCalledWith(
+      DEFAULT_TEAM_ID,
+      expect.objectContaining({ id: "gimli", royaume: "GALADRIEL", roleIndex: 3 }),
+    );
+  });
+
+  it("garde B : deux agents au même roleIndex → avertissement d'unicité", () => {
+    const team: Team = defaultTeamFromDemo("lotr");
+    // Force une collision : Gimli passe sur le roleIndex d'Aragorn (1).
+    team.agents = team.agents.map((a) =>
+      a.id === "gimli" ? { ...a, roleIndex: 1 } : a,
+    );
+    render(<TeamsEditor teams={makeTeams({ teams: [team] })} />);
+    selectAgent("gimli");
+    expect(
+      screen.getByText(
+        "Cet index est déjà utilisé par un autre agent — ils partageront la même vignette.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("rôle hors-liste (team L15) : valeur courante conservée comme option (tolérant)", () => {
     const team: Team = defaultTeamFromDemo("lotr");
     // Force un royaume dérivé hors des 7 rôles (cas teams catalogue L15).

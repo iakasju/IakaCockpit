@@ -193,6 +193,15 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
   const selAgentIsCoord =
     !!selectedAgent && !!selected && selectedAgent.id === selected.coordinator;
 
+  // Garde d'unicité (B) : le `roleIndex` de l'agent affiché collisionne-t-il avec
+  // celui d'un autre agent de la team ? (deux agents au même index → même vignette).
+  const selectedAgentRoleIndexCollision =
+    !!selectedAgent &&
+    !!selected &&
+    selected.agents.some(
+      (a) => a.id !== selectedAgent.id && a.roleIndex === selectedAgent.roleIndex,
+    );
+
   return (
     <div className="block teamseditor" aria-label={t("teams.editorAria")}>
       <span className="eyebrow">{t("teams.eyebrow")}</span>
@@ -435,9 +444,20 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                       aria-label={t("teams.fieldRoleAria", {
                         id: selectedAgent.id,
                       })}
-                      onChange={(e) =>
-                        patchAgent(selectedAgent, { royaume: e.target.value })
-                      }
+                      onChange={(e) => {
+                        // Le menu de rôle PILOTE `roleIndex` : sélectionner un rôle
+                        // canonique fixe royaume + son roleIndex (empêche deux agents
+                        // sur le même index par erreur). Une valeur hors-liste (teams
+                        // L15) ne touche que le royaume — le roleIndex reste manuel.
+                        const key = e.target.value;
+                        const role = AGENT_ROLES.find((r) => r.key === key);
+                        patchAgent(
+                          selectedAgent,
+                          role
+                            ? { royaume: role.key, roleIndex: role.roleIndex }
+                            : { royaume: key },
+                        );
+                      }}
                     >
                       {/* Tolérant : une valeur hors des 7 rôles (teams L15 à
                           royaumes dérivés) reste sélectionnée, jamais perdue. */}
@@ -473,6 +493,11 @@ export function TeamsEditor({ teams, theme }: TeamsEditorProps): JSX.Element {
                           patchAgent(selectedAgent, { roleIndex: v });
                       }}
                     />
+                    {selectedAgentRoleIndexCollision && (
+                      <span className="fieldwarn" role="status" aria-live="polite">
+                        {t("teams.roleIndexCollision")}
+                      </span>
+                    )}
                   </label>
                   <label className="agentf">
                     <span>{t("teams.fieldRunner")}</span>

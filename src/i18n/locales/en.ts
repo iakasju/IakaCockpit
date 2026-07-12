@@ -428,6 +428,8 @@ export const en: Resources = {
     coordinatorPilots: " · coordinator — drives the terminal-source",
     fieldRoleIndex: "roleIndex",
     fieldRoleIndexAria: "roleIndex of {{id}}",
+    roleIndexCollision:
+      "This index is already used by another agent — they will share the same avatar.",
     fieldRunner: "Runner",
     fieldRunnerAria: "Runner of {{id}}",
     runnerDefinable: " — definable",

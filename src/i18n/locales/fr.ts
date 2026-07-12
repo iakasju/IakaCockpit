@@ -429,6 +429,8 @@ export const fr = {
     coordinatorPilots: " · coordinateur — pilote le terminal-source",
     fieldRoleIndex: "roleIndex",
     fieldRoleIndexAria: "roleIndex de {{id}}",
+    roleIndexCollision:
+      "Cet index est déjà utilisé par un autre agent — ils partageront la même vignette.",
     fieldRunner: "Runner",
     fieldRunnerAria: "Runner de {{id}}",
     runnerDefinable: " — définissable",

@@ -48,4 +48,30 @@ describe("makeAvatarResolver — pont nom d'agent → vignette (L9-A, reframé L
     const resolve = makeAvatarResolver("naonedge-dark", "none", ROSTER);
     expect(resolve("Gandalf")).toBeNull();
   });
+
+  it("contrat vignettes (studio-clair/lotr) : roleIndex distincts → URLs distinctes ; identiques → mêmes URLs", () => {
+    // roleIndex distincts (Aragorn=1, Gandalf=2) → deux vignettes différentes.
+    const ok = makeAvatarResolver("studio-clair", "lotr", [
+      { name: "Aragorn", roleIndex: 1 },
+      { name: "Gandalf", roleIndex: 2 },
+    ]);
+    expect(String(ok("Aragorn"))).toContain("lotr/aragorn.webp");
+    expect(String(ok("Gandalf"))).toContain("lotr/gandalf.webp");
+    expect(ok("Aragorn")).not.toBe(ok("Gandalf"));
+
+    // Collision legacy (deux agents au même roleIndex 2) → MÊME URL (bug reproduit).
+    const collided = makeAvatarResolver("studio-clair", "lotr", [
+      { name: "Aragorn", roleIndex: 2 },
+      { name: "Gandalf", roleIndex: 2 },
+    ]);
+    expect(collided("Aragorn")).toBe(collided("Gandalf"));
+
+    // Après réalignement (Aragorn→1), Aragorn ≠ Gandalf de nouveau.
+    const fixed = makeAvatarResolver("studio-clair", "lotr", [
+      { name: "Aragorn", roleIndex: 1 },
+      { name: "Gandalf", roleIndex: 2 },
+    ]);
+    expect(String(fixed("Aragorn"))).toContain("lotr/aragorn.webp");
+    expect(fixed("Aragorn")).not.toBe(fixed("Gandalf"));
+  });
 });
