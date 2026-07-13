@@ -403,6 +403,13 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       la pastille (`role="switch"`, toggle **symétrique** : sortie fullscreen incluse — AR-1 supersédé). Fix
       structurel : switch sorti du conteneur `overflow-x:auto` (`.projtabs-list` scrollable + `.fsswitch`
       frère). **Vérifié en CDP réel** : `gapRight=0` (collé à droite). Commits `3a4f408`→`4270a34`.
+- [ ] **L30** — **Page « Analytics » (remplace le Journal)** — *(backlog, non cadré ; demande Stéphane 2026-07-13)*.
+      **Virer / débrancher-garder la vue Journal** (main courante L4/L12) et la remplacer dans le rail par une
+      **page « Analytics »** pleine de **gadgets** dérivés du mock d'hypothèses
+      `specs/design/redesign/A/concepts/hypotheses/economie.html` (« Économie du tour » : repérer les tours
+      chers, tokens par tour / par agent, coût, durées…), + les autres concepts analytics du redesign (économie,
+      mémoire, effets, plan). = tableau de bord analytics de la session/projet. À cadrer (source des données =
+      transcript/économie déjà dérivés + main courante ; réutiliser les widgets existants).
 - [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
       *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
       600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
