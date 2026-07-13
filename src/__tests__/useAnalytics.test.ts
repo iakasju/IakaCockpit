@@ -271,6 +271,68 @@ describe("deriveAnalytics — attribution par agent RÉELLE (L30-P3)", () => {
   });
 });
 
+describe("deriveAnalytics — coordinateur en premier rang (Aragorn/Odin)", () => {
+  const COST: AnalyticsCost = {
+    cost_total: 20,
+    by_model: [
+      { model: "claude-opus-4-8[1m]", tokens: 2_000_000, cost: 20, untariffed: false },
+      { model: "claude-sonnet-4-5", tokens: 500_000, cost: 5, untariffed: false },
+    ],
+    by_day: [{ date: "2026-07-11", cost: 25 }],
+    untariffed_models: [],
+    priced_at: null,
+  };
+  const ATTRIB: AgentAttribution = {
+    agents: [
+      { agent: "gimli", tokens: 1_000_000, cost: 12, delegations: 3, model: "claude-opus-4-8", untariffed: false },
+    ],
+    unavailable: 0,
+    priced_at: null,
+  };
+
+  it("ajoute la ligne coordinateur (tokens/coût du parent) en tête, part recalculée sur le total", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, COST, null, ATTRIB, "Odin");
+    expect(m.perAgent).toHaveLength(2); // Odin + gimli
+    const coord = m.perAgent!.find((a) => a.coordinator)!;
+    expect(coord.name).toBe("Odin");
+    // Conso parent = somme by_model (2 M + 0,5 M) et coût = cost_total.
+    expect(coord.tokens).toBe(2_500_000);
+    expect(coord.cost).toBe(20);
+    expect(coord.runner).toBe("claude-opus-4-8[1m]"); // modèle dominant (by_model[0])
+    // Tri tokens desc → coordinateur (2,5 M) en tête, gimli (1 M) ensuite.
+    expect(m.perAgent![0].name).toBe("Odin");
+    // Part recalculée sur le TOTAL coordinateur + délégués (2,5 M + 1 M = 3,5 M).
+    expect(coord.share).toBeCloseTo(2_500_000 / 3_500_000, 5);
+    expect(m.perAgent![1].share).toBeCloseTo(1_000_000 / 3_500_000, 5);
+  });
+
+  it("scope projet : la ligne coordinateur porte le nom fourni (coordinateur de la team)", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, "big", range7, COST, null, null, "Aragorn");
+    expect(m.perAgent).toHaveLength(1);
+    expect(m.perAgent![0].name).toBe("Aragorn");
+    expect(m.perAgent![0].coordinator).toBe(true);
+  });
+
+  it("pas de coût réel → aucune ligne coordinateur inventée (zéro fausse donnée)", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, null, null, "Odin");
+    expect(m.perAgent).toBeNull();
+  });
+
+  it("coordinateur untariffé partout → coût null (« — »), pas 0 fabriqué", () => {
+    const untariffed: AnalyticsCost = {
+      cost_total: 0,
+      by_model: [{ model: "mistral-x", tokens: 900_000, cost: 0, untariffed: true }],
+      by_day: [],
+      untariffed_models: ["mistral-x"],
+      priced_at: null,
+    };
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, untariffed, null, null, "Odin");
+    const coord = m.perAgent!.find((a) => a.coordinator)!;
+    expect(coord.tokens).toBe(900_000);
+    expect(coord.cost).toBeNull();
+  });
+});
+
 describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
   const demo = makeDemoAnalytics(NOW, range7);
 

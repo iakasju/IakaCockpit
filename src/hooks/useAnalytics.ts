@@ -75,7 +75,7 @@ export interface DailyBucket {
   output: number | null;
 }
 
-/** Un acteur de la config (agent) — attribution par NOM = démo/P3, `null` en réel. */
+/** Un acteur de la config (agent). Le coordinateur (Aragorn/Odin) porte `coordinator: true`. */
 export interface AgentDatum {
   name: string;
   role: string;
@@ -86,6 +86,8 @@ export interface AgentDatum {
   share: number;
   turns: number | null;
   avgDuration: string | null;
+  /** Ligne du COORDINATEUR (conso du transcript parent), pas un délégué. */
+  coordinator?: boolean;
 }
 
 /** RÉEL (L30-P2) : coût $ par modèle sur la plage — alimente le mix par modèle (V4). */
@@ -238,6 +240,9 @@ function dateToMs(date: string): number {
  *                 range-bornées côté Rust. `null`/absent → placeholder.
  * @param attribution attribution par agent RÉELLE (L30-P3, `useAgentAttribution`) : tokens/coût
  *                 par agent nommé via `outputFile`. `null`/absent/vide → perAgent placeholder/démo.
+ * @param coordinatorName nom du coordinateur (Aragorn en projet / Odin en portefeuille) : ajoute
+ *                 une ligne de premier rang à `perAgent` = conso du transcript parent (via `cost`).
+ *                 `undefined`/absence de `cost` réel → pas de ligne (zéro fausse donnée).
  */
 export function deriveAnalytics(
   economy: readonly TreemapItem[],
@@ -247,6 +252,7 @@ export function deriveAnalytics(
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
   attribution?: AgentAttribution | null,
+  coordinatorName?: string,
 ): AnalyticsModel {
   // Périmètre : projets triés tokens desc + ALL (somme) en tête.
   const projects = [...economy].sort((a, b) => b.tokens - a.tokens);
@@ -355,25 +361,54 @@ export function deriveAnalytics(
   // part (mention honnête). Modèle inconnu (`untariffed`) → coût affiché `null` (« — »).
   const attrib = attribution ?? null;
   const delegByName = new Map((delg ?? []).map((d) => [d.agent, d]));
-  const attribTotal =
-    attrib != null ? attrib.agents.reduce((s, a) => s + a.tokens, 0) : 0;
+  const attribLines: AgentDatum[] = (attrib?.agents ?? []).map((a, i) => {
+    const dd = delegByName.get(a.agent);
+    return {
+      name: a.agent,
+      role: "",
+      runner: a.model || "—",
+      color: AGENT_PALETTE[(i + 1) % AGENT_PALETTE.length],
+      tokens: a.tokens,
+      cost: a.untariffed ? null : a.cost,
+      share: 0, // recalculée sur le total coordinateur + délégués
+      turns: dd ? dd.count : null,
+      avgDuration: dd && dd.avg_ms > 0 ? fmtDurationMs(dd.avg_ms) : null,
+    };
+  });
+
+  // Ligne du COORDINATEUR (Aragorn en projet / Odin en portefeuille) : sa conso = le transcript
+  // PARENT = ce que `analytics_cost` agrège (tokens = somme `by_model`, coût = `cost_total`).
+  // Ajoutée UNIQUEMENT si la source parent a de la donnée réelle (`hasCost`) ET qu'un nom de
+  // coordinateur est fourni → jamais de ligne inventée. Modèle = dominant (`by_model[0]`, trié
+  // coût desc). Untariffé partout → coût `null` (« — »), comme ailleurs.
+  const coordLines: AgentDatum[] = [];
+  if (coordinatorName && hasCost) {
+    const parentTokens = costObj!.by_model.reduce((s, m) => s + m.tokens, 0);
+    const untariffedAll = costObj!.by_model.every((m) => m.untariffed);
+    coordLines.push({
+      name: coordinatorName,
+      role: "",
+      runner: costObj!.by_model[0]?.model ?? "—",
+      color: AGENT_PALETTE[0],
+      tokens: parentTokens,
+      cost: untariffedAll ? null : realCost,
+      share: 0,
+      turns: null,
+      avgDuration: null,
+      coordinator: true,
+    });
+  }
+
+  // Composition : [coordinateur, ...délégués], parts recalculées sur le TOTAL (coordinateur +
+  // délégués), tri tokens desc (le coordinateur sera souvent en tête).
+  const allAgentLines = [...coordLines, ...attribLines];
+  const perAgentTotal = allAgentLines.reduce((s, a) => s + a.tokens, 0);
+  for (const a of allAgentLines) {
+    a.share = perAgentTotal > 0 ? a.tokens / perAgentTotal : 0;
+  }
+  allAgentLines.sort((a, b) => b.tokens - a.tokens);
   const realPerAgent: AgentDatum[] | null =
-    attrib != null && attrib.agents.length > 0
-      ? attrib.agents.map((a, i) => {
-          const dd = delegByName.get(a.agent);
-          return {
-            name: a.agent,
-            role: "",
-            runner: a.model || "—",
-            color: AGENT_PALETTE[i % AGENT_PALETTE.length],
-            tokens: a.tokens,
-            cost: a.untariffed ? null : a.cost,
-            share: attribTotal > 0 ? a.tokens / attribTotal : 0,
-            turns: dd ? dd.count : null,
-            avgDuration: dd && dd.avg_ms > 0 ? fmtDurationMs(dd.avg_ms) : null,
-          };
-        })
-      : null;
+    allAgentLines.length > 0 ? allAgentLines : null;
   const attributionUnavailable = attrib?.unavailable ?? 0;
 
   return {
@@ -457,10 +492,29 @@ export function useAnalytics(
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
   attribution?: AgentAttribution | null,
+  coordinatorName?: string,
 ): AnalyticsModel {
   return useMemo(
     () =>
-      deriveAnalytics(economy, activity, scope, range, cost, delegations, attribution),
-    [economy, activity, scope, range, cost, delegations, attribution],
+      deriveAnalytics(
+        economy,
+        activity,
+        scope,
+        range,
+        cost,
+        delegations,
+        attribution,
+        coordinatorName,
+      ),
+    [
+      economy,
+      activity,
+      scope,
+      range,
+      cost,
+      delegations,
+      attribution,
+      coordinatorName,
+    ],
   );
 }

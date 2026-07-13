@@ -74,6 +74,25 @@ describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tok
     // Tokens/$ par agent nommé = pas de source → note honnête + placeholder.
     expect(screen.getByText(/pas de source réelle/)).toBeTruthy();
   });
+
+  it("affiche le COORDINATEUR (Odin) en premier rang avec son tag quand un nom est fourni", () => {
+    // Même coût parent, coordinateur "Odin" → ligne de premier rang dans le classement.
+    const withCoord = deriveAnalytics(
+      [],
+      [],
+      ALL_SCOPE,
+      rangeFromPreset("7d", NOW),
+      cost,
+      deleg,
+      null,
+      "Odin",
+    );
+    render(<PerspectiveAgents model={withCoord} />);
+    // Le coordinateur apparaît dans le classement (plus la note « pas de source »).
+    expect(screen.getAllByText("Odin").length).toBeGreaterThan(0);
+    expect(screen.getByText("Coordinateur")).toBeTruthy(); // le tag
+    expect(screen.queryByText(/pas de source réelle/)).toBeNull();
+  });
 });
 
 describe("Perspectives — prod sans source réelle (compaction honnête, pas de gros skeleton)", () => {

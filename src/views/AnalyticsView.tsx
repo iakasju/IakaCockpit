@@ -40,11 +40,15 @@ export function AnalyticsView({
   economy,
   activity,
   demoOn,
+  coordinatorOfProject,
 }: {
   economy: readonly TreemapItem[];
   activity: readonly ProjectActivity[];
   /** Vitrine dev-gardée (calque `demoWidgetsOn`) : substitue la démo si AUCUNE donnée réelle. */
   demoOn: boolean;
+  /** Nom du coordinateur de la team d'un projet (App a `teams`) ; `undefined` si indisponible.
+   *  Portefeuille (ALL) = "Odin". */
+  coordinatorOfProject?: (projectId: string) => string | undefined;
 }): JSX.Element {
   const { t, i18n } = useTranslation();
   const now = useNow(60_000); // pas besoin d'un tick fin ici (rétrospective jour)
@@ -81,6 +85,13 @@ export function AnalyticsView({
   // Attribution par agent RÉELLE (L30-P3) : tokens + coût par agent nommé via `outputFile`.
   // Range + scope-aware (le Rust lit les transcripts sous-agents ; le front ne lit rien).
   const attribution = useAgentAttribution(range.fromMs, range.toMs, projectScope);
+  // Nom du coordinateur pour le scope courant : portefeuille (ALL) = "Odin" ; un projet = le
+  // coordinateur de sa team (résolu par App via `teams`) ; fallback = « Coordinateur ». Sert la
+  // ligne de premier rang dans la vue par agent (la logique teams reste dans App, pas ici).
+  const coordinatorName =
+    scope === ALL_SCOPE
+      ? "Odin"
+      : (coordinatorOfProject?.(scope) ?? t("analytics.roleCoordinator"));
   const real = useAnalytics(
     economy,
     activity,
@@ -89,6 +100,7 @@ export function AnalyticsView({
     cost,
     delegations,
     attribution,
+    coordinatorName,
   );
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 

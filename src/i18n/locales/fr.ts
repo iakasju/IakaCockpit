@@ -539,6 +539,7 @@ export const fr = {
     untariffedNote: "Modèle(s) sans tarif (coût non compté) : {{models}}",
     perAgentNoSource: "Tokens et coût par agent nommé : pas de source réelle — les sous-agents délégués tournent hors du transcript parent (attribution par agent = à venir).",
     attributionUnavailable: "{{count}} délégation(s) non attribuable(s) — transcript(s) éphémère(s) expiré(s).",
+    roleCoordinator: "Coordinateur",
   },
 
   teams: {

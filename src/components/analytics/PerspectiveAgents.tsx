@@ -126,7 +126,14 @@ export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Ele
                     <div className="acell">
                       <span className="asw" style={{ background: a.color }} aria-hidden />
                       <div>
-                        <div className="nm">{a.name}</div>
+                        <div className="nm">
+                          {a.name}
+                          {a.coordinator && (
+                            <span className="coordtag">
+                              {t("analytics.roleCoordinator")}
+                            </span>
+                          )}
+                        </div>
                         <div className="rl">{a.role}</div>
                       </div>
                     </div>

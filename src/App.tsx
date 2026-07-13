@@ -418,6 +418,14 @@ export default function App(): JSX.Element {
     grid.setActiveView("working");
   };
 
+  // Analytics — nom du coordinateur de la team d'un projet (Aragorn…), pour la ligne de premier
+  // rang de la vue par agent. La logique teams reste ICI (App a `teams`) ; AnalyticsView reçoit
+  // juste le resolver. `undefined` si indisponible → la vue retombe sur « Coordinateur » (i18n).
+  const coordinatorOfProject = (projectId: string): string | undefined => {
+    const team = teams.teamForProject(projectId);
+    return teams.coordinatorOf(team)?.name;
+  };
+
   // Entrée partagée (L10b/§5.1) : la saisie chat ÉCHOTE (tour user) ET PILOTE le chef
   // (stdin du PTY : la frappe + `\r` pour soumettre la TUI native). Le `@agent` est un
   // préfixe VERBATIM (arbitrage #5) : `content` est écrit tel quel au PTY, aucune
@@ -635,6 +643,7 @@ export default function App(): JSX.Element {
             economy={portfolioEco}
             activity={portfolioAct}
             demoOn={demoWidgetsOn}
+            coordinatorOfProject={coordinatorOfProject}
           />
         )}
         {grid.activeView === "teams" && (
