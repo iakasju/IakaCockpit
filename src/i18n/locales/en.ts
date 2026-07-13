@@ -445,6 +445,9 @@ export const en: Resources = {
     lede: "How the team configuration (agents · roles · runners · models) translates into cost, tokens, durations and efficiency — and where the variations are.",
     allPortfolio: "ALL · whole portfolio",
     dataComing: "Data coming",
+    soonPrefix: "Coming",
+    emptyReason: "No real data for this range yet.",
+    emptyCompareReason: "The bi-period comparison has no real source yet.",
     // Perimeter column
     perimeter: "Perimeter",
     perimeterHint: "Sorted by token volume over the range. Selecting scopes the whole page.",

@@ -8,7 +8,7 @@
 import { useTranslation } from "react-i18next";
 import type { AnalyticsModel } from "../../hooks/useAnalytics";
 import { fmtTokens, fmtCost, fmtPct } from "./format";
-import { Placeholder } from "./Placeholder";
+import { SoonStrip, EmptyPerspective } from "./Placeholder";
 
 /** Génère un `<path>` de sparkline (aire + ligne) depuis une série de valeurs. */
 function sparkPath(values: readonly number[], w: number, h: number): { area: string; line: string } {
@@ -29,48 +29,74 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
   const agentMax = (perAgent ?? []).reduce((m, a) => Math.max(m, a.tokens), 1);
   const spark = costTrend ? sparkPath(costTrend, 320, 96) : null;
 
+  // KPI bar : uniquement les indicateurs qui portent une valeur RÉELLE. Un KPI `null`
+  // (ex. temps agent sans source) n'est PAS rendu — pas de grande carte vide (compaction).
+  const kpis = [
+    model.tokens != null && {
+      label: t("analytics.kpi.tokens"),
+      value: fmtTokens(model.tokens),
+      sub: t("analytics.kpi.tokensSub"),
+    },
+    model.cost != null && {
+      label: t("analytics.kpi.cost"),
+      value: fmtCost(model.cost),
+      sub: t("analytics.kpi.costSub"),
+    },
+    model.delegations != null && {
+      label: t("analytics.kpi.delegations"),
+      value: String(model.delegations),
+      sub: t("analytics.kpi.delegationsSub"),
+    },
+    model.agentTime != null && {
+      label: t("analytics.kpi.time"),
+      value: model.agentTime,
+      sub: t("analytics.kpi.timeSub"),
+    },
+  ].filter((k): k is { label: string; value: string; sub: string } => !!k);
+
+  // Présence de donnée réelle par widget → rendu plein ; absence → listé « à venir » (compact).
+  const hasPerAgent = !!(perAgent && perAgent.length > 0);
+  const hasDaily = daily.length > 0;
+  const hasCostTrend = !!(spark && costTrend);
+  const hasTop = !!(topDelegations && topDelegations.length > 0);
+  const anyWidget = hasPerAgent || hasDaily || hasCostTrend || hasTop;
+
+  const soon: string[] = [];
+  if (!hasPerAgent) {
+    soon.push(t("analytics.tokensByAgent"), t("analytics.activityShare"));
+  }
+  if (!hasDaily) soon.push(t("analytics.tokensPerDay"));
+  if (!hasCostTrend) soon.push(t("analytics.costTrend"));
+  if (!hasTop) soon.push(t("analytics.topDelegations"));
+
   return (
     <div className="ana-persp">
-      {/* Bandeau KPI */}
-      <div className="kpibar" role="group" aria-label={t("analytics.kpis")}>
-        <div className="k">
-          <div className="kl">{t("analytics.kpi.tokens")}</div>
-          <div className="kv">{model.tokens != null ? fmtTokens(model.tokens) : "—"}</div>
-          <div className="kd">{t("analytics.kpi.tokensSub")}</div>
+      {/* Bandeau KPI — rendu seulement s'il reste au moins un indicateur réel. */}
+      {kpis.length > 0 && (
+        <div className="kpibar" role="group" aria-label={t("analytics.kpis")}>
+          {kpis.map((k) => (
+            <div className="k" key={k.label}>
+              <div className="kl">{k.label}</div>
+              <div className="kv">{k.value}</div>
+              <div className="kd">{k.sub}</div>
+            </div>
+          ))}
         </div>
-        <div className={`k${model.cost == null ? " k-soon" : ""}`}>
-          <div className="kl">{t("analytics.kpi.cost")}</div>
-          <div className="kv">{model.cost != null ? fmtCost(model.cost) : "—"}</div>
-          <div className="kd">
-            {model.cost != null ? t("analytics.kpi.costSub") : t("analytics.dataComing")}
-          </div>
-        </div>
-        <div className={`k${model.agentTime == null ? " k-soon" : ""}`}>
-          <div className="kl">{t("analytics.kpi.time")}</div>
-          <div className="kv">{model.agentTime ?? "—"}</div>
-          <div className="kd">
-            {model.agentTime != null ? t("analytics.kpi.timeSub") : t("analytics.dataComing")}
-          </div>
-        </div>
-        <div className={`k${model.delegations == null ? " k-soon" : ""}`}>
-          <div className="kl">{t("analytics.kpi.delegations")}</div>
-          <div className="kv">{model.delegations ?? "—"}</div>
-          <div className="kd">
-            {model.delegations != null ? t("analytics.kpi.delegationsSub") : t("analytics.dataComing")}
-          </div>
-        </div>
-      </div>
+      )}
 
+      {kpis.length === 0 && !anyWidget && <EmptyPerspective />}
+
+      {anyWidget && (
       <div className="agrid">
         {/* Tokens par agent (treemap) */}
+        {hasPerAgent && (
         <div className="vcard">
           <div className="vh">
             <span className="vt">{t("analytics.tokensByAgent")}</span>
             <span className="vs">{t("analytics.tokensByAgentSub")}</span>
           </div>
-          {perAgent && perAgent.length > 0 ? (
             <div className="atmap">
-              {perAgent.map((a) => (
+              {perAgent!.map((a) => (
                 <div
                   key={a.name}
                   className="atcell"
@@ -86,12 +112,11 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
                 </div>
               ))}
             </div>
-          ) : (
-            <Placeholder />
-          )}
         </div>
+        )}
 
         {/* Part d'activité */}
+        {hasPerAgent && (
         <div className="vcard">
           <div className="vh">
             <span className="vt">{t("analytics.activityShare")}</span>
@@ -101,15 +126,13 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
               </span>
             )}
           </div>
-          {perAgent && perAgent.length > 0 ? (
-            <>
               <div className="ashare" aria-hidden>
-                {perAgent.map((a) => (
+                {perAgent!.map((a) => (
                   <div key={a.name} style={{ width: `${a.share * 100}%`, background: a.color }} />
                 ))}
               </div>
               <div className="asharekey">
-                {perAgent.slice(0, 5).map((a) => (
+                {perAgent!.slice(0, 5).map((a) => (
                   <div className="r" key={a.name}>
                     <span className="sw" style={{ background: a.color }} />
                     <span className="nm">{a.name}</span>
@@ -118,19 +141,16 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
                   </div>
                 ))}
               </div>
-            </>
-          ) : (
-            <Placeholder />
-          )}
         </div>
+        )}
 
         {/* Tokens par jour (barres entrée/sortie) */}
+        {hasDaily && (
         <div className="vcard span2">
           <div className="vh">
             <span className="vt">{t("analytics.tokensPerDay")}</span>
             <span className="vs">{t("analytics.tokensPerDaySub")}</span>
           </div>
-          {daily.length > 0 ? (
             <div className="abars">
               {daily.map((d) => {
                 const total = d.tokens;
@@ -149,9 +169,6 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
                 );
               })}
             </div>
-          ) : (
-            <Placeholder />
-          )}
           {daily.some((d) => d.input != null) && (
             <div className="legend2 analeg">
               <span>
@@ -163,18 +180,19 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
             </div>
           )}
         </div>
+        )}
 
         {/* Tendance du coût (sparkline) */}
+        {hasCostTrend && (
         <div className="vcard">
           <div className="vh">
             <span className="vt">{t("analytics.costTrend")}</span>
             <span className="vs">{t("analytics.costTrendSub")}</span>
           </div>
-          {spark && costTrend ? (
             <svg viewBox="0 0 320 96" width="100%" style={{ display: "block" }} aria-hidden>
-              <path d={spark.area} fill="rgba(var(--accent-rgb), 0.16)" />
+              <path d={spark!.area} fill="rgba(var(--accent-rgb), 0.16)" />
               <path
-                d={spark.line}
+                d={spark!.line}
                 fill="none"
                 stroke="var(--accent)"
                 strokeWidth="2.5"
@@ -182,21 +200,19 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
                 strokeLinejoin="round"
               />
             </svg>
-          ) : (
-            <Placeholder lines={2} />
-          )}
         </div>
+        )}
 
         {/* Top délégations chères */}
+        {hasTop && (
         <div className="vcard">
           <div className="vh">
             <span className="vt">{t("analytics.topDelegations")}</span>
             <span className="vs">{t("analytics.topDelegationsSub")}</span>
           </div>
-          {topDelegations && topDelegations.length > 0 ? (
             <table className="deltbl">
               <tbody>
-                {topDelegations.map((d, i) => (
+                {topDelegations!.map((d, i) => (
                   <tr key={i}>
                     <td>
                       <div className="pair">
@@ -212,11 +228,11 @@ export function PerspectiveDashboard({ model }: { model: AnalyticsModel }): JSX.
                 ))}
               </tbody>
             </table>
-          ) : (
-            <Placeholder />
-          )}
         </div>
+        )}
       </div>
+      )}
+      {(anyWidget || kpis.length > 0) && <SoonStrip labels={soon} />}
     </div>
   );
 }

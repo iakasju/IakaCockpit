@@ -446,6 +446,9 @@ export const fr = {
     lede: "Comment la configuration d'équipe (agents · rôles · runners · modèles) se traduit en coût, tokens, durées et efficacité — et où sont les variations.",
     allPortfolio: "ALL · tout le portefeuille",
     dataComing: "Donnée à venir",
+    soonPrefix: "À venir",
+    emptyReason: "Aucune donnée réelle sur cette plage pour le moment.",
+    emptyCompareReason: "La comparaison bi-période n'a pas encore de source réelle.",
     // Colonne Périmètre
     perimeter: "Périmètre",
     perimeterHint: "Trié par volume de tokens sur la plage. Sélectionner scope toute la page.",

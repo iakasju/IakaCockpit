@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsModel, CompareAgent } from "../../hooks/useAnalytics";
 import { fmtTokens, fmtCost } from "./format";
-import { Placeholder } from "./Placeholder";
+import { EmptyPerspective, Placeholder } from "./Placeholder";
 
 type Scenario = "beforeAfter" | "hypothesis";
 
@@ -39,6 +39,16 @@ export function PerspectiveCompare({ model }: { model: AnalyticsModel }): JSX.El
   const [scenario, setScenario] = useState<Scenario>("beforeAfter");
   const cmp = model.compare;
 
+  // Comparaison bi-période = pas de source réelle (backend à venir). Plutôt qu'un layout de
+  // cartes vides (double période / configs / deltas), un unique bloc compact honnête.
+  if (!cmp) {
+    return (
+      <div className="ana-persp">
+        <EmptyPerspective reason={t("analytics.emptyCompareReason")} />
+      </div>
+    );
+  }
+
   return (
     <div className="ana-persp">
       {/* Sélecteur de scénario A/B (toujours affiché : l'UX des deux) */}
@@ -63,14 +73,7 @@ export function PerspectiveCompare({ model }: { model: AnalyticsModel }): JSX.El
         </button>
       </div>
 
-      {!cmp ? (
-        <div className="vcard">
-          <div className="vh">
-            <span className="vt">{t("analytics.compareTitle")}</span>
-          </div>
-          <Placeholder />
-        </div>
-      ) : scenario === "beforeAfter" ? (
+      {scenario === "beforeAfter" ? (
         <>
           {/* Double période */}
           <div className="cmpbar">

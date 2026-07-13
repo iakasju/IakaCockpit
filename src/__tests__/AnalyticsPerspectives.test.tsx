@@ -76,21 +76,50 @@ describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tok
   });
 });
 
-describe("Perspectives — prod sans source réelle (placeholder honnête)", () => {
-  it("V1 Dashboard vide : widgets non couverts rendent « Donnée à venir »", () => {
-    render(<PerspectiveDashboard model={empty} />);
-    expect(screen.getAllByText("Donnée à venir").length).toBeGreaterThan(0);
+describe("Perspectives — prod sans source réelle (compaction honnête, pas de gros skeleton)", () => {
+  it("V1 Dashboard vide : bloc compact « Donnée à venir » (pas d'empilement de cartes)", () => {
+    const { container } = render(<PerspectiveDashboard model={empty} />);
+    // Un unique bloc compact centré, ZÉRO skeleton.
+    expect(container.querySelectorAll(".ana-empty")).toHaveLength(1);
+    expect(container.querySelectorAll(".anaskel")).toHaveLength(0);
+    expect(screen.getByText("Donnée à venir")).toBeTruthy();
+    // Aucune carte de widget vide rendue.
+    expect(screen.queryByText(/Tokens par agent/)).toBeNull();
   });
 
-  it("V3 Comparaison vide : placeholder (pas de config inventée)", () => {
-    render(<PerspectiveCompare model={empty} />);
+  it("V1 Dashboard avec RÉEL partiel : widget plein + ligne « à venir » (pas de skeleton)", () => {
+    // Un seul champ réel (tokens/jour) → la carte tokens/jour est pleine, le reste compacté.
+    const partial = deriveAnalytics(
+      [{ project: "p", tokens: 120_000, segments: [] }],
+      [{ project: "p", days: [{ date: "2026-07-11", tokens: 120_000 }] }],
+      ALL_SCOPE,
+      rangeFromPreset("custom", NOW, {
+        fromMs: new Date(2026, 6, 1).getTime(),
+        toMs: NOW,
+      }),
+    );
+    const { container } = render(<PerspectiveDashboard model={partial} />);
+    // La carte réelle est pleine (barres jour) ; aucun gros skeleton.
+    expect(container.querySelectorAll(".abars").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".anaskel")).toHaveLength(0);
+    // Les widgets sans source sont regroupés dans une ligne « à venir » compacte.
+    expect(container.querySelectorAll(".ana-soon")).toHaveLength(1);
+  });
+
+  it("V3 Comparaison vide : bloc compact honnête (pas de config ni de skeleton)", () => {
+    const { container } = render(<PerspectiveCompare model={empty} />);
+    expect(container.querySelectorAll(".ana-empty")).toHaveLength(1);
+    expect(container.querySelectorAll(".anaskel")).toHaveLength(0);
     expect(screen.getByText("Donnée à venir")).toBeTruthy();
     expect(screen.queryByText("Config A")).toBeNull();
+    // Le sélecteur de scénario n'est pas affiché quand il n'y a rien à comparer.
+    expect(screen.queryByRole("tab")).toBeNull();
   });
 
-  it("V4 vide : placeholder (pas d'agent inventé)", () => {
-    render(<PerspectiveAgents model={empty} />);
-    expect(screen.getByText("Donnée à venir")).toBeTruthy();
+  it("V4 vide : note honnête compacte (pas de gros skeleton), classement toujours titré", () => {
+    const { container } = render(<PerspectiveAgents model={empty} />);
+    expect(container.querySelectorAll(".anaskel")).toHaveLength(0);
+    expect(screen.getByText(/pas de source réelle/)).toBeTruthy();
     expect(screen.queryByText("Classement des agents")).toBeTruthy();
   });
 });

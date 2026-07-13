@@ -151,11 +151,9 @@ export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Ele
             </tbody>
           </table>
         ) : (
-          <>
-            <Placeholder />
-            {/* Honnêteté GRAVÉE : dire POURQUOI tokens/$ par agent n'ont pas de source. */}
-            <p className="hypnote">{t("analytics.perAgentNoSource")}</p>
-          </>
+          /* Compaction : pas de gros skeleton — seulement la note honnête (POURQUOI tokens/$
+             par agent n'ont pas de source). Réapparaîtra en table dès que le réel existe. */
+          <p className="hypnote compact">{t("analytics.perAgentNoSource")}</p>
         )}
       </div>
 
