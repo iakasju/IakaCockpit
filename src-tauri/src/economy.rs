@@ -974,6 +974,36 @@ mod tests {
     }
 
     #[test]
+    fn fold_cost_reagit_a_la_plage_24h_7j_30j_strictement() {
+        // Prouve la RÉACTIVITÉ du coût par plage : trois tours datés (récent / -3 j / -10 j),
+        // agrégés sur des fenêtres 24 h ⊂ 7 j ⊂ 30 j → coûts STRICTEMENT croissants.
+        let pr = pricing_test();
+        let day = 86_400_000_i64;
+        let now = iso_to_epoch_ms("2026-06-30T12:00:00Z").unwrap();
+
+        // sonnet (tarifé) input-only : coûts distincts, tous positifs.
+        let recent = r#"{"type":"assistant","timestamp":"2026-06-30T11:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":1000000,"output_tokens":0}}}"#; // now-1h
+        let mid = r#"{"type":"assistant","timestamp":"2026-06-27T12:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":2000000,"output_tokens":0}}}"#; // now-3j
+        let old = r#"{"type":"assistant","timestamp":"2026-06-20T12:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":4000000,"output_tokens":0}}}"#; // now-10j
+
+        let total_for = |from: i64| -> f64 {
+            let mut acc = CostAcc::default();
+            for line in [recent, mid, old] {
+                fold_cost_line(&mut acc, line, from, now, &pr);
+            }
+            finalize_cost(acc, None).cost_total
+        };
+
+        let c24 = total_for(now - day); // seulement le tour récent
+        let c7 = total_for(now - 7 * day); // récent + -3 j
+        let c30 = total_for(now - 30 * day); // les trois
+
+        assert!(c24 > 0.0, "24h doit compter le tour récent");
+        assert!(c24 < c7, "7j ({c7}) doit dépasser 24h ({c24})");
+        assert!(c7 < c30, "30j ({c30}) doit dépasser 7j ({c7})");
+    }
+
+    #[test]
     fn fold_cost_ignore_sans_timestamp_sans_usage_et_non_assistant() {
         let pr = pricing_test();
         let mut acc = CostAcc::default();
