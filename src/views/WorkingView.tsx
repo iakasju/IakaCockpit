@@ -37,6 +37,7 @@ import { MemoryGauge } from "../components/MemoryGauge";
 import { EffectsPanel } from "../components/EffectsPanel";
 import { GanttPanel } from "../components/GanttPanel";
 import { DelegationTree } from "../components/DelegationTree";
+import { AgentSwimlanes } from "../components/AgentSwimlanes";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
 import type { PlanTimeline } from "../hooks/derivePlanTimeline";
@@ -209,6 +210,9 @@ export function WorkingView({
   // REMPLACE le bandeau Gantt (débranché-gardé ci-dessous). L'état réutilise l'ancien
   // `showGantt` renommé `showTree` (même sémantique : bandeau central repliable).
   const [showTree, setShowTree] = useState(true);
+  // Rendu du bandeau délégations (L29) : arbre vertical (L28) ↔ couloirs horizontaux
+  // (variante B). Défaut = « Couloirs » (variante B demandée). État local MVP.
+  const [delegView, setDelegView] = useState<"tree" | "swim">("swim");
   // GANTT DÉBRANCHÉ-GARDÉ (L28) : l'arbre des délégations le remplace en Travail. Le
   // Gantt reste dans le code (import `GanttPanel` + prop `timeline` conservés, cf. rendu
   // plus bas gardé sous ce flag) et redevient réactivable en passant ce flag à `true`.
@@ -473,8 +477,34 @@ export function WorkingView({
                 aria-pressed={showTree}
                 onClick={() => setShowTree((v) => !v)}
               >
-                {t("delegTree.toggle")}
+                {t("delegTree.band")}
               </button>
+              {/* Toggle Arbre (L28, vertical) ↔ Couloirs (L29, horizontal, variante B).
+                  Défaut Couloirs. Les deux rendus lisent les MÊMES délégations. */}
+              {showTree && (
+                <div
+                  className="delegtoggle"
+                  role="group"
+                  aria-label={t("delegTree.viewGroup")}
+                >
+                  <button
+                    type="button"
+                    className={`btn sm${delegView === "tree" ? " accent" : ""}`}
+                    aria-pressed={delegView === "tree"}
+                    onClick={() => setDelegView("tree")}
+                  >
+                    {t("delegTree.toggle")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn sm${delegView === "swim" ? " accent" : ""}`}
+                    aria-pressed={delegView === "swim"}
+                    onClick={() => setDelegView("swim")}
+                  >
+                    {t("swimlanes.toggle")}
+                  </button>
+                </div>
+              )}
             </div>
 
             {showNextStep && (
@@ -493,11 +523,19 @@ export function WorkingView({
                 active (`tasks` / useAgentTasks) ; coordinateur = activeRunner. */}
             {showTree && activeRunner && (
               <div className="treeband">
-                <DelegationTree
-                  coordinator={activeRunner.coordinator}
-                  tasks={tasks ?? []}
-                  resolveAvatar={resolveAvatar}
-                />
+                {delegView === "swim" ? (
+                  <AgentSwimlanes
+                    coordinator={activeRunner.coordinator}
+                    tasks={tasks ?? []}
+                    resolveAvatar={resolveAvatar}
+                  />
+                ) : (
+                  <DelegationTree
+                    coordinator={activeRunner.coordinator}
+                    tasks={tasks ?? []}
+                    resolveAvatar={resolveAvatar}
+                  />
+                )}
               </div>
             )}
 

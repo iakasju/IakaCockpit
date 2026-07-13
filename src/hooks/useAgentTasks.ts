@@ -25,8 +25,14 @@ export interface AgentTask {
   description: string;
   /** `running` à la délégation, `done` à l'`activite` du même `tool_use_id`. */
   status: TaskStatus;
-  /** Horodatage de l'event source (optionnel). */
+  /** Horodatage de la délégation (début), = `ts` de l'event source (optionnel). */
   ts?: string;
+  /**
+   * Horodatage de CLÔTURE (fin) : `ts` de l'`activite` qui passe la tâche `done`
+   * (L29). Absent tant que la tâche est `running` (barre « ouverte jusqu'à
+   * maintenant » côté vue swimlanes). Non destructif : n'altère pas `ts` (début).
+   */
+  doneTs?: string;
 }
 
 /**
@@ -71,7 +77,13 @@ export function reduceAgentTasks(
     const idx = tasks.findIndex((t) => t.id === id);
     if (idx < 0 || tasks[idx].status === "done") return tasks;
     const next = tasks.slice();
-    next[idx] = { ...next[idx], status: "done" };
+    // `doneTs` = horodatage de clôture (L29) ; on retombe sur le `ts` de début si
+    // l'`activite` n'en porte pas (barre de largeur minimale, jamais négative).
+    next[idx] = {
+      ...next[idx],
+      status: "done",
+      doneTs: ev.ts ?? next[idx].ts,
+    };
     return next;
   }
 

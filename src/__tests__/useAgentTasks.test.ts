@@ -51,6 +51,39 @@ describe("reduceAgentTasks — réducteur pur", () => {
     expect(done[0].agent).toBe("gandalf");
   });
 
+  it("doneTs (L29) : absent tant que running, renseigné au done (ts de clôture)", () => {
+    const running = reduceAgentTasks(
+      [],
+      ev({
+        kind: "delegation",
+        tool_use_id: "t1",
+        agent: "gimli",
+        text: "coder",
+        ts: "2026-06-27T10:00:00Z",
+      }),
+    );
+    // Tant que running : pas de ts de clôture.
+    expect(running[0].doneTs).toBeUndefined();
+    expect(running[0].ts).toBe("2026-06-27T10:00:00Z");
+    const done = reduceAgentTasks(
+      running,
+      ev({ kind: "activite", tool_use_id: "t1", ts: "2026-06-27T10:12:00Z" }),
+    );
+    // Le done porte le ts de clôture SANS altérer le ts de début.
+    expect(done[0].doneTs).toBe("2026-06-27T10:12:00Z");
+    expect(done[0].ts).toBe("2026-06-27T10:00:00Z");
+  });
+
+  it("doneTs : activite SANS ts → retombe sur le ts de début (barre mini, jamais négatif)", () => {
+    const running = reduceAgentTasks(
+      [],
+      ev({ kind: "delegation", tool_use_id: "t1", agent: "g", text: "x", ts: "T0" }),
+    );
+    const done = reduceAgentTasks(running, ev({ kind: "activite", tool_use_id: "t1" }));
+    expect(done[0].status).toBe("done");
+    expect(done[0].doneTs).toBe("T0");
+  });
+
   it("activite à un id INCONNU → liste inchangée (même référence, défensif)", () => {
     const tasks = reduceAgentTasks(
       [],

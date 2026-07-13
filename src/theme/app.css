@@ -2555,6 +2555,103 @@ button {
     opacity: 0.45;
   }
 }
+
+/* ===========================================================
+   SWIMLANES D'AGENTS (L29 — variante B, arbre horizontal)
+   Un couloir par agent sur un axe temps ; barres d'activité
+   (running ambre / done vert) + flèches de délégation
+   (coordinateur → délégué, pointillé accent). Ascenseur X.
+   =========================================================== */
+.swim {
+  --sw-amber: #d98a2b;
+  --sw-green: var(--green, #3aa675);
+}
+.swimh {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 0 10px;
+}
+.swimt {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.swimcount {
+  font-size: 11px;
+  color: var(--text-2);
+}
+.swimempty {
+  font-size: 11.5px;
+  color: var(--text-3);
+  padding: 2px 0;
+}
+/* Ascenseur HORIZONTAL : le SVG a une largeur px (∝ durée) ; s'il déborde du
+   bandeau, il scrolle en X. Hauteur bornée par le `.treeband` parent. */
+.swimscroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+.swimsvg {
+  display: block;
+}
+.swimgrid {
+  stroke: color-mix(in srgb, var(--text-3) 16%, transparent);
+  stroke-width: 1;
+}
+.swimax {
+  fill: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.swimrow {
+  stroke: color-mix(in srgb, var(--text-3) 10%, transparent);
+  stroke-width: 1;
+}
+.swimrow.coord {
+  stroke: color-mix(in srgb, var(--accent) 30%, transparent);
+  stroke-width: 1.4;
+}
+.swimlab {
+  fill: var(--text-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+}
+.swimav.ph {
+  fill: var(--surf-2);
+}
+.swimavtxt {
+  fill: var(--text-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+}
+.swimbar {
+  transition: 0.12s;
+}
+.swimbar.running {
+  fill: var(--sw-amber);
+}
+.swimbar.done {
+  fill: var(--sw-green);
+}
+/* Flèches de délégation : trait pointillé accent + tête pleine. */
+.swimarrline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 3;
+  opacity: 0.75;
+}
+.swimarrhead {
+  fill: var(--accent);
+  opacity: 0.85;
+}
+
 /* ===========================================================
    GANTT PRÉVISIONNEL (L19 #9a/#9b + L20 — conformité au mock)
    Couloirs PAR TÂCHE (AR-1), grammaire visuelle du mock portée

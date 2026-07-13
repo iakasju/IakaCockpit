@@ -35,12 +35,24 @@ export const fr = {
     ariaLabel: "Arbre des délégations",
     title: "Arbre des délégations",
     toggle: "Arbre",
+    band: "Délégations",
+    viewGroup: "Vue des délégations",
     coordinator: "coordinateur",
     count: "{{count}} délégation(s)",
     running: "{{count}} en cours",
     statusRunning: "en cours",
     statusDone: "terminé",
     empty: "Aucune délégation.",
+  },
+
+  swimlanes: {
+    ariaLabel: "Couloirs d'agents (délégations)",
+    title: "Couloirs d'agents",
+    toggle: "Couloirs",
+    count: "{{count}} délégation(s)",
+    empty: "Aucune délégation.",
+    barRunning: "{{agent}} · en cours",
+    barDone: "{{agent}} · terminé",
   },
 
   memory: {

@@ -234,33 +234,55 @@ describe("WorkingView — L28 arbre des délégations (remplace le Gantt)", () =
     );
   }
 
-  it("le bandeau Gantt N'EST PLUS rendu ; l'arbre des délégations est là (défaut ouvert)", () => {
+  it("le bandeau Gantt N'EST PLUS rendu ; le bandeau délégations est là, en COULOIRS par défaut (L29)", () => {
     const { container } = renderTree([
       { id: "t1", agent: "gimli", description: "Coder", status: "running" },
     ]);
     // Gantt débranché : aucun bandeau `.gantband` / `.gantt`.
     expect(container.querySelector(".gantband")).toBeNull();
     expect(container.querySelector(".gantt")).toBeNull();
-    // Arbre présent, alimenté par les délégations de la conversation active.
+    // Bandeau présent, alimenté par les délégations de la conversation active.
     const treeband = container.querySelector(".treeband") as HTMLElement;
-    expect(treeband.querySelector(".dtree")).not.toBeNull();
-    // Enfant délégué + racine = coordinateur résolu (scopés à l'arbre : les mêmes
-    // noms apparaissent aussi dans le Roster/convhead).
+    // Défaut = variante B « Couloirs » (AR-4) → swimlanes, pas l'arbre vertical.
+    expect(treeband.querySelector(".swim")).not.toBeNull();
+    expect(treeband.querySelector(".dtree")).toBeNull();
+    // Couloir délégué + couloir coordinateur résolu (labels swimlanes).
     expect(within(treeband).getByText("Gimli")).toBeTruthy();
     expect(within(treeband).getByText("Aragorn")).toBeTruthy();
   });
 
-  it("le bouton convhead pilote l'affichage de l'arbre (repli/ouverture)", () => {
+  it("le bouton convhead pilote l'affichage du bandeau délégations (repli/ouverture)", () => {
     const { container } = renderTree([
       { id: "t1", agent: "gimli", description: "Coder", status: "running" },
     ]);
-    const btn = screen.getByRole("button", { name: "Arbre" });
+    const btn = screen.getByRole("button", { name: "Délégations" });
     // Ouvert par défaut.
     expect(container.querySelector(".treeband")).not.toBeNull();
     fireEvent.click(btn);
     expect(container.querySelector(".treeband")).toBeNull();
     fireEvent.click(btn);
     expect(container.querySelector(".treeband")).not.toBeNull();
+  });
+
+  it("toggle « Arbre / Couloirs » (L29) commute les deux rendus, mêmes délégations", () => {
+    const { container } = renderTree([
+      { id: "t1", agent: "gimli", description: "Coder", status: "running" },
+    ]);
+    const treeband = () => container.querySelector(".treeband") as HTMLElement;
+    // Défaut = Couloirs (swimlanes).
+    expect(treeband().querySelector(".swim")).not.toBeNull();
+    expect(treeband().querySelector(".dtree")).toBeNull();
+    // Bascule vers l'arbre vertical L28.
+    fireEvent.click(screen.getByRole("button", { name: "Arbre" }));
+    expect(treeband().querySelector(".dtree")).not.toBeNull();
+    expect(treeband().querySelector(".swim")).toBeNull();
+    // L'arbre lit les MÊMES délégations (Gimli + coordinateur Aragorn).
+    expect(within(treeband()).getByText("Gimli")).toBeTruthy();
+    expect(within(treeband()).getByText("Aragorn")).toBeTruthy();
+    // Retour aux Couloirs.
+    fireEvent.click(screen.getByRole("button", { name: "Couloirs" }));
+    expect(treeband().querySelector(".swim")).not.toBeNull();
+    expect(treeband().querySelector(".dtree")).toBeNull();
   });
 });
 

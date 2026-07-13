@@ -36,12 +36,24 @@ export const en: Resources = {
     ariaLabel: "Delegation tree",
     title: "Delegation tree",
     toggle: "Tree",
+    band: "Delegations",
+    viewGroup: "Delegations view",
     coordinator: "coordinator",
     count: "{{count}} delegation(s)",
     running: "{{count}} running",
     statusRunning: "running",
     statusDone: "done",
     empty: "No delegation.",
+  },
+
+  swimlanes: {
+    ariaLabel: "Agent lanes (delegations)",
+    title: "Agent lanes",
+    toggle: "Lanes",
+    count: "{{count}} delegation(s)",
+    empty: "No delegation.",
+    barRunning: "{{agent}} · running",
+    barDone: "{{agent}} · done",
   },
 
   memory: {
