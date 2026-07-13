@@ -80,6 +80,7 @@ pub fn run() {
             economy::analytics_cost,
             economy::delegations_by_agent,
             economy::agent_attribution,
+            economy::delegation_edges,
             economy::analytics_index_status,
             economy::analytics_refresh,
             pricing::pricing_table,

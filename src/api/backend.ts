@@ -313,6 +313,16 @@ export interface IndexStatus {
   attrib_ready: boolean;
 }
 
+/** Arête de délégation parent→enfant (miroir `economy::DelegEdge`) — sous-délégations (niveau ≥ 2)
+ *  extraites des `outputFile`. Alimente l'arbre MULTI-NIVEAUX. */
+export interface DelegEdge {
+  project: string;
+  parent: string;
+  child: string;
+  status: string;
+  ts: number;
+}
+
 /** Ligne de la table de prix (miroir `pricing::ModelPriceRow`) — $/M tokens par bucket. */
 export interface ModelPriceRow {
   model: string;
@@ -399,6 +409,23 @@ export function analyticsRefresh(): Promise<void> {
  */
 export function analyticsIndexStatus(): Promise<IndexStatus> {
   return call<IndexStatus>("analytics_index_status", {});
+}
+
+/**
+ * Arêtes de délégation parent→enfant (sous-délégations, niveau ≥ 2) sur la période `[fromMs, toMs]`,
+ * scopées par projet — alimente l'arbre MULTI-NIVEAUX du Journal. Dérivées de la phase 2 de l'index
+ * (le front ne lit aucun transcript/outputFile). Vide tant que la phase 2 n'est pas prête.
+ */
+export function delegationEdges(
+  fromMs: number,
+  toMs: number,
+  project?: string,
+): Promise<DelegEdge[]> {
+  return call<DelegEdge[]>("delegation_edges", {
+    from: Math.round(fromMs),
+    to: Math.round(toMs),
+    project,
+  });
 }
 
 /**
@@ -975,6 +1002,7 @@ export const backend = {
   analyticsCost,
   delegationsByAgent,
   agentAttribution,
+  delegationEdges,
   analyticsRefresh,
   analyticsIndexStatus,
   pricingTable,

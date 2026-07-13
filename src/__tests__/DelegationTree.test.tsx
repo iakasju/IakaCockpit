@@ -102,6 +102,51 @@ describe("DelegationTree — arbre des délégations (L28)", () => {
     expect(container.querySelector(".dtkids")).toBeNull();
   });
 
+  it("MULTI-NIVEAUX : les sous-délégations (edges) sont greffées sous leur parent (imbriqué)", () => {
+    const { container } = render(
+      <DelegationTree
+        coordinator="Aragorn"
+        tasks={[task({ id: "t1", agent: "gimli", status: "running" })]}
+        edges={[
+          { project: "p", parent: "gimli", child: "loki", status: "done", ts: 1 },
+          { project: "p", parent: "loki", child: "legolas", status: "running", ts: 2 },
+        ]}
+      />,
+    );
+    // gimli (L1) → loki (L2) → legolas (L3) : un `.dtkids` imbriqué par niveau.
+    expect(container.querySelectorAll(".dtkids.nested").length).toBe(2);
+    expect(screen.getByText("Loki")).toBeTruthy();
+    expect(screen.getByText("Legolas")).toBeTruthy();
+    // loki done (✓), legolas running (pas de ✓).
+    expect(screen.getByTitle("terminé").textContent).toBe("✓");
+  });
+
+  it("MULTI-NIVEAUX : anti-boucle (cycle parent↔enfant) ne fait pas exploser le rendu", () => {
+    const { container } = render(
+      <DelegationTree
+        coordinator="Aragorn"
+        tasks={[task({ id: "t1", agent: "gimli", status: "running" })]}
+        edges={[
+          { project: "p", parent: "gimli", child: "loki", status: "running", ts: 1 },
+          { project: "p", parent: "loki", child: "gimli", status: "running", ts: 2 }, // cycle
+        ]}
+      />,
+    );
+    // Rend sans boucle infinie ; gimli (racine du sous-arbre) n'est pas re-développé sous loki.
+    expect(container.querySelectorAll(".dtnode").length).toBeLessThan(6);
+    expect(screen.getByText("Loki")).toBeTruthy();
+  });
+
+  it("edges absents → arbre 1 niveau (Travail live), aucun `.dtkids.nested`", () => {
+    const { container } = render(
+      <DelegationTree
+        coordinator="Aragorn"
+        tasks={[task({ id: "t1", agent: "gimli" })]}
+      />,
+    );
+    expect(container.querySelectorAll(".dtkids.nested").length).toBe(0);
+  });
+
   it("vignette d'agent quand resolveAvatar renvoie une URL (alt = nom)", () => {
     render(
       <DelegationTree

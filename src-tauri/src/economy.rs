@@ -904,8 +904,9 @@ fn fold_attrib_line(acc: &mut AttribAcc, line: &str, project: Option<&str>) {
     }
 }
 
-/// Somme les 4 buckets `usage` sur les lignes JSONL d'un transcript sous-agent. Défensif : une
-/// ligne sans `usage` (à la racine OU sous `message`) est ignorée. PUR/testable.
+/// Somme les 4 buckets `usage` sur les lignes JSONL d'un transcript sous-agent. **Référence de
+/// scan direct** (non-régression) — la prod passe par `scan_output` (usage + arêtes). PUR/testable.
+#[cfg(test)]
 fn sum_usage_jsonl(content: &str) -> (u64, u64, u64, u64) {
     let (mut i, mut o, mut cw, mut cr) = (0u64, 0u64, 0u64, 0u64);
     for line in content.lines() {
@@ -935,14 +936,131 @@ fn sum_usage_jsonl(content: &str) -> (u64, u64, u64, u64) {
     (i, o, cw, cr)
 }
 
-/// Lit un `outputFile` et somme ses 4 buckets `usage`. `None` si le fichier est illisible
-/// (tmp éphémère disparu) → la délégation sera comptée `unavailable`, JAMAIS fabriquée.
+/// Lit un `outputFile` et somme ses 4 buckets `usage`. **Référence de scan direct** (tests) — la
+/// prod passe par `read_output` (usage + sous-délégations). `None` si illisible/vide.
+#[cfg(test)]
 fn read_output_usage(path: &str) -> Option<(u64, u64, u64, u64)> {
     if path.trim().is_empty() {
         return None;
     }
     let content = std::fs::read_to_string(path).ok()?;
     Some(sum_usage_jsonl(&content))
+}
+
+/// Arête de délégation parent→enfant (miroir TS `DelegEdge`), extraite d'un `outputFile` de
+/// sous-agent (ses propres `tool_use "Agent"`/`"Task"`). Arbre de délégations MULTI-NIVEAUX.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DelegEdge {
+    pub project: String,
+    /// Agent qui délègue (niveau N) — le `subagent_type` du transcript courant.
+    pub parent: String,
+    /// Sous-agent délégué (niveau N+1) — le `subagent_type` d'un tool_use interne.
+    pub child: String,
+    /// Statut best-effort : `"done"` si un `tool_result` apparié existe, sinon `"running"`.
+    pub status: String,
+    /// Horodatage (ms epoch) de la sous-délégation (0 si non datable).
+    pub ts: i64,
+}
+
+/// Scan d'un `outputFile` de sous-agent : usage (4 buckets, attribution) + ses sous-délégations
+/// (`tool_use "Agent"`/`"Task"` → enfant + statut best-effort + ts). Une passe. PUR/testable.
+struct OutputScan {
+    usage: Buckets,
+    /// (enfant, statut, ts) — sous-délégations trouvées DANS ce transcript (niveau suivant).
+    subdelegs: Vec<(String, String, i64)>,
+}
+
+/// Extrait usage + sous-délégations d'un transcript de sous-agent. Défensif. MVP = 1 niveau plus
+/// bas (pas de récursion dans les outputFiles des sous-délégations → profondeur bornée à ~2-3).
+fn scan_output(content: &str) -> OutputScan {
+    let (mut i, mut o, mut cw, mut cr) = (0u64, 0u64, 0u64, 0u64);
+    // tool_use de délégation : id → (child, ts) ; ids ayant un tool_result → statut "done".
+    let mut uses: Vec<(String, String, i64)> = Vec::new();
+    let mut done: HashSet<String> = HashSet::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let v: Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        if let Some(usage) = v
+            .get("message")
+            .and_then(|m| m.get("usage"))
+            .or_else(|| v.get("usage"))
+        {
+            let n = |k: &str| usage.get(k).and_then(Value::as_u64).unwrap_or(0);
+            i += n("input_tokens");
+            o += n("output_tokens");
+            cw += n("cache_creation_input_tokens");
+            cr += n("cache_read_input_tokens");
+        }
+        let ty = v.get("type").and_then(Value::as_str).unwrap_or("");
+        let ms = v
+            .get("timestamp")
+            .and_then(Value::as_str)
+            .and_then(iso_to_epoch_ms)
+            .unwrap_or(0);
+        let blocks = match v.get("message").and_then(|m| m.get("content")) {
+            Some(Value::Array(b)) => b,
+            _ => continue,
+        };
+        for blk in blocks {
+            let bt = blk.get("type").and_then(Value::as_str).unwrap_or("");
+            match (ty, bt) {
+                ("assistant", "tool_use") => {
+                    let name = blk.get("name").and_then(Value::as_str).unwrap_or("");
+                    if !crate::transcript::is_delegation_tool(name) {
+                        continue;
+                    }
+                    let id = blk
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_string();
+                    if let Some(child) = blk
+                        .get("input")
+                        .and_then(|inp| inp.get("subagent_type"))
+                        .and_then(Value::as_str)
+                    {
+                        uses.push((id, child.to_string(), ms));
+                    }
+                }
+                ("user", "tool_result") => {
+                    if let Some(id) = blk.get("tool_use_id").and_then(Value::as_str) {
+                        done.insert(id.to_string());
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    let subdelegs = uses
+        .into_iter()
+        .map(|(id, child, ts)| {
+            let status = if done.contains(&id) {
+                "done"
+            } else {
+                "running"
+            };
+            (child, status.to_string(), ts)
+        })
+        .collect();
+    OutputScan {
+        usage: (i, o, cw, cr),
+        subdelegs,
+    }
+}
+
+/// Lit un `outputFile` et le scanne (usage + sous-délégations). `None` si illisible/vide.
+fn read_output(path: &str) -> Option<OutputScan> {
+    if path.trim().is_empty() {
+        return None;
+    }
+    let content = std::fs::read_to_string(path).ok()?;
+    Some(scan_output(&content))
 }
 
 /// Finalise l'attribution : pour chaque délégation DANS la période, lit son `outputFile` via
@@ -1053,6 +1171,29 @@ pub fn agent_attribution(
     }))
 }
 
+/// Commande : arêtes de délégation parent→enfant (sous-délégations, niveau ≥ 2 sous le
+/// coordinateur), sur la période `[from, to]` (ms) et scopées par projet. Alimente l'arbre
+/// MULTI-NIVEAUX (Journal). Dérivées de la PHASE 2 (lecture des outputFiles). Non bloquante :
+/// phase 2 pas prête → build en fond + liste vide (le front polle le statut).
+#[tauri::command]
+pub fn delegation_edges(
+    from: i64,
+    to: i64,
+    project: Option<String>,
+) -> Result<Vec<DelegEdge>, String> {
+    let ready = index_cache()
+        .read()
+        .map(|g| g.attrib_built)
+        .unwrap_or(false);
+    if !ready {
+        trigger_phase2_async();
+        return Ok(Vec::new());
+    }
+    Ok(query_index(|idx| {
+        index_edges(idx, from, to, project.as_deref())
+    }))
+}
+
 /// État de construction de l'index (miroir TS `IndexStatus`). Le front affiche « construction… »
 /// tant que `tokens_ready` est faux, et « calcul par agent en cours… » tant que `attrib_ready`
 /// est faux, puis re-fetche.
@@ -1104,6 +1245,12 @@ type Buckets = (u64, u64, u64, u64);
 type AttribKey = (String, String, String, String);
 /// Valeur de l'agrégat d'attribution : 4 buckets de tokens + nombre de délégations attribuées.
 type AttribVal = (u64, u64, u64, u64, u64);
+/// Résultat mergé de la phase 2 : attribution + non-attribuables + arêtes de délégation.
+type Phase2Merge = (
+    HashMap<AttribKey, AttribVal>,
+    HashMap<(String, String), u32>,
+    Vec<DelegEdge>,
+);
 
 fn add_buckets(dst: &mut Buckets, src: Buckets) {
     dst.0 += src.0;
@@ -1149,6 +1296,8 @@ pub struct AggIndex {
     attrib: HashMap<AttribKey, AttribVal>,
     /// (project, date) → nb de délégations non attribuables (outputFile manquant). (Phase 2.)
     unavailable: HashMap<(String, String), u32>,
+    /// Arêtes de délégation parent→enfant (sous-délégations trouvées dans les outputFiles). (Phase 2.)
+    edges: Vec<DelegEdge>,
 }
 
 /// Convertit un ms epoch (UTC) en date `YYYY-MM-DD` (algorithme `civil_from_days` de Howard
@@ -1343,6 +1492,7 @@ struct FileFrag {
 struct AttribFrag {
     attrib: HashMap<AttribKey, AttribVal>,
     unavailable: HashMap<(String, String), u32>,
+    edges: Vec<DelegEdge>,
 }
 
 /// Entrée du cache par fichier : empreinte (mtime/size) + fragment phase 1 + phase 2 résolue (option).
@@ -1378,9 +1528,9 @@ fn index_file_phase1(idx: &mut AggIndex, content: &str) {
     merge_phase1_frag(idx, &parse_file_frag(content));
 }
 
-/// PHASE 2 (lente, I/O) : résout les `pending` en lisant chaque `outputFile` UNE fois via `reader`
-/// → `attrib` (tokens sommés + modèle normalisé) et `unavailable` (outputFile absent/illisible).
-/// PUR (l'I/O disque est dans `reader`) — testable sans disque.
+/// PHASE 2 (attribution seule, tokens) — **référence de scan direct** (non-régression). La prod
+/// passe par `resolve_frag` (attrib + non-attribuables + ARÊTES). PUR (I/O dans `reader`).
+#[cfg(test)]
 fn resolve_pending<F>(
     pending: &[PendingDeleg],
     reader: &F,
@@ -1488,29 +1638,65 @@ fn merge_phase1(cache: &FileCacheMap) -> AggIndex {
     idx
 }
 
-/// PHASE 2 INCRÉMENTALE — résout (lecture des `outputFile`) SEULEMENT les fragments non encore
-/// résolus (fichiers nouveaux/modifiés), réutilise l'attrib cachée des autres, puis merge le tout.
-fn resolve_and_merge_phase2<F>(
-    cache: &mut FileCacheMap,
-    reader: &F,
-) -> (
-    HashMap<AttribKey, AttribVal>,
-    HashMap<(String, String), u32>,
-)
+/// Résout les `pending` d'UN fichier : lit chaque `outputFile` via `reader` (OutputScan) → attrib
+/// (usage) + unavailable (illisible) + ARÊTES parent→enfant (sous-délégations du transcript enfant).
+/// PUR (I/O dans `reader`). Le `parent` d'une arête = l'agent de la délégation courante.
+fn resolve_frag<F>(pending: &[PendingDeleg], reader: &F) -> AttribFrag
 where
-    F: Fn(&str) -> Option<Buckets>,
+    F: Fn(&str) -> Option<OutputScan>,
+{
+    let mut frag = AttribFrag::default();
+    for p in pending {
+        match reader(&p.output) {
+            Some(scan) => {
+                let key = (
+                    p.project.clone(),
+                    p.day.clone(),
+                    p.agent.clone(),
+                    pricing::normalize_model(&p.model),
+                );
+                let a = frag.attrib.entry(key).or_insert((0, 0, 0, 0, 0));
+                a.0 += scan.usage.0;
+                a.1 += scan.usage.1;
+                a.2 += scan.usage.2;
+                a.3 += scan.usage.3;
+                a.4 += 1;
+                // Arêtes : l'agent courant (`p.agent`) → chaque sous-délégué trouvé dans son outputFile.
+                for (child, status, ts) in scan.subdelegs {
+                    frag.edges.push(DelegEdge {
+                        project: p.project.clone(),
+                        parent: p.agent.clone(),
+                        child,
+                        status,
+                        ts,
+                    });
+                }
+            }
+            None => {
+                *frag
+                    .unavailable
+                    .entry((p.project.clone(), p.day.clone()))
+                    .or_insert(0) += 1;
+            }
+        }
+    }
+    frag
+}
+
+/// PHASE 2 INCRÉMENTALE — résout (lecture des `outputFile`) SEULEMENT les fragments non encore
+/// résolus (fichiers nouveaux/modifiés), réutilise l'attrib+arêtes cachées des autres, puis merge.
+fn resolve_and_merge_phase2<F>(cache: &mut FileCacheMap, reader: &F) -> Phase2Merge
+where
+    F: Fn(&str) -> Option<OutputScan>,
 {
     for c in cache.values_mut() {
         if c.attrib.is_none() {
-            let (attrib, unavailable) = resolve_pending(&c.frag.pending, reader);
-            c.attrib = Some(AttribFrag {
-                attrib,
-                unavailable,
-            });
+            c.attrib = Some(resolve_frag(&c.frag.pending, reader));
         }
     }
     let mut attrib: HashMap<AttribKey, AttribVal> = HashMap::new();
     let mut unavailable: HashMap<(String, String), u32> = HashMap::new();
+    let mut edges: Vec<DelegEdge> = Vec::new();
     for c in cache.values() {
         if let Some(af) = &c.attrib {
             for (k, v) in &af.attrib {
@@ -1524,9 +1710,10 @@ where
             for (k, v) in &af.unavailable {
                 *unavailable.entry(k.clone()).or_insert(0) += v;
             }
+            edges.extend(af.edges.iter().cloned());
         }
     }
-    (attrib, unavailable)
+    (attrib, unavailable, edges)
 }
 
 /// Liste les transcripts `.jsonl` d'un dossier `projects/` + leur empreinte (mtime/size) — SANS
@@ -1599,16 +1786,17 @@ pub fn build_phase2() {
     {
         build_phase1();
     }
-    let (attrib, unavailable) = {
+    let (attrib, unavailable, edges) = {
         let mut cache = match file_cache().write() {
             Ok(g) => g,
             Err(p) => p.into_inner(),
         };
-        resolve_and_merge_phase2(&mut cache, &read_output_usage)
+        resolve_and_merge_phase2(&mut cache, &read_output)
     };
     if let Ok(mut g) = index_cache().write() {
         g.attrib = attrib;
         g.unavailable = unavailable;
+        g.edges = edges;
         g.attrib_built = true;
     }
 }
@@ -1724,6 +1912,15 @@ fn index_deleg(
         .collect();
     out.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.agent.cmp(&b.agent)));
     out
+}
+
+/// Arêtes de délégation depuis l'index, filtrées par période (ts ms) et scope projet.
+fn index_edges(idx: &AggIndex, from: i64, to: i64, project: Option<&str>) -> Vec<DelegEdge> {
+    idx.edges
+        .iter()
+        .filter(|e| in_scope(&e.project, project) && e.ts >= from && e.ts <= to)
+        .cloned()
+        .collect()
 }
 
 /// Attribution par agent depuis l'index (tokens sommés → coût à la requête ; `unavailable`).
@@ -2692,8 +2889,8 @@ mod tests {
             !idx.pending.is_empty(),
             "phase 1 empile la délégation à résoudre"
         );
-        let (attrib_map, unavailable_map) =
-            resolve_and_merge_phase2(&mut cache, &read_output_usage);
+        let (attrib_map, unavailable_map, _edges) =
+            resolve_and_merge_phase2(&mut cache, &read_output);
         idx.attrib = attrib_map;
         idx.unavailable = unavailable_map;
         idx.attrib_built = true;
@@ -2833,7 +3030,10 @@ mod tests {
         // Phase 2 aussi identique (attrib + unavailable) — reader factice pour l'outputFile de p1.
         let reader = |path: &str| {
             if path == "/tmp/f1.jsonl" {
-                Some((0, 1_000_000, 0, 0))
+                Some(OutputScan {
+                    usage: (0, 1_000_000, 0, 0),
+                    subdelegs: vec![],
+                })
             } else {
                 None
             }
@@ -2886,6 +3086,78 @@ mod tests {
             rebuild_frags(&mut cache, &[(p1.clone(), None, 100)], read),
             1
         );
+    }
+
+    // ---------------- Arbre de délégations MULTI-NIVEAUX (arêtes) ----------------
+
+    #[test]
+    fn scan_output_extrait_usage_et_sous_delegations() {
+        // Sous-agent (gimli) qui sous-délègue : loki (avec tool_result → done) et legolas (running).
+        let content = concat!(
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"usage":{"input_tokens":100,"output_tokens":50}}}"#,
+            "\n",
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:01:00Z","message":{"content":[{"type":"tool_use","id":"s1","name":"Agent","input":{"subagent_type":"loki","description":"x"}}]}}"#,
+            "\n",
+            r#"{"type":"user","timestamp":"2026-06-30T10:02:00Z","message":{"content":[{"type":"tool_result","tool_use_id":"s1","content":"ok"}]}}"#,
+            "\n",
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:03:00Z","message":{"content":[{"type":"tool_use","id":"s2","name":"Task","input":{"subagent_type":"legolas","description":"y"}}]}}"#,
+        );
+        let scan = scan_output(content);
+        assert_eq!(scan.usage, (100, 50, 0, 0));
+        assert_eq!(scan.subdelegs.len(), 2);
+        assert_eq!(
+            scan.subdelegs
+                .iter()
+                .find(|(c, _, _)| c == "loki")
+                .unwrap()
+                .1,
+            "done"
+        );
+        assert_eq!(
+            scan.subdelegs
+                .iter()
+                .find(|(c, _, _)| c == "legolas")
+                .unwrap()
+                .1,
+            "running"
+        );
+    }
+
+    #[test]
+    fn resolve_frag_produit_les_aretes_et_index_edges_filtre() {
+        // Coordinateur a délégué à gimli (outputFile) ; gimli sous-délègue à loki (done, ts 42).
+        let pending = vec![PendingDeleg {
+            project: "p".into(),
+            day: "2026-06-30".into(),
+            agent: "gimli".into(),
+            model: "claude-sonnet-4-5".into(),
+            output: "/tmp/g.jsonl".into(),
+        }];
+        let reader = |path: &str| {
+            if path == "/tmp/g.jsonl" {
+                Some(OutputScan {
+                    usage: (0, 100, 0, 0),
+                    subdelegs: vec![("loki".into(), "done".into(), 42)],
+                })
+            } else {
+                None
+            }
+        };
+        let frag = resolve_frag(&pending, &reader);
+        assert_eq!(frag.edges.len(), 1);
+        assert_eq!(frag.edges[0].parent, "gimli");
+        assert_eq!(frag.edges[0].child, "loki");
+        assert_eq!(frag.edges[0].status, "done");
+        assert_eq!(frag.edges[0].project, "p");
+
+        // index_edges : filtre période (ts) + scope projet.
+        let idx = AggIndex {
+            edges: frag.edges.clone(),
+            ..Default::default()
+        };
+        assert_eq!(index_edges(&idx, 0, i64::MAX, None).len(), 1);
+        assert_eq!(index_edges(&idx, 0, i64::MAX, Some("autre")).len(), 0); // hors scope
+        assert_eq!(index_edges(&idx, 100, i64::MAX, None).len(), 0); // ts 42 < from 100
     }
 
     #[test]

@@ -13,6 +13,7 @@ import type { TFunction } from "i18next";
 import { ALL_CANAUX, filterFeed, type Canal } from "../mock/feed";
 import { useMainCourante } from "../hooks/useMainCourante";
 import { deriveDelegationsFromFeed } from "../hooks/deriveDelegations";
+import { useDelegationEdges } from "../hooks/useDelegationEdges";
 import { DelegationTree } from "./DelegationTree";
 
 /** Libellé i18n d'un canal. */
@@ -82,6 +83,10 @@ export function MainCourante(): JSX.Element {
     () => deriveDelegationsFromFeed(sessionDelegations),
     [sessionDelegations],
   );
+
+  // Sous-délégations (niveau ≥ 2) du projet, depuis l'index (phase 2). Vide hors-Tauri / phase 2
+  // pas prête → l'arbre reste 1 niveau (zéro fausse donnée).
+  const sessionEdges = useDelegationEdges(project);
 
   return (
     <aside className="mcleft" aria-label={t("journal.ariaLabel")}>
@@ -185,7 +190,9 @@ export function MainCourante(): JSX.Element {
           L'ancienne liste `sdlist` est débranchée-gardée (commentée ci-dessous). */}
       {project && sessionTasks.length > 0 && (
         <div className="sessdeleg">
-          <DelegationTree coordinator={project} tasks={sessionTasks} />
+          {/* Arbre MULTI-NIVEAUX : L1 = agents du feed ; sous-délégations (niveau ≥ 2) greffées
+              depuis l'index (`edges`, index-backed, phase 2). Vide → arbre 1 niveau (honnête). */}
+          <DelegationTree coordinator={project} tasks={sessionTasks} edges={sessionEdges} />
         </div>
       )}
       {/* Ancien rendu liste (débranché-gardé L28 — réactivable) :

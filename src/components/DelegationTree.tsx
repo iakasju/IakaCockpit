@@ -16,15 +16,22 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AgentTask } from "../hooks/useAgentTasks";
 import type { AvatarResolver } from "../theme/teamAvatar";
+import type { DelegEdge } from "../api/backend";
 
 export interface DelegationTreeProps {
   /** Nom du coordinateur = racine de l'arbre (nœud actif). */
   coordinator: string;
-  /** Délégations à afficher (une par tâche). Vide → placeholder. */
+  /** Délégations de niveau 1 (une par tâche). Vide → placeholder. */
   tasks: readonly AgentTask[];
   /** Résolveur de vignette par nom d'agent (réutilise celui du Roster). */
   resolveAvatar?: AvatarResolver;
+  /** Sous-délégations (arêtes parent→enfant) pour l'arbre MULTI-NIVEAUX (Journal). Absent/[] =
+   *  arbre 1 niveau (Travail live). Les enfants sont greffés sous le nœud dont `parent` == agent. */
+  edges?: readonly DelegEdge[];
 }
+
+/** Profondeur max de récursion (anti-explosion) — coordinateur → délégué → sous-délégué → … */
+const MAX_DEPTH = 4;
 
 /** Capitalise un nom d'agent (`gandalf` → `Gandalf`) pour l'affichage. */
 function displayName(agent: string): string {
@@ -57,15 +64,88 @@ function NodeAvatar({
   );
 }
 
+/** Un nœud de l'arbre (récursif) : agent + statut + éventuels sous-délégués (arêtes). Anti-boucle
+ *  (chemin `seen`) + profondeur bornée (`MAX_DEPTH`). Le statut colore comme aujourd'hui. */
+function DelegNode({
+  agent,
+  status,
+  description,
+  childrenByParent,
+  resolveAvatar,
+  depth,
+  seen,
+}: {
+  agent: string;
+  status: string;
+  description?: string;
+  childrenByParent: Map<string, { child: string; status: string }[]>;
+  resolveAvatar?: AvatarResolver;
+  depth: number;
+  seen: ReadonlySet<string>;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const name = displayName(agent);
+  const isRunning = status !== "done";
+  // Enfants : arêtes dont le parent == cet agent, si on n'a pas bouclé et sous la profondeur max.
+  const kids =
+    depth < MAX_DEPTH && !seen.has(agent)
+      ? (childrenByParent.get(agent) ?? [])
+      : [];
+  const nextSeen = new Set(seen);
+  nextSeen.add(agent);
+
+  return (
+    <li className={`dtnode ${isRunning ? "running" : "done"}`}>
+      <span className="dtedge" aria-hidden />
+      <NodeAvatar url={resolveAvatar?.(agent) ?? null} alt={name} />
+      <span className="dtbody">
+        <span className="dtname">{name}</span>
+        {description && <span className="dtdesc">{description}</span>}
+      </span>
+      <span
+        className={`dtstatus ${isRunning ? "running" : "done"}`}
+        title={isRunning ? t("delegTree.statusRunning") : t("delegTree.statusDone")}
+        aria-label={isRunning ? t("delegTree.statusRunning") : t("delegTree.statusDone")}
+      >
+        {isRunning ? "" : "✓"}
+      </span>
+      {kids.length > 0 && (
+        <ul className="dtkids nested">
+          {kids.map((k, i) => (
+            <DelegNode
+              key={`${k.child}-${i}`}
+              agent={k.child}
+              status={k.status}
+              childrenByParent={childrenByParent}
+              resolveAvatar={resolveAvatar}
+              depth={depth + 1}
+              seen={nextSeen}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 export function DelegationTree({
   coordinator,
   tasks,
   resolveAvatar,
+  edges = [],
 }: DelegationTreeProps): JSX.Element {
   const { t } = useTranslation();
   const total = tasks.length;
   const running = tasks.filter((task) => task.status === "running").length;
   const coordName = displayName(coordinator);
+
+  // Map parent → enfants (arêtes de sous-délégation). Agrégées par nom (MVP index rétrospectif).
+  const childrenByParent = new Map<string, { child: string; status: string }[]>();
+  for (const e of edges) {
+    const list = childrenByParent.get(e.parent) ?? [];
+    list.push({ child: e.child, status: e.status });
+    childrenByParent.set(e.parent, list);
+  }
 
   return (
     <section className="dtree" aria-label={t("delegTree.ariaLabel")}>
@@ -92,45 +172,20 @@ export function DelegationTree({
             <span className="dtrole">{t("delegTree.coordinator")}</span>
           </div>
 
-          {/* Enfants = agents délégués, colorés par statut (MVP 1 niveau). */}
+          {/* Niveau 1 = délégués du coordinateur ; niveaux ≥ 2 = sous-délégations (arêtes). */}
           <ul className="dtkids">
-            {tasks.map((task) => {
-              const name = displayName(task.agent);
-              const isRunning = task.status === "running";
-              return (
-                <li
-                  key={task.id}
-                  className={`dtnode ${task.status}`}
-                >
-                  <span className="dtedge" aria-hidden />
-                  <NodeAvatar
-                    url={resolveAvatar?.(task.agent) ?? null}
-                    alt={name}
-                  />
-                  <span className="dtbody">
-                    <span className="dtname">{name}</span>
-                    {task.description && (
-                      <span className="dtdesc">{task.description}</span>
-                    )}
-                  </span>
-                  <span
-                    className={`dtstatus ${task.status}`}
-                    title={
-                      isRunning
-                        ? t("delegTree.statusRunning")
-                        : t("delegTree.statusDone")
-                    }
-                    aria-label={
-                      isRunning
-                        ? t("delegTree.statusRunning")
-                        : t("delegTree.statusDone")
-                    }
-                  >
-                    {isRunning ? "" : "✓"}
-                  </span>
-                </li>
-              );
-            })}
+            {tasks.map((task) => (
+              <DelegNode
+                key={task.id}
+                agent={task.agent}
+                status={task.status}
+                description={task.description}
+                childrenByParent={childrenByParent}
+                resolveAvatar={resolveAvatar}
+                depth={1}
+                seen={new Set([coordinator])}
+              />
+            ))}
           </ul>
         </div>
       )}

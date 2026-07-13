@@ -2484,6 +2484,14 @@ button {
   background: transparent;
   border-left: 3px solid var(--dt-amber);
   transition: 0.12s;
+  flex-wrap: wrap;
+}
+/* Arbre MULTI-NIVEAUX : les sous-délégués passent SOUS le nœud (pleine largeur), indentés,
+   avec leur propre tronc+branches (chaque `.dtkids` est self-contained). */
+.dtnode > .dtkids.nested {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 6px;
 }
 .dtnode:hover {
   background: var(--surf);
