@@ -10,6 +10,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::{OnceLock, RwLock};
 
 /// Coût agrégé d'un projet (miroir TS `ProjectEconomy`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -251,26 +252,20 @@ fn claude_projects_dir() -> Option<std::path::PathBuf> {
     Some(Path::new(&home).join(".claude").join("projects"))
 }
 
-/// Commande : coût agrégé par projet depuis les transcripts de session. Renvoie TOUS les
-/// projets (pas de troncature) ; le scope (projets de la table) est appliqué CÔTÉ FRONT —
-/// tronquer ici jetterait les petits projets de la table avant le filtre (décision = tout
-/// garder). Calque `portfolio_activity`.
+/// Commande : coût agrégé par projet, dérivé de l'INDEX précalculé (perf). Renvoie TOUS les
+/// projets (pas de troncature) ; le scope (projets de la table) est appliqué CÔTÉ FRONT.
 #[tauri::command]
 pub fn portfolio_economy() -> Result<Vec<ProjectEconomy>, String> {
-    match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_dir(&dir, usize::MAX)),
-        None => Ok(Vec::new()),
-    }
+    Ok(query_index(index_economy))
 }
 
-/// Commande : ventilation tokens/jour/projet (top 12) pour la visu « travail passé » (L21 D).
-/// Le scope (projets de la table) est appliqué CÔTÉ FRONT ; ici on renvoie tous les projets.
+/// Commande : ventilation tokens/jour/projet pour la visu « travail passé » (L21 D), dérivée
+/// de l'INDEX précalculé. **FIX V2** : plus de troncature top-12 (elle masquait l'évolution
+/// d'un projet sélectionné hors du top) → TOUS les projets, l'évolution suit le scope comme
+/// V1/V4. Le scope est appliqué CÔTÉ FRONT (`deriveAnalytics`).
 #[tauri::command]
 pub fn portfolio_activity() -> Result<Vec<ProjectActivity>, String> {
-    match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_activity(&dir, 12)),
-        None => Ok(Vec::new()),
-    }
+    Ok(query_index(|idx| index_activity(idx, usize::MAX)))
 }
 
 // ============================ Coût $ réel par période (L30-P2, volet B) ============================
@@ -381,9 +376,9 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
 }
 
 /// Intègre UNE ligne JSONL dans l'accumulateur de coût, filtrée par période `[from, to]` et,
-/// optionnellement, par projet (`project = Some(p)` → ne compte que les lignes dont
-/// `project_of(cwd) == p` ; `None` = tout le portefeuille). PUR/testable. Sépare les 4 buckets,
-/// tarife via `pricing`, ignore proprement tout record non pertinent / hors période / non daté.
+/// optionnellement, par projet. **Référence de scan direct** conservée pour la non-régression
+/// (les commandes lisent désormais l'INDEX précalculé). PUR/testable.
+#[cfg(test)]
 fn fold_cost_line(
     acc: &mut CostAcc,
     line: &str,
@@ -515,41 +510,10 @@ fn finalize_cost(acc: CostAcc, priced_at: Option<String>) -> AnalyticsCost {
     }
 }
 
-/// Scanne un dossier `projects/` et agrège le coût $ sur la période. Défensif.
-fn scan_projects_cost(
-    projects_dir: &Path,
-    from: i64,
-    to: i64,
-    pricing: &PricingSnapshot,
-    project: Option<&str>,
-) -> AnalyticsCost {
-    let mut acc = CostAcc::default();
-    if let Ok(dirs) = std::fs::read_dir(projects_dir) {
-        for sess_dir in dirs.flatten() {
-            let files = match std::fs::read_dir(sess_dir.path()) {
-                Ok(f) => f,
-                Err(_) => continue,
-            };
-            for f in files.flatten() {
-                let p = f.path();
-                if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
-                    continue;
-                }
-                if let Ok(content) = std::fs::read_to_string(&p) {
-                    for line in content.lines() {
-                        fold_cost_line(&mut acc, line, from, to, pricing, project);
-                    }
-                }
-            }
-        }
-    }
-    finalize_cost(acc, pricing.priced_at.clone())
-}
-
-/// Commande : coût $ réel agrégé sur la période `[from, to]` (ms epoch, du sélecteur de plage)
-/// depuis les transcripts de session. `project = Some(p)` scope au projet du Périmètre (dernier
-/// segment du cwd) ; `None`/absent = tout le portefeuille. Table de prix = snapshot courant
-/// (embarquée + refresh background). Lecture seule, défensive (vide / hors-Tauri → coût 0).
+/// Commande : coût $ réel agrégé sur la période `[from, to]` (ms epoch, du sélecteur de plage),
+/// dérivé de l'INDEX précalculé (somme des tokens par (projet,jour,modèle) → tarification à la
+/// requête). `project = Some(p)` scope au projet du Périmètre ; `None`/absent = tout le
+/// portefeuille. Table de prix = snapshot courant. Lecture seule ; instantané après build.
 #[tauri::command]
 pub fn analytics_cost(
     from: i64,
@@ -557,16 +521,10 @@ pub fn analytics_cost(
     project: Option<String>,
 ) -> Result<AnalyticsCost, String> {
     let pricing = pricing::snapshot();
-    match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_cost(
-            &dir,
-            from,
-            to,
-            &pricing,
-            project.as_deref(),
-        )),
-        None => Ok(finalize_cost(CostAcc::default(), pricing.priced_at.clone())),
-    }
+    let (fd, td) = (ymd_from_ms(from), ymd_from_ms(to));
+    Ok(query_index(|idx| {
+        index_cost(idx, &fd, &td, project.as_deref(), &pricing)
+    }))
 }
 
 // ==================== Délégations réelles par agent (L30-P2, transcript) ====================
@@ -589,16 +547,17 @@ pub struct AgentDelegations {
 }
 
 /// Accumulateur de délégations : `tool_use_id` → (agent, ts_use_ms) et `tool_use_id` → ts_result_ms.
+/// **Référence de scan direct** (non-régression) — la commande lit désormais l'INDEX.
+#[cfg(test)]
 #[derive(Default)]
 struct DelegAcc {
     uses: HashMap<String, (String, i64)>,
     results: HashMap<String, i64>,
 }
 
-/// Intègre UNE ligne JSONL dans l'accumulateur de délégations. PUR/testable. Collecte les
-/// `tool_use` de délégation (côté assistant) et les `tool_result` (côté user) par `tool_use_id`.
-/// `project = Some(p)` scope au projet (`project_of(cwd) == p`, use ET result d'une même session
-/// partagent le cwd → appariement cohérent) ; `None` = tout le portefeuille.
+/// Intègre UNE ligne JSONL dans l'accumulateur de délégations. PUR/testable. **Référence de
+/// scan direct** conservée pour la non-régression (la commande lit l'INDEX).
+#[cfg(test)]
 fn fold_deleg_line(acc: &mut DelegAcc, line: &str, project: Option<&str>) {
     let line = line.trim();
     if line.is_empty() {
@@ -664,8 +623,8 @@ fn fold_deleg_line(acc: &mut DelegAcc, line: &str, project: Option<&str>) {
 }
 
 /// Convertit l'accumulateur en liste par agent (comptes + durées), filtrée par période sur le
-/// ts de la DÉLÉGATION (use). Tri par nombre de délégations desc puis nom. Durée moyenne sur les
-/// seules délégations appariées (result trouvé).
+/// ts de la DÉLÉGATION (use). **Référence de scan direct** (non-régression).
+#[cfg(test)]
 fn finalize_deleg(acc: DelegAcc, from: i64, to: i64) -> Vec<AgentDelegations> {
     // agent → (count, total_ms, paired_count)
     let mut by_agent: HashMap<String, (u64, i64, u64)> = HashMap::new();
@@ -700,50 +659,19 @@ fn finalize_deleg(acc: DelegAcc, from: i64, to: i64) -> Vec<AgentDelegations> {
     out
 }
 
-/// Scanne un dossier `projects/` et agrège les délégations par agent sur la période. Défensif.
-fn scan_projects_deleg(
-    projects_dir: &Path,
-    from: i64,
-    to: i64,
-    project: Option<&str>,
-) -> Vec<AgentDelegations> {
-    let mut acc = DelegAcc::default();
-    if let Ok(dirs) = std::fs::read_dir(projects_dir) {
-        for sess_dir in dirs.flatten() {
-            let files = match std::fs::read_dir(sess_dir.path()) {
-                Ok(f) => f,
-                Err(_) => continue,
-            };
-            for f in files.flatten() {
-                let p = f.path();
-                if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
-                    continue;
-                }
-                if let Ok(content) = std::fs::read_to_string(&p) {
-                    for line in content.lines() {
-                        fold_deleg_line(&mut acc, line, project);
-                    }
-                }
-            }
-        }
-    }
-    finalize_deleg(acc, from, to)
-}
-
 /// Commande : délégations réelles par agent nommé sur la période `[from, to]` (ms epoch),
-/// depuis les transcripts. `project = Some(p)` scope au projet du Périmètre ; `None`/absent =
-/// tout le portefeuille. Comptes + durées (use→result) uniquement — PAS de tokens/$ (pas de
-/// source, cf. constat). Lecture seule, défensive (vide / hors-Tauri → liste vide).
+/// dérivée de l'INDEX précalculé. `project = Some(p)` scope au projet du Périmètre ; `None`/
+/// absent = tout le portefeuille. Comptes + durées (use→result) uniquement. Instantané après build.
 #[tauri::command]
 pub fn delegations_by_agent(
     from: i64,
     to: i64,
     project: Option<String>,
 ) -> Result<Vec<AgentDelegations>, String> {
-    match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_deleg(&dir, from, to, project.as_deref())),
-        None => Ok(Vec::new()),
-    }
+    let (fd, td) = (ymd_from_ms(from), ymd_from_ms(to));
+    Ok(query_index(|idx| {
+        index_deleg(idx, &fd, &td, project.as_deref())
+    }))
 }
 
 // ==================== Attribution par agent RÉELLE (tokens + coût, L30-P3) ====================
@@ -783,17 +711,18 @@ pub struct AgentAttribution {
 }
 
 /// Accumulateur d'attribution : `tool_use_id` → (agent, ts_use_ms) côté use, et
-/// `tool_use_id` → (resolvedModel, outputFile) côté result.
+/// `tool_use_id` → (resolvedModel, outputFile) côté result. **Référence de scan direct**
+/// (non-régression) — la commande lit l'INDEX.
+#[cfg(test)]
 #[derive(Default)]
 struct AttribAcc {
     uses: HashMap<String, (String, i64)>,
     results: HashMap<String, (String, String)>,
 }
 
-/// Intègre UNE ligne JSONL du transcript PARENT dans l'accumulateur d'attribution. PUR/testable.
-/// Filtre le scope projet (`project_of(cwd)`) comme les autres agrégats. Collecte : (a) les
-/// `tool_use` de délégation (agent + ts) ; (b) les `tool_result` porteurs de `toolUseResult`
-/// (resolvedModel + outputFile), appariés par `tool_use_id`.
+/// Intègre UNE ligne JSONL du transcript PARENT dans l'accumulateur d'attribution. **Référence
+/// de scan direct** conservée pour la non-régression (la commande lit l'INDEX). PUR/testable.
+#[cfg(test)]
 fn fold_attrib_line(acc: &mut AttribAcc, line: &str, project: Option<&str>) {
     let line = line.trim();
     if line.is_empty() {
@@ -915,9 +844,9 @@ fn read_output_usage(path: &str) -> Option<(u64, u64, u64, u64)> {
 }
 
 /// Finalise l'attribution : pour chaque délégation DANS la période, lit son `outputFile` via
-/// `reader` (injectable pour les tests), somme les tokens, tarife via `pricing`. `outputFile`
-/// absent/illisible → `unavailable`. Agrège par agent (modèle représentatif = plus grosse
-/// délégation), tri tokens desc. PUR (l'I/O disque est dans `reader`).
+/// `reader` (injectable pour les tests), somme les tokens, tarife via `pricing`. **Référence de
+/// scan direct** conservée pour la non-régression (la commande lit l'INDEX).
+#[cfg(test)]
 fn finalize_attrib<F>(
     acc: AttribAcc,
     from: i64,
@@ -991,16 +920,261 @@ where
     }
 }
 
-/// Scanne les transcripts parents et attribue tokens+coût par agent. Défensif. Ne lit les
-/// `outputFile` QUE des délégations retenues (période + scope) — pas des milliers de fichiers.
-fn scan_projects_attrib(
-    projects_dir: &Path,
+/// Commande : attribution par agent RÉELLE (tokens + coût) sur la période `[from, to]` (ms
+/// epoch), scopée par projet (`project`), dérivée de l'INDEX précalculé (les `outputFile` ont
+/// été lus UNE fois au build). `unavailable` = délégations dont l'`outputFile` a expiré (jamais
+/// de token fabriqué). Lecture seule ; instantané après build.
+#[tauri::command]
+pub fn agent_attribution(
     from: i64,
     to: i64,
-    pricing: &PricingSnapshot,
-    project: Option<&str>,
-) -> AgentAttribution {
-    let mut acc = AttribAcc::default();
+    project: Option<String>,
+) -> Result<AgentAttribution, String> {
+    let pricing = pricing::snapshot();
+    let (fd, td) = (ymd_from_ms(from), ymd_from_ms(to));
+    Ok(query_index(|idx| {
+        index_attrib(idx, &fd, &td, project.as_deref(), &pricing)
+    }))
+}
+
+/// Commande : reconstruit l'index d'agrégats à la demande (bouton « Actualiser » Analytics).
+/// Non bloquante côté logique (le build parcourt les transcripts une fois). Best-effort.
+#[tauri::command]
+pub fn analytics_refresh() -> Result<(), String> {
+    build_index();
+    Ok(())
+}
+
+// ==================== Index d'agrégats précalculé (PERF) ====================
+//
+// PERF : sans index, CHAQUE changement de plage/projet re-scanne TOUS les transcripts (millions
+// de lignes) + relit les `outputFile` → LENT. L'index agrège TOUT en UNE passe (calque du cache
+// `pricing` : process-global `RwLock`), puis chaque commande SOMME en mémoire → instantané.
+//
+// On stocke des TOKENS (+ modèle), JAMAIS le coût $ : le coût se calcule À LA REQUÊTE (tokens ×
+// prix via `pricing::snapshot()`), pour qu'un refresh de prix ne force pas un re-scan. La clé
+// temporelle est le JOUR `YYYY-MM-DD` (granularité jour ASSUMÉE pour l'agrégat — les presets de
+// plage sont journaliers). Incrémental par mtime = DIFFÉRÉ (rebuild complet au démarrage / refresh).
+
+/// 4 buckets de tokens (input, output, cache_creation, cache_read).
+type Buckets = (u64, u64, u64, u64);
+
+/// Clé de l'agrégat d'attribution : (project, date, agent, model normalisé).
+type AttribKey = (String, String, String, String);
+/// Valeur de l'agrégat d'attribution : 4 buckets de tokens + nombre de délégations attribuées.
+type AttribVal = (u64, u64, u64, u64, u64);
+
+fn add_buckets(dst: &mut Buckets, src: Buckets) {
+    dst.0 += src.0;
+    dst.1 += src.1;
+    dst.2 += src.2;
+    dst.3 += src.3;
+}
+
+/// Index d'agrégats précalculé. Tokens seulement (le coût se dérive à la requête).
+#[derive(Default, Clone)]
+pub struct AggIndex {
+    /// Faux tant que le premier build n'a pas eu lieu (déclenche le build paresseux).
+    built: bool,
+    /// Horodatage (ms epoch) du dernier build — freshness (incrémental différé).
+    #[allow(dead_code)]
+    built_at: Option<i64>,
+    /// (project, date, model, sidechain) → buckets. Sert cost / activity / economy.
+    tokens: HashMap<(String, String, String, bool), Buckets>,
+    /// (project, date, agent) → (count, total_ms appariés, paired). Sert delegations_by_agent.
+    deleg: HashMap<(String, String, String), (u64, i64, u64)>,
+    /// (project, date, agent, model normalisé) → (i, o, cw, cr, count attribué). Sert attribution.
+    attrib: HashMap<AttribKey, AttribVal>,
+    /// (project, date) → nb de délégations non attribuables (outputFile manquant).
+    unavailable: HashMap<(String, String), u32>,
+}
+
+/// Convertit un ms epoch (UTC) en date `YYYY-MM-DD` (algorithme `civil_from_days` de Howard
+/// Hinnant, symétrique de `days_from_civil`, sans `chrono`). Clamp défensif des bornes ouvertes
+/// (`i64::MAX`/`MIN`) → dates extrêmes qui bornent correctement les comparaisons lexicales.
+fn ymd_from_ms(ms: i64) -> String {
+    let days = ms.div_euclid(86_400_000).clamp(-100_000_000, 100_000_000);
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = y + i64::from(m <= 2);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
+/// Un projet est-il dans le scope ? `None` = tout le portefeuille.
+fn in_scope(project: &str, target: Option<&str>) -> bool {
+    match target {
+        Some(t) => project == t,
+        None => true,
+    }
+}
+
+/// Intègre le contenu d'UN transcript parent dans l'index (une passe, chaque ligne parsée une
+/// fois). `reader` lit un `outputFile` → buckets (injectable pour tests). Défensif partout.
+fn index_file<F>(idx: &mut AggIndex, content: &str, reader: &F)
+where
+    F: Fn(&str) -> Option<Buckets>,
+{
+    // Appariement délégation intra-fichier (use↔result par tool_use_id — même parent).
+    let mut uses: HashMap<String, (String, i64, String, String)> = HashMap::new();
+    let mut results: HashMap<String, (i64, String, String)> = HashMap::new();
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let v: Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        let ty = v.get("type").and_then(Value::as_str).unwrap_or("");
+        let project = v.get("cwd").and_then(Value::as_str).and_then(project_of);
+        let ms = v
+            .get("timestamp")
+            .and_then(Value::as_str)
+            .and_then(iso_to_epoch_ms);
+        let day = v.get("timestamp").and_then(Value::as_str).and_then(day_of);
+
+        // (a) Tokens (record assistant avec usage) → agrégat tokens (project, date, model, sidechain).
+        if ty == "assistant" {
+            if let (Some(usage), Some(project), Some(day)) = (
+                v.get("message").and_then(|m| m.get("usage")),
+                project.clone(),
+                day.clone(),
+            ) {
+                let n = |k: &str| usage.get(k).and_then(Value::as_u64).unwrap_or(0);
+                let b: Buckets = (
+                    n("input_tokens"),
+                    n("output_tokens"),
+                    n("cache_creation_input_tokens"),
+                    n("cache_read_input_tokens"),
+                );
+                if b.0 != 0 || b.1 != 0 || b.2 != 0 || b.3 != 0 {
+                    let model = v
+                        .get("message")
+                        .and_then(|m| m.get("model"))
+                        .and_then(Value::as_str)
+                        .unwrap_or("unknown")
+                        .to_string();
+                    let sidechain = v
+                        .get("isSidechain")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false);
+                    add_buckets(
+                        idx.tokens
+                            .entry((project, day, model, sidechain))
+                            .or_default(),
+                        b,
+                    );
+                }
+            }
+        }
+
+        // (b) Délégations : collecte use (assistant) / result (user) par tool_use_id.
+        let blocks = match v.get("message").and_then(|m| m.get("content")) {
+            Some(Value::Array(b)) => b,
+            _ => continue,
+        };
+        let tur = v.get("toolUseResult");
+        for blk in blocks {
+            let bt = blk.get("type").and_then(Value::as_str).unwrap_or("");
+            match (ty, bt) {
+                ("assistant", "tool_use") => {
+                    let name = blk.get("name").and_then(Value::as_str).unwrap_or("");
+                    if !crate::transcript::is_delegation_tool(name) {
+                        continue;
+                    }
+                    let id = match blk.get("id").and_then(Value::as_str) {
+                        Some(i) => i.to_string(),
+                        None => continue,
+                    };
+                    let agent = blk
+                        .get("input")
+                        .and_then(|i| i.get("subagent_type"))
+                        .and_then(Value::as_str);
+                    if let (Some(agent), Some(ms), Some(project), Some(day)) =
+                        (agent, ms, project.clone(), day.clone())
+                    {
+                        uses.insert(id, (agent.to_string(), ms, project, day));
+                    }
+                }
+                ("user", "tool_result") => {
+                    let id = match blk.get("tool_use_id").and_then(Value::as_str) {
+                        Some(i) => i.to_string(),
+                        None => continue,
+                    };
+                    if results.contains_key(&id) {
+                        continue;
+                    }
+                    let (model, output) = match tur {
+                        Some(t) => (
+                            t.get("resolvedModel")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                            t.get("outputFile")
+                                .and_then(Value::as_str)
+                                .unwrap_or("")
+                                .to_string(),
+                        ),
+                        None => (String::new(), String::new()),
+                    };
+                    if let Some(ms) = ms {
+                        results.insert(id, (ms, model, output));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // Résolution des délégations du fichier (durée + lecture UNIQUE de chaque outputFile).
+    for (id, (agent, use_ms, project, day)) in uses {
+        let e = idx
+            .deleg
+            .entry((project.clone(), day.clone(), agent.clone()))
+            .or_insert((0, 0, 0));
+        e.0 += 1;
+        match results.get(&id) {
+            Some((res_ms, model, output)) => {
+                let dur = res_ms - use_ms;
+                if dur >= 0 {
+                    e.1 += dur;
+                    e.2 += 1;
+                }
+                match reader(output) {
+                    Some(b) => {
+                        let key = (project, day, agent, pricing::normalize_model(model));
+                        let a = idx.attrib.entry(key).or_insert((0, 0, 0, 0, 0));
+                        a.0 += b.0;
+                        a.1 += b.1;
+                        a.2 += b.2;
+                        a.3 += b.3;
+                        a.4 += 1;
+                    }
+                    None => {
+                        *idx.unavailable.entry((project, day)).or_insert(0) += 1;
+                    }
+                }
+            }
+            None => {
+                *idx.unavailable.entry((project, day)).or_insert(0) += 1;
+            }
+        }
+    }
+}
+
+/// Construit l'index depuis un dossier `projects/` (une passe complète, chaque outputFile lu une
+/// fois). Défensif : fichier/dir illisible ignoré.
+fn build_from_dir(projects_dir: &Path) -> AggIndex {
+    let mut idx = AggIndex::default();
     if let Ok(dirs) = std::fs::read_dir(projects_dir) {
         for sess_dir in dirs.flatten() {
             let files = match std::fs::read_dir(sess_dir.path()) {
@@ -1013,41 +1187,208 @@ fn scan_projects_attrib(
                     continue;
                 }
                 if let Ok(content) = std::fs::read_to_string(&p) {
-                    for line in content.lines() {
-                        fold_attrib_line(&mut acc, line, project);
-                    }
+                    index_file(&mut idx, &content, &read_output_usage);
                 }
             }
         }
     }
-    finalize_attrib(acc, from, to, pricing, read_output_usage)
+    idx.built = true;
+    idx.built_at = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_millis() as i64);
+    idx
 }
 
-/// Commande : attribution par agent RÉELLE (tokens + coût) sur la période `[from, to]` (ms
-/// epoch), scopée par projet (`project`). Lit les transcripts sous-agents via `outputFile`.
-/// `unavailable` = délégations dont l'`outputFile` a expiré (jamais de token fabriqué). Lecture
-/// seule, défensive (vide / hors-Tauri → agents vides, unavailable 0).
-#[tauri::command]
-pub fn agent_attribution(
-    from: i64,
-    to: i64,
-    project: Option<String>,
-) -> Result<AgentAttribution, String> {
-    let pricing = pricing::snapshot();
-    match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_attrib(
-            &dir,
-            from,
-            to,
-            &pricing,
-            project.as_deref(),
-        )),
-        None => Ok(AgentAttribution {
-            agents: Vec::new(),
-            unavailable: 0,
-            priced_at: pricing.priced_at.clone(),
-        }),
+/// Cache process-global de l'index (init paresseuse sur un index vide non construit).
+fn index_cache() -> &'static RwLock<AggIndex> {
+    static C: OnceLock<RwLock<AggIndex>> = OnceLock::new();
+    C.get_or_init(|| RwLock::new(AggIndex::default()))
+}
+
+/// (Re)construit l'index complet et l'installe. Non paniquant (verrou empoisonné → ignoré).
+pub fn build_index() {
+    let idx = match claude_projects_dir() {
+        Some(dir) => build_from_dir(&dir),
+        None => AggIndex {
+            built: true,
+            ..Default::default()
+        },
+    };
+    if let Ok(mut g) = index_cache().write() {
+        *g = idx;
     }
+}
+
+/// Lance la construction de l'index EN TÂCHE DE FOND au démarrage (thread détaché, calque
+/// `pricing::spawn_refresh`). NON bloquant ; aucune panique ne remonte.
+pub fn spawn_build() {
+    std::thread::spawn(build_index);
+}
+
+/// Exécute `f` sur l'index (construction PARESSEUSE au premier accès si pas encore construit).
+/// Ne clone pas l'index : calcul sous verrou de lecture (tolère un verrou empoisonné).
+fn query_index<T>(f: impl FnOnce(&AggIndex) -> T) -> T {
+    if !index_cache().read().map(|g| g.built).unwrap_or(false) {
+        build_index();
+    }
+    match index_cache().read() {
+        Ok(g) => f(&g),
+        Err(poisoned) => f(&poisoned.into_inner()),
+    }
+}
+
+/// Coût $ depuis l'index : somme les buckets (project ∈ scope, date ∈ plage, model) → prix.
+fn index_cost(
+    idx: &AggIndex,
+    from_date: &str,
+    to_date: &str,
+    project: Option<&str>,
+    pricing: &PricingSnapshot,
+) -> AnalyticsCost {
+    let mut acc = CostAcc::default();
+    for ((proj, date, model, _sc), (i, o, cw, cr)) in &idx.tokens {
+        if !in_scope(proj, project) || date.as_str() < from_date || date.as_str() > to_date {
+            continue;
+        }
+        let tokens = i + o + cw + cr;
+        let (cost, untariffed) = match pricing.price_for(model) {
+            Some(p) => (p.cost_of(*i, *o, *cw, *cr), false),
+            None => (0.0, true),
+        };
+        let e = acc.by_model.entry(model.clone()).or_insert((0, 0.0, false));
+        e.0 += tokens;
+        e.1 += cost;
+        e.2 |= untariffed;
+        *acc.by_day.entry(date.clone()).or_insert(0.0) += cost;
+    }
+    finalize_cost(acc, pricing.priced_at.clone())
+}
+
+/// Délégations par agent depuis l'index (comptes + durées appariées).
+fn index_deleg(
+    idx: &AggIndex,
+    from_date: &str,
+    to_date: &str,
+    project: Option<&str>,
+) -> Vec<AgentDelegations> {
+    let mut by_agent: HashMap<String, (u64, i64, u64)> = HashMap::new();
+    for ((proj, date, agent), (count, total_ms, paired)) in &idx.deleg {
+        if !in_scope(proj, project) || date.as_str() < from_date || date.as_str() > to_date {
+            continue;
+        }
+        let e = by_agent.entry(agent.clone()).or_insert((0, 0, 0));
+        e.0 += count;
+        e.1 += total_ms;
+        e.2 += paired;
+    }
+    let mut out: Vec<AgentDelegations> = by_agent
+        .into_iter()
+        .map(|(agent, (count, total_ms, paired))| AgentDelegations {
+            agent,
+            count,
+            total_ms,
+            avg_ms: if paired > 0 {
+                total_ms / paired as i64
+            } else {
+                0
+            },
+        })
+        .collect();
+    out.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.agent.cmp(&b.agent)));
+    out
+}
+
+/// Attribution par agent depuis l'index (tokens sommés → coût à la requête ; `unavailable`).
+fn index_attrib(
+    idx: &AggIndex,
+    from_date: &str,
+    to_date: &str,
+    project: Option<&str>,
+    pricing: &PricingSnapshot,
+) -> AgentAttribution {
+    // agent → (tokens, cost, delegations, dominant_model, dominant_tokens, untariffed)
+    let mut by_agent: HashMap<String, (u64, f64, u64, String, u64, bool)> = HashMap::new();
+    for ((proj, date, agent, model), (i, o, cw, cr, count)) in &idx.attrib {
+        if !in_scope(proj, project) || date.as_str() < from_date || date.as_str() > to_date {
+            continue;
+        }
+        let tokens = i + o + cw + cr;
+        let (cost, untariffed) = match pricing.price_for(model) {
+            Some(p) => (p.cost_of(*i, *o, *cw, *cr), false),
+            None => (0.0, true),
+        };
+        let e = by_agent
+            .entry(agent.clone())
+            .or_insert((0, 0.0, 0, String::new(), 0, false));
+        e.0 += tokens;
+        e.1 += cost;
+        e.2 += count;
+        if tokens >= e.4 {
+            e.4 = tokens;
+            e.3 = model.clone();
+        }
+        e.5 |= untariffed;
+    }
+    let mut unavailable = 0u32;
+    for ((proj, date), n) in &idx.unavailable {
+        if !in_scope(proj, project) || date.as_str() < from_date || date.as_str() > to_date {
+            continue;
+        }
+        unavailable += n;
+    }
+    let mut agents: Vec<AgentTokens> = by_agent
+        .into_iter()
+        .map(
+            |(agent, (tokens, cost, delegations, model, _dom, untariffed))| AgentTokens {
+                agent,
+                tokens,
+                cost,
+                delegations,
+                model,
+                untariffed,
+            },
+        )
+        .collect();
+    agents.sort_by(|a, b| b.tokens.cmp(&a.tokens).then_with(|| a.agent.cmp(&b.agent)));
+    AgentAttribution {
+        agents,
+        unavailable,
+        priced_at: pricing.priced_at.clone(),
+    }
+}
+
+/// Totaux par projet depuis l'index (all-time), format identique à `scan_projects_dir`.
+fn index_economy(idx: &AggIndex) -> Vec<ProjectEconomy> {
+    let mut acc: Acc = HashMap::new();
+    for ((proj, _date, _model, sidechain), (i, o, cw, cr)) in &idx.tokens {
+        let e = acc.entry(proj.clone()).or_default();
+        e.0 += i + cw + cr; // input total = input + cache_creation + cache_read (calque fold_line)
+        e.1 += o;
+        if *sidechain {
+            e.3 += o;
+        } else {
+            e.2 += o;
+        }
+    }
+    finalize(acc, usize::MAX)
+}
+
+/// Ventilation tokens/jour/projet depuis l'index (règle byDay = input+output+cache_creation,
+/// HORS cache_read), format identique à `scan_projects_activity`.
+fn index_activity(idx: &AggIndex, top: usize) -> Vec<ProjectActivity> {
+    let mut acc: ActAcc = HashMap::new();
+    for ((proj, date, _model, _sc), (i, o, cw, _cr)) in &idx.tokens {
+        let sum = i + o + cw;
+        if sum == 0 {
+            continue;
+        }
+        *acc.entry(proj.clone())
+            .or_default()
+            .entry(date.clone())
+            .or_insert(0) += sum;
+    }
+    finalize_activity(acc, top)
 }
 
 #[cfg(test)]
@@ -1664,5 +2005,210 @@ mod tests {
         assert_eq!(all.len(), 2, "ALL = les deux délégations");
         assert_eq!(agents_for(Some("proj-a")), vec!["gimli".to_string()]);
         assert_eq!(agents_for(Some("proj-b")), vec!["legolas".to_string()]);
+    }
+
+    // ---------------- Index d'agrégats précalculé (PERF) ----------------
+
+    #[test]
+    fn ymd_from_ms_convertit_les_dates() {
+        assert_eq!(ymd_from_ms(0), "1970-01-01");
+        // 2026-06-30T12:00:00Z → même jour que day_of.
+        let ms = iso_to_epoch_ms("2026-06-30T12:00:00Z").unwrap();
+        assert_eq!(ymd_from_ms(ms), "2026-06-30");
+        // Bornes ouvertes : MAX borne haute, MIN borne basse (comparaison lexicale correcte).
+        assert!(ymd_from_ms(i64::MAX).as_str() > "2026-06-30");
+        assert!(ymd_from_ms(i64::MIN).as_str() < "2026-06-30");
+    }
+
+    /// Fixture : un transcript parent (tokens coord + délégué sidechain + 2 délégations gimli/
+    /// legolas, une avec outputFile lisible, une avec outputFile manquant).
+    fn fixture_parent() -> Vec<&'static str> {
+        vec![
+            // Tokens coordinateur (opus) — proj-a, 2026-06-30.
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/proj-a","message":{"model":"claude-opus-4-8[1m]","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":200}}}"#,
+            // Tokens délégué (sidechain) — proj-a, même jour.
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:05:00Z","isSidechain":true,"cwd":"/w/proj-a","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":300,"output_tokens":100}}}"#,
+            // Délégation A → gimli (avec result + outputFile lisible).
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/proj-a","message":{"content":[{"type":"tool_use","id":"tuA","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#,
+            r#"{"type":"user","timestamp":"2026-06-30T09:02:00Z","cwd":"/w/proj-a","toolUseResult":{"resolvedModel":"claude-opus-4-8[1m]","outputFile":"/tmp/ok.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"tuA","content":"ok"}]}}"#,
+            // Délégation B → legolas (result mais outputFile manquant → unavailable).
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:10:00Z","cwd":"/w/proj-a","message":{"content":[{"type":"tool_use","id":"tuB","name":"Task","input":{"subagent_type":"legolas","description":"y"}}]}}"#,
+            r#"{"type":"user","timestamp":"2026-06-30T09:11:00Z","cwd":"/w/proj-a","toolUseResult":{"resolvedModel":"claude-sonnet-4-5","outputFile":"/tmp/gone.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"tuB","content":"ok"}]}}"#,
+        ]
+    }
+
+    /// Reader fixture : `/tmp/ok.jsonl` → 1M output ; sinon absent.
+    fn fixture_reader(path: &str) -> Option<Buckets> {
+        if path == "/tmp/ok.jsonl" {
+            Some((0, 1_000_000, 0, 0))
+        } else {
+            None
+        }
+    }
+
+    fn build_fixture_index() -> AggIndex {
+        let mut idx = AggIndex::default();
+        let content = fixture_parent().join("\n");
+        index_file(&mut idx, &content, &fixture_reader);
+        idx.built = true;
+        idx
+    }
+
+    #[test]
+    fn index_cost_egal_au_scan_direct() {
+        let pr = pricing_test();
+        let idx = build_fixture_index();
+        // Direct : fold_cost_line sur toutes les lignes tokens (pas de scope, toute la période).
+        let mut acc = CostAcc::default();
+        for l in fixture_parent() {
+            fold_cost_line(&mut acc, l, 0, i64::MAX, &pr, None);
+        }
+        let direct = finalize_cost(acc, pr.priced_at.clone());
+        let via_index = index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr);
+        assert!((direct.cost_total - via_index.cost_total).abs() < 1e-9);
+        assert_eq!(direct.by_model.len(), via_index.by_model.len());
+        assert_eq!(direct.by_day, via_index.by_day);
+    }
+
+    #[test]
+    fn index_deleg_egal_au_scan_direct() {
+        let idx = build_fixture_index();
+        let mut acc = DelegAcc::default();
+        for l in fixture_parent() {
+            fold_deleg_line(&mut acc, l, None);
+        }
+        let direct = finalize_deleg(acc, 0, i64::MAX);
+        let via_index = index_deleg(&idx, "0000-00-00", "9999-99-99", None);
+        assert_eq!(direct, via_index);
+        // Deux délégations (gimli, legolas).
+        assert_eq!(via_index.len(), 2);
+    }
+
+    #[test]
+    fn index_attrib_egal_au_scan_direct_sur_tokens_et_unavailable() {
+        let pr = pricing_test();
+        let idx = build_fixture_index();
+        let mut acc = AttribAcc::default();
+        for l in fixture_parent() {
+            fold_attrib_line(&mut acc, l, None);
+        }
+        let direct = finalize_attrib(acc, 0, i64::MAX, &pr, fixture_reader);
+        let via_index = index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr);
+        // gimli attribué (1M output opus), legolas non attribuable (outputFile manquant).
+        assert_eq!(via_index.agents.len(), 1);
+        assert_eq!(via_index.agents[0].agent, "gimli");
+        assert_eq!(direct.agents[0].tokens, via_index.agents[0].tokens);
+        assert!((direct.agents[0].cost - via_index.agents[0].cost).abs() < 1e-9);
+        assert_eq!(direct.unavailable, via_index.unavailable);
+        assert_eq!(via_index.unavailable, 1);
+    }
+
+    #[test]
+    fn index_economy_et_activity_egaux_au_scan_direct() {
+        let idx = build_fixture_index();
+        // Économie : fold_line direct.
+        let mut acc_e = Acc::new();
+        for l in fixture_parent() {
+            fold_line(&mut acc_e, l);
+        }
+        let direct_e = finalize(acc_e, usize::MAX);
+        let index_e = index_economy(&idx);
+        assert_eq!(direct_e, index_e);
+        // Activité : fold_activity_line direct.
+        let mut acc_a = ActAcc::new();
+        for l in fixture_parent() {
+            fold_activity_line(&mut acc_a, l);
+        }
+        let direct_a = finalize_activity(acc_a, usize::MAX);
+        let index_a = index_activity(&idx, usize::MAX);
+        assert_eq!(direct_a, index_a);
+    }
+
+    #[test]
+    fn index_scope_et_periode_filtrent() {
+        let pr = pricing_test();
+        let idx = build_fixture_index();
+        // Scope inexistant → vide.
+        let c = index_cost(&idx, "0000-00-00", "9999-99-99", Some("autre"), &pr);
+        assert_eq!(c.cost_total, 0.0);
+        assert!(c.by_model.is_empty());
+        // Période excluant le 30 juin → vide.
+        let c2 = index_cost(&idx, "2026-07-01", "9999-99-99", None, &pr);
+        assert_eq!(c2.cost_total, 0.0);
+        // Scope proj-a → non vide.
+        let c3 = index_cost(&idx, "0000-00-00", "9999-99-99", Some("proj-a"), &pr);
+        assert!(c3.cost_total > 0.0);
+    }
+
+    #[test]
+    fn build_from_dir_lit_les_transcripts_et_output_files() {
+        // Construit une arbo temporaire projects/<session>/<sid>.jsonl + un outputFile réel.
+        let base = std::env::temp_dir().join(format!("iaka-idx-{}", std::process::id()));
+        let sess = base.join("proj-x-session");
+        std::fs::create_dir_all(&sess).unwrap();
+        let sub_path = base.join("sub-agent.jsonl");
+        std::fs::write(
+            &sub_path,
+            r#"{"type":"assistant","message":{"usage":{"input_tokens":0,"output_tokens":2000000}}}"#,
+        )
+        .unwrap();
+        let sub = sub_path.to_string_lossy().to_string();
+        let parent = format!(
+            concat!(
+                r#"{{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/proj-x","message":{{"model":"claude-sonnet-4-5","usage":{{"input_tokens":100,"output_tokens":50}}}}}}"#,
+                "\n",
+                r#"{{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/proj-x","message":{{"content":[{{"type":"tool_use","id":"z1","name":"Agent","input":{{"subagent_type":"gimli","description":"x"}}}}]}}}}"#,
+                "\n",
+                r#"{{"type":"user","timestamp":"2026-06-30T09:01:00Z","cwd":"/w/proj-x","toolUseResult":{{"resolvedModel":"claude-sonnet-4-5","outputFile":"{sub}"}},"message":{{"content":[{{"type":"tool_result","tool_use_id":"z1","content":"ok"}}]}}}}"#,
+            ),
+            sub = sub
+        );
+        std::fs::write(sess.join("s1.jsonl"), parent).unwrap();
+
+        let idx = build_from_dir(&base);
+        assert!(idx.built);
+        let pr = pricing_test();
+        let attrib = index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr);
+        assert_eq!(attrib.agents.len(), 1);
+        assert_eq!(attrib.agents[0].agent, "gimli");
+        assert_eq!(attrib.agents[0].tokens, 2_000_000); // lu depuis l'outputFile réel
+        assert_eq!(attrib.unavailable, 0);
+
+        std::fs::remove_dir_all(&base).ok();
+    }
+
+    #[test]
+    fn index_activity_ne_tronque_pas_les_projets() {
+        // FIX V2 : `portfolio_activity` (via index) renvoie TOUS les projets — un projet
+        // sélectionné hors des 12 plus gros n'est plus masqué (son évolution s'affiche).
+        let mut idx = AggIndex::default();
+        for i in 0..15 {
+            idx.tokens.insert(
+                (format!("proj-{i:02}"), "2026-06-30".into(), "m".into(), false),
+                (10, 5, 0, 0),
+            );
+        }
+        idx.built = true;
+        let act = index_activity(&idx, usize::MAX);
+        assert_eq!(act.len(), 15, "aucune troncature top-12");
+        // Le plus petit projet est bien présent.
+        assert!(act.iter().any(|p| p.project == "proj-14"));
+    }
+
+    #[test]
+    fn index_vide_non_construit_donne_du_vide_propre() {
+        // Un index par défaut (non construit) → requêtes vides, jamais de panique.
+        let idx = AggIndex::default();
+        assert!(!idx.built);
+        let pr = pricing_test();
+        assert!(index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr)
+            .by_model
+            .is_empty());
+        assert!(index_deleg(&idx, "0000-00-00", "9999-99-99", None).is_empty());
+        assert!(index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr)
+            .agents
+            .is_empty());
+        assert!(index_economy(&idx).is_empty());
+        assert!(index_activity(&idx, usize::MAX).is_empty());
     }
 }

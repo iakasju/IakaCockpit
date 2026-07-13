@@ -351,6 +351,15 @@ export function agentAttribution(
 }
 
 /**
+ * Reconstruit l'index d'agrégats Analytics à la demande (bouton « Actualiser »). L'index est
+ * bâti au démarrage en tâche de fond ; ce refresh force un rebuild (nouvelles sessions). No-op
+ * hors Tauri.
+ */
+export function analyticsRefresh(): Promise<void> {
+  return call<void>("analytics_refresh", {});
+}
+
+/**
  * Importe un dossier existant comme projet (bouton + de Working). Persiste son
  * chemin côté Rust et renvoie son état git scanné. Le dossier peut vivre hors du
  * chapeau (import externe choisi par geste utilisateur).
@@ -916,6 +925,7 @@ export const backend = {
   analyticsCost,
   delegationsByAgent,
   agentAttribution,
+  analyticsRefresh,
   addProject,
   listExtraProjects,
   pickDirectory,

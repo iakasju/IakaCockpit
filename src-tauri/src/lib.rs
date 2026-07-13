@@ -65,6 +65,9 @@ pub fn run() {
                 .ok()
                 .map(|d| d.join("pricing.json"));
             pricing::spawn_refresh(pricing_url, cache_path);
+            // PERF : construit l'index d'agrégats Analytics EN TÂCHE DE FOND au démarrage
+            // (non bloquant). Les commandes Analytics lisent l'index → KPIs instantanés.
+            economy::spawn_build();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -77,6 +80,7 @@ pub fn run() {
             economy::analytics_cost,
             economy::delegations_by_agent,
             economy::agent_attribution,
+            economy::analytics_refresh,
             services::check_services,
             config::get_root,
             config::set_root,
