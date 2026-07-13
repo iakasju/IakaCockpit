@@ -2184,7 +2184,12 @@ mod tests {
         let mut idx = AggIndex::default();
         for i in 0..15 {
             idx.tokens.insert(
-                (format!("proj-{i:02}"), "2026-06-30".into(), "m".into(), false),
+                (
+                    format!("proj-{i:02}"),
+                    "2026-06-30".into(),
+                    "m".into(),
+                    false,
+                ),
                 (10, 5, 0, 0),
             );
         }
