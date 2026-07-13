@@ -413,6 +413,10 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `DelegationTree`+`GanttPanel` conservés. Front seul. Commit `135c688`. Zéro fausse donnée (pas de
       barre/flèche sans ts). Différés : flèches multi-niveaux (parent réel), prévisionnel/baseline, swimlanes
       au Journal.
+      **Révision recette → scellé `v0.25.0`** (2026-07-13, gate PASS, 605 front) : **R1** labels d'agents
+      **fixes** (colonne gelée hors scroll horizontal) ; **R2** repères d'heure **toujours lisibles**
+      (gridlines + labels `HH:MM`, densité adaptée) ; **R3** **zoom +/−** sur l'axe temps (bornes `[0.25…4]`).
+      Commit `946c1af`.
 - [x] **L28** — **Arbre des délégations** (chantier IHM B ; remplace le Gantt) → `specs/instructions/L28-arbre-delegations.md`
       *(**LIVRÉ, scellé `v0.23.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.23.0.md` ; gate Legolas PASS —
       589 front, Rust intact).* Composant `DelegationTree` (coordinateur → délégués, coloré 🟠 running /
