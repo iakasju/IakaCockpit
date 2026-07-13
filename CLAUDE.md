@@ -429,8 +429,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       directement sous le chapeau** `/work` (fin de la fragmentation ; non-projets → `.folder`) + **en-tête Table
       sur 2 lignes**, `5b5d4d4`/`f283265`.)* *(**`v0.28.0`** : **V3 Comparaison RÉELLE** — A avant/après constaté
       + B constaté vs hypothèse (re-tarifage à volume constant, `pricing_table`) → **les 4 perspectives Analytics
-      toutes réelles** ; `2dc2c3c`/`141a6dd`, doc `docs/qualite/v0.28.0.md`.)* Différés : index **incrémental**
-      (mtime), arbre délégations **multi-niveaux**, hypothèse V3-B **par agent nommé**.
+      toutes réelles** ; `2dc2c3c`/`141a6dd`, doc `docs/qualite/v0.28.0.md`.)* *(**`v0.29.0`** : 3 différés clos —
+      **index incrémental** (mtime, cache par fichier, `15c5e6a`), **arbre de délégations multi-niveaux** (arêtes
+      parent→enfant des outputFiles, récursif au Journal, `c8d0601`), **hypothèse V3-B par agent** (`047dd90`) ;
+      doc `docs/qualite/v0.29.0.md`. Rust 332 + front 689.)* Différés restants : arbre multi-niveaux **en LIVE**
+      (Travail), récursion **au-delà de 2-3 niveaux**.
 - [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
       *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
       600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
