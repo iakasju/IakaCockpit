@@ -422,10 +422,15 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       via le lien `toolUseResult.outputFile` — le sous-agent tourne hors du transcript parent ; `unavailable` si
       tmp éphémère expiré, jamais fabriqué) ; **précalcul KPIs** (`AggIndex` en cache, build background → clics
       instantanés, coût calculé à la requête) ; **fix V2** (évolution scopée projet) ; **coordinateur en premier
-      rang** attribué **par projet** puis agrégé par nom (Aragorn ≠ Odin en scope ALL, plus de fusion). Différés :
-      **comparaison V3 bi-période réelle + hypothèse V3-B** (re-tarifage par agent désormais possible), index
-      **incrémental** (mtime). *(Patch `v0.27.1` : **liaisons de l'arbre des délégations rendues visibles**
-      — tronc + branches theme-aware, `ac0226b`, doc `docs/qualite/v0.27.1.md`.)*
+      rang** attribué **par projet** puis agrégé par nom (Aragorn ≠ Odin en scope ALL, plus de fusion).
+      *(Patch `v0.27.1` : **liaisons de l'arbre des délégations rendues visibles** — tronc + branches theme-aware,
+      `ac0226b`.)* *(Patch `v0.27.2` : **Périmètre instantané** — build index en 2 phases (tokens rapide / attribution
+      différée) + indicateur de construction, `f627938`/`ab8e70b`.)* *(Patch `v0.27.3` : **projet = répertoire
+      directement sous le chapeau** `/work` (fin de la fragmentation ; non-projets → `.folder`) + **en-tête Table
+      sur 2 lignes**, `5b5d4d4`/`f283265`.)* *(**`v0.28.0`** : **V3 Comparaison RÉELLE** — A avant/après constaté
+      + B constaté vs hypothèse (re-tarifage à volume constant, `pricing_table`) → **les 4 perspectives Analytics
+      toutes réelles** ; `2dc2c3c`/`141a6dd`, doc `docs/qualite/v0.28.0.md`.)* Différés : index **incrémental**
+      (mtime), arbre délégations **multi-niveaux**, hypothèse V3-B **par agent nommé**.
 - [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
       *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
       600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
