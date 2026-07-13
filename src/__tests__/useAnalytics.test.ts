@@ -108,7 +108,7 @@ describe("deriveAnalytics — placeholders honnêtes", () => {
 });
 
 describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
-  const demo = makeDemoAnalytics(NOW);
+  const demo = makeDemoAnalytics(NOW, range7);
 
   it("réel partiel (tokens réels, cost null) : garde le réel, comble le reste par la démo", () => {
     const real = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7);
@@ -150,5 +150,42 @@ describe("rangeFromPreset", () => {
   it("24h et 30d ajustent la fenêtre", () => {
     expect(rangeFromPreset("24h", NOW).fromMs).toBe(NOW - 86_400_000);
     expect(rangeFromPreset("30d", NOW).fromMs).toBe(NOW - 30 * 86_400_000);
+  });
+  it("custom : défaut 14j si pas de bornes, sinon les bornes fournies", () => {
+    expect(rangeFromPreset("custom", NOW).fromMs).toBe(NOW - 14 * 86_400_000);
+    const custom = { fromMs: NOW - 3 * 86_400_000, toMs: NOW };
+    const r = rangeFromPreset("custom", NOW, custom);
+    expect(r.fromMs).toBe(custom.fromMs);
+    expect(r.toMs).toBe(custom.toMs);
+  });
+  it("custom : bornes incohérentes (from >= to) → repli sur le défaut 14j", () => {
+    const r = rangeFromPreset("custom", NOW, { fromMs: NOW, toMs: NOW - 86_400_000 });
+    expect(r.fromMs).toBe(NOW - 14 * 86_400_000);
+  });
+});
+
+describe("makeDemoAnalytics — sensible à la plage (recette L30-P1)", () => {
+  it("la série jour a autant de buckets que de jours (24h→1, 7j→7, 30j→30)", () => {
+    expect(makeDemoAnalytics(NOW, rangeFromPreset("24h", NOW)).daily).toHaveLength(1);
+    expect(makeDemoAnalytics(NOW, rangeFromPreset("7d", NOW)).daily).toHaveLength(7);
+    expect(makeDemoAnalytics(NOW, rangeFromPreset("30d", NOW)).daily).toHaveLength(30);
+  });
+  it("les agrégats croissent avec la plage (30j > 7j > 24h)", () => {
+    const d1 = makeDemoAnalytics(NOW, rangeFromPreset("24h", NOW));
+    const d7 = makeDemoAnalytics(NOW, rangeFromPreset("7d", NOW));
+    const d30 = makeDemoAnalytics(NOW, rangeFromPreset("30d", NOW));
+    expect(d1.tokens! < d7.tokens!).toBe(true);
+    expect(d7.tokens! < d30.tokens!).toBe(true);
+    expect(d1.cost! < d7.cost!).toBe(true);
+    expect(d7.delegations! < d30.delegations!).toBe(true);
+    // costTrend / agentHours suivent la longueur de la série jour.
+    expect(d30.costTrend).toHaveLength(30);
+    expect(d1.agentHours).toHaveLength(1);
+    // perAgent (V4) bouge aussi avec la plage.
+    expect(d1.perAgent![0].tokens < d30.perAgent![0].tokens).toBe(true);
+  });
+  it("callout de variation seulement si la fenêtre ≥ 7 j (null sur 24h)", () => {
+    expect(makeDemoAnalytics(NOW, rangeFromPreset("24h", NOW)).variation).toBeNull();
+    expect(makeDemoAnalytics(NOW, rangeFromPreset("7d", NOW)).variation).not.toBeNull();
   });
 });

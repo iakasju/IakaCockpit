@@ -9,7 +9,8 @@ import { PerspectiveAgents } from "../components/analytics/PerspectiveAgents";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import { deriveAnalytics, rangeFromPreset, ALL_SCOPE } from "../hooks/useAnalytics";
 
-const demo = makeDemoAnalytics(new Date(2026, 6, 13, 12, 0, 0).getTime());
+const NOW = new Date(2026, 6, 13, 12, 0, 0).getTime();
+const demo = makeDemoAnalytics(NOW, rangeFromPreset("7d", NOW));
 const empty = deriveAnalytics([], [], ALL_SCOPE, rangeFromPreset("7d", Date.now()));
 
 describe("Perspectives — démo pleine (widgets clés présents)", () => {
@@ -101,6 +102,34 @@ describe("AnalyticsView — toggle de perspective", () => {
     ).toBeTruthy();
     expect(screen.getAllByText("Donnée à venir").length).toBeGreaterThan(0);
     expect(screen.queryByText("$11,64")).toBeNull();
+  });
+
+  it("changer de plage fait bouger les widgets (nb de buckets jour : 7j→30j)", () => {
+    const { container } = render(
+      <AnalyticsView economy={[]} activity={[]} demoOn />,
+    );
+    // Défaut 7 j → 7 colonnes de barres jour (V1 Dashboard).
+    expect(container.querySelectorAll(".abars .col")).toHaveLength(7);
+    fireEvent.click(screen.getByRole("tab", { name: "30 j" }));
+    expect(container.querySelectorAll(".abars .col")).toHaveLength(30);
+    fireEvent.click(screen.getByRole("tab", { name: "24 h" }));
+    expect(container.querySelectorAll(".abars .col")).toHaveLength(1);
+  });
+
+  it("Custom ouvre deux sélecteurs de date et modifier une date rebâtit la plage", () => {
+    render(<AnalyticsView economy={[]} activity={[]} demoOn />);
+    // Pas de sélecteur de date hors Custom.
+    expect(screen.queryByLabelText("Date de début")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Custom" }));
+    const from = screen.getByLabelText("Date de début") as HTMLInputElement;
+    const to = screen.getByLabelText("Date de fin") as HTMLInputElement;
+    expect(from).toBeTruthy();
+    expect(to).toBeTruthy();
+    // Restreindre la borne de début à 5 jours avant la fin → la série jour passe à 5 buckets.
+    const toMs = new Date(to.value).getTime();
+    const newFrom = new Date(toMs - 5 * 86_400_000).toISOString().slice(0, 10);
+    fireEvent.change(from, { target: { value: newFrom } });
+    expect(document.querySelectorAll(".abars .col").length).toBe(5);
   });
 
   it("sélectionner un projet du périmètre change la pastille de scope", () => {

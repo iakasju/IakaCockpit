@@ -49,10 +49,26 @@ export function AnalyticsView({
   const [scope, setScope] = useState<string>(ALL_SCOPE);
   const [preset, setPreset] = useState<RangePreset>("7d");
   const [perspective, setPerspective] = useState<Perspective>("dashboard");
+  // Bornes « Custom » en dates ISO `YYYY-MM-DD` ; défaut = 14 j → aujourd'hui (distinct du 7j
+  // pour prouver l'effet). Vides tant que l'utilisateur n'a pas ouvert Custom → repli sur le
+  // défaut de `rangeFromPreset("custom", …)`.
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
 
-  const range = useMemo(() => rangeFromPreset(preset, now), [preset, now]);
+  const range = useMemo(() => {
+    if (preset === "custom") {
+      const fromMs = customFrom ? new Date(customFrom).getTime() : NaN;
+      const toMs = customTo ? new Date(customTo).getTime() : NaN;
+      const custom =
+        Number.isFinite(fromMs) && Number.isFinite(toMs)
+          ? { fromMs, toMs }
+          : undefined;
+      return rangeFromPreset("custom", now, custom);
+    }
+    return rangeFromPreset(preset, now);
+  }, [preset, now, customFrom, customTo]);
   const real = useAnalytics(economy, activity, scope, range);
-  const demo = useMemo(() => makeDemoAnalytics(now), [now]);
+  const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 
   // Fusion démo PAR CHAMP (recette L30-P1) : en dev (`demoOn`), on prend le RÉEL là où il
   // existe et on comble le reste avec la démo → les 4 perspectives sont pleines même quand
@@ -82,6 +98,10 @@ export function AnalyticsView({
             scopeLabel={model.scopeLabel}
             locale={i18n.language}
             onPreset={setPreset}
+            onCustom={(from, to) => {
+              setCustomFrom(from);
+              setCustomTo(to);
+            }}
           />
           <PerspectiveTabs active={perspective} onSelect={setPerspective} />
 

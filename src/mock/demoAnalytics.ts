@@ -15,6 +15,7 @@ import type {
   AgentDatum,
   TopDelegation,
   CompareModel,
+  TimeRange,
 } from "../hooks/useAnalytics";
 import { ALL_SCOPE } from "../hooks/useAnalytics";
 
@@ -173,7 +174,37 @@ const DEMO_COMPARE: CompareModel = {
 };
 
 /** Modèle Analytics de démo, ancré sur `now`. Full (aucun `null`) → vitrine des 4 perspectives. */
-export function makeDemoAnalytics(now: number): AnalyticsModel {
+// Cycles DÉTERMINISTES (7 jours, baseline) tuilés sur la plage — PAS de Math.random (rendu
+// stable d'un run à l'autre). Le pic (index 2) revient tous les 7 jours → toujours visible.
+const CYCLE_INOUT: [number, number][] = [
+  [700_000, 200_000],
+  [520_000, 160_000],
+  [960_000, 280_000], // pic
+  [460_000, 140_000],
+  [620_000, 180_000],
+  [300_000, 90_000],
+  [260_000, 80_000],
+];
+const CYCLE_COST = [1.2, 1.15, 2.73, 1.05, 1.6, 0.75, 0.6]; // $/jour
+const CYCLE_HOURS = [2.4, 1.8, 3.27, 1.6, 2.2, 1.07, 0.93]; // h/jour
+
+/** Heures décimales → « 14 h 20 » (calque du wording des mocks). */
+function fmtHours(h: number): string {
+  const total = Math.round(h * 60);
+  const hh = Math.floor(total / 60);
+  const mm = total % 60;
+  return mm === 0 ? `${hh} h` : `${hh} h ${String(mm).padStart(2, "0")}`;
+}
+
+/**
+ * Modèle Analytics de démo, ancré sur `now` ET SENSIBLE À LA PLAGE `range` (recette L30-P1) :
+ * la série jour a `days` buckets (24h→1, 7j→7, 30j→30) et les agrégats (KPIs, coût, temps,
+ * délégations, perAgent, coordVsSub) sont proportionnels à `days` (baseline = 7j, `factor =
+ * days / 7`) → les widgets BOUGENT quand on change de plage. `compare` (V3) est une comparaison
+ * de DEUX sous-périodes A/B avec ses propres libellés, INDÉPENDANTE du sélecteur de plage du
+ * haut → laissée inchangée. `perimeter` = structure du portefeuille (pas la plage) → inchangé.
+ */
+export function makeDemoAnalytics(now: number, range: TimeRange): AnalyticsModel {
   const allTokens = DEMO_PROJECTS.reduce((s, p) => s + p.tokens, 0);
   const topTokens = DEMO_PROJECTS[0]?.tokens || 1;
 
@@ -188,46 +219,63 @@ export function makeDemoAnalytics(now: number): AnalyticsModel {
     })),
   ];
 
-  // Série jour : 7 buckets finissant aujourd'hui (ancrés sur `now`).
   const day = 86_400_000;
-  const inOut: [number, number][] = [
-    [700_000, 200_000],
-    [520_000, 160_000],
-    [960_000, 280_000], // pic
-    [460_000, 140_000],
-    [620_000, 180_000],
-    [300_000, 90_000],
-    [260_000, 80_000],
-  ];
-  const daily: DailyBucket[] = inOut.map(([input, output], i) => {
-    const d = new Date(now - (inOut.length - 1 - i) * day);
+  const days = Math.max(1, Math.round((range.toMs - range.fromMs) / day));
+  const factor = days / 7; // baseline = 7 jours
+
+  // Série jour : `days` buckets finissant aujourd'hui (ancrés sur `now`), motif cyclique.
+  const daily: DailyBucket[] = Array.from({ length: days }, (_, i) => {
+    const [input, output] = CYCLE_INOUT[i % 7];
+    const d = new Date(now - (days - 1 - i) * day);
     return { date: ymd(d), tokens: input + output, input, output };
+  });
+
+  // Agrégats proportionnels à la plage (arrondis lisibles).
+  const tokens = Math.round(allTokens * factor);
+  const cost = Number((11.64 * factor).toFixed(2));
+
+  // Coût cumulé + tendance : recalculés sur `days` points (cumul croissant avec la plage).
+  const costTrend = daily.map((_, i) => CYCLE_COST[i % 7]);
+  let running = 0;
+  const cumulativeCost = costTrend.map((c) => {
+    running = Number((running + c).toFixed(2));
+    return running;
   });
 
   return {
     perimeter,
     scopeId: ALL_SCOPE,
     scopeLabel: "ALL · portefeuille",
-    tokens: allTokens,
-    coordVsSub: { coord: 1_180_000, sub: allTokens - 1_180_000 },
-    daily,
-    cost: 11.64,
-    agentTime: "14 h 20",
-    delegations: 186,
-    perAgent: DEMO_AGENTS,
-    costTrend: [1.2, 1.15, 2.73, 1.05, 1.6, 0.75, 0.6],
-    topDelegations: DEMO_TOP_DELEGATIONS,
-    variation: {
-      title: "Variation détectée — jour le plus cher",
-      body:
-        "910 k tokens · $2,73 en une journée, soit +68 % vs la médiane. Cause probable : " +
-        "refonte des chartes iakagraph (Gimli + Loki en parallèle, pic de contexte).",
+    tokens,
+    coordVsSub: {
+      coord: Math.round(1_180_000 * factor),
+      sub: Math.round((allTokens - 1_180_000) * factor),
     },
-    cumulativeCost: [1.2, 2.35, 3.1, 5.8, 7.4, 9.9, 11.64],
-    agentHours: daily.map((d, i) => ({
-      date: d.date,
-      hours: [2.4, 1.8, 3.27, 1.6, 2.2, 1.07, 0.93][i],
+    daily,
+    cost,
+    agentTime: fmtHours(14.33 * factor),
+    delegations: Math.round(186 * factor),
+    perAgent: DEMO_AGENTS.map((a) => ({
+      ...a,
+      tokens: Math.round(a.tokens * factor),
+      cost: a.cost == null ? null : Number((a.cost * factor).toFixed(2)),
+      turns: a.turns == null ? null : Math.round(a.turns * factor),
     })),
+    costTrend,
+    topDelegations: DEMO_TOP_DELEGATIONS,
+    // Callout de variation : n'a de sens que sur une fenêtre ≥ 7 j (jour le plus cher vs
+    // médiane). Sur 24 h il n'y a pas de dispersion → placeholder honnête (variation null).
+    variation:
+      days >= 7
+        ? {
+            title: "Variation détectée — jour le plus cher",
+            body:
+              "910 k tokens · $2,73 en une journée, soit +68 % vs la médiane. Cause probable : " +
+              "refonte des chartes iakagraph (Gimli + Loki en parallèle, pic de contexte).",
+          }
+        : null,
+    cumulativeCost,
+    agentHours: daily.map((d, i) => ({ date: d.date, hours: CYCLE_HOURS[i % 7] })),
     compare: DEMO_COMPARE,
     hasRealData: true,
   };

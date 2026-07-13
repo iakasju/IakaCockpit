@@ -452,6 +452,8 @@ export const fr = {
     // Plage de temps
     range: "Plage de temps",
     preset: { "24h": "24 h", "7d": "7 j", "30d": "30 j", custom: "Custom" },
+    customFrom: "Date de début",
+    customTo: "Date de fin",
     // Perspectives
     perspective: "Perspective",
     view: {

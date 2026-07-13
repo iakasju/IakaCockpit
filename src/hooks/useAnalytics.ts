@@ -30,9 +30,23 @@ export interface TimeRange {
   toMs: number;
 }
 
-/** Construit une plage à partir d'un préréglage ancré sur `now` (pas de `Date.now()` figé). */
-export function rangeFromPreset(preset: RangePreset, now: number): TimeRange {
+/**
+ * Construit une plage à partir d'un préréglage ancré sur `now` (pas de `Date.now()` figé).
+ * Pour `custom`, utilise les bornes fournies si présentes, sinon un défaut `now-14j → now`
+ * (distinct du 7j pour rendre l'effet du sélecteur visible).
+ */
+export function rangeFromPreset(
+  preset: RangePreset,
+  now: number,
+  custom?: { fromMs: number; toMs: number },
+): TimeRange {
   const day = 86_400_000;
+  if (preset === "custom") {
+    if (custom && custom.fromMs < custom.toMs) {
+      return { preset, fromMs: custom.fromMs, toMs: custom.toMs };
+    }
+    return { preset, fromMs: now - 14 * day, toMs: now };
+  }
   const span = preset === "24h" ? day : preset === "30d" ? 30 * day : 7 * day;
   return { preset, fromMs: now - span, toMs: now };
 }

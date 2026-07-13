@@ -451,6 +451,8 @@ export const en: Resources = {
     // Time range
     range: "Time range",
     preset: { "24h": "24 h", "7d": "7 d", "30d": "30 d", custom: "Custom" },
+    customFrom: "Start date",
+    customTo: "End date",
     // Perspectives
     perspective: "Perspective",
     view: {
