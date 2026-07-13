@@ -6,11 +6,12 @@
 //! SEULE, défensif (une ligne invalide est ignorée, jamais de panique). Borné en sortie
 //! (top N projets). Aucun secret, aucune écriture.
 
+use crate::paths;
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::{OnceLock, RwLock};
+use std::sync::{Mutex, OnceLock, RwLock};
 
 /// Coût agrégé d'un projet (miroir TS `ProjectEconomy`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -27,14 +28,78 @@ pub struct ProjectEconomy {
 /// Accumulateur par projet : (input, output, coord, sub).
 type Acc = HashMap<String, (u64, u64, u64, u64)>;
 
-/// Dernier segment d'un cwd = nom de projet. Coupe sur `/` ET `\` pour gérer les vieux
-/// transcripts Windows (`C:\iakaVODdash` → `iakaVODdash`, `/a/b/iaka-demo` → `iaka-demo`).
-/// Défensif : chaîne vide → `None`, segments vides (séparateurs de fin) ignorés.
+/// Segments non vides d'un chemin (coupe sur `/` ET `\` — gère les vieux transcripts Windows).
+fn path_segments(path: &str) -> Vec<&str> {
+    path.split(['/', '\\']).filter(|s| !s.is_empty()).collect()
+}
+
+/// Racine du chapeau (« hat root ») résolue UNE fois via le socle L0 `paths` (cross-OS,
+/// `IAKAFRAME_ROOT`, zéro constante Windows). Chaîne mise en cache (stable sur la vie du process).
+fn hat_root() -> &'static str {
+    static R: OnceLock<String> = OnceLock::new();
+    R.get_or_init(|| paths::resolve_hat_root().to_string_lossy().into_owned())
+}
+
+/// Le répertoire `<root>/<seg>` est-il un VRAI projet (dépôt git) ? Test FS `.git` (dossier OU
+/// fichier — worktrees), **caché par segment** (une seule vérif FS par nom de projet, pas par
+/// ligne). Défensif : inaccessible / verrou empoisonné → `false` (classé non-projet → `.folder`).
+fn is_git_project(candidate: &Path) -> bool {
+    let key = candidate
+        .file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    static CACHE: OnceLock<Mutex<HashMap<String, bool>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Ok(mut c) = cache.lock() {
+        if let Some(v) = c.get(&key) {
+            return *v;
+        }
+        let v = candidate.join(".git").exists();
+        c.insert(key, v);
+        return v;
+    }
+    candidate.join(".git").exists()
+}
+
+/// Nom de projet d'un `cwd`, RELATIF à une racine chapeau + un prédicat « est-un-projet » (PUR,
+/// testable sans FS). Règle (décision Stéphane) : le projet = le **répertoire directement sous le
+/// chapeau** (`/work`).
+///   - `cwd` sous la racine → premier segment `seg` sous `/work` :
+///       * `<root>/seg` est un dépôt git → projet = `seg` (`IakaCockpit`, `iakagraph`…) ;
+///       * sinon (dossier de travail Odin sans `.git`) → projet = **`.folder`** (bucket unique).
+///   - `cwd` == racine exacte (`/work`) → dernier segment de la racine (`work`, portefeuille).
+///   - `cwd` hors racine → dernier segment (comportement historique conservé).
+///   - `cwd` vide → `None`.
+fn project_of_with<F>(cwd: &str, root: &str, is_project: F) -> Option<String>
+where
+    F: Fn(&Path) -> bool,
+{
+    let cwd_segs = path_segments(cwd);
+    if cwd_segs.is_empty() {
+        return None;
+    }
+    let root_segs = path_segments(root);
+    if !root_segs.is_empty() && cwd_segs.starts_with(&root_segs) {
+        if cwd_segs.len() > root_segs.len() {
+            // Sous la racine → premier segment sous /work, classé projet git vs `.folder`.
+            let seg = cwd_segs[root_segs.len()];
+            let candidate = Path::new(root).join(seg);
+            return Some(if is_project(&candidate) {
+                seg.to_string()
+            } else {
+                ".folder".to_string()
+            });
+        }
+        // cwd == racine exacte → niveau portefeuille (le dossier /work lui-même).
+        return root_segs.last().map(|&s| s.to_string());
+    }
+    // Hors racine → dernier segment (inchangé, aucune perte).
+    cwd_segs.last().map(|&s| s.to_string())
+}
+
+/// Nom de projet d'un `cwd` (wrapper prod) : racine chapeau réelle (cachée) + `.git`-check caché.
 fn project_of(cwd: &str) -> Option<String> {
-    cwd.trim_end_matches(['/', '\\'])
-        .rsplit(['/', '\\'])
-        .find(|s| !s.is_empty())
-        .map(str::to_string)
+    project_of_with(cwd, hat_root(), is_git_project)
 }
 
 /// Intègre UNE ligne JSONL (record assistant avec `message.usage`) dans l'accumulateur.
@@ -1585,28 +1650,111 @@ mod tests {
     use super::*;
 
     #[test]
-    fn project_of_prend_le_dernier_segment() {
+    fn project_of_projet_git_sous_le_chapeau_est_le_repertoire_direct() {
+        // Un vrai projet (dépôt git) → premier segment sous /work, quelle que soit la profondeur.
+        let root = "/Users/x/work";
+        let is_git = |p: &Path| p.ends_with("IakaCockpit") || p.ends_with("iakagraph");
         assert_eq!(
-            project_of("/Users/x/work/iaka-demo"),
-            Some("iaka-demo".into())
+            project_of_with("/Users/x/work/IakaCockpit/src-tauri", root, is_git),
+            Some("IakaCockpit".into())
         );
-        assert_eq!(project_of("/a/b/"), Some("b".into()));
-        assert_eq!(project_of(""), None);
+        assert_eq!(
+            project_of_with("/Users/x/work/IakaCockpit/docker/redesign", root, is_git),
+            Some("IakaCockpit".into())
+        );
+        assert_eq!(
+            project_of_with("/Users/x/work/iakagraph", root, is_git),
+            Some("iakagraph".into())
+        );
+    }
+
+    #[test]
+    fn project_of_dossier_non_git_sous_le_chapeau_est_point_folder() {
+        // Dossiers de travail Odin sans `.git` → bucket unique `.folder` (pas une entrée chacun).
+        let root = "/Users/x/work";
+        let no_git = |_: &Path| false;
+        assert_eq!(
+            project_of_with("/Users/x/work/divers", root, no_git),
+            Some(".folder".into())
+        );
+        assert_eq!(
+            project_of_with("/Users/x/work/naonedge-dashboard/sub", root, no_git),
+            Some(".folder".into())
+        );
+    }
+
+    #[test]
+    fn project_of_racine_exacte_est_le_portefeuille() {
+        let root = "/Users/x/work";
+        let no_git = |_: &Path| false;
+        // La racine /work elle-même = portefeuille (Odin), PAS `.folder`.
+        assert_eq!(
+            project_of_with("/Users/x/work", root, no_git),
+            Some("work".into())
+        );
+        assert_eq!(
+            project_of_with("/Users/x/work/", root, no_git),
+            Some("work".into())
+        );
+    }
+
+    #[test]
+    fn project_of_hors_chapeau_dernier_segment() {
+        let root = "/Users/x/work";
+        let no_git = |_: &Path| false;
+        assert_eq!(
+            project_of_with("/private/tmp/scratch/foo", root, no_git),
+            Some("foo".into())
+        );
+        assert_eq!(project_of_with("", root, no_git), None);
     }
 
     #[test]
     fn project_of_gere_les_cwd_windows() {
-        // Vieux transcripts Windows : séparateur antislash.
-        assert_eq!(project_of(r"C:\iakaVODdash"), Some("iakaVODdash".into()));
+        // Vieux transcripts Windows : séparateur antislash + racine Windows.
+        let is_git = |p: &Path| p.ends_with("IakaCockpit");
+        let no_git = |_: &Path| false;
         assert_eq!(
-            project_of(r"C:\Users\x\work\iaka-demo"),
-            Some("iaka-demo".into())
+            project_of_with(r"C:\work\IakaCockpit\src-tauri", r"C:\work", is_git),
+            Some("IakaCockpit".into())
         );
-        // Chemin mixte (slash + antislash).
-        assert_eq!(project_of(r"/c/work\iaka-demo"), Some("iaka-demo".into()));
-        // Séparateur de fin (trailing) ignoré.
-        assert_eq!(project_of(r"C:\iakaVODdash\"), Some("iakaVODdash".into()));
-        assert_eq!(project_of(r"\a\b\"), Some("b".into()));
+        // Dossier non-git Windows → `.folder`.
+        assert_eq!(
+            project_of_with(r"C:\work\divers", r"C:\work", no_git),
+            Some(".folder".into())
+        );
+        // Racine exacte Windows → portefeuille.
+        assert_eq!(
+            project_of_with(r"C:\work", r"C:\work", no_git),
+            Some("work".into())
+        );
+        // Chemin mixte (slash + antislash) sous une racine mixte.
+        assert_eq!(
+            project_of_with(r"/c/work\iaka-demo\sub", "/c/work", no_git),
+            Some(".folder".into())
+        );
+    }
+
+    #[test]
+    fn project_of_n_appelle_le_git_check_que_sous_la_racine() {
+        // Le prédicat (test FS coûteux) n'est appelé QUE pour un cwd sous la racine — jamais pour
+        // la racine exacte, hors-racine ou vide. Le wrapper prod `is_git_project` cache en plus
+        // par segment (une seule vérif FS par nom de projet, pas par ligne).
+        let root = "/Users/x/work";
+        let calls = std::cell::Cell::new(0);
+        let pred = |_: &Path| {
+            calls.set(calls.get() + 1);
+            true
+        };
+        assert_eq!(
+            project_of_with("/Users/x/work/IakaCockpit/a", root, pred),
+            Some("IakaCockpit".into())
+        );
+        assert_eq!(calls.get(), 1); // sous racine → 1 appel
+        project_of_with("/Users/x/work", root, pred); // racine exacte → 0
+        project_of_with("/private/tmp/foo", root, pred); // hors racine → 0
+        project_of_with("", root, pred); // vide → 0
+        assert_eq!(calls.get(), 1, "git-check appelé seulement sous la racine");
     }
 
     #[test]
