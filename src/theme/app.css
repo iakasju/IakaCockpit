@@ -1837,24 +1837,26 @@ button {
 }
 
 /* ===== Conversation : barre de tête + toggle Chat/Shell ===== */
+/* En-tête sur DEUX lignes : identité (`.convtitle`) puis contrôles (`.convctrls`) —
+   fin du chevauchement quand tous les boutons sont là. */
 .convhead {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   padding: 14px 22px;
   background: var(--surf);
   border-bottom: 1px solid var(--surf-3);
 }
-/* Le titre ABSORBE le manque de place (shrink + ellipsis du chip runner) pour que
-   le toggle Chat|Shell et les boutons ne soient JAMAIS clipés (« Shell » entier),
-   même quand le bouton « Interrompre (esc) » apparaît en mode Shell. */
+/* Ligne 1 = identité (nom projet · coordinateur · runner · badge). Le chip runner
+   ellipse si vraiment étroit ; l'identité tient normalement sur sa ligne. */
 .convtitle {
   display: flex;
   align-items: baseline;
   gap: 10px;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-wrap: nowrap;
 }
 .convtitle .ct-runner {
@@ -1863,9 +1865,17 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Toggle + boutons : taille fixe, jamais compressés. */
-.modetoggle,
-.convhead > .btn.sm {
+/* Ligne 2 = contrôles ; wrap = filet de sécurité sur petit écran (jamais de clip). */
+.convctrls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* Toggle + boutons : taille naturelle, jamais compressés. */
+.convctrls .modetoggle,
+.convctrls .delegtoggle,
+.convctrls .btn.sm {
   flex: 0 0 auto;
 }
 .convtitle .ct-nm {
@@ -1929,13 +1939,6 @@ button {
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(20, 22, 28, 0.08);
 }
-.convhead > .btn.sm {
-  margin-left: auto;
-}
-.convhead .modetoggle + .btn.sm {
-  margin-left: 0;
-}
-
 .convbody {
   flex: 1;
   min-height: 0;

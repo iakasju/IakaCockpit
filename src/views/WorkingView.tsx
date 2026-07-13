@@ -428,6 +428,8 @@ export function WorkingView({
                   </span>
                 )}
               </div>
+              {/* Ligne 2 : tous les contrôles regroupés (2 lignes → fin du chevauchement). */}
+              <div className="convctrls">
               <div
                 className="modetoggle"
                 role="tablist"
@@ -505,6 +507,7 @@ export function WorkingView({
                   </button>
                 </div>
               )}
+              </div>
             </div>
 
             {showNextStep && (
