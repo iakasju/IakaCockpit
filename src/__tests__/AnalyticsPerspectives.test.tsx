@@ -55,6 +55,7 @@ describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tok
     ],
     by_day: [{ date: "2026-07-11", cost: 12 }],
     untariffed_models: ["mistral-x"],
+    by_project: [{ project: "iakacockpit", tokens: 1_100_000, cost: 12, untariffed: false }],
     priced_at: "2026-07-13",
   };
   const deleg = [
@@ -75,8 +76,8 @@ describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tok
     expect(screen.getByText(/pas de source réelle/)).toBeTruthy();
   });
 
-  it("affiche le COORDINATEUR (Odin) en premier rang avec son tag quand un nom est fourni", () => {
-    // Même coût parent, coordinateur "Odin" → ligne de premier rang dans le classement.
+  it("affiche le COORDINATEUR (Odin) en premier rang avec son tag quand un resolver est fourni", () => {
+    // Coût parent par projet + resolver → ligne coordinateur de premier rang dans le classement.
     const withCoord = deriveAnalytics(
       [],
       [],
@@ -85,7 +86,7 @@ describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tok
       cost,
       deleg,
       null,
-      "Odin",
+      () => "Odin",
     );
     render(<PerspectiveAgents model={withCoord} />);
     // Le coordinateur apparaît dans le classement (plus la note « pas de source »).

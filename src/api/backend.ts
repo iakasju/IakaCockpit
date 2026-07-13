@@ -258,12 +258,23 @@ export interface DayCost {
   cost: number;
 }
 
+/** Coût $ PARENT par projet (miroir `economy::ProjectCost`) — le parent = le coordinateur ;
+ *  permet d'attribuer chaque projet à SON coordinateur (Aragorn…) puis d'agréger par nom. */
+export interface ProjectCost {
+  project: string;
+  tokens: number;
+  cost: number;
+  untariffed: boolean;
+}
+
 /** Coût $ réel agrégé sur une période (miroir `economy::AnalyticsCost`). */
 export interface AnalyticsCost {
   cost_total: number;
   by_model: ModelCost[];
   by_day: DayCost[];
   untariffed_models: string[];
+  /** Coût parent par projet — attribution du coordinateur PAR projet côté front. */
+  by_project: ProjectCost[];
   /** Date de la table de prix (`pricing.json`), ou `null` si table embarquée. */
   priced_at: string | null;
 }

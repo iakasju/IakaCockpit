@@ -39,6 +39,7 @@ function makeFakeBackend(calls: CostCall[]): Backend {
         ],
         by_day: [],
         untariffed_models: [],
+        by_project: [],
         priced_at: null,
       });
     },
@@ -97,6 +98,7 @@ describe("usePortfolioCost — réactivité par plage", () => {
       by_model: [{ model: "m", tokens: 1000, cost: total, untariffed: false }],
       by_day: [],
       untariffed_models: [],
+      by_project: [],
       priced_at: null,
     });
     const c24 = deriveAnalytics([], [], ALL_SCOPE, rangeFromPreset("24h", NOW), mk(1));

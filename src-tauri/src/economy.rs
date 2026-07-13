@@ -298,6 +298,20 @@ pub struct DayCost {
     pub cost: f64,
 }
 
+/// Coût $ PARENT par projet (miroir TS `ProjectCost`). Le transcript parent = le COORDINATEUR ;
+/// exposer la conso par projet permet au front d'attribuer chaque projet à SON coordinateur
+/// (Aragorn pour iakacockpit…) puis d'agréger par nom — sans fusionner Odin et Aragorn.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ProjectCost {
+    pub project: String,
+    /// Total des 4 buckets de tokens du transcript parent de ce projet sur la période.
+    pub tokens: u64,
+    /// Coût $ tarifé de ce projet (0.0 si tous ses modèles sont untariffed).
+    pub cost: f64,
+    /// `true` = aucun modèle tarifé pour ce projet (coût non compté).
+    pub untariffed: bool,
+}
+
 /// Coût $ réel agrégé sur une période (miroir TS `AnalyticsCost`).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct AnalyticsCost {
@@ -309,15 +323,19 @@ pub struct AnalyticsCost {
     pub by_day: Vec<DayCost>,
     /// Noms des modèles rencontrés SANS tarif (coût non compté ; front les signale).
     pub untariffed_models: Vec<String>,
+    /// Coût PARENT par projet (tri coût desc) — attribution du coordinateur PAR projet côté front.
+    pub by_project: Vec<ProjectCost>,
     /// Date de la table de prix (`pricing.json`), ou `None` si table embarquée.
     pub priced_at: Option<String>,
 }
 
-/// Accumulateur de coût : par modèle (tokens, cost, untariffed) + par jour (cost).
+/// Accumulateur de coût : par modèle (tokens, cost, untariffed) + par jour (cost) + par projet
+/// (tokens, cost, `all_untariffed` — vrai tant qu'aucun modèle tarifé n'a été vu pour ce projet).
 #[derive(Default)]
 struct CostAcc {
     by_model: HashMap<String, (u64, f64, bool)>,
     by_day: HashMap<String, f64>,
+    by_project: HashMap<String, (u64, f64, bool)>,
 }
 
 /// Convertit un timestamp ISO-8601 UTC (`2026-06-30T12:00:00Z`, avec ms optionnelles) en
@@ -501,11 +519,30 @@ fn finalize_cost(acc: CostAcc, priced_at: Option<String>) -> AnalyticsCost {
         .collect();
     by_day.sort_by(|a, b| a.date.cmp(&b.date));
 
+    // `all_untariffed` (3ᵉ champ) = vrai tant qu'aucun modèle tarifé n'a été vu → `untariffed`.
+    let mut by_project: Vec<ProjectCost> = acc
+        .by_project
+        .into_iter()
+        .map(|(project, (tokens, cost, all_untariffed))| ProjectCost {
+            project,
+            tokens,
+            cost,
+            untariffed: all_untariffed,
+        })
+        .collect();
+    by_project.sort_by(|a, b| {
+        b.cost
+            .partial_cmp(&a.cost)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.tokens.cmp(&a.tokens))
+    });
+
     AnalyticsCost {
         cost_total,
         by_model,
         by_day,
         untariffed_models,
+        by_project,
         priced_at,
     }
 }
@@ -1261,6 +1298,12 @@ fn index_cost(
         e.1 += cost;
         e.2 |= untariffed;
         *acc.by_day.entry(date.clone()).or_insert(0.0) += cost;
+        // Coût PARENT par projet : le 3ᵉ champ = `all_untariffed` (part à vrai, faux dès qu'un
+        // modèle tarifé contribue). Sert l'attribution du coordinateur PAR projet côté front.
+        let pe = acc.by_project.entry(proj.clone()).or_insert((0, 0.0, true));
+        pe.0 += tokens;
+        pe.1 += cost;
+        pe.2 &= untariffed;
     }
     finalize_cost(acc, pricing.priced_at.clone())
 }
@@ -2175,6 +2218,67 @@ mod tests {
         assert_eq!(attrib.unavailable, 0);
 
         std::fs::remove_dir_all(&base).ok();
+    }
+
+    #[test]
+    fn index_cost_by_project_somme_coherente_et_filtree() {
+        let pr = pricing_test();
+        // Deux projets, sonnet tarifé, même jour.
+        let mut idx = AggIndex::default();
+        idx.tokens.insert(
+            (
+                "proj-a".into(),
+                "2026-06-30".into(),
+                "claude-sonnet-4-5".into(),
+                false,
+            ),
+            (1_000_000, 0, 0, 0),
+        );
+        idx.tokens.insert(
+            (
+                "proj-b".into(),
+                "2026-06-30".into(),
+                "claude-sonnet-4-5".into(),
+                false,
+            ),
+            (3_000_000, 0, 0, 0),
+        );
+        idx.tokens.insert(
+            (
+                "proj-b".into(),
+                "2026-06-20".into(),
+                "claude-sonnet-4-5".into(),
+                false,
+            ),
+            (500_000, 0, 0, 0),
+        );
+        idx.built = true;
+
+        // Toute la période : 2 projets, Σ by_project.tokens == Σ by_model.tokens.
+        let c = index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr);
+        assert_eq!(c.by_project.len(), 2);
+        let sum_bp: u64 = c.by_project.iter().map(|p| p.tokens).sum();
+        let sum_bm: u64 = c.by_model.iter().map(|m| m.tokens).sum();
+        assert_eq!(sum_bp, sum_bm);
+        assert_eq!(sum_bp, 4_500_000);
+        // Tri coût desc → proj-b (3,5 M) devant proj-a (1 M).
+        assert_eq!(c.by_project[0].project, "proj-b");
+        assert_eq!(c.by_project[0].tokens, 3_500_000);
+        assert!(!c.by_project[0].untariffed);
+
+        // Scope projet → une seule entrée.
+        let ca = index_cost(&idx, "0000-00-00", "9999-99-99", Some("proj-a"), &pr);
+        assert_eq!(ca.by_project.len(), 1);
+        assert_eq!(ca.by_project[0].project, "proj-a");
+
+        // Période excluant le 20 juin → proj-b n'a que son jour du 30 (3 M).
+        let cwin = index_cost(&idx, "2026-06-25", "9999-99-99", None, &pr);
+        let pb = cwin
+            .by_project
+            .iter()
+            .find(|p| p.project == "proj-b")
+            .unwrap();
+        assert_eq!(pb.tokens, 3_000_000);
     }
 
     #[test]

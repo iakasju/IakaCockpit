@@ -240,9 +240,10 @@ function dateToMs(date: string): number {
  *                 range-bornées côté Rust. `null`/absent → placeholder.
  * @param attribution attribution par agent RÉELLE (L30-P3, `useAgentAttribution`) : tokens/coût
  *                 par agent nommé via `outputFile`. `null`/absent/vide → perAgent placeholder/démo.
- * @param coordinatorName nom du coordinateur (Aragorn en projet / Odin en portefeuille) : ajoute
- *                 une ligne de premier rang à `perAgent` = conso du transcript parent (via `cost`).
- *                 `undefined`/absence de `cost` réel → pas de ligne (zéro fausse donnée).
+ * @param coordinatorNameOf resolver `projet → nom du coordinateur` (Aragorn pour iakacockpit,
+ *                 Odin pour la racine). Attribue la conso PARENT de chaque projet (`cost.by_project`)
+ *                 à SON coordinateur puis agrège PAR NOM → lignes de premier rang de `perAgent`.
+ *                 `undefined`/absence de `cost` réel → aucune ligne (zéro fausse donnée).
  */
 export function deriveAnalytics(
   economy: readonly TreemapItem[],
@@ -252,7 +253,7 @@ export function deriveAnalytics(
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
   attribution?: AgentAttribution | null,
-  coordinatorName?: string,
+  coordinatorNameOf?: (project: string) => string,
 ): AnalyticsModel {
   // Périmètre : projets triés tokens desc + ALL (somme) en tête.
   const projects = [...economy].sort((a, b) => b.tokens - a.tokens);
@@ -361,46 +362,64 @@ export function deriveAnalytics(
   // part (mention honnête). Modèle inconnu (`untariffed`) → coût affiché `null` (« — »).
   const attrib = attribution ?? null;
   const delegByName = new Map((delg ?? []).map((d) => [d.agent, d]));
+
+  // Lignes du/des COORDINATEUR(S) — attribution PAR PROJET (fix : ne plus fusionner Odin/Aragorn).
+  // La conso PARENT de CHAQUE projet (`cost.by_project`) revient au coordinateur de CE projet
+  // (résolu par `coordinatorNameOf`, ex. Aragorn pour iakacockpit, Odin pour la racine), puis on
+  // AGRÈGE PAR NOM : scope ALL avec plusieurs projets → plusieurs lignes distinctes (Aragorn =
+  // somme de SES projets, Odin = racine) ; scope projet → 1 entrée → 1 ligne. Ajoutée UNIQUEMENT
+  // sur coût parent réel (`hasCost`). Modèle = dominant global (`by_model[0]`). Untariffé partout
+  // pour un nom → coût `null` (« — »). `coordinator:true`.
+  const coordAgg = new Map<
+    string,
+    { tokens: number; cost: number; anyTariffed: boolean }
+  >();
+  if (coordinatorNameOf && hasCost) {
+    for (const pc of costObj!.by_project) {
+      const name = coordinatorNameOf(pc.project);
+      const cur = coordAgg.get(name) ?? {
+        tokens: 0,
+        cost: 0,
+        anyTariffed: false,
+      };
+      cur.tokens += pc.tokens;
+      cur.cost += pc.cost;
+      cur.anyTariffed ||= !pc.untariffed;
+      coordAgg.set(name, cur);
+    }
+  }
+  const dominantModel = costObj?.by_model[0]?.model ?? "—";
+  const coordLines: AgentDatum[] = [...coordAgg.entries()].map(
+    ([name, agg], k) => ({
+      name,
+      role: "",
+      runner: dominantModel,
+      color: AGENT_PALETTE[k % AGENT_PALETTE.length],
+      tokens: agg.tokens,
+      cost: agg.anyTariffed ? agg.cost : null,
+      share: 0, // recalculée sur l'ensemble
+      turns: null,
+      avgDuration: null,
+      coordinator: true,
+    }),
+  );
+
   const attribLines: AgentDatum[] = (attrib?.agents ?? []).map((a, i) => {
     const dd = delegByName.get(a.agent);
     return {
       name: a.agent,
       role: "",
       runner: a.model || "—",
-      color: AGENT_PALETTE[(i + 1) % AGENT_PALETTE.length],
+      color: AGENT_PALETTE[(coordLines.length + i) % AGENT_PALETTE.length],
       tokens: a.tokens,
       cost: a.untariffed ? null : a.cost,
-      share: 0, // recalculée sur le total coordinateur + délégués
+      share: 0, // recalculée sur le total coordinateur(s) + délégués
       turns: dd ? dd.count : null,
       avgDuration: dd && dd.avg_ms > 0 ? fmtDurationMs(dd.avg_ms) : null,
     };
   });
 
-  // Ligne du COORDINATEUR (Aragorn en projet / Odin en portefeuille) : sa conso = le transcript
-  // PARENT = ce que `analytics_cost` agrège (tokens = somme `by_model`, coût = `cost_total`).
-  // Ajoutée UNIQUEMENT si la source parent a de la donnée réelle (`hasCost`) ET qu'un nom de
-  // coordinateur est fourni → jamais de ligne inventée. Modèle = dominant (`by_model[0]`, trié
-  // coût desc). Untariffé partout → coût `null` (« — »), comme ailleurs.
-  const coordLines: AgentDatum[] = [];
-  if (coordinatorName && hasCost) {
-    const parentTokens = costObj!.by_model.reduce((s, m) => s + m.tokens, 0);
-    const untariffedAll = costObj!.by_model.every((m) => m.untariffed);
-    coordLines.push({
-      name: coordinatorName,
-      role: "",
-      runner: costObj!.by_model[0]?.model ?? "—",
-      color: AGENT_PALETTE[0],
-      tokens: parentTokens,
-      cost: untariffedAll ? null : realCost,
-      share: 0,
-      turns: null,
-      avgDuration: null,
-      coordinator: true,
-    });
-  }
-
-  // Composition : [coordinateur, ...délégués], parts recalculées sur le TOTAL (coordinateur +
-  // délégués), tri tokens desc (le coordinateur sera souvent en tête).
+  // Composition : [...coordinateurs, ...délégués], parts recalculées sur le TOTAL, tri tokens desc.
   const allAgentLines = [...coordLines, ...attribLines];
   const perAgentTotal = allAgentLines.reduce((s, a) => s + a.tokens, 0);
   for (const a of allAgentLines) {
@@ -492,7 +511,7 @@ export function useAnalytics(
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
   attribution?: AgentAttribution | null,
-  coordinatorName?: string,
+  coordinatorNameOf?: (project: string) => string,
 ): AnalyticsModel {
   return useMemo(
     () =>
@@ -504,7 +523,7 @@ export function useAnalytics(
         cost,
         delegations,
         attribution,
-        coordinatorName,
+        coordinatorNameOf,
       ),
     [
       economy,
@@ -514,7 +533,7 @@ export function useAnalytics(
       cost,
       delegations,
       attribution,
-      coordinatorName,
+      coordinatorNameOf,
     ],
   );
 }

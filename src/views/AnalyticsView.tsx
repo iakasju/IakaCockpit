@@ -9,7 +9,7 @@
  * donnée réelle) montre la richesse des 4 perspectives sans jamais inventer de donnée en prod.
  * `now` est tické (`useNow`) — pas de `Date.now()` figé. Les widgets eux-mêmes sont purs (D8).
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TreemapItem } from "../components/TreemapPanel";
 import type { ProjectActivity } from "../api/backend";
@@ -85,13 +85,14 @@ export function AnalyticsView({
   // Attribution par agent RÉELLE (L30-P3) : tokens + coût par agent nommé via `outputFile`.
   // Range + scope-aware (le Rust lit les transcripts sous-agents ; le front ne lit rien).
   const attribution = useAgentAttribution(range.fromMs, range.toMs, projectScope);
-  // Nom du coordinateur pour le scope courant : portefeuille (ALL) = "Odin" ; un projet = le
-  // coordinateur de sa team (résolu par App via `teams`) ; fallback = « Coordinateur ». Sert la
-  // ligne de premier rang dans la vue par agent (la logique teams reste dans App, pas ici).
-  const coordinatorName =
-    scope === ALL_SCOPE
-      ? "Odin"
-      : (coordinatorOfProject?.(scope) ?? t("analytics.roleCoordinator"));
+  // Resolver `projet → nom du coordinateur` : chaque projet est attribué à SON coordinateur
+  // (App résout via `teams` ; racine/indisponible → "Odin"). L'agrégation PAR NOM se fait dans
+  // `deriveAnalytics` (plus de ligne "Odin" globale qui fusionnait tous les projets). La logique
+  // teams reste dans App ; ici on garantit juste un nom non vide.
+  const coordinatorNameOf = useCallback(
+    (project: string): string => coordinatorOfProject?.(project) ?? "Odin",
+    [coordinatorOfProject],
+  );
   const real = useAnalytics(
     economy,
     activity,
@@ -100,7 +101,7 @@ export function AnalyticsView({
     cost,
     delegations,
     attribution,
-    coordinatorName,
+    coordinatorNameOf,
   );
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 

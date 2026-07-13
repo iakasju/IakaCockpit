@@ -147,6 +147,7 @@ describe("deriveAnalytics — coût $ RÉEL (L30-P2)", () => {
       { date: "2026-07-11", cost: 6 },
     ],
     untariffed_models: ["mistral-x"],
+    by_project: [],
     priced_at: "2026-07-13",
   };
 
@@ -166,6 +167,7 @@ describe("deriveAnalytics — coût $ RÉEL (L30-P2)", () => {
       by_model: [],
       by_day: [],
       untariffed_models: [],
+      by_project: [],
       priced_at: null,
     };
     const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, empty);
@@ -271,50 +273,57 @@ describe("deriveAnalytics — attribution par agent RÉELLE (L30-P3)", () => {
   });
 });
 
-describe("deriveAnalytics — coordinateur en premier rang (Aragorn/Odin)", () => {
+describe("deriveAnalytics — coordinateur PAR PROJET (ne pas confondre Odin/Aragorn)", () => {
+  // Coût parent PAR PROJET : iakacockpit (coordinateur Aragorn) + racine (coordinateur Odin) +
+  // iakagraph (Aragorn aussi → doit s'agréger avec iakacockpit sous UN seul nom).
   const COST: AnalyticsCost = {
-    cost_total: 20,
+    cost_total: 30,
     by_model: [
-      { model: "claude-opus-4-8[1m]", tokens: 2_000_000, cost: 20, untariffed: false },
-      { model: "claude-sonnet-4-5", tokens: 500_000, cost: 5, untariffed: false },
+      { model: "claude-opus-4-8[1m]", tokens: 3_000_000, cost: 30, untariffed: false },
     ],
-    by_day: [{ date: "2026-07-11", cost: 25 }],
+    by_day: [{ date: "2026-07-11", cost: 30 }],
     untariffed_models: [],
-    priced_at: null,
-  };
-  const ATTRIB: AgentAttribution = {
-    agents: [
-      { agent: "gimli", tokens: 1_000_000, cost: 12, delegations: 3, model: "claude-opus-4-8", untariffed: false },
+    by_project: [
+      { project: "iakacockpit", tokens: 1_000_000, cost: 12, untariffed: false },
+      { project: "root", tokens: 2_000_000, cost: 15, untariffed: false },
+      { project: "iakagraph", tokens: 500_000, cost: 3, untariffed: false },
     ],
-    unavailable: 0,
     priced_at: null,
   };
+  // Resolver : iakacockpit & iakagraph → Aragorn ; tout le reste (racine) → Odin.
+  const resolver = (project: string): string =>
+    project === "iakacockpit" || project === "iakagraph" ? "Aragorn" : "Odin";
 
-  it("ajoute la ligne coordinateur (tokens/coût du parent) en tête, part recalculée sur le total", () => {
-    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, COST, null, ATTRIB, "Odin");
-    expect(m.perAgent).toHaveLength(2); // Odin + gimli
-    const coord = m.perAgent!.find((a) => a.coordinator)!;
-    expect(coord.name).toBe("Odin");
-    // Conso parent = somme by_model (2 M + 0,5 M) et coût = cost_total.
-    expect(coord.tokens).toBe(2_500_000);
-    expect(coord.cost).toBe(20);
-    expect(coord.runner).toBe("claude-opus-4-8[1m]"); // modèle dominant (by_model[0])
-    // Tri tokens desc → coordinateur (2,5 M) en tête, gimli (1 M) ensuite.
+  it("scope ALL : DEUX coordinateurs distincts, tokens NON fusionnés, agrégés par nom", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, COST, null, null, resolver);
+    const coords = m.perAgent!.filter((a) => a.coordinator);
+    expect(coords).toHaveLength(2); // Aragorn + Odin (plus de fusion)
+    const aragorn = coords.find((a) => a.name === "Aragorn")!;
+    const odin = coords.find((a) => a.name === "Odin")!;
+    // Aragorn = iakacockpit (1 M) + iakagraph (0,5 M) agrégés PAR NOM.
+    expect(aragorn.tokens).toBe(1_500_000);
+    expect(aragorn.cost).toBe(15); // 12 + 3
+    // Odin = racine seule (2 M), pas mêlé à Aragorn.
+    expect(odin.tokens).toBe(2_000_000);
+    expect(odin.cost).toBe(15);
+    // Tri tokens desc → Odin (2 M) devant Aragorn (1,5 M).
     expect(m.perAgent![0].name).toBe("Odin");
-    // Part recalculée sur le TOTAL coordinateur + délégués (2,5 M + 1 M = 3,5 M).
-    expect(coord.share).toBeCloseTo(2_500_000 / 3_500_000, 5);
-    expect(m.perAgent![1].share).toBeCloseTo(1_000_000 / 3_500_000, 5);
   });
 
-  it("scope projet : la ligne coordinateur porte le nom fourni (coordinateur de la team)", () => {
-    const m = deriveAnalytics(ECONOMY, ACTIVITY, "big", range7, COST, null, null, "Aragorn");
-    expect(m.perAgent).toHaveLength(1);
-    expect(m.perAgent![0].name).toBe("Aragorn");
-    expect(m.perAgent![0].coordinator).toBe(true);
+  it("scope projet : une seule entrée by_project → une seule ligne coordinateur", () => {
+    const single: AnalyticsCost = {
+      ...COST,
+      by_project: [{ project: "iakacockpit", tokens: 1_000_000, cost: 12, untariffed: false }],
+    };
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, "iakacockpit", range7, single, null, null, resolver);
+    const coords = m.perAgent!.filter((a) => a.coordinator);
+    expect(coords).toHaveLength(1);
+    expect(coords[0].name).toBe("Aragorn");
+    expect(coords[0].tokens).toBe(1_000_000);
   });
 
   it("pas de coût réel → aucune ligne coordinateur inventée (zéro fausse donnée)", () => {
-    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, null, null, "Odin");
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, null, null, resolver);
     expect(m.perAgent).toBeNull();
   });
 
@@ -324,10 +333,12 @@ describe("deriveAnalytics — coordinateur en premier rang (Aragorn/Odin)", () =
       by_model: [{ model: "mistral-x", tokens: 900_000, cost: 0, untariffed: true }],
       by_day: [],
       untariffed_models: ["mistral-x"],
+      by_project: [{ project: "root", tokens: 900_000, cost: 0, untariffed: true }],
       priced_at: null,
     };
-    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, untariffed, null, null, "Odin");
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, untariffed, null, null, resolver);
     const coord = m.perAgent!.find((a) => a.coordinator)!;
+    expect(coord.name).toBe("Odin");
     expect(coord.tokens).toBe(900_000);
     expect(coord.cost).toBeNull();
   });
@@ -362,6 +373,7 @@ describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
       by_model: [{ model: "claude-opus-4-8", tokens: 1_000_000, cost: 42, untariffed: false }],
       by_day: [{ date: "2026-07-11", cost: 42 }],
       untariffed_models: [],
+      by_project: [],
       priced_at: "2026-07-13",
     };
     const real = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, cost);
