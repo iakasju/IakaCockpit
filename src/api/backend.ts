@@ -306,6 +306,13 @@ export interface AgentAttribution {
   priced_at: string | null;
 }
 
+/** État de construction de l'index Analytics (miroir `economy::IndexStatus`) : phase 1 (Périmètre/
+ *  coût/délégations) puis phase 2 (attribution par agent). */
+export interface IndexStatus {
+  tokens_ready: boolean;
+  attrib_ready: boolean;
+}
+
 /**
  * Coût $ réel sur la période `[fromMs, toMs]` (bornes du sélecteur de plage Analytics), dérivé
  * des transcripts + table de prix par modèle côté Rust. `project` scope au projet du Périmètre
@@ -368,6 +375,15 @@ export function agentAttribution(
  */
 export function analyticsRefresh(): Promise<void> {
   return call<void>("analytics_refresh", {});
+}
+
+/**
+ * État de construction de l'index Analytics : `tokens_ready` (phase 1 = Périmètre/coût/délégations)
+ * et `attrib_ready` (phase 2 = attribution par agent, lecture des `outputFile`). Le front affiche
+ * « construction… » tant que non prêt, puis re-fetche. Lecture non bloquante.
+ */
+export function analyticsIndexStatus(): Promise<IndexStatus> {
+  return call<IndexStatus>("analytics_index_status", {});
 }
 
 /**
@@ -937,6 +953,7 @@ export const backend = {
   delegationsByAgent,
   agentAttribution,
   analyticsRefresh,
+  analyticsIndexStatus,
   addProject,
   listExtraProjects,
   pickDirectory,

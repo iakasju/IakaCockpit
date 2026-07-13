@@ -67,7 +67,14 @@ function MixBar({ slices }: { slices: readonly MixSlice[] }): JSX.Element {
   );
 }
 
-export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Element {
+export function PerspectiveAgents({
+  model,
+  attributionPending = false,
+}: {
+  model: AnalyticsModel;
+  /** Phase 2 de l'index (attribution par agent) encore en construction → note « en cours ». */
+  attributionPending?: boolean;
+}): JSX.Element {
   const { t } = useTranslation();
   const agents = model.perAgent;
   const deleg = model.perAgentDelegations;
@@ -158,6 +165,10 @@ export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Ele
               ))}
             </tbody>
           </table>
+        ) : attributionPending ? (
+          /* Phase 2 de l'index en construction (lecture des outputFile) : calcul en cours,
+             pas une absence de source — la table apparaîtra dès que la phase 2 est prête. */
+          <p className="hypnote compact">{t("analytics.attributionBuilding")}</p>
         ) : (
           /* Compaction : pas de gros skeleton — seulement la note honnête (POURQUOI tokens/$
              par agent n'ont pas de source). Réapparaîtra en table dès que le réel existe. */

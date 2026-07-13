@@ -540,6 +540,8 @@ export const fr = {
     perAgentNoSource: "Tokens et coût par agent nommé : pas de source réelle — les sous-agents délégués tournent hors du transcript parent (attribution par agent = à venir).",
     attributionUnavailable: "{{count}} délégation(s) non attribuable(s) — transcript(s) éphémère(s) expiré(s).",
     roleCoordinator: "Coordinateur",
+    indexBuilding: "Construction de l'index…",
+    attributionBuilding: "Calcul par agent en cours…",
   },
 
   teams: {

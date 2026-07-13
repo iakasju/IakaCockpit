@@ -337,6 +337,36 @@
   margin-top: 2px;
 }
 
+/* Indicateur discret « Construction de l'index… » (phase 1 pas encore prête, rare) */
+.analytics .ana-building {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.analytics .ana-building::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ana-pulse 1.1s ease-in-out infinite;
+}
+@keyframes ana-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Treemap tokens par agent (V1) */
 .analytics .atmap {
   display: flex;

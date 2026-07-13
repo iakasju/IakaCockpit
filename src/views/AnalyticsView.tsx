@@ -24,6 +24,7 @@ import {
 import { usePortfolioCost } from "../hooks/usePortfolioCost";
 import { useDelegationsByAgent } from "../hooks/useDelegationsByAgent";
 import { useAgentAttribution } from "../hooks/useAgentAttribution";
+import { useIndexStatus } from "../hooks/useIndexStatus";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import { PerimeterColumn } from "../components/analytics/PerimeterColumn";
 import { TimeRangeControl } from "../components/analytics/TimeRangeControl";
@@ -82,9 +83,24 @@ export function AnalyticsView({
   const projectScope = scope === ALL_SCOPE ? undefined : scope;
   const cost = usePortfolioCost(range.fromMs, range.toMs, projectScope);
   const delegations = useDelegationsByAgent(range.fromMs, range.toMs, projectScope);
+  // État de construction de l'index (2 phases). Phase 1 (Périmètre/coût/délégations) est bâtie
+  // synchrone au 1er accès → rapide ; phase 2 (attribution par agent, lecture des outputFile) est
+  // DIFFÉRÉE. On polle jusqu'à ce qu'elle soit prête, puis on re-fetche l'attribution.
+  const indexStatus = useIndexStatus();
   // Attribution par agent RÉELLE (L30-P3) : tokens + coût par agent nommé via `outputFile`.
-  // Range + scope-aware (le Rust lit les transcripts sous-agents ; le front ne lit rien).
-  const attribution = useAgentAttribution(range.fromMs, range.toMs, projectScope);
+  // Range + scope-aware ; re-fetch quand la phase 2 devient prête (`attrib_ready` = readyToken).
+  const attribution = useAgentAttribution(
+    range.fromMs,
+    range.toMs,
+    projectScope,
+    undefined,
+    indexStatus.attrib_ready,
+  );
+  // V4 « en cours » : la phase 2 n'est pas prête ET aucune attribution encore reçue (prod réelle
+  // uniquement ; hors-Tauri/démo → `attrib_ready` vrai → jamais d'indicateur).
+  const attributionPending =
+    !indexStatus.attrib_ready &&
+    (attribution == null || attribution.agents.length === 0);
   // Resolver `projet → nom du coordinateur` : chaque projet est attribué à SON coordinateur
   // (App résout via `teams` ; racine/indisponible → "Odin"). L'agrégation PAR NOM se fait dans
   // `deriveAnalytics` (plus de ligne "Odin" globale qui fusionnait tous les projets). La logique
@@ -128,6 +144,13 @@ export function AnalyticsView({
           <h1 className="title">{t("analytics.title")}</h1>
           <p className="lede">{t("analytics.lede")}</p>
 
+          {/* Indicateur discret : phase 1 (Périmètre/coût) encore en construction (rare, sub-sec). */}
+          {!indexStatus.tokens_ready && (
+            <div className="ana-building" role="status">
+              {t("analytics.indexBuilding")}
+            </div>
+          )}
+
           <TimeRangeControl
             range={range}
             scopeLabel={model.scopeLabel}
@@ -143,7 +166,9 @@ export function AnalyticsView({
           {perspective === "dashboard" && <PerspectiveDashboard model={model} />}
           {perspective === "timeline" && <PerspectiveTimeline model={model} />}
           {perspective === "compare" && <PerspectiveCompare model={model} />}
-          {perspective === "agents" && <PerspectiveAgents model={model} />}
+          {perspective === "agents" && (
+            <PerspectiveAgents model={model} attributionPending={attributionPending} />
+          )}
         </div>
       </main>
     </section>

@@ -14,6 +14,9 @@ export function useAgentAttribution(
   toMs: number,
   project?: string,
   api: Backend = backend,
+  /** Jeton de fraîcheur (ex. `attrib_ready` de `useIndexStatus`) : quand il change, on re-fetche
+   *  — l'attribution renvoie du vide tant que la phase 2 de l'index n'est pas prête. */
+  readyToken?: unknown,
 ): AgentAttribution | null {
   const [attrib, setAttrib] = useState<AgentAttribution | null>(null);
 
@@ -34,7 +37,7 @@ export function useAgentAttribution(
     return () => {
       alive = false;
     };
-  }, [api, fromMs, toMs, project]);
+  }, [api, fromMs, toMs, project, readyToken]);
 
   return attrib;
 }

@@ -539,6 +539,8 @@ export const en: Resources = {
     perAgentNoSource: "Tokens and cost per named agent: no real source — delegated sub-agents run outside the parent transcript (per-agent attribution = coming).",
     attributionUnavailable: "{{count}} delegation(s) not attributable — ephemeral transcript(s) expired.",
     roleCoordinator: "Coordinator",
+    indexBuilding: "Building index…",
+    attributionBuilding: "Computing per-agent…",
   },
 
   teams: {

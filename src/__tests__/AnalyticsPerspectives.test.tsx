@@ -142,6 +142,12 @@ describe("Perspectives — prod sans source réelle (compaction honnête, pas de
     expect(screen.getByText(/pas de source réelle/)).toBeTruthy();
     expect(screen.queryByText("Classement des agents")).toBeTruthy();
   });
+
+  it("V4 attribution en construction : note « en cours », pas « pas de source »", () => {
+    render(<PerspectiveAgents model={empty} attributionPending />);
+    expect(screen.getByText(/Calcul par agent en cours/)).toBeTruthy();
+    expect(screen.queryByText(/pas de source réelle/)).toBeNull();
+  });
 });
 
 describe("AnalyticsView — toggle de perspective", () => {
