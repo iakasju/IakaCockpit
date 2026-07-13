@@ -619,6 +619,12 @@
   color: var(--text-3);
   font-family: var(--font-mono);
 }
+/* Cible d'hypothèse (V3-B) : par modèle (global) ou par agent */
+.analytics .hypmode {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
 /* Override d'hypothèse (V3-B) : deux menus modèle source → cible */
 .analytics .hypover {
   display: flex;

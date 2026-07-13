@@ -516,6 +516,10 @@ export const fr = {
     hypothesisReplan: "re-tarifé sous {{model}}",
     hypothesisFrom: "remplacer le modèle",
     hypothesisTo: "par",
+    hypothesisMode: "cibler",
+    hypothesisModeGlobal: "par modèle",
+    hypothesisModeAgent: "par agent",
+    hypothesisAgent: "agent",
     hypothesisNotRepriced: "{{count}} agent(s) au modèle source sans prix — non re-tarifé(s).",
     hypothesisNote: "On re-tarife les tokens réellement observés sous un autre modèle. Changer de modèle changerait la verbosité (donc le volume) : ceci est une hypothèse de premier ordre, jamais une mesure.",
     // Comparaison A/B — fenêtre + deltas + verdict

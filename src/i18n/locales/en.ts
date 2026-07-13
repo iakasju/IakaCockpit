@@ -515,6 +515,10 @@ export const en: Resources = {
     hypothesisReplan: "re-priced under {{model}}",
     hypothesisFrom: "replace model",
     hypothesisTo: "with",
+    hypothesisMode: "target",
+    hypothesisModeGlobal: "by model",
+    hypothesisModeAgent: "by agent",
+    hypothesisAgent: "agent",
     hypothesisNotRepriced: "{{count}} agent(s) on source model without pricing — not re-priced.",
     hypothesisNote: "We re-price the tokens actually observed under another model. Changing model would change verbosity (hence volume): this is a first-order hypothesis, never a measurement.",
     // A/B comparison — window + deltas + verdict

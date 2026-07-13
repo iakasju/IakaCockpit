@@ -106,8 +106,14 @@ describe("V3 — Comparaison RÉELLE (avant/après + hypothèse)", () => {
     // Étiquette d'honnêteté GRAVÉE + coût observé (base) rendus.
     expect(screen.getByText("hypothèse · à volume constant")).toBeTruthy();
     expect(screen.getAllByText("$20,00").length).toBeGreaterThan(0); // coût réel B (gimli)
-    // Les deux menus modèle (source + cible) sont présents.
+    // Les deux menus (source modèle + cible) sont présents.
     expect(screen.getAllByRole("combobox").length).toBe(2);
+    // Ciblage PAR AGENT : bascule → le menu agent liste l'agent réel (gimli).
+    fireEvent.click(screen.getByRole("button", { name: "par agent" }));
+    expect(screen.getByRole("option", { name: "gimli" })).toBeTruthy();
+    // Toujours 2 menus (agent + cible) + étiquette d'honnêteté maintenue.
+    expect(screen.getAllByRole("combobox").length).toBe(2);
+    expect(screen.getByText("hypothèse · à volume constant")).toBeTruthy();
   });
 });
 

@@ -125,20 +125,32 @@ export interface HypothesisResult {
   unavailable: number;
 }
 
+/** Cible du re-tarifage d'hypothèse : PAR MODÈLE (global, `fromModel`) OU PAR AGENT nommé (`agent`). */
+export interface HypothesisOverride {
+  /** Cibler UN agent nommé (mode « par agent ») — prime sur `fromModel` s'il est renseigné. */
+  agent?: string;
+  /** Mode global : re-tarifer les agents dont le modèle == `fromModel`. Ignoré si `agent` présent. */
+  fromModel?: string;
+  /** Modèle de remplacement (cible du re-tarifage). */
+  toModel: string;
+}
+
 /**
- * Re-tarife les tokens OBSERVÉS (attribution B) : les agents dont le modèle == `fromModel` sont
- * ré-évalués au prix de `toModel` ; les autres gardent leur coût réel. Les TOKENS ne bougent PAS
- * (ratio de taux représentatifs). Modèle cible sans prix → `altCost = null` (« — »). Agent au
- * modèle source sans prix → non re-tarifé (compté `notRepriced`). Untariffé → hors calcul $. PUR.
+ * Re-tarife les tokens OBSERVÉS (attribution B) sous un autre modèle — les TOKENS ne bougent PAS
+ * (ratio de taux représentatifs). Cible :
+ *   - PAR AGENT (`override.agent`) → seul cet agent est ré-évalué ;
+ *   - PAR MODÈLE (`override.fromModel`, mode global) → tous les agents de ce modèle.
+ * Les autres agents gardent leur coût réel. Modèle cible sans prix → `altCost = null` (« — ») ;
+ * agent ciblé sans prix source → non re-tarifé (compté `notRepriced`) ; untariffé → hors calcul $. PUR.
  */
 export function repriceHypothesis(
   attrib: AgentAttribution | null,
   table: PricingTable | null,
-  fromModel: string,
-  toModel: string,
+  override: HypothesisOverride,
 ): HypothesisResult {
+  const { agent, fromModel, toModel } = override;
   const base: HypothesisResult = {
-    fromModel,
+    fromModel: fromModel ?? agent ?? "",
     toModel,
     baseCost: null,
     altCost: null,
@@ -157,7 +169,9 @@ export function repriceHypothesis(
     if (ag.cost == null) continue; // untariffé → hors calcul $ (jamais un coût fabriqué)
     hasBase = true;
     sumBase += ag.cost;
-    if (ag.model === fromModel) {
+    // Ciblé PAR AGENT si `agent` fourni, sinon PAR MODÈLE (global).
+    const targeted = agent != null ? ag.agent === agent : ag.model === fromModel;
+    if (targeted) {
       const sourceRate = rateFor(ag.model, table);
       if (targetRate == null || sourceRate == null || sourceRate === 0) {
         notRepriced += 1;
@@ -171,7 +185,7 @@ export function repriceHypothesis(
   }
 
   return {
-    fromModel,
+    fromModel: base.fromModel,
     toModel,
     baseCost: hasBase ? sumBase : null,
     altCost: hasBase && targetRate != null ? sumAlt : null,

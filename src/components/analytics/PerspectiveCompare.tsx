@@ -50,12 +50,24 @@ function HypothesisReal({
     () => [...new Set(attribB.agents.map((a) => a.model).filter((m) => m))],
     [attribB],
   );
+  const agentOptions = useMemo(
+    () => [...new Set(attribB.agents.map((a) => a.agent))],
+    [attribB],
+  );
   const toOptions = pricing?.models.map((m) => m.model) ?? [];
+  // Cible : « par modèle » (global) ou « par agent » nommé.
+  const [mode, setMode] = useState<"global" | "agent">("global");
   const [fromModel, setFromModel] = useState(fromOptions[0] ?? "");
+  const [agent, setAgent] = useState(agentOptions[0] ?? "");
   const [toModel, setToModel] = useState(toOptions[0] ?? "");
   const hyp = useMemo(
-    () => repriceHypothesis(attribB, pricing, fromModel, toModel),
-    [attribB, pricing, fromModel, toModel],
+    () =>
+      repriceHypothesis(
+        attribB,
+        pricing,
+        mode === "agent" ? { agent, toModel } : { fromModel, toModel },
+      ),
+    [attribB, pricing, mode, agent, fromModel, toModel],
   );
 
   return (
@@ -66,17 +78,49 @@ function HypothesisReal({
       {/* Étiquette d'honnêteté GRAVÉE : toujours présente sur ce scénario. */}
       <div className="hyplabel">{t("analytics.hypothesisLabel")}</div>
 
-      {/* Override : remplacer le modèle source par un modèle cible (liste = table de prix). */}
+      {/* Cible : par modèle (global) ou par agent nommé. */}
+      <div className="hypmode" role="group" aria-label={t("analytics.hypothesisMode")}>
+        <button
+          type="button"
+          className={`btn xs${mode === "global" ? " accent" : ""}`}
+          aria-pressed={mode === "global"}
+          onClick={() => setMode("global")}
+        >
+          {t("analytics.hypothesisModeGlobal")}
+        </button>
+        <button
+          type="button"
+          className={`btn xs${mode === "agent" ? " accent" : ""}`}
+          aria-pressed={mode === "agent"}
+          onClick={() => setMode("agent")}
+        >
+          {t("analytics.hypothesisModeAgent")}
+        </button>
+      </div>
+
+      {/* Override : remplacer (le modèle source | l'agent ciblé) par un modèle cible. */}
       <div className="hypover">
         <label className="hypsel">
-          <span>{t("analytics.hypothesisFrom")}</span>
-          <select value={fromModel} onChange={(e) => setFromModel(e.target.value)}>
-            {fromOptions.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <span>
+            {mode === "agent" ? t("analytics.hypothesisAgent") : t("analytics.hypothesisFrom")}
+          </span>
+          {mode === "agent" ? (
+            <select value={agent} onChange={(e) => setAgent(e.target.value)}>
+              {agentOptions.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select value={fromModel} onChange={(e) => setFromModel(e.target.value)}>
+              {fromOptions.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          )}
         </label>
         <span className="dar" aria-hidden>
           →

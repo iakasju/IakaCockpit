@@ -116,7 +116,10 @@ describe("repriceHypothesis — re-tarifage à volume constant (V3-B)", () => {
   };
 
   it("re-tarife le modèle source au prix cible (tokens constants) ; untariffé exclu", () => {
-    const r = repriceHypothesis(attrib, table, "claude-opus-4-8[1m]", "claude-haiku");
+    const r = repriceHypothesis(attrib, table, {
+      fromModel: "claude-opus-4-8[1m]",
+      toModel: "claude-haiku",
+    });
     // base = coût réel des agents tarifés (gimli 20 ; legolas untariffé exclu).
     expect(r.baseCost).toBe(20);
     // alt = 20 × rate(haiku)/rate(opus) = 20 × 1.47/27.5625.
@@ -128,15 +131,43 @@ describe("repriceHypothesis — re-tarifage à volume constant (V3-B)", () => {
   });
 
   it("modèle cible sans prix → altCost null (« — »), base conservée", () => {
-    const r = repriceHypothesis(attrib, table, "claude-opus-4-8[1m]", "modele-inconnu");
+    const r = repriceHypothesis(attrib, table, {
+      fromModel: "claude-opus-4-8[1m]",
+      toModel: "modele-inconnu",
+    });
     expect(r.baseCost).toBe(20);
     expect(r.altCost).toBeNull();
   });
 
   it("attribution vide → tout null (placeholder, zéro fausse donnée)", () => {
     const empty: AgentAttribution = { agents: [], unavailable: 0, priced_at: null };
-    const r = repriceHypothesis(empty, table, "x", "y");
+    const r = repriceHypothesis(empty, table, { fromModel: "x", toModel: "y" });
     expect(r.baseCost).toBeNull();
     expect(r.altCost).toBeNull();
+  });
+
+  it("PAR AGENT : re-tarife UNIQUEMENT l'agent ciblé (les autres gardent leur coût réel)", () => {
+    // Deux agents tarifés au même modèle opus ; on ne cible QUE gimli.
+    const two: AgentAttribution = {
+      agents: [
+        { agent: "gimli", tokens: 1_000_000, cost: 20, delegations: 1, model: "claude-opus-4-8[1m]", untariffed: false },
+        { agent: "legolas", tokens: 1_000_000, cost: 20, delegations: 1, model: "claude-opus-4-8[1m]", untariffed: false },
+      ],
+      unavailable: 0,
+      priced_at: null,
+    };
+    const rHaiku = (20 * (0.8 + 4 + 1 + 0.08)) / 4 / ((15 + 75 + 18.75 + 1.5) / 4);
+    const perAgent = repriceHypothesis(two, table, { agent: "gimli", toModel: "claude-haiku" });
+    // base = 40 (les deux) ; alt = gimli re-tarifé (haiku) + legolas inchangé (20).
+    expect(perAgent.baseCost).toBe(40);
+    expect(perAgent.altCost).toBeCloseTo(rHaiku + 20, 6);
+    // Mode GLOBAL (même modèle) re-tarife les DEUX → alt = 2 × gimli-haiku.
+    const global = repriceHypothesis(two, table, {
+      fromModel: "claude-opus-4-8[1m]",
+      toModel: "claude-haiku",
+    });
+    expect(global.altCost).toBeCloseTo(2 * rHaiku, 6);
+    // Cibler un agent ne touche donc PAS le même total que le global (preuve du ciblage).
+    expect(perAgent.altCost! > global.altCost!).toBe(true);
   });
 });
