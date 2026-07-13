@@ -98,26 +98,50 @@ hors `backend.ts` ; on réutilise `portfolioEconomy/Activity`), **CSP intacte**,
 god-component, **débrancher-garder** (Journal conservé), **zéro fausse donnée** (placeholder
 en prod si pas de source réelle), i18n parité. **Rust non touché** en P1.
 
-### L30-P2 — Coût $ réel + agrégation par période/modèle (RUST + front, cible ultérieure)
-- **Table de prix par modèle** (`$/Mtok` : input / output / cache-write / cache-read — les 4
-  postes, le cache change le coût réel). **Séparer `cache_read`/`cache_creation`** de l'input
-  plein (aujourd'hui `fold_line` les mélange pour les totaux tokens — pour le COÛT il faut les 4
-  champs distincts, tous présents dans `message.usage`). Modèles locaux (llama3.1…) = **0 $**.
-  Modèle **absent de la table** → coût `null` + placeholder (jamais de coût inventé).
-- **Approvisionnement de la table = table par défaut EMBARQUÉE (fallback offline, CSP intacte)
-  + rafraîchissement EN TÂCHE DE FOND AU DÉMARRAGE** de l'app (non bloquant : l'app démarre sur
-  la table locale ; la MAJ s'applique quand elle arrive ; injoignable → on garde la table
-  embarquée). Source = **pricing.json maintenue dans la suite** (Forgejo/iakabox ou endpoint
-  contrôlé) — self-hosted-first, traçable (table + date). Cf. AR-5.
-- Coût $ dérivé par ligne (`model` + usage) → agrégation **par période** (bornes `from`/`to`),
-  **mix par modèle** → alimente V1 coût, V2 coût cumulé, V3 deltas + **hypothèse par modèle**,
-  V4 mix modèle **en réel**.
-- Le front bascule les widgets « placeholder » sur la donnée réelle dès qu'elle arrive.
+### ⚠️ Constat transcript (investigation Aragorn 2026-07-13) — RECADRE P2/P3
+Sur **66 transcripts réels** : `isSidechain` est **TOUJOURS `false`** (0 fil de sous-agent
+inline). Les délégations (gimli/legolas/loki, présentes comme `tool_use "Agent"` +
+`subagent_type`) tournent comme **agents séparés** → **leurs tokens ne sont PAS dans le
+transcript parent**. Le split coord/sub d'`economy.rs` est en pratique « tout coordinateur ».
+Le `subagent_tokens` vu dans les notifications est du **texte de message** (rapports relayés),
+**pas** un champ structuré. **Conséquence** : les **tokens/coût PAR AGENT NOMMÉ n'ont pas de
+source réelle** propre → **différés** (spike). Ce qui EST réel : coût $ (modèle+usage du
+coordinateur) et **délégations par agent en COMPTES/DURÉES** (via `tool_use "Agent"`).
+
+### L30-P2 — « Analytics réel » = Coût $ réel + délégations réelles par agent (RUST + front)
+Scope tranché par Stéphane (2026-07-13, option « B + délégations réelles ») :
+
+**B — Coût $ réel (economy.rs + façade + front)**
+- **Table de prix par modèle** (`$/Mtok` : input / output / cache-write / cache-read — 4 postes ;
+  le cache change le coût réel). **Séparer les 4 buckets** de `message.usage` (aujourd'hui
+  `fold_line` les mélange). Modèles locaux (llama3.1/ollama…) = **0 $**. Modèle **absent de la
+  table** → coût `null` + placeholder (jamais de coût inventé) + marqueur « modèle sans tarif ».
+- **Approvisionnement** : table **EMBARQUÉE par défaut** (bootstrap, valeurs publiques courantes,
+  commentée « défaut, rafraîchie au démarrage ») **+ rafraîchissement EN TÂCHE DE FOND AU
+  DÉMARRAGE** depuis `pricing_url` (config non sensible ; **non bloquant** ; injoignable/absent →
+  on garde l'embarquée). Traçable (table + date de MAJ). Cf. AR-5.
+- Coût $ dérivé **par ligne** (`model` + usage) → agrégation **par période** (bornes `from`/`to`
+  passées depuis le sélecteur de plage) + **mix par modèle** → alimente KPI coût, tendance,
+  coût cumulé (V2), deltas coût (V3-A single-période), mix modèle (V4) **en réel**.
+
+**Délégations réelles par agent (transcript)**
+- Depuis les transcripts (déjà lus par `economy.rs`), extraire les `tool_use "Agent"`
+  (`subagent_type` = nom d'agent) + apparier le `tool_result` (durée = ts result − ts use) →
+  agrégat **par agent nommé** : **nombre de délégations** + **durée totale/moyenne**, filtré par
+  période. Alimente le **KPI délégations** (réel) et une **vue « par agent » en comptes/durées**
+  (V4 : classement par nombre de délégations, PAS par tokens — honnête).
+- **Zéro fausse donnée** : per-agent en tokens/$ reste **placeholder** (pas de source) ; on
+  n'affiche que comptes/durées réels.
+
+**Front** : `useAnalytics` consomme les nouvelles données réelles (coût, délégations/agent),
+range-aware ; les widgets « placeholder » basculent au réel là où la source existe désormais.
+Le reste (per-agent tokens/$, hypothèse V3-B par agent) reste placeholder.
 
 ### Différé / hors-lot (P3+)
-- **Attribution par agent NOMMÉ** (Aragorn/Gimli…) : corréler `Agent` tool_use ↔ session
-  sidechain (le split coord/délégués existe déjà ; le NOM du délégué est le cran d'après).
-  Débloque V3-B **hypothèse par agent** (« et si Gimli passait sonnet → codex ») et V4 par agent réel.
+- **SPIKE per-agent tokens/$** : où vivent les transcripts des sous-agents délégués ? portent-ils
+  `usage` ? — préalable à toute attribution tokens/$ par agent nommé. `isSidechain` étant
+  toujours `false`, la voie « sidechain inline » est **écartée** ; voie à explorer = transcripts
+  séparés des sous-agents. Débloque V3-B **hypothèse par agent** et le « qui coûte quoi » en $.
 - Hypothèse de **changement de PLAN** (délégation) et pas seulement de modèle : change les
   volumes → au-delà du re-tarifage à volume constant (P3+, à part).
 - Comparaison de config « réelle » adossée à l'historique des `frame.json`/binding (V3-A pousse

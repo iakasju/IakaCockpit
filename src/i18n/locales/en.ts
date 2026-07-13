@@ -526,6 +526,14 @@ export const en: Resources = {
     runnerMix: "Runner mix",
     modelMix: "Model mix",
     tokensWord: "team tokens",
+    // Real L30-P2 (delegations by agent + model mix)
+    colDelegations: "Delegations",
+    delegByAgent: "Delegations by agent",
+    delegByAgentSub: "real · count & average duration",
+    modelCostTitle: "Model mix · real cost",
+    modelCostSub: "observed $ cost per model over the range",
+    untariffedNote: "Model(s) without pricing (cost not counted): {{models}}",
+    perAgentNoSource: "Tokens and cost per named agent: no real source — delegated sub-agents run outside the parent transcript (per-agent attribution = coming).",
   },
 
   teams: {

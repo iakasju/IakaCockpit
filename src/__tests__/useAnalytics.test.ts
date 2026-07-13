@@ -8,7 +8,11 @@ import {
 } from "../hooks/useAnalytics";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import type { TreemapItem } from "../components/TreemapPanel";
-import type { ProjectActivity } from "../api/backend";
+import type {
+  ProjectActivity,
+  AnalyticsCost,
+  AgentDelegations,
+} from "../api/backend";
 
 const NOW = new Date(2026, 6, 13, 12, 0, 0).getTime(); // 13 juil. 2026, midi local
 
@@ -130,6 +134,82 @@ describe("deriveAnalytics — placeholders honnêtes", () => {
   });
 });
 
+describe("deriveAnalytics — coût $ RÉEL (L30-P2)", () => {
+  const COST: AnalyticsCost = {
+    cost_total: 10,
+    by_model: [
+      { model: "claude-sonnet-4-5", tokens: 1_000_000, cost: 10, untariffed: false },
+      { model: "mistral-x", tokens: 200_000, cost: 0, untariffed: true },
+    ],
+    by_day: [
+      { date: "2026-07-10", cost: 4 },
+      { date: "2026-07-11", cost: 6 },
+    ],
+    untariffed_models: ["mistral-x"],
+    priced_at: "2026-07-13",
+  };
+
+  it("alimente coût, tendance, cumulé, mix modèle et marqueur untariffed depuis le RÉEL", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, COST);
+    expect(m.cost).toBe(10); // cost_total autoritaire Rust
+    expect(m.costTrend).toEqual([4, 6]); // by_day → tendance
+    expect(m.cumulativeCost).toEqual([4, 10]); // somme courante
+    expect(m.modelCost).toHaveLength(2);
+    expect(m.untariffedModels).toEqual(["mistral-x"]);
+    expect(m.pricedAt).toBe("2026-07-13");
+  });
+
+  it("coût absent (by_model vide) → cost/costTrend null (placeholder, jamais $0 fabriqué)", () => {
+    const empty: AnalyticsCost = {
+      cost_total: 0,
+      by_model: [],
+      by_day: [],
+      untariffed_models: [],
+      priced_at: null,
+    };
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, empty);
+    expect(m.cost).toBeNull();
+    expect(m.costTrend).toBeNull();
+    expect(m.cumulativeCost).toBeNull();
+    expect(m.modelCost).toBeNull();
+  });
+
+  it("sans argument coût → tout placeholder (rétro-compat P1)", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7);
+    expect(m.cost).toBeNull();
+    expect(m.modelCost).toBeNull();
+    expect(m.untariffedModels).toEqual([]);
+    expect(m.pricedAt).toBeNull();
+  });
+});
+
+describe("deriveAnalytics — délégations RÉELLES par agent (L30-P2)", () => {
+  const DELEG: AgentDelegations[] = [
+    { agent: "gimli", count: 3, total_ms: 90_000, avg_ms: 30_000 },
+    { agent: "legolas", count: 1, total_ms: 0, avg_ms: 0 },
+  ];
+
+  it("KPI délégations = somme des comptes ; perAgentDelegations = comptes + durées réels", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, DELEG);
+    expect(m.delegations).toBe(4);
+    expect(m.perAgentDelegations).toHaveLength(2);
+    expect(m.perAgentDelegations![0]).toEqual({
+      agent: "gimli",
+      count: 3,
+      totalMs: 90_000,
+      avgMs: 30_000,
+    });
+    // Tokens/$ par agent restent placeholder (pas de source, cf. constat).
+    expect(m.perAgent).toBeNull();
+  });
+
+  it("liste vide (fetch réel, aucune délégation) → KPI 0, perAgentDelegations null", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, []);
+    expect(m.delegations).toBe(0);
+    expect(m.perAgentDelegations).toBeNull();
+  });
+});
+
 describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
   const demo = makeDemoAnalytics(NOW, range7);
 
@@ -151,6 +231,21 @@ describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
     expect(m.perAgent).toBe(demo.perAgent);
     expect(m.compare).toBe(demo.compare);
     expect(m.hasRealData).toBe(true);
+  });
+
+  it("coût RÉEL présent : mergeDemo garde le réel (pas la démo)", () => {
+    const cost: AnalyticsCost = {
+      cost_total: 42,
+      by_model: [{ model: "claude-opus-4-8", tokens: 1_000_000, cost: 42, untariffed: false }],
+      by_day: [{ date: "2026-07-11", cost: 42 }],
+      untariffed_models: [],
+      priced_at: "2026-07-13",
+    };
+    const real = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, cost);
+    const m = mergeDemo(real, demo);
+    expect(m.cost).toBe(42); // réel préservé, pas la démo
+    expect(m.modelCost).toBe(real.modelCost);
+    expect(m.pricedAt).toBe("2026-07-13");
   });
 
   it("réel vide : périmètre + daily viennent de la démo (page pleine en dev)", () => {

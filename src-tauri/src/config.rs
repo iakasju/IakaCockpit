@@ -21,6 +21,10 @@ pub const KEY_THEME: &str = "theme";
 pub const KEY_LITELLM_ENDPOINT: &str = "litellm_endpoint";
 /// Projets importés hors racine (bouton + de Working) : tableau JSON de chemins.
 pub const KEY_EXTRA_PROJECTS: &str = "extra_projects";
+/// URL du `pricing.json` autoritaire (coût $ Analytics, L30-P2). Config NON sensible :
+/// simple URL (self-hosted-first : Forgejo/iakabox ou endpoint contrôlé). Absente → table
+/// de prix embarquée seule. Rafraîchissement EN TÂCHE DE FOND au démarrage (`pricing::spawn_refresh`).
+pub const KEY_PRICING_URL: &str = "pricing_url";
 
 // --- Teams & agents — définition de premier rang (L11) — config NON sensible -----
 //

@@ -236,6 +236,73 @@ export function portfolioActivity(): Promise<ProjectActivity[]> {
   return call<ProjectActivity[]>("portfolio_activity");
 }
 
+// --- Analytics : coût $ réel + délégations réelles par agent (L30-P2) ---
+//
+// Coût $ dérivé côté Rust (transcripts + table de prix par modèle `pricing.rs`, 4 buckets
+// séparés). Délégations par agent = `tool_use "Agent"`/`"Task"` appariés à leur `tool_result`.
+// Bornes de période = le sélecteur de plage Analytics. Lecture seule ; l'appel réseau du
+// refresh de prix vit UNIQUEMENT côté Rust (CSP stricte — le front ne fait aucun fetch).
+
+/** Coût $ agrégé d'un modèle (miroir `economy::ModelCost`). */
+export interface ModelCost {
+  model: string;
+  tokens: number;
+  cost: number;
+  /** `true` = modèle absent de la table de prix (coût non compté, marqueur honnête). */
+  untariffed: boolean;
+}
+
+/** Coût $ d'un jour (miroir `economy::DayCost`) — tendance + cumulé. */
+export interface DayCost {
+  date: string;
+  cost: number;
+}
+
+/** Coût $ réel agrégé sur une période (miroir `economy::AnalyticsCost`). */
+export interface AnalyticsCost {
+  cost_total: number;
+  by_model: ModelCost[];
+  by_day: DayCost[];
+  untariffed_models: string[];
+  /** Date de la table de prix (`pricing.json`), ou `null` si table embarquée. */
+  priced_at: string | null;
+}
+
+/** Délégations réelles agrégées d'un agent nommé (miroir `economy::AgentDelegations`). */
+export interface AgentDelegations {
+  agent: string;
+  count: number;
+  total_ms: number;
+  avg_ms: number;
+}
+
+/**
+ * Coût $ réel sur la période `[fromMs, toMs]` (bornes du sélecteur de plage Analytics), dérivé
+ * des transcripts + table de prix par modèle côté Rust. Lecture seule ; vide (coût 0, listes
+ * vides) si aucun transcript / hors Tauri. Le refresh de la table de prix est background Rust.
+ */
+export function analyticsCost(fromMs: number, toMs: number): Promise<AnalyticsCost> {
+  return call<AnalyticsCost>("analytics_cost", {
+    from: Math.round(fromMs),
+    to: Math.round(toMs),
+  });
+}
+
+/**
+ * Délégations réelles par agent nommé sur la période `[fromMs, toMs]` (comptes + durées
+ * use→result). PAS de tokens/$ par agent (pas de source, cf. constat transcript). Lecture
+ * seule ; vide si aucun transcript / hors Tauri.
+ */
+export function delegationsByAgent(
+  fromMs: number,
+  toMs: number,
+): Promise<AgentDelegations[]> {
+  return call<AgentDelegations[]>("delegations_by_agent", {
+    from: Math.round(fromMs),
+    to: Math.round(toMs),
+  });
+}
+
 /**
  * Importe un dossier existant comme projet (bouton + de Working). Persiste son
  * chemin côté Rust et renvoie son état git scanné. Le dossier peut vivre hors du
@@ -799,6 +866,8 @@ export const backend = {
   scanPortfolio,
   portfolioEconomy,
   portfolioActivity,
+  analyticsCost,
+  delegationsByAgent,
   addProject,
   listExtraProjects,
   pickDirectory,

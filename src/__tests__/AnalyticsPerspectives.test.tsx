@@ -46,6 +46,36 @@ describe("Perspectives — démo pleine (widgets clés présents)", () => {
   });
 });
 
+describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tokens/$ par agent)", () => {
+  const cost = {
+    cost_total: 12,
+    by_model: [
+      { model: "claude-sonnet-4-5", tokens: 1_000_000, cost: 12, untariffed: false },
+      { model: "mistral-x", tokens: 100_000, cost: 0, untariffed: true },
+    ],
+    by_day: [{ date: "2026-07-11", cost: 12 }],
+    untariffed_models: ["mistral-x"],
+    priced_at: "2026-07-13",
+  };
+  const deleg = [
+    { agent: "gimli", count: 4, total_ms: 200_000, avg_ms: 50_000 },
+    { agent: "legolas", count: 2, total_ms: 0, avg_ms: 0 },
+  ];
+  // Économie vide → perAgent (tokens/$) reste null ; mais cost + délégations sont réels.
+  const realOnly = deriveAnalytics([], [], ALL_SCOPE, rangeFromPreset("7d", NOW), cost, deleg);
+
+  it("affiche les délégations par agent réelles + le mix par modèle réel + marqueur untariffed", () => {
+    render(<PerspectiveAgents model={realOnly} />);
+    expect(screen.getByText("Délégations par agent")).toBeTruthy();
+    expect(screen.getAllByText("gimli").length).toBeGreaterThan(0);
+    expect(screen.getByText("Mix par modèle · coût réel")).toBeTruthy();
+    // Marqueur honnête : modèle sans tarif signalé (coût non compté).
+    expect(screen.getByText(/mistral-x/)).toBeTruthy();
+    // Tokens/$ par agent nommé = pas de source → note honnête + placeholder.
+    expect(screen.getByText(/pas de source réelle/)).toBeTruthy();
+  });
+});
+
 describe("Perspectives — prod sans source réelle (placeholder honnête)", () => {
   it("V1 Dashboard vide : widgets non couverts rendent « Donnée à venir »", () => {
     render(<PerspectiveDashboard model={empty} />);
