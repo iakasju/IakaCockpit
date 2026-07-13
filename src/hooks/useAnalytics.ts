@@ -254,6 +254,37 @@ export function deriveAnalytics(
 }
 
 /**
+ * Fusion démo PAR CHAMP (recette L30-P1). Le RÉEL ne couvre que 3 champs (tokens, coordVsSub,
+ * daily) ; sans fusion, dès qu'une seule donnée réelle existe (`hasRealData`), tout le reste
+ * tombe en placeholder et la page paraît vide. Le cadrage P1 = « réel LÀ OÙ dispo + démo POUR
+ * LE RESTE » (pas tout-ou-rien). Cette fonction PURE prend, champ par champ, la valeur RÉELLE
+ * si elle existe, sinon la valeur DÉMO. Appelée UNIQUEMENT en démo dev (`demoOn`) → garde
+ * « zéro fausse donnée » en prod (non appelée, `real` inchangé). `scopeId`/`scopeLabel` sont
+ * réécrits par la vue ensuite ; on garde ici ceux de `real`.
+ */
+export function mergeDemo(real: AnalyticsModel, demo: AnalyticsModel): AnalyticsModel {
+  return {
+    perimeter: real.hasRealData ? real.perimeter : demo.perimeter,
+    scopeId: real.scopeId,
+    scopeLabel: real.scopeLabel,
+    tokens: real.tokens ?? demo.tokens,
+    coordVsSub: real.coordVsSub ?? demo.coordVsSub,
+    daily: real.daily.length > 0 ? real.daily : demo.daily,
+    cost: real.cost ?? demo.cost,
+    agentTime: real.agentTime ?? demo.agentTime,
+    delegations: real.delegations ?? demo.delegations,
+    perAgent: real.perAgent ?? demo.perAgent,
+    costTrend: real.costTrend ?? demo.costTrend,
+    topDelegations: real.topDelegations ?? demo.topDelegations,
+    variation: real.variation ?? demo.variation,
+    cumulativeCost: real.cumulativeCost ?? demo.cumulativeCost,
+    agentHours: real.agentHours ?? demo.agentHours,
+    compare: real.compare ?? demo.compare,
+    hasRealData: real.hasRealData,
+  };
+}
+
+/**
  * Hook Analytics : mémoïse la dérivation réelle. Les entrées viennent d'App (façade D7) ;
  * `scope`/`range` sont l'état local de la vue.
  */

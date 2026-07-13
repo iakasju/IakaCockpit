@@ -16,6 +16,7 @@ import type { ProjectActivity } from "../api/backend";
 import { useNow } from "../hooks/useNow";
 import {
   useAnalytics,
+  mergeDemo,
   rangeFromPreset,
   ALL_SCOPE,
   type RangePreset,
@@ -53,8 +54,11 @@ export function AnalyticsView({
   const real = useAnalytics(economy, activity, scope, range);
   const demo = useMemo(() => makeDemoAnalytics(now), [now]);
 
-  // Substitution démo : uniquement si activée ET aucune donnée réelle (garde prod).
-  const base = real.hasRealData ? real : demoOn ? demo : real;
+  // Fusion démo PAR CHAMP (recette L30-P1) : en dev (`demoOn`), on prend le RÉEL là où il
+  // existe et on comble le reste avec la démo → les 4 perspectives sont pleines même quand
+  // les vrais transcripts n'alimentent que 3 champs. En prod (`demoOn=false`), `real` inchangé
+  // → placeholders honnêtes, ZÉRO fausse donnée.
+  const base = demoOn ? mergeDemo(real, demo) : real;
 
   // Le scope/pill reflètent TOUJOURS la sélection courante (même en démo, dont les valeurs
   // agrégées restent celles du portefeuille — vitrine P1).

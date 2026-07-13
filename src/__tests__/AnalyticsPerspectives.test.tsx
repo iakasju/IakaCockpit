@@ -80,6 +80,19 @@ describe("AnalyticsView — toggle de perspective", () => {
     expect(screen.getByText("Classement des agents")).toBeTruthy();
   });
 
+  it("dev avec réel PARTIEL : réel là où dispo + démo pour combler (page pleine)", () => {
+    // Un vrai projet (tokens réels) → real.hasRealData=true MAIS cost reste null.
+    const economy = [{ project: "iakacockpit", tokens: 250_000, segments: [] }];
+    render(<AnalyticsView economy={economy} activity={[]} demoOn />);
+    // Tokens = RÉEL (250 k, présent dans le périmètre + le KPI), pas la démo (3,87 M).
+    expect(screen.getAllByText("250 k").length).toBeGreaterThan(0);
+    expect(screen.queryByText("3,87 M")).toBeNull();
+    // Coût non couvert par le réel → COMBLÉ par la démo (plus de placeholder ici).
+    expect(screen.getByText("$11,64")).toBeTruthy();
+    // Périmètre = réel (le projet réel apparaît).
+    expect(screen.getAllByText("iakacockpit").length).toBeGreaterThan(0);
+  });
+
   it("prod sans démo : la page rend le placeholder (aucun chiffre inventé)", () => {
     render(<AnalyticsView economy={[]} activity={[]} demoOn={false} />);
     // Titre présent + placeholders honnêtes, pas de KPI démo.

@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   deriveAnalytics,
+  mergeDemo,
   rangeFromPreset,
   ALL_SCOPE,
   type TimeRange,
 } from "../hooks/useAnalytics";
+import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import type { TreemapItem } from "../components/TreemapPanel";
 import type { ProjectActivity } from "../api/backend";
 
@@ -102,6 +104,39 @@ describe("deriveAnalytics — placeholders honnêtes", () => {
     expect(m.perimeter).toHaveLength(1);
     expect(m.perimeter[0].id).toBe(ALL_SCOPE);
     expect(m.perimeter[0].tokens).toBe(0);
+  });
+});
+
+describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
+  const demo = makeDemoAnalytics(NOW);
+
+  it("réel partiel (tokens réels, cost null) : garde le réel, comble le reste par la démo", () => {
+    const real = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7);
+    // Prérequis : le réel couvre tokens/coordVsSub/daily, mais PAS cost/perAgent/compare.
+    expect(real.tokens).toBe(850_000);
+    expect(real.cost).toBeNull();
+    expect(real.perAgent).toBeNull();
+
+    const m = mergeDemo(real, demo);
+    // Champs réels PRÉSERVÉS (pas écrasés par la démo).
+    expect(m.tokens).toBe(850_000);
+    expect(m.coordVsSub).toEqual(real.coordVsSub);
+    expect(m.daily).toBe(real.daily);
+    expect(m.perimeter).toBe(real.perimeter); // hasRealData → périmètre réel
+    // Champs non couverts COMBLÉS par la démo (plus de placeholder).
+    expect(m.cost).toBe(demo.cost);
+    expect(m.perAgent).toBe(demo.perAgent);
+    expect(m.compare).toBe(demo.compare);
+    expect(m.hasRealData).toBe(true);
+  });
+
+  it("réel vide : périmètre + daily viennent de la démo (page pleine en dev)", () => {
+    const real = deriveAnalytics([], [], ALL_SCOPE, range7);
+    const m = mergeDemo(real, demo);
+    expect(m.hasRealData).toBe(false);
+    expect(m.perimeter).toBe(demo.perimeter);
+    expect(m.daily).toBe(demo.daily);
+    expect(m.tokens).toBe(demo.tokens);
   });
 });
 
