@@ -82,10 +82,15 @@ describe("AnalyticsView — toggle de perspective", () => {
   });
 
   it("dev avec réel PARTIEL : réel là où dispo + démo pour combler (page pleine)", () => {
-    // Un vrai projet (tokens réels) → real.hasRealData=true MAIS cost reste null.
+    // Un vrai projet (périmètre) + une activité RÉELLE dans la fenêtre 7j → KPI tokens réel.
     const economy = [{ project: "iakacockpit", tokens: 250_000, segments: [] }];
-    render(<AnalyticsView economy={economy} activity={[]} demoOn />);
-    // Tokens = RÉEL (250 k, présent dans le périmètre + le KPI), pas la démo (3,87 M).
+    // Jour d'activité récent (il y a 2 jours) → dans la plage 7j par défaut.
+    const d = new Date(Date.now() - 2 * 86_400_000);
+    const p = (n: number): string => String(n).padStart(2, "0");
+    const day = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    const activity = [{ project: "iakacockpit", days: [{ date: day, tokens: 250_000 }] }];
+    render(<AnalyticsView economy={economy} activity={activity} demoOn />);
+    // Tokens = RÉEL de la fenêtre (250 k, périmètre + KPI), pas la démo (3,87 M).
     expect(screen.getAllByText("250 k").length).toBeGreaterThan(0);
     expect(screen.queryByText("3,87 M")).toBeNull();
     // Coût non couvert par le réel → COMBLÉ par la démo (plus de placeholder ici).

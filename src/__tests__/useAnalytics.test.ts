@@ -51,18 +51,41 @@ describe("deriveAnalytics — périmètre", () => {
 });
 
 describe("deriveAnalytics — scope réel", () => {
-  it("ALL : total tokens = somme, coord/sub = somme", () => {
+  it("ALL : tokens = somme des jours DANS la plage (pas l'all-time), coord/sub = somme", () => {
     const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7);
-    expect(m.tokens).toBe(850_000);
+    // KPI tokens = tokens de la FENÊTRE (07-10 + 07-11), pas l'économie all-time (850 k).
+    expect(m.tokens).toBe(42_000);
+    // coordVsSub reste all-time (ratio, alignement plage = P2).
     expect(m.coordVsSub).toEqual({ coord: 610_000, sub: 240_000 });
     expect(m.hasRealData).toBe(true);
   });
 
-  it("scope projet : tokens + coord/sub du seul projet", () => {
-    const m = deriveAnalytics(ECONOMY, ACTIVITY, "mid", range7);
-    expect(m.scopeLabel).toBe("mid");
-    expect(m.tokens).toBe(250_000);
-    expect(m.coordVsSub).toEqual({ coord: 250_000, sub: 0 });
+  it("scope projet : tokens = jours de CE projet dans la plage, coord/sub du projet", () => {
+    // "mid" n'a aucune activité → tokens de plage = 0 (honnête), pas 250 k (all-time).
+    const mMid = deriveAnalytics(ECONOMY, ACTIVITY, "mid", range7);
+    expect(mMid.scopeLabel).toBe("mid");
+    expect(mMid.tokens).toBe(0);
+    expect(mMid.coordVsSub).toEqual({ coord: 250_000, sub: 0 });
+    // "big" a 30 k dans la plage.
+    const mBig = deriveAnalytics(ECONOMY, ACTIVITY, "big", range7);
+    expect(mBig.tokens).toBe(30_000);
+  });
+
+  it("tokens SUIT la plage : rétrécir la fenêtre change la somme", () => {
+    // 24h ne couvre ni le 10 ni le 11 juil. (NOW = 13 juil. midi) → 0 token de plage.
+    const m24 = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, rangeFromPreset("24h", NOW));
+    expect(m24.tokens).toBe(0);
+    // 7j couvre les deux jours → 42 k.
+    const m7 = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, rangeFromPreset("7d", NOW));
+    expect(m7.tokens).toBe(42_000);
+    expect(m24.tokens! < m7.tokens!).toBe(true);
+  });
+
+  it("economy présent mais AUCUNE activité → tokens null (démo/placeholder, jamais all-time)", () => {
+    const m = deriveAnalytics(ECONOMY, [], ALL_SCOPE, range7);
+    expect(m.tokens).toBeNull();
+    // hasRealData reste vrai (le périmètre economy existe).
+    expect(m.hasRealData).toBe(true);
   });
 });
 
@@ -110,16 +133,16 @@ describe("deriveAnalytics — placeholders honnêtes", () => {
 describe("mergeDemo — fusion PAR CHAMP (recette L30-P1)", () => {
   const demo = makeDemoAnalytics(NOW, range7);
 
-  it("réel partiel (tokens réels, cost null) : garde le réel, comble le reste par la démo", () => {
+  it("réel partiel (tokens réels de la plage, cost null) : garde le réel, comble par la démo", () => {
     const real = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7);
-    // Prérequis : le réel couvre tokens/coordVsSub/daily, mais PAS cost/perAgent/compare.
-    expect(real.tokens).toBe(850_000);
+    // Prérequis : le réel couvre tokens (fenêtre)/coordVsSub/daily, mais PAS cost/perAgent/compare.
+    expect(real.tokens).toBe(42_000);
     expect(real.cost).toBeNull();
     expect(real.perAgent).toBeNull();
 
     const m = mergeDemo(real, demo);
     // Champs réels PRÉSERVÉS (pas écrasés par la démo).
-    expect(m.tokens).toBe(850_000);
+    expect(m.tokens).toBe(42_000);
     expect(m.coordVsSub).toEqual(real.coordVsSub);
     expect(m.daily).toBe(real.daily);
     expect(m.perimeter).toBe(real.perimeter); // hasRealData → périmètre réel
@@ -187,5 +210,22 @@ describe("makeDemoAnalytics — sensible à la plage (recette L30-P1)", () => {
   it("callout de variation seulement si la fenêtre ≥ 7 j (null sur 24h)", () => {
     expect(makeDemoAnalytics(NOW, rangeFromPreset("24h", NOW)).variation).toBeNull();
     expect(makeDemoAnalytics(NOW, rangeFromPreset("7d", NOW)).variation).not.toBeNull();
+  });
+
+  it("la COMPOSITION perAgent change avec la plage (pas un simple scaling proportionnel)", () => {
+    const d1 = makeDemoAnalytics(NOW, rangeFromPreset("24h", NOW)).perAgent!;
+    const d30 = makeDemoAnalytics(NOW, rangeFromPreset("30d", NOW)).perAgent!;
+    const shareOf = (list: typeof d1, name: string): number =>
+      list.find((a) => a.name === name)!.share;
+    // Si c'était proportionnel, les PARTS seraient identiques ; le poids par plage les fait
+    // diverger → la treemap V1 et le classement V4 bougent visuellement.
+    expect(shareOf(d1, "Aragorn")).not.toBeCloseTo(shareOf(d30, "Aragorn"), 3);
+    // Les parts restent une distribution valide (somme ≈ 1).
+    const sum = d30.reduce((s, a) => s + a.share, 0);
+    expect(sum).toBeCloseTo(1, 5);
+    // Le classement est trié par tokens desc dans chaque plage.
+    for (let i = 1; i < d30.length; i++) {
+      expect(d30[i - 1].tokens >= d30[i].tokens).toBe(true);
+    }
   });
 });

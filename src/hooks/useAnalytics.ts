@@ -221,8 +221,9 @@ export function deriveAnalytics(
     ? ALL_LABEL
     : (scoped[0]?.project ?? scope);
 
-  // Tokens réels du scope + coord/sub.
-  const tokens = scoped.length > 0 ? scoped.reduce((s, p) => s + p.tokens, 0) : null;
+  // Coordinateur vs délégués : réel ALL-TIME (economy). C'est un RATIO (pas un KPI de tête),
+  // laissé all-time car le split coord/sub PAR JOUR n'est pas disponible → alignement sur la
+  // plage = P2. On ne le fabrique pas.
   const coord = scoped.reduce((s, p) => s + (p.coord ?? 0), 0);
   const sub = scoped.reduce((s, p) => s + (p.sub ?? 0), 0);
   const coordVsSub =
@@ -242,6 +243,13 @@ export function deriveAnalytics(
   const daily: DailyBucket[] = [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, tk]) => ({ date, tokens: tk, input: null, output: null }));
+
+  // KPI tokens = tokens RÉELS DE LA PLAGE (dérivés de `daily`, déjà range-filtré), PAS
+  // l'all-time de l'économie — pour que les 4 KPIs de tête réagissent ENSEMBLE au sélecteur
+  // de plage. Si des données d'activité existent → somme de la fenêtre (peut valoir 0 =
+  // honnête) ; sinon (hors-Tauri / aucune donnée) → null (démo en dev, placeholder en prod).
+  const rangeTokens = daily.reduce((s, d) => s + d.tokens, 0);
+  const tokens = activity.length > 0 ? rangeTokens : null;
 
   const hasRealData = allTokens > 0 || daily.length > 0;
 

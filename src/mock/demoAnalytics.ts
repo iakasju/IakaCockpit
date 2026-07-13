@@ -196,6 +196,22 @@ function fmtHours(h: number): string {
   return mm === 0 ? `${hh} h` : `${hh} h ${String(mm).padStart(2, "0")}`;
 }
 
+// Composition inter-agents DÉPENDANTE de la plage (recette L30-P1). Sans ça, tous les agents
+// étant scalés par le MÊME facteur, les PROPORTIONS (barres relatives, mix %, classement)
+// restaient figées et « rien ne bougeait » en V4. On applique un poids DÉTERMINISTE par agent
+// (pas de Math.random) fonction de `days` ET de l'index → certains montent, d'autres
+// descendent selon la fenêtre ; le classement et les mix bougent visiblement.
+const AGENT_ANGLE = 1.1;
+/** Poids borné (~[0.65, 1.35], toujours > 0) par agent × plage. */
+function agentWeight(days: number, i: number): number {
+  return 1 + Math.sin(days + i * AGENT_ANGLE) * 0.35;
+}
+/** « 42 s » → 42 (secondes), ou null si non parsable. */
+function parseAvgSec(label: string): number | null {
+  const m = /(\d+)\s*s/.exec(label);
+  return m ? Number(m[1]) : null;
+}
+
 /**
  * Modèle Analytics de démo, ancré sur `now` ET SENSIBLE À LA PLAGE `range` (recette L30-P1) :
  * la série jour a `days` buckets (24h→1, 7j→7, 30j→30) et les agrégats (KPIs, coût, temps,
@@ -242,6 +258,29 @@ export function makeDemoAnalytics(now: number, range: TimeRange): AnalyticsModel
     return running;
   });
 
+  // perAgent : scaling `factor` (plage) + poids inter-agents dépendant de la plage → la
+  // COMPOSITION change (barres, mix, classement bougent). `share` recalculée sur les tokens
+  // pondérés (parts justes en V1), puis tri par tokens desc (l'ORDRE peut changer).
+  const weighted = DEMO_AGENTS.map((a, i) => {
+    const w = agentWeight(days, i);
+    const baseSec = a.avgDuration == null ? null : parseAvgSec(a.avgDuration);
+    return {
+      ...a,
+      tokens: Math.round(a.tokens * factor * w),
+      cost: a.cost == null ? null : Number((a.cost * factor * w).toFixed(2)),
+      turns: a.turns == null ? null : Math.max(1, Math.round(a.turns * factor * w)),
+      // Durée moyenne légèrement variable avec la plage (± ~6 s déterministe), reste plausible.
+      avgDuration:
+        baseSec == null
+          ? a.avgDuration
+          : `${Math.max(1, Math.round(baseSec + Math.sin(days * 0.7 + i) * 6))} s`,
+    };
+  });
+  const totalWeightedTokens = weighted.reduce((s, a) => s + a.tokens, 0) || 1;
+  const perAgent: AgentDatum[] = weighted
+    .map((a) => ({ ...a, share: a.tokens / totalWeightedTokens }))
+    .sort((x, y) => y.tokens - x.tokens);
+
   return {
     perimeter,
     scopeId: ALL_SCOPE,
@@ -255,12 +294,7 @@ export function makeDemoAnalytics(now: number, range: TimeRange): AnalyticsModel
     cost,
     agentTime: fmtHours(14.33 * factor),
     delegations: Math.round(186 * factor),
-    perAgent: DEMO_AGENTS.map((a) => ({
-      ...a,
-      tokens: Math.round(a.tokens * factor),
-      cost: a.cost == null ? null : Number((a.cost * factor).toFixed(2)),
-      turns: a.turns == null ? null : Math.round(a.turns * factor),
-    })),
+    perAgent,
     costTrend,
     topDelegations: DEMO_TOP_DELEGATIONS,
     // Callout de variation : n'a de sens que sur une fenêtre ≥ 7 j (jour le plus cher vs
