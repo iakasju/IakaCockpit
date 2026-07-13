@@ -211,6 +211,27 @@ describe("deriveAnalytics — délégations RÉELLES par agent (L30-P2)", () => 
   });
 });
 
+describe("deriveAnalytics — évolution V2 scopée par projet (FIX)", () => {
+  it("l'évolution (daily) suit le projet sélectionné, pas le portefeuille", () => {
+    const economy: TreemapItem[] = [
+      { project: "big", tokens: 1_000_000, segments: [] },
+      { project: "tiny", tokens: 100, segments: [] }, // aurait pu être tronqué (top-12) côté scan
+    ];
+    const activity: ProjectActivity[] = [
+      { project: "big", days: [{ date: "2026-07-10", tokens: 900_000 }] },
+      { project: "tiny", days: [{ date: "2026-07-11", tokens: 100 }] },
+    ];
+    const range = rangeFromPreset("30d", NOW);
+    const all = deriveAnalytics(economy, activity, ALL_SCOPE, range);
+    const tiny = deriveAnalytics(economy, activity, "tiny", range);
+    // ALL = les deux jours ; scope tiny = SEULEMENT son jour (pas le portefeuille).
+    expect(all.daily.length).toBe(2);
+    expect(tiny.daily.length).toBe(1);
+    expect(tiny.daily[0].date).toBe("2026-07-11");
+    expect(tiny.daily[0].tokens).toBe(100);
+  });
+});
+
 describe("deriveAnalytics — attribution par agent RÉELLE (L30-P3)", () => {
   const DELEG: AgentDelegations[] = [
     { agent: "gimli", count: 3, total_ms: 90_000, avg_ms: 30_000 },
