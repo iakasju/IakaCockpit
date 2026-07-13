@@ -606,6 +606,43 @@
 }
 
 /* ===== V3 comparaison ===== */
+/* Fenêtre de comparaison (précédente vs courante) */
+.analytics .cmpwin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+.analytics .cmpwin-lab {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+/* Override d'hypothèse (V3-B) : deux menus modèle source → cible */
+.analytics .hypover {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+}
+.analytics .hypsel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+.analytics .hypsel select {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--text-3) 22%, transparent);
+  background: var(--surf);
+  color: var(--text-2);
+}
 .analytics .cmpbar {
   display: flex;
   align-items: center;

@@ -25,6 +25,7 @@ import { usePortfolioCost } from "../hooks/usePortfolioCost";
 import { useDelegationsByAgent } from "../hooks/useDelegationsByAgent";
 import { useAgentAttribution } from "../hooks/useAgentAttribution";
 import { useIndexStatus } from "../hooks/useIndexStatus";
+import { useCompare, usePricingTable } from "../hooks/useCompare";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import { PerimeterColumn } from "../components/analytics/PerimeterColumn";
 import { TimeRangeControl } from "../components/analytics/TimeRangeControl";
@@ -34,7 +35,10 @@ import {
 } from "../components/analytics/PerspectiveTabs";
 import { PerspectiveDashboard } from "../components/analytics/PerspectiveDashboard";
 import { PerspectiveTimeline } from "../components/analytics/PerspectiveTimeline";
-import { PerspectiveCompare } from "../components/analytics/PerspectiveCompare";
+import {
+  PerspectiveCompare,
+  type CompareWindow,
+} from "../components/analytics/PerspectiveCompare";
 import { PerspectiveAgents } from "../components/analytics/PerspectiveAgents";
 
 export function AnalyticsView({
@@ -57,6 +61,8 @@ export function AnalyticsView({
   const [scope, setScope] = useState<string>(ALL_SCOPE);
   const [preset, setPreset] = useState<RangePreset>("7d");
   const [perspective, setPerspective] = useState<Perspective>("dashboard");
+  // V3 Comparaison : fenêtre « précédente vs courante » (A = fenêtre d'avant, B = courante).
+  const [compareWindow, setCompareWindow] = useState<CompareWindow>("7d");
   // Bornes « Custom » en dates ISO `YYYY-MM-DD` ; défaut = 14 j → aujourd'hui (distinct du 7j
   // pour prouver l'effet). Vides tant que l'utilisateur n'a pas ouvert Custom → repli sur le
   // défaut de `rangeFromPreset("custom", …)`.
@@ -119,6 +125,30 @@ export function AnalyticsView({
     attribution,
     coordinatorNameOf,
   );
+
+  // V3 Comparaison (RÉEL) : deux plages A (fenêtre précédente) vs B (courante) dérivées de la
+  // fenêtre choisie, scopées par le projet courant. `useCompare` réutilise les hooks façade (via
+  // l'index → rapide). `usePricingTable` alimente le re-tarifage d'hypothèse (V3-B).
+  const { rangeA, rangeB } = useMemo(() => {
+    const day = 86_400_000;
+    const span = compareWindow === "24h" ? day : compareWindow === "30d" ? 30 * day : 7 * day;
+    return {
+      rangeB: { preset: "custom" as const, fromMs: now - span, toMs: now },
+      rangeA: { preset: "custom" as const, fromMs: now - 2 * span, toMs: now - span },
+    };
+  }, [compareWindow, now]);
+  const pricing = usePricingTable();
+  const { compare, attribB } = useCompare(
+    economy,
+    activity,
+    scope,
+    rangeA,
+    rangeB,
+    coordinatorNameOf,
+    indexStatus.attrib_ready,
+    i18n.language,
+  );
+
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 
   // Fusion démo PAR CHAMP (recette L30-P1) : en dev (`demoOn`), on prend le RÉEL là où il
@@ -165,7 +195,16 @@ export function AnalyticsView({
 
           {perspective === "dashboard" && <PerspectiveDashboard model={model} />}
           {perspective === "timeline" && <PerspectiveTimeline model={model} />}
-          {perspective === "compare" && <PerspectiveCompare model={model} />}
+          {perspective === "compare" && (
+            <PerspectiveCompare
+              model={model}
+              compare={compare}
+              attribB={attribB}
+              pricing={pricing}
+              window={compareWindow}
+              onWindow={setCompareWindow}
+            />
+          )}
           {perspective === "agents" && (
             <PerspectiveAgents model={model} attributionPending={attributionPending} />
           )}

@@ -46,6 +46,71 @@ describe("Perspectives — démo pleine (widgets clés présents)", () => {
   });
 });
 
+describe("V3 — Comparaison RÉELLE (avant/après + hypothèse)", () => {
+  const compare = {
+    aLabel: "1 juil. → 8 juil.",
+    bLabel: "8 juil. → 13 juil.",
+    aSummary: "2 agent(s)",
+    bSummary: "3 agent(s)",
+    aAgents: [{ name: "Odin", runner: "claude-opus-4-8" }],
+    bAgents: [{ name: "Odin", runner: "claude-opus-4-8" }, { name: "gimli", runner: "claude-opus-4", flag: "new" as const }],
+    deltas: [
+      { label: "Coût / M tokens", a: "$10", b: "$7,50", chip: "↓ 25%", tone: "pos" as const },
+    ],
+    perAgent: [{ name: "Odin", color: "#3b82f6", aTokens: 2_000_000, bTokens: 2_500_000 }],
+    verdict: { title: "Config B plus efficiente", body: "B : +25% tokens · −25% coût / M tokens vs A." },
+    hypothesis: null,
+  };
+
+  it("V3-A : la comparaison RÉELLE (prop `compare`) prime sur la démo — deltas + verdict + fenêtre", () => {
+    let win = "7d";
+    render(
+      <PerspectiveCompare
+        model={empty}
+        compare={compare}
+        window="7d"
+        onWindow={(w) => {
+          win = w;
+        }}
+      />,
+    );
+    expect(screen.getByText("Config A")).toBeTruthy();
+    expect(screen.getByText("Coût / M tokens")).toBeTruthy();
+    expect(screen.getByText("↓ 25%")).toBeTruthy();
+    expect(screen.getByText(/plus efficiente/)).toBeTruthy();
+    // Fenêtre de comparaison présente + interactive.
+    fireEvent.click(screen.getByRole("button", { name: "30 j" }));
+    expect(win).toBe("30d");
+  });
+
+  it("V3-B : re-tarifage RÉEL (attribution B + table de prix) — override + coût + étiquette", () => {
+    const attribB = {
+      agents: [
+        { agent: "gimli", tokens: 1_000_000, cost: 20, delegations: 1, model: "claude-opus-4-8[1m]", untariffed: false },
+      ],
+      unavailable: 0,
+      priced_at: null,
+    };
+    const pricing = {
+      models: [
+        { model: "claude-opus-4", input: 15, output: 75, cache_write: 18.75, cache_read: 1.5 },
+        { model: "claude-haiku", input: 0.8, output: 4, cache_write: 1, cache_read: 0.08 },
+      ],
+      priced_at: null,
+    };
+    render(
+      <PerspectiveCompare model={empty} compare={compare} attribB={attribB} pricing={pricing} />,
+    );
+    // Passe au scénario hypothèse.
+    fireEvent.click(screen.getByRole("tab", { name: /Constaté vs hypothèse/ }));
+    // Étiquette d'honnêteté GRAVÉE + coût observé (base) rendus.
+    expect(screen.getByText("hypothèse · à volume constant")).toBeTruthy();
+    expect(screen.getAllByText("$20,00").length).toBeGreaterThan(0); // coût réel B (gimli)
+    // Les deux menus modèle (source + cible) sont présents.
+    expect(screen.getAllByRole("combobox").length).toBe(2);
+  });
+});
+
 describe("V4 — données RÉELLES L30-P2 (délégations + mix modèle, sans tokens/$ par agent)", () => {
   const cost = {
     cost_total: 12,
