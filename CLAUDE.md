@@ -403,6 +403,16 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       la pastille (`role="switch"`, toggle **symétrique** : sortie fullscreen incluse — AR-1 supersédé). Fix
       structurel : switch sorti du conteneur `overflow-x:auto` (`.projtabs-list` scrollable + `.fsswitch`
       frère). **Vérifié en CDP réel** : `gapRight=0` (collé à droite). Commits `3a4f408`→`4270a34`.
+- [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
+      *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
+      600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
+      d'hypothèses (`hypotheses/arbre.html`) : `AgentSwimlanes` (SVG, calque `ActivityTimeline`) — **couloir
+      par agent** + axe temps + **barres** (`ts`→`doneTs` ou ouvertes si running, 🟠/🟢) + **flèches de
+      délégation** coordinateur→délégué (MVP 1 niveau) + ascenseur horizontal. `useAgentTasks` gagne `doneTs`.
+      Travail : **toggle « Arbre / Couloirs »** (L28 vertical ↔ L29 horizontal, mêmes données, défaut Couloirs) ;
+      `DelegationTree`+`GanttPanel` conservés. Front seul. Commit `135c688`. Zéro fausse donnée (pas de
+      barre/flèche sans ts). Différés : flèches multi-niveaux (parent réel), prévisionnel/baseline, swimlanes
+      au Journal.
 - [x] **L28** — **Arbre des délégations** (chantier IHM B ; remplace le Gantt) → `specs/instructions/L28-arbre-delegations.md`
       *(**LIVRÉ, scellé `v0.23.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.23.0.md` ; gate Legolas PASS —
       589 front, Rust intact).* Composant `DelegationTree` (coordinateur → délégués, coloré 🟠 running /

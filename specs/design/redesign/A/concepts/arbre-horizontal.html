@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts · Arbre horizontal</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="concepts.css">
+<style>
+/* ============================================================
+   ARBRE HORIZONTAL — surcouche scoped de concepts.css
+   La conversation coule GAUCHE → DROITE, ascenseur horizontal,
+   hauteur bornée (2 lanes). Reprend strictement les tokens A :
+   couleurs de kind (.ch), badges d'attribution (.b-*), sans-bord.
+   ============================================================ */
+
+/* conteneur scrollable : l'ascenseur est ICI (overflow-x) */
+.htwrap{position:relative;margin-top:14px}
+.htree{background:var(--card);border-radius:20px;padding:24px 28px 26px;
+  box-shadow:0 1px 0 var(--line-soft),0 18px 40px -32px rgba(20,22,28,.3);
+  overflow-x:auto;overflow-y:hidden}
+/* fondu de bord droit = affordance « ça défile » (hors flux scrollé) */
+.htwrap .fade{position:absolute;top:8px;right:0;bottom:18px;width:46px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),var(--card));border-radius:0 20px 20px 0}
+.htwrap .hint{position:absolute;right:16px;bottom:-2px;font-family:var(--mono);font-size:10.5px;
+  color:var(--ink3);display:flex;align-items:center;gap:6px}
+.htwrap .hint b{color:var(--acc);font-weight:600}
+
+/* la scène = grille : lane 1 = tronc, lane 2 = sidechain */
+.stage{display:grid;grid-template-columns:repeat(5,214px);
+  column-gap:34px;row-gap:46px;align-items:start;min-width:max-content;padding:8px 6px 4px}
+
+/* nœud compact (carte) — hauteur FIXE pour aligner tronc & connecteurs */
+.hnode{position:relative;width:214px;height:116px;background:var(--bg);border-radius:14px;
+  padding:12px 14px;display:flex;flex-direction:column;gap:5px;z-index:1;
+  box-shadow:0 1px 0 var(--line-soft),0 10px 24px -22px rgba(20,22,28,.35)}
+.hnode.side{background:#fdfcff;box-shadow:0 1px 0 rgba(142,78,198,.12),0 10px 24px -22px rgba(80,40,120,.3)}
+
+/* knot (point de jonction) à gauche, aligné pour tous */
+.hnode .knot{position:absolute;left:-7px;top:47px;width:14px;height:14px;border-radius:50%;
+  background:var(--card);border:2px solid var(--acc);z-index:2}
+.hnode.side .knot{border-color:var(--purple)}
+/* tête de sidechain : entrée par le HAUT (reçoit la branche qui tombe) */
+.hnode.headside .knot{left:50%;top:-7px;transform:translateX(-50%);border-color:var(--purple)}
+
+/* connecteur horizontal entrant (gauche) — le tronc coule → */
+.hnode::before{content:"";position:absolute;top:53px;left:-34px;width:34px;height:2px;
+  background:var(--acc);z-index:0}
+.hnode.side::before{background:var(--purple)}
+.hnode.lead::before{display:none}   /* 1er de rangée : pas d'entrée horizontale */
+
+/* branche qui TOMBE du nœud de délégation vers la sidechain (elbow vertical) */
+.hnode.spawns::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:46px;
+  background:var(--purple);z-index:0}
+.branchlabel{position:absolute;left:50%;top:calc(100% + 13px);transform:translateX(-50%);
+  font-family:var(--mono);font-size:9px;color:var(--purple);white-space:nowrap;z-index:4;
+  background:rgba(142,78,198,.1);padding:2px 8px;border-radius:6px}
+
+/* contenu carte */
+.hc-h{display:flex;align-items:center;gap:7px}
+.hc-h img{width:19px;height:19px;border-radius:5px;object-fit:cover}
+.hc-h b{font-family:var(--display);font-weight:600;font-size:12.5px;letter-spacing:-.01em}
+.hc-h .badge{font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;
+  text-transform:uppercase;font-family:var(--mono)}
+.hc-b{font-size:11.5px;color:var(--ink2);line-height:1.42;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hc-f{margin-top:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.hc-f .uuid{font-family:var(--mono);font-size:9.5px;color:var(--ink3)}
+.hc-f code{font-family:var(--mono);font-size:9px;background:var(--deep);padding:1px 5px;border-radius:4px;color:var(--ink3)}
+.hc-f .att{font-family:var(--mono);font-size:9px;background:var(--deep);padding:1px 6px;border-radius:5px;color:var(--ink3)}
+.hc-f .att b{color:var(--ink2);font-weight:600}
+
+/* légende compacte de l'arbre */
+.hleg{display:flex;gap:20px;flex-wrap:wrap;font-size:11.5px;color:var(--ink3);margin:16px 0 2px}
+.hleg span{display:inline-flex;align-items:center;gap:7px}
+.hleg i{width:16px;height:2px;border-radius:2px;display:inline-block}
+
+/* bandeau méta condensé sous l'arbre (3 mini-cartes) */
+.metastrip{display:grid;grid-template-columns:1.1fr 1.2fr 1fr;gap:16px;margin-top:22px}
+.metastrip .scard{padding:15px 17px}
+.metastrip .sct{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:600;
+  font-size:13.5px;margin-bottom:11px}
+.metastrip .sct .eb{font-size:9.5px}
+.metastrip .msgline{margin:0 0 8px 0;max-width:none}
+.metastrip .async{grid-template-columns:1fr;gap:10px;margin-top:0}
+.metastrip .asyncard{padding:12px 14px;border-radius:12px}
+@media(max-width:1100px){.metastrip{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <a href="../portfolio.html" title="Portfolio">🗂️<small>Folio</small></a>
+  <a href="../working.html" title="Working">🛠️<small>Work</small></a>
+  <a href="../journal.html" title="Journal">📓<small>Log</small></a>
+  <a href="../teams.html" title="Teams">👥<small>Team</small></a>
+  <a class="on" href="index.html" title="Atlas des concepts">🧬<small>Atlas</small></a>
+  <div class="sep"></div>
+  <a href="../reglages.html" title="Réglages">⚙️<small>Réglage</small></a>
+</nav>
+<div class="page"><div class="pad wide">
+  <div class="eyebrow">Concepts 01 · 02 · 09 · 10</div>
+  <h1 class="title">Arbre horizontal</h1>
+  <p class="sub">Même arbre (<span style="font-family:var(--mono);font-size:13px">uuid → parentUuid</span>, sidechains de délégation) mais qui <b>coule de gauche à droite</b> : la lecture chrono suit l'<b>ascenseur horizontal</b>, la page reste <b>basse</b>. Le tronc est une rangée ; la sidechain tombe en une <b>sous-rangée</b> compacte rattachée à son nœud parent.</p>
+
+  <nav class="csub">
+    <a href="index.html"><span class="n">00</span> Atlas</a>
+    <a href="session.html"><span class="n">01</span> Session live</a>
+    <a href="arbre.html"><span class="n">02</span> Arbre &amp; agents</a>
+    <a class="on" href="arbre-horizontal.html"><span class="n">02b</span> Arbre horizontal</a>
+    <a href="effets.html"><span class="n">03</span> Effets fichiers</a>
+    <a href="memoire.html"><span class="n">04</span> Mémoire &amp; coût</a>
+    <span class="grow"></span>
+    <span class="stat">conv iaka-demo · 38 nœuds · 1 sidechain</span>
+  </nav>
+
+  <div class="rowhead"><h2>Arbre de conversation</h2><span class="eb">main + sidechains · lecture →</span></div>
+  <div class="hleg">
+    <span><i style="background:var(--acc)"></i> tronc principal (gauche → droite)</span>
+    <span><i style="background:var(--purple)"></i> sidechain · délégation (sous-rangée)</span>
+    <span style="font-family:var(--mono);font-size:11px">⎇ isSidechain:true</span>
+  </div>
+
+  <!-- ======= ARBRE HORIZONTAL (ascenseur = .htree) ======= -->
+  <div class="htwrap">
+    <div class="htree">
+      <div class="stage">
+
+        <!-- LANE 1 · tronc principal -->
+        <div class="hnode main lead" style="grid-column:1;grid-row:1">
+          <span class="knot"></span>
+          <div class="hc-h"><b>Stéphane</b><span class="ch parole">parole</span></div>
+          <div class="hc-b">« Lance la refonte avec Loki. »</div>
+          <div class="hc-f"><span class="uuid">a1f0…2c</span></div>
+        </div>
+
+        <div class="hnode main spawns" style="grid-column:2;grid-row:1">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span></div>
+          <div class="hc-b">Cadrage + délégation de l'audit des écrans.</div>
+          <div class="hc-f"><span class="uuid">b3c7…91</span><span class="att">attributionAgent: <b>aragorn</b></span></div>
+          <span class="branchlabel">⎇ sidechain · isSidechain:true</span>
+        </div>
+
+        <div class="hnode main" style="grid-column:3;grid-row:1">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/aragorn.png"><b>Aragorn</b><span class="badge b-arag">Projet</span></div>
+          <div class="hc-b">Reprend le tronc, restitue le verbatim de Gandalf à Stéphane.</div>
+          <div class="hc-f"><span class="uuid">b3c7…d8</span><code>parentUuid: b3c7…91</code></div>
+        </div>
+
+        <div class="hnode main" style="grid-column:4;grid-row:1">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/gimli.png"><b>Gimli</b><span class="badge b-gim">Exécution</span></div>
+          <div class="hc-b">Branche d'exécution : passe 1 (rail). 6 gestes Edit enchaînés.</div>
+          <div class="hc-f"><span class="uuid">e4a8…1b</span><span class="att">attributionAgent: <b>gimli</b></span></div>
+        </div>
+
+        <div class="hnode main" style="grid-column:5;grid-row:1">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/legolas.png"><b>Legolas</b><span class="badge b-leg">Qualité</span></div>
+          <div class="hc-b">Gate de version : lint + tests verts → ferme le tour.</div>
+          <div class="hc-f"><span class="uuid">f7b1…5a</span><code>parentUuid: e4a8…1b</code></div>
+        </div>
+
+        <!-- LANE 2 · sidechain de délégation (tombe sous le nœud b3c7…91) -->
+        <div class="hnode side headside lead" style="grid-column:2;grid-row:2">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="badge b-gand">Analyse</span></div>
+          <div class="hc-b">Audit des 5 écrans.</div>
+          <div class="hc-f"><span class="uuid">c9d2…04</span><span class="att">logicalParentUuid: <b>b3c7…91</b></span></div>
+        </div>
+
+        <div class="hnode side" style="grid-column:3;grid-row:2">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="ch pensee">pensée</span></div>
+          <div class="hc-b">« Le point dur n'est pas la charte mais la grammaire de mise en page. »</div>
+          <div class="hc-f"><span class="uuid">c9d2…77</span></div>
+        </div>
+
+        <div class="hnode side" style="grid-column:4;grid-row:2">
+          <span class="knot"></span>
+          <div class="hc-h"><img src="../../assets/gandalf.png"><b>Gandalf</b><span class="ch deleg">rapport</span></div>
+          <div class="hc-b">Rend un plan en 3 passes → ferme la sidechain.</div>
+          <div class="hc-f"><span class="uuid">c9d2…f3</span><span class="att">sourceToolAssistantUUID: <b>b3c7…91</b></span></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="fade"></div>
+    <div class="hint"><b>glisser</b> pour dérouler la conversation →</div>
+  </div>
+
+  <!-- ======= bandeau méta condensé ======= -->
+  <div class="metastrip">
+    <div class="scard">
+      <div class="sct">Attribution machine<span class="eb">qui a écrit quoi</span></div>
+      <table class="maptbl">
+        <tr><td><b style="color:var(--blue)">Aragorn</b> · coordinateur</td><td>18 nœuds · iakaframe-aragorn</td></tr>
+        <tr><td><b style="color:var(--purple)">Gandalf</b> · analyse</td><td>7 nœuds · sidechain</td></tr>
+        <tr><td><b style="color:var(--green)">Gimli</b> · exécution</td><td>11 nœuds · 6 gestes Edit</td></tr>
+        <tr><td><b style="color:#b8770a">Legolas</b> · qualité</td><td>2 nœuds · gate</td></tr>
+      </table>
+    </div>
+
+    <div class="scard">
+      <div class="sct">Dialogue inter-agents<span class="eb">SendMessage</span></div>
+      <div class="msgline"><span class="sm">SendMessage</span><b style="font-family:var(--display)">Aragorn</b><span class="ar">→</span><b style="font-family:var(--display)">Gandalf</b><span class="ar">·</span> « ajoute l'écran Teams »</div>
+      <div class="msgline"><span class="sm">SendMessage</span><b style="font-family:var(--display)">Gandalf</b><span class="ar">→</span><b style="font-family:var(--display)">Aragorn</b><span class="ar">·</span> « ajout fait, plan à 4 passes »</div>
+    </div>
+
+    <div class="scard">
+      <div class="sct">Asynchronisme &amp; fond<span class="eb">tâches détachées</span></div>
+      <div class="async">
+        <div class="asyncard">
+          <div class="ah"><div class="ai">⏱️</div><b>Réveil programmé</b><span class="pulse"></span></div>
+          <div class="ad">Re-scan du chapeau ~/work dans 4 min.</div>
+          <div class="meta"><span>ScheduleWakeup</span><span>14:42</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div></div>
+</body></html>
