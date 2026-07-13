@@ -9,8 +9,8 @@
 use crate::paths;
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::path::Path;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock, RwLock};
 
 /// Coût agrégé d'un projet (miroir TS `ProjectEconomy`).
@@ -1177,10 +1177,12 @@ fn in_scope(project: &str, target: Option<&str>) -> bool {
     }
 }
 
-/// PHASE 1 (rapide, PARSING PUR — AUCUNE lecture d'`outputFile`) : intègre le contenu d'UN
-/// transcript parent dans l'index → `tokens` + `deleg` (comptes/durées) + `pending` (délégations
-/// à attribuer en phase 2). Une passe, chaque ligne parsée une fois. Défensif partout.
-fn index_file_phase1(idx: &mut AggIndex, content: &str) {
+/// PHASE 1 (rapide, PARSING PUR — AUCUNE lecture d'`outputFile`) : parse le contenu d'UN transcript
+/// parent en un FRAGMENT `tokens` + `deleg` (comptes/durées) + `pending` (délégations à attribuer en
+/// phase 2). Une passe, chaque ligne parsée une fois. Fragment = contribution de CE fichier (cache
+/// incrémental par mtime). Défensif partout.
+fn parse_file_frag(content: &str) -> FileFrag {
+    let mut frag = FileFrag::default();
     // Appariement délégation intra-fichier (use↔result par tool_use_id — même parent).
     let mut uses: HashMap<String, (String, i64, String, String)> = HashMap::new();
     let mut results: HashMap<String, (i64, String, String)> = HashMap::new();
@@ -1228,7 +1230,7 @@ fn index_file_phase1(idx: &mut AggIndex, content: &str) {
                         .and_then(Value::as_bool)
                         .unwrap_or(false);
                     add_buckets(
-                        idx.tokens
+                        frag.tokens
                             .entry((project, day, model, sidechain))
                             .or_default(),
                         b,
@@ -1298,7 +1300,7 @@ fn index_file_phase1(idx: &mut AggIndex, content: &str) {
     // Délégations du fichier : durée (appariée, SANS I/O) en phase 1 ; l'attribution (lecture
     // d'`outputFile`) est DIFFÉRÉE en phase 2 → on empile une entrée `pending` par délégation.
     for (id, (agent, use_ms, project, day)) in uses {
-        let e = idx
+        let e = frag
             .deleg
             .entry((project.clone(), day.clone(), agent.clone()))
             .or_insert((0, 0, 0));
@@ -1315,7 +1317,7 @@ fn index_file_phase1(idx: &mut AggIndex, content: &str) {
             }
             None => (String::new(), String::new()),
         };
-        idx.pending.push(PendingDeleg {
+        frag.pending.push(PendingDeleg {
             project,
             day,
             agent,
@@ -1323,6 +1325,57 @@ fn index_file_phase1(idx: &mut AggIndex, content: &str) {
             output,
         });
     }
+    frag
+}
+
+/// Fragment par fichier transcript : contribution de CE fichier aux agrégats phase 1. Base du cache
+/// incrémental (merge des fragments = index global ; réutilisé tant que mtime/size inchangés).
+#[derive(Clone, Default)]
+struct FileFrag {
+    tokens: HashMap<(String, String, String, bool), Buckets>,
+    deleg: HashMap<(String, String, String), (u64, i64, u64)>,
+    pending: Vec<PendingDeleg>,
+}
+
+/// Contribution phase-2 RÉSOLUE d'un fichier (attribution + non-attribuables), cachée tant que le
+/// fichier ne change pas → seuls les fichiers modifiés relisent leurs `outputFile`.
+#[derive(Clone, Default)]
+struct AttribFrag {
+    attrib: HashMap<AttribKey, AttribVal>,
+    unavailable: HashMap<(String, String), u32>,
+}
+
+/// Entrée du cache par fichier : empreinte (mtime/size) + fragment phase 1 + phase 2 résolue (option).
+struct CachedFile {
+    /// `None` si `stat` a échoué (fichier traité comme CHANGÉ à chaque build → défensif).
+    mtime: Option<std::time::SystemTime>,
+    size: u64,
+    frag: FileFrag,
+    /// Phase 2 résolue ; `None` = à (re)résoudre (fichier nouveau/modifié).
+    attrib: Option<AttribFrag>,
+}
+
+type FileCacheMap = HashMap<std::path::PathBuf, CachedFile>;
+
+/// Fusionne un fragment phase 1 dans l'index global (sommes commutatives → merge = parse complet).
+fn merge_phase1_frag(idx: &mut AggIndex, frag: &FileFrag) {
+    for (k, v) in &frag.tokens {
+        add_buckets(idx.tokens.entry(k.clone()).or_default(), *v);
+    }
+    for (k, v) in &frag.deleg {
+        let e = idx.deleg.entry(k.clone()).or_insert((0, 0, 0));
+        e.0 += v.0;
+        e.1 += v.1;
+        e.2 += v.2;
+    }
+    idx.pending.extend(frag.pending.iter().cloned());
+}
+
+/// Intègre le contenu d'UN transcript dans l'index (parse + merge). Wrapper conservé pour les tests
+/// (non-régression) ; la prod passe par le cache incrémental.
+#[cfg(test)]
+fn index_file_phase1(idx: &mut AggIndex, content: &str) {
+    merge_phase1_frag(idx, &parse_file_frag(content));
 }
 
 /// PHASE 2 (lente, I/O) : résout les `pending` en lisant chaque `outputFile` UNE fois via `reader`
@@ -1367,8 +1420,121 @@ where
 }
 
 /// PHASE 1 depuis un dossier `projects/` (parsing pur, AUCUN `outputFile` lu). Défensif.
-fn build_phase1_from_dir(projects_dir: &Path) -> AggIndex {
+/// Cache process-global de l'index (init paresseuse sur un index vide non construit).
+fn index_cache() -> &'static RwLock<AggIndex> {
+    static C: OnceLock<RwLock<AggIndex>> = OnceLock::new();
+    C.get_or_init(|| RwLock::new(AggIndex::default()))
+}
+
+/// Cache par FICHIER transcript (empreinte mtime/size + fragments). Base de l'incrémental : au
+/// rebuild, seuls les fichiers nouveaux/modifiés sont re-parsés ; les inchangés réutilisent leur
+/// fragment ; les disparus sont retirés.
+fn file_cache() -> &'static RwLock<FileCacheMap> {
+    static C: OnceLock<RwLock<FileCacheMap>> = OnceLock::new();
+    C.get_or_init(|| RwLock::new(FileCacheMap::new()))
+}
+
+/// Garde anti-double-spawn de la phase 2 (déclenchée à la demande par `agent_attribution`).
+static PHASE2_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// INCRÉMENTAL — met à jour le cache par fichier : re-parse (via `read`) UNIQUEMENT les fichiers
+/// nouveaux/modifiés (mtime OU size différent), réutilise le fragment des inchangés, retire les
+/// disparus. Re-parser un fichier INVALIDE sa phase 2 (`attrib = None`). Défensif : `stat` échoué
+/// (`mtime = None`) ⇒ traité comme changé ; lecture échouée ⇒ fragment vide. Retourne le nb de
+/// fichiers RE-PARSÉS (0 = tout réutilisé). PUR (l'I/O est dans `read`). `files` = (path, mtime, size).
+fn rebuild_frags<R>(
+    cache: &mut FileCacheMap,
+    files: &[(PathBuf, Option<std::time::SystemTime>, u64)],
+    read: R,
+) -> usize
+where
+    R: Fn(&Path) -> Option<String>,
+{
+    let mut present: HashSet<PathBuf> = HashSet::new();
+    let mut parsed = 0usize;
+    for (path, mtime, size) in files {
+        present.insert(path.clone());
+        // Réutilisable seulement si empreinte connue ET identique (mtime datable + size égale).
+        let reuse = matches!(
+            cache.get(path),
+            Some(c) if c.mtime.is_some() && c.mtime == *mtime && c.size == *size
+        );
+        if reuse {
+            continue;
+        }
+        let frag = read(path).map(|c| parse_file_frag(&c)).unwrap_or_default();
+        cache.insert(
+            path.clone(),
+            CachedFile {
+                mtime: *mtime,
+                size: *size,
+                frag,
+                attrib: None, // phase 2 à (re)résoudre pour ce fichier
+            },
+        );
+        parsed += 1;
+    }
+    cache.retain(|k, _| present.contains(k));
+    parsed
+}
+
+/// Index PHASE 1 = merge des fragments du cache (résultat identique à un parse complet).
+fn merge_phase1(cache: &FileCacheMap) -> AggIndex {
     let mut idx = AggIndex::default();
+    for c in cache.values() {
+        merge_phase1_frag(&mut idx, &c.frag);
+    }
+    idx.tokens_built = true;
+    idx
+}
+
+/// PHASE 2 INCRÉMENTALE — résout (lecture des `outputFile`) SEULEMENT les fragments non encore
+/// résolus (fichiers nouveaux/modifiés), réutilise l'attrib cachée des autres, puis merge le tout.
+fn resolve_and_merge_phase2<F>(
+    cache: &mut FileCacheMap,
+    reader: &F,
+) -> (
+    HashMap<AttribKey, AttribVal>,
+    HashMap<(String, String), u32>,
+)
+where
+    F: Fn(&str) -> Option<Buckets>,
+{
+    for c in cache.values_mut() {
+        if c.attrib.is_none() {
+            let (attrib, unavailable) = resolve_pending(&c.frag.pending, reader);
+            c.attrib = Some(AttribFrag {
+                attrib,
+                unavailable,
+            });
+        }
+    }
+    let mut attrib: HashMap<AttribKey, AttribVal> = HashMap::new();
+    let mut unavailable: HashMap<(String, String), u32> = HashMap::new();
+    for c in cache.values() {
+        if let Some(af) = &c.attrib {
+            for (k, v) in &af.attrib {
+                let e = attrib.entry(k.clone()).or_insert((0, 0, 0, 0, 0));
+                e.0 += v.0;
+                e.1 += v.1;
+                e.2 += v.2;
+                e.3 += v.3;
+                e.4 += v.4;
+            }
+            for (k, v) in &af.unavailable {
+                *unavailable.entry(k.clone()).or_insert(0) += v;
+            }
+        }
+    }
+    (attrib, unavailable)
+}
+
+/// Liste les transcripts `.jsonl` d'un dossier `projects/` + leur empreinte (mtime/size) — SANS
+/// lire le contenu (la lecture est différée aux seuls fichiers modifiés). Défensif.
+fn collect_transcript_stats(
+    projects_dir: &Path,
+) -> Vec<(PathBuf, Option<std::time::SystemTime>, u64)> {
+    let mut out = Vec::new();
     if let Ok(dirs) = std::fs::read_dir(projects_dir) {
         for sess_dir in dirs.flatten() {
             let files = match std::fs::read_dir(sess_dir.path()) {
@@ -1380,33 +1546,38 @@ fn build_phase1_from_dir(projects_dir: &Path) -> AggIndex {
                 if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
                     continue;
                 }
-                if let Ok(content) = std::fs::read_to_string(&p) {
-                    index_file_phase1(&mut idx, &content);
-                }
+                let meta = std::fs::metadata(&p).ok();
+                let mtime = meta.as_ref().and_then(|m| m.modified().ok());
+                let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+                out.push((p, mtime, size));
             }
         }
     }
-    idx.tokens_built = true;
-    idx.built_at = std::time::SystemTime::now()
+    out
+}
+
+fn now_ms() -> Option<i64> {
+    std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .ok()
-        .map(|d| d.as_millis() as i64);
-    idx
+        .map(|d| d.as_millis() as i64)
 }
 
-/// Cache process-global de l'index (init paresseuse sur un index vide non construit).
-fn index_cache() -> &'static RwLock<AggIndex> {
-    static C: OnceLock<RwLock<AggIndex>> = OnceLock::new();
-    C.get_or_init(|| RwLock::new(AggIndex::default()))
-}
-
-/// Garde anti-double-spawn de la phase 2 (déclenchée à la demande par `agent_attribution`).
-static PHASE2_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// PHASE 1 : (re)construit tokens/deleg/pending et l'installe. RAPIDE (parsing pur). Non paniquant.
+/// PHASE 1 : (re)construit tokens/deleg/pending INCRÉMENTALEMENT (cache par fichier) et l'installe.
+/// RAPIDE au démarrage récurrent (seuls les fichiers modifiés sont relus/parsés). Non paniquant.
 pub fn build_phase1() {
     let idx = match claude_projects_dir() {
-        Some(dir) => build_phase1_from_dir(&dir),
+        Some(dir) => {
+            let files = collect_transcript_stats(&dir);
+            let mut cache = match file_cache().write() {
+                Ok(g) => g,
+                Err(p) => p.into_inner(),
+            };
+            rebuild_frags(&mut cache, &files, |p| std::fs::read_to_string(p).ok());
+            let mut idx = merge_phase1(&cache);
+            idx.built_at = now_ms();
+            idx
+        }
         None => AggIndex {
             tokens_built: true,
             ..Default::default()
@@ -1417,9 +1588,9 @@ pub fn build_phase1() {
     }
 }
 
-/// PHASE 2 : résout les `pending` (lecture des `outputFile`) et installe `attrib`/`unavailable`.
-/// Construit d'abord la phase 1 si besoin. L'I/O disque se fait HORS verrou (on ne clone que
-/// `pending`, petit) ; seule l'installation prend le verrou d'écriture.
+/// PHASE 2 : résout les `outputFile` INCRÉMENTALEMENT (seuls les fichiers modifiés relisent leurs
+/// outputFiles ; les délégations inchangées gardent leur attribution cachée) et installe
+/// `attrib`/`unavailable`. Construit d'abord la phase 1 si besoin.
 pub fn build_phase2() {
     if !index_cache()
         .read()
@@ -1428,11 +1599,13 @@ pub fn build_phase2() {
     {
         build_phase1();
     }
-    let pending = match index_cache().read() {
-        Ok(g) => g.pending.clone(),
-        Err(p) => p.into_inner().pending.clone(),
+    let (attrib, unavailable) = {
+        let mut cache = match file_cache().write() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        };
+        resolve_and_merge_phase2(&mut cache, &read_output_usage)
     };
-    let (attrib, unavailable) = resolve_pending(&pending, &read_output_usage);
     if let Ok(mut g) = index_cache().write() {
         g.attrib = attrib;
         g.unavailable = unavailable;
@@ -2507,16 +2680,20 @@ mod tests {
         );
         std::fs::write(sess.join("s1.jsonl"), parent).unwrap();
 
-        // Phase 1 (dossier, SANS outputFile) puis phase 2 (résolution via reader réel).
-        let mut idx = build_phase1_from_dir(&base);
+        // Phase 1 incrémentale (cache local, SANS outputFile) puis phase 2 (résolution réelle).
+        let files = collect_transcript_stats(&base);
+        let mut cache = FileCacheMap::new();
+        let parsed = rebuild_frags(&mut cache, &files, |p| std::fs::read_to_string(p).ok());
+        assert_eq!(parsed, 1, "un transcript nouveau → parsé une fois");
+        let mut idx = merge_phase1(&cache);
         assert!(idx.tokens_built);
-        assert!(!idx.attrib_built);
         assert!(idx.attrib.is_empty(), "phase 1 ne lit AUCUN outputFile");
         assert!(
             !idx.pending.is_empty(),
             "phase 1 empile la délégation à résoudre"
         );
-        let (attrib_map, unavailable_map) = resolve_pending(&idx.pending, &read_output_usage);
+        let (attrib_map, unavailable_map) =
+            resolve_and_merge_phase2(&mut cache, &read_output_usage);
         idx.attrib = attrib_map;
         idx.unavailable = unavailable_map;
         idx.attrib_built = true;
@@ -2568,6 +2745,147 @@ mod tests {
         let a = index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr);
         assert_eq!(a.agents.len(), 1); // gimli attribué
         assert_eq!(a.unavailable, 1); // legolas (outputFile manquant)
+    }
+
+    // ---------------- Index INCRÉMENTAL (cache par fichier, mtime) ----------------
+
+    /// Deux transcripts distincts (projets p1/p2) pour la fixture incrémentale.
+    fn frag_fixtures() -> (String, String, String) {
+        let f1 = concat!(
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/p1","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":50}}}"#,
+            "\n",
+            r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/p1","message":{"content":[{"type":"tool_use","id":"a1","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#,
+            "\n",
+            r#"{"type":"user","timestamp":"2026-06-30T09:01:00Z","cwd":"/w/p1","toolUseResult":{"resolvedModel":"claude-sonnet-4-5","outputFile":"/tmp/f1.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"a1","content":"ok"}]}}"#,
+        )
+        .to_string();
+        let f2 = r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/p2","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":200,"output_tokens":80}}}"#.to_string();
+        // Version modifiée de f2 (tokens différents).
+        let f2b = r#"{"type":"assistant","timestamp":"2026-06-30T09:00:00Z","cwd":"/w/p2","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":500,"output_tokens":300}}}"#.to_string();
+        (f1, f2, f2b)
+    }
+
+    fn tm(secs: u64) -> Option<std::time::SystemTime> {
+        Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs))
+    }
+
+    #[test]
+    fn incremental_reparse_seulement_les_fichiers_modifies() {
+        let (f1, f2, _f2b) = frag_fixtures();
+        let p1 = PathBuf::from("/proj/p1.jsonl");
+        let p2 = PathBuf::from("/proj/p2.jsonl");
+        let contents: HashMap<PathBuf, String> =
+            HashMap::from([(p1.clone(), f1), (p2.clone(), f2)]);
+        let read = |p: &Path| contents.get(p).cloned();
+
+        let mut cache = FileCacheMap::new();
+        // 1er build : 2 fichiers → 2 parsés.
+        let files = vec![(p1.clone(), tm(10), 100), (p2.clone(), tm(20), 50)];
+        assert_eq!(rebuild_frags(&mut cache, &files, read), 2);
+        // Rebuild sans modif → 0 parsé (tout réutilisé).
+        assert_eq!(rebuild_frags(&mut cache, &files, read), 0);
+        // p2 modifié (mtime ET size) → 1 seul parsé.
+        let files2 = vec![(p1.clone(), tm(10), 100), (p2.clone(), tm(21), 51)];
+        assert_eq!(rebuild_frags(&mut cache, &files2, read), 1);
+    }
+
+    #[test]
+    fn incremental_egal_au_build_complet_apres_modif() {
+        let (f1, f2, f2b) = frag_fixtures();
+        let p1 = PathBuf::from("/proj/p1.jsonl");
+        let p2 = PathBuf::from("/proj/p2.jsonl");
+        // Contenu APRÈS modif de p2.
+        let contents: HashMap<PathBuf, String> =
+            HashMap::from([(p1.clone(), f1.clone()), (p2.clone(), f2b.clone())]);
+        let read = |p: &Path| contents.get(p).cloned();
+
+        // --- Chemin INCRÉMENTAL : build v1 (p2=f2) puis modif p2→f2b. ---
+        let mut inc = FileCacheMap::new();
+        let v1: HashMap<PathBuf, String> =
+            HashMap::from([(p1.clone(), f1.clone()), (p2.clone(), f2)]);
+        rebuild_frags(
+            &mut inc,
+            &[(p1.clone(), tm(10), 100), (p2.clone(), tm(20), 50)],
+            |p| v1.get(p).cloned(),
+        );
+        // Modif p2 (nouvelle empreinte) → re-parse seulement p2 (contenu f2b).
+        let parsed = rebuild_frags(
+            &mut inc,
+            &[(p1.clone(), tm(10), 100), (p2.clone(), tm(30), 99)],
+            read,
+        );
+        assert_eq!(parsed, 1);
+        let idx_inc = merge_phase1(&inc);
+
+        // --- Chemin COMPLET : cache vide, tout parsé avec les contenus finaux. ---
+        let mut full = FileCacheMap::new();
+        rebuild_frags(
+            &mut full,
+            &[(p1.clone(), tm(10), 100), (p2.clone(), tm(30), 99)],
+            read,
+        );
+        let idx_full = merge_phase1(&full);
+
+        // Correctness : incrémental == complet (tokens + deleg, maps commutatives).
+        assert_eq!(idx_inc.tokens, idx_full.tokens);
+        assert_eq!(idx_inc.deleg, idx_full.deleg);
+
+        // Phase 2 aussi identique (attrib + unavailable) — reader factice pour l'outputFile de p1.
+        let reader = |path: &str| {
+            if path == "/tmp/f1.jsonl" {
+                Some((0, 1_000_000, 0, 0))
+            } else {
+                None
+            }
+        };
+        let a_inc = resolve_and_merge_phase2(&mut inc, &reader);
+        let a_full = resolve_and_merge_phase2(&mut full, &reader);
+        assert_eq!(a_inc.0, a_full.0);
+        assert_eq!(a_inc.1, a_full.1);
+    }
+
+    #[test]
+    fn incremental_retire_les_fichiers_disparus() {
+        let (f1, f2, _f2b) = frag_fixtures();
+        let p1 = PathBuf::from("/proj/p1.jsonl");
+        let p2 = PathBuf::from("/proj/p2.jsonl");
+        let contents: HashMap<PathBuf, String> =
+            HashMap::from([(p1.clone(), f1), (p2.clone(), f2)]);
+        let read = |p: &Path| contents.get(p).cloned();
+
+        let mut cache = FileCacheMap::new();
+        rebuild_frags(
+            &mut cache,
+            &[(p1.clone(), tm(10), 100), (p2.clone(), tm(20), 50)],
+            read,
+        );
+        let with_both = merge_phase1(&cache);
+        // p2 disparaît → son fragment est retiré ; l'index ne le contient plus.
+        rebuild_frags(&mut cache, &[(p1.clone(), tm(10), 100)], read);
+        assert_eq!(cache.len(), 1);
+        let after = merge_phase1(&cache);
+        assert!(after.tokens.len() < with_both.tokens.len());
+        // p1 conservé (projet p1 encore présent) ; p2 absent.
+        assert!(after.tokens.keys().all(|(proj, _, _, _)| proj == "p1"));
+    }
+
+    #[test]
+    fn incremental_stat_echoue_traite_comme_change() {
+        // mtime = None (stat KO) → jamais réutilisé (re-parse à chaque build). Défensif.
+        let (f1, _f2, _f2b) = frag_fixtures();
+        let p1 = PathBuf::from("/proj/p1.jsonl");
+        let contents: HashMap<PathBuf, String> = HashMap::from([(p1.clone(), f1)]);
+        let read = |p: &Path| contents.get(p).cloned();
+        let mut cache = FileCacheMap::new();
+        assert_eq!(
+            rebuild_frags(&mut cache, &[(p1.clone(), None, 100)], read),
+            1
+        );
+        // Même appel avec mtime None → re-parsé (pas de réutilisation sur empreinte inconnue).
+        assert_eq!(
+            rebuild_frags(&mut cache, &[(p1.clone(), None, 100)], read),
+            1
+        );
     }
 
     #[test]
