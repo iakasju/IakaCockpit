@@ -80,6 +80,7 @@ pub fn run() {
             economy::analytics_cost,
             economy::delegations_by_agent,
             economy::agent_attribution,
+            economy::analytics_index_status,
             economy::analytics_refresh,
             services::check_services,
             config::get_root,

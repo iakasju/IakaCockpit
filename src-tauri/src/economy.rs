@@ -958,9 +958,10 @@ where
 }
 
 /// Commande : attribution par agent RÉELLE (tokens + coût) sur la période `[from, to]` (ms
-/// epoch), scopée par projet (`project`), dérivée de l'INDEX précalculé (les `outputFile` ont
-/// été lus UNE fois au build). `unavailable` = délégations dont l'`outputFile` a expiré (jamais
-/// de token fabriqué). Lecture seule ; instantané après build.
+/// epoch), scopée par projet (`project`), dérivée de la PHASE 2 de l'index (lecture des
+/// `outputFile`). **Non bloquante** : si la phase 2 n'est pas prête, déclenche son build EN FOND
+/// et renvoie du vide (le front affiche « calcul en cours » via `analytics_index_status` et
+/// re-fetche). `unavailable` = délégations dont l'`outputFile` a expiré (jamais de token fabriqué).
 #[tauri::command]
 pub fn agent_attribution(
     from: i64,
@@ -968,14 +969,52 @@ pub fn agent_attribution(
     project: Option<String>,
 ) -> Result<AgentAttribution, String> {
     let pricing = pricing::snapshot();
+    // Phase 2 pas prête → NE PAS bloquer : build en fond + vide (le front polle le statut).
+    let ready = index_cache()
+        .read()
+        .map(|g| g.attrib_built)
+        .unwrap_or(false);
+    if !ready {
+        trigger_phase2_async();
+        return Ok(AgentAttribution {
+            agents: Vec::new(),
+            unavailable: 0,
+            priced_at: pricing.priced_at.clone(),
+        });
+    }
     let (fd, td) = (ymd_from_ms(from), ymd_from_ms(to));
     Ok(query_index(|idx| {
         index_attrib(idx, &fd, &td, project.as_deref(), &pricing)
     }))
 }
 
+/// État de construction de l'index (miroir TS `IndexStatus`). Le front affiche « construction… »
+/// tant que `tokens_ready` est faux, et « calcul par agent en cours… » tant que `attrib_ready`
+/// est faux, puis re-fetche.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct IndexStatus {
+    pub tokens_ready: bool,
+    pub attrib_ready: bool,
+}
+
+/// Commande : état de construction de l'index (phase 1 / phase 2). Lecture non bloquante.
+#[tauri::command]
+pub fn analytics_index_status() -> Result<IndexStatus, String> {
+    let (tokens_ready, attrib_ready) = match index_cache().read() {
+        Ok(g) => (g.tokens_built, g.attrib_built),
+        Err(p) => {
+            let g = p.into_inner();
+            (g.tokens_built, g.attrib_built)
+        }
+    };
+    Ok(IndexStatus {
+        tokens_ready,
+        attrib_ready,
+    })
+}
+
 /// Commande : reconstruit l'index d'agrégats à la demande (bouton « Actualiser » Analytics).
-/// Non bloquante côté logique (le build parcourt les transcripts une fois). Best-effort.
+/// Phase 1 puis phase 2. Best-effort.
 #[tauri::command]
 pub fn analytics_refresh() -> Result<(), String> {
     build_index();
@@ -1008,21 +1047,42 @@ fn add_buckets(dst: &mut Buckets, src: Buckets) {
     dst.3 += src.3;
 }
 
-/// Index d'agrégats précalculé. Tokens seulement (le coût se dérive à la requête).
+/// Une délégation en attente de résolution (phase 2) : tout est connu SAUF les tokens du
+/// sous-agent, qui nécessitent la lecture (lente) de `output`. Collectée en phase 1 (parsing pur).
+#[derive(Clone)]
+struct PendingDeleg {
+    project: String,
+    day: String,
+    agent: String,
+    /// `resolvedModel` du sous-agent (vide si pas de tool_result apparié).
+    model: String,
+    /// Chemin de l'`outputFile` (vide si pas de résultat → non attribuable en phase 2).
+    output: String,
+}
+
+/// Index d'agrégats précalculé, construit en DEUX PHASES pour un Périmètre instantané.
+/// Phase 1 (rapide, parsing pur) remplit `tokens` + `deleg` (comptes/durées) + `pending` — elle
+/// sert `portfolio_economy`/`portfolio_activity`/`analytics_cost`/`delegations_by_agent`. Phase 2
+/// (lente, I/O `outputFile`) remplit `attrib` + `unavailable` — elle sert `agent_attribution`.
+/// Tokens seulement (le coût se dérive à la requête via `pricing`).
 #[derive(Default, Clone)]
 pub struct AggIndex {
-    /// Faux tant que le premier build n'a pas eu lieu (déclenche le build paresseux).
-    built: bool,
+    /// Phase 1 prête : `tokens`/`deleg`/`pending` remplis (Périmètre/coût/délégations servables).
+    tokens_built: bool,
+    /// Phase 2 prête : `attrib`/`unavailable` remplis (attribution par agent servable).
+    attrib_built: bool,
     /// Horodatage (ms epoch) du dernier build — freshness (incrémental différé).
     #[allow(dead_code)]
     built_at: Option<i64>,
-    /// (project, date, model, sidechain) → buckets. Sert cost / activity / economy.
+    /// (project, date, model, sidechain) → buckets. Sert cost / activity / economy. (Phase 1.)
     tokens: HashMap<(String, String, String, bool), Buckets>,
-    /// (project, date, agent) → (count, total_ms appariés, paired). Sert delegations_by_agent.
+    /// (project, date, agent) → (count, total_ms appariés, paired). Délégations. (Phase 1.)
     deleg: HashMap<(String, String, String), (u64, i64, u64)>,
-    /// (project, date, agent, model normalisé) → (i, o, cw, cr, count attribué). Sert attribution.
+    /// Délégations à attribuer en phase 2 (lecture des `outputFile`). (Rempli en phase 1.)
+    pending: Vec<PendingDeleg>,
+    /// (project, date, agent, model normalisé) → (i, o, cw, cr, count attribué). (Phase 2.)
     attrib: HashMap<AttribKey, AttribVal>,
-    /// (project, date) → nb de délégations non attribuables (outputFile manquant).
+    /// (project, date) → nb de délégations non attribuables (outputFile manquant). (Phase 2.)
     unavailable: HashMap<(String, String), u32>,
 }
 
@@ -1052,12 +1112,10 @@ fn in_scope(project: &str, target: Option<&str>) -> bool {
     }
 }
 
-/// Intègre le contenu d'UN transcript parent dans l'index (une passe, chaque ligne parsée une
-/// fois). `reader` lit un `outputFile` → buckets (injectable pour tests). Défensif partout.
-fn index_file<F>(idx: &mut AggIndex, content: &str, reader: &F)
-where
-    F: Fn(&str) -> Option<Buckets>,
-{
+/// PHASE 1 (rapide, PARSING PUR — AUCUNE lecture d'`outputFile`) : intègre le contenu d'UN
+/// transcript parent dans l'index → `tokens` + `deleg` (comptes/durées) + `pending` (délégations
+/// à attribuer en phase 2). Une passe, chaque ligne parsée une fois. Défensif partout.
+fn index_file_phase1(idx: &mut AggIndex, content: &str) {
     // Appariement délégation intra-fichier (use↔result par tool_use_id — même parent).
     let mut uses: HashMap<String, (String, i64, String, String)> = HashMap::new();
     let mut results: HashMap<String, (i64, String, String)> = HashMap::new();
@@ -1172,45 +1230,79 @@ where
         }
     }
 
-    // Résolution des délégations du fichier (durée + lecture UNIQUE de chaque outputFile).
+    // Délégations du fichier : durée (appariée, SANS I/O) en phase 1 ; l'attribution (lecture
+    // d'`outputFile`) est DIFFÉRÉE en phase 2 → on empile une entrée `pending` par délégation.
     for (id, (agent, use_ms, project, day)) in uses {
         let e = idx
             .deleg
             .entry((project.clone(), day.clone(), agent.clone()))
             .or_insert((0, 0, 0));
         e.0 += 1;
-        match results.get(&id) {
+        // `model`/`output` du résultat apparié (vides si pas de tool_result → non attribuable P2).
+        let (model, output) = match results.get(&id) {
             Some((res_ms, model, output)) => {
                 let dur = res_ms - use_ms;
                 if dur >= 0 {
                     e.1 += dur;
                     e.2 += 1;
                 }
-                match reader(output) {
-                    Some(b) => {
-                        let key = (project, day, agent, pricing::normalize_model(model));
-                        let a = idx.attrib.entry(key).or_insert((0, 0, 0, 0, 0));
-                        a.0 += b.0;
-                        a.1 += b.1;
-                        a.2 += b.2;
-                        a.3 += b.3;
-                        a.4 += 1;
-                    }
-                    None => {
-                        *idx.unavailable.entry((project, day)).or_insert(0) += 1;
-                    }
-                }
+                (model.clone(), output.clone())
             }
-            None => {
-                *idx.unavailable.entry((project, day)).or_insert(0) += 1;
-            }
-        }
+            None => (String::new(), String::new()),
+        };
+        idx.pending.push(PendingDeleg {
+            project,
+            day,
+            agent,
+            model,
+            output,
+        });
     }
 }
 
-/// Construit l'index depuis un dossier `projects/` (une passe complète, chaque outputFile lu une
-/// fois). Défensif : fichier/dir illisible ignoré.
-fn build_from_dir(projects_dir: &Path) -> AggIndex {
+/// PHASE 2 (lente, I/O) : résout les `pending` en lisant chaque `outputFile` UNE fois via `reader`
+/// → `attrib` (tokens sommés + modèle normalisé) et `unavailable` (outputFile absent/illisible).
+/// PUR (l'I/O disque est dans `reader`) — testable sans disque.
+fn resolve_pending<F>(
+    pending: &[PendingDeleg],
+    reader: &F,
+) -> (
+    HashMap<AttribKey, AttribVal>,
+    HashMap<(String, String), u32>,
+)
+where
+    F: Fn(&str) -> Option<Buckets>,
+{
+    let mut attrib: HashMap<AttribKey, AttribVal> = HashMap::new();
+    let mut unavailable: HashMap<(String, String), u32> = HashMap::new();
+    for p in pending {
+        match reader(&p.output) {
+            Some(b) => {
+                let key = (
+                    p.project.clone(),
+                    p.day.clone(),
+                    p.agent.clone(),
+                    pricing::normalize_model(&p.model),
+                );
+                let a = attrib.entry(key).or_insert((0, 0, 0, 0, 0));
+                a.0 += b.0;
+                a.1 += b.1;
+                a.2 += b.2;
+                a.3 += b.3;
+                a.4 += 1;
+            }
+            None => {
+                *unavailable
+                    .entry((p.project.clone(), p.day.clone()))
+                    .or_insert(0) += 1;
+            }
+        }
+    }
+    (attrib, unavailable)
+}
+
+/// PHASE 1 depuis un dossier `projects/` (parsing pur, AUCUN `outputFile` lu). Défensif.
+fn build_phase1_from_dir(projects_dir: &Path) -> AggIndex {
     let mut idx = AggIndex::default();
     if let Ok(dirs) = std::fs::read_dir(projects_dir) {
         for sess_dir in dirs.flatten() {
@@ -1224,12 +1316,12 @@ fn build_from_dir(projects_dir: &Path) -> AggIndex {
                     continue;
                 }
                 if let Ok(content) = std::fs::read_to_string(&p) {
-                    index_file(&mut idx, &content, &read_output_usage);
+                    index_file_phase1(&mut idx, &content);
                 }
             }
         }
     }
-    idx.built = true;
+    idx.tokens_built = true;
     idx.built_at = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .ok()
@@ -1243,12 +1335,15 @@ fn index_cache() -> &'static RwLock<AggIndex> {
     C.get_or_init(|| RwLock::new(AggIndex::default()))
 }
 
-/// (Re)construit l'index complet et l'installe. Non paniquant (verrou empoisonné → ignoré).
-pub fn build_index() {
+/// Garde anti-double-spawn de la phase 2 (déclenchée à la demande par `agent_attribution`).
+static PHASE2_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// PHASE 1 : (re)construit tokens/deleg/pending et l'installe. RAPIDE (parsing pur). Non paniquant.
+pub fn build_phase1() {
     let idx = match claude_projects_dir() {
-        Some(dir) => build_from_dir(&dir),
+        Some(dir) => build_phase1_from_dir(&dir),
         None => AggIndex {
-            built: true,
+            tokens_built: true,
             ..Default::default()
         },
     };
@@ -1257,17 +1352,68 @@ pub fn build_index() {
     }
 }
 
-/// Lance la construction de l'index EN TÂCHE DE FOND au démarrage (thread détaché, calque
-/// `pricing::spawn_refresh`). NON bloquant ; aucune panique ne remonte.
-pub fn spawn_build() {
-    std::thread::spawn(build_index);
+/// PHASE 2 : résout les `pending` (lecture des `outputFile`) et installe `attrib`/`unavailable`.
+/// Construit d'abord la phase 1 si besoin. L'I/O disque se fait HORS verrou (on ne clone que
+/// `pending`, petit) ; seule l'installation prend le verrou d'écriture.
+pub fn build_phase2() {
+    if !index_cache()
+        .read()
+        .map(|g| g.tokens_built)
+        .unwrap_or(false)
+    {
+        build_phase1();
+    }
+    let pending = match index_cache().read() {
+        Ok(g) => g.pending.clone(),
+        Err(p) => p.into_inner().pending.clone(),
+    };
+    let (attrib, unavailable) = resolve_pending(&pending, &read_output_usage);
+    if let Ok(mut g) = index_cache().write() {
+        g.attrib = attrib;
+        g.unavailable = unavailable;
+        g.attrib_built = true;
+    }
 }
 
-/// Exécute `f` sur l'index (construction PARESSEUSE au premier accès si pas encore construit).
-/// Ne clone pas l'index : calcul sous verrou de lecture (tolère un verrou empoisonné).
+/// (Re)construit l'index COMPLET (phase 1 puis phase 2). Utilisé par `analytics_refresh`.
+pub fn build_index() {
+    build_phase1();
+    build_phase2();
+}
+
+/// Lance la construction de l'index EN TÂCHE DE FOND au démarrage (thread détaché) : phase 1
+/// (Périmètre servable vite) PUIS phase 2. NON bloquant ; aucune panique ne remonte.
+pub fn spawn_build() {
+    std::thread::spawn(|| {
+        build_phase1();
+        build_phase2();
+    });
+}
+
+/// Déclenche la phase 2 en tâche de fond si elle n'est pas prête et pas déjà en cours (garde
+/// atomique anti-double-spawn). Non bloquant — `agent_attribution` renvoie du vide en attendant.
+fn trigger_phase2_async() {
+    use std::sync::atomic::Ordering;
+    if PHASE2_RUNNING
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_ok()
+    {
+        std::thread::spawn(|| {
+            build_phase2();
+            PHASE2_RUNNING.store(false, Ordering::SeqCst);
+        });
+    }
+}
+
+/// Exécute `f` sur l'index après avoir garanti la PHASE 1 (Périmètre/coût/délégations). Construit
+/// la phase 1 SYNCHRONE au premier accès si pas prête (rapide). Ne clone pas l'index.
 fn query_index<T>(f: impl FnOnce(&AggIndex) -> T) -> T {
-    if !index_cache().read().map(|g| g.built).unwrap_or(false) {
-        build_index();
+    if !index_cache()
+        .read()
+        .map(|g| g.tokens_built)
+        .unwrap_or(false)
+    {
+        build_phase1();
     }
     match index_cache().read() {
         Ok(g) => f(&g),
@@ -2089,11 +2235,16 @@ mod tests {
         }
     }
 
+    /// Index complet de fixture : phase 1 (parsing) PUIS phase 2 (résolution via reader fixture).
     fn build_fixture_index() -> AggIndex {
         let mut idx = AggIndex::default();
         let content = fixture_parent().join("\n");
-        index_file(&mut idx, &content, &fixture_reader);
-        idx.built = true;
+        index_file_phase1(&mut idx, &content);
+        idx.tokens_built = true;
+        let (attrib, unavailable) = resolve_pending(&idx.pending, &fixture_reader);
+        idx.attrib = attrib;
+        idx.unavailable = unavailable;
+        idx.attrib_built = true;
         idx
     }
 
@@ -2208,8 +2359,20 @@ mod tests {
         );
         std::fs::write(sess.join("s1.jsonl"), parent).unwrap();
 
-        let idx = build_from_dir(&base);
-        assert!(idx.built);
+        // Phase 1 (dossier, SANS outputFile) puis phase 2 (résolution via reader réel).
+        let mut idx = build_phase1_from_dir(&base);
+        assert!(idx.tokens_built);
+        assert!(!idx.attrib_built);
+        assert!(idx.attrib.is_empty(), "phase 1 ne lit AUCUN outputFile");
+        assert!(
+            !idx.pending.is_empty(),
+            "phase 1 empile la délégation à résoudre"
+        );
+        let (attrib_map, unavailable_map) = resolve_pending(&idx.pending, &read_output_usage);
+        idx.attrib = attrib_map;
+        idx.unavailable = unavailable_map;
+        idx.attrib_built = true;
+
         let pr = pricing_test();
         let attrib = index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr);
         assert_eq!(attrib.agents.len(), 1);
@@ -2218,6 +2381,45 @@ mod tests {
         assert_eq!(attrib.unavailable, 0);
 
         std::fs::remove_dir_all(&base).ok();
+    }
+
+    #[test]
+    fn phase1_sert_le_perimetre_sans_lire_les_outputfiles() {
+        // Phase 1 = parsing pur : remplit tokens/deleg/pending, PAS attrib/unavailable. Le
+        // Périmètre (economy/activity) et le coût sont servables SANS aucune lecture d'outputFile.
+        let mut idx = AggIndex::default();
+        let content = fixture_parent().join("\n");
+        index_file_phase1(&mut idx, &content);
+        idx.tokens_built = true;
+
+        // Phase 2 pas faite → attrib/unavailable vides, mais pending rempli.
+        assert!(idx.attrib.is_empty());
+        assert!(idx.unavailable.is_empty());
+        assert!(!idx.pending.is_empty());
+        assert!(!idx.attrib_built);
+
+        // Périmètre + coût + délégations SERVABLES depuis la seule phase 1.
+        assert!(!index_economy(&idx).is_empty());
+        assert!(!index_activity(&idx, usize::MAX).is_empty());
+        let pr = pricing_test();
+        assert!(!index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr)
+            .by_model
+            .is_empty());
+        assert!(!index_deleg(&idx, "0000-00-00", "9999-99-99", None).is_empty());
+
+        // L'attribution nécessite la phase 2 : vide tant qu'elle n'a pas résolu les pending.
+        assert!(index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr)
+            .agents
+            .is_empty());
+
+        // Phase 2 (résolution) → attribution non vide + unavailable comptés (fixture : 1 KO).
+        let (attrib, unavailable) = resolve_pending(&idx.pending, &fixture_reader);
+        idx.attrib = attrib;
+        idx.unavailable = unavailable;
+        idx.attrib_built = true;
+        let a = index_attrib(&idx, "0000-00-00", "9999-99-99", None, &pr);
+        assert_eq!(a.agents.len(), 1); // gimli attribué
+        assert_eq!(a.unavailable, 1); // legolas (outputFile manquant)
     }
 
     #[test]
@@ -2252,7 +2454,7 @@ mod tests {
             ),
             (500_000, 0, 0, 0),
         );
-        idx.built = true;
+        idx.tokens_built = true;
 
         // Toute la période : 2 projets, Σ by_project.tokens == Σ by_model.tokens.
         let c = index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr);
@@ -2297,7 +2499,7 @@ mod tests {
                 (10, 5, 0, 0),
             );
         }
-        idx.built = true;
+        idx.tokens_built = true;
         let act = index_activity(&idx, usize::MAX);
         assert_eq!(act.len(), 15, "aucune troncature top-12");
         // Le plus petit projet est bien présent.
@@ -2308,7 +2510,8 @@ mod tests {
     fn index_vide_non_construit_donne_du_vide_propre() {
         // Un index par défaut (non construit) → requêtes vides, jamais de panique.
         let idx = AggIndex::default();
-        assert!(!idx.built);
+        assert!(!idx.tokens_built);
+        assert!(!idx.attrib_built);
         let pr = pricing_test();
         assert!(index_cost(&idx, "0000-00-00", "9999-99-99", None, &pr)
             .by_model
