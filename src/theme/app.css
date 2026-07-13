@@ -2405,6 +2405,8 @@ button {
 .dtree {
   --dt-amber: #d98a2b;
   --dt-green: var(--green, #3aa675);
+  /* Liaisons coordinateur→délégués : lisibles en clair ET sombre (theme-aware). */
+  --dt-line: color-mix(in srgb, var(--text-3) 70%, transparent);
 }
 .dth {
   display: flex;
@@ -2456,6 +2458,18 @@ button {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+}
+/* Amorce du tronc : relie le bas de la racine au premier délégué (comble le gap). */
+.dtkids::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: -8px;
+  width: 2px;
+  height: 16px;
+  background: var(--dt-line);
+  pointer-events: none;
 }
 .dtnode {
   position: relative;
@@ -2474,17 +2488,41 @@ button {
 .dtnode.done {
   border-left-color: var(--dt-green);
 }
-/* Connecteur en L reliant chaque enfant à la racine (arbre 1 niveau). */
+/* Liaisons coordinateur→délégués (arbre 1 niveau), nettement visibles :
+   - un TRONC vertical continu (segment par nœud, joints entre eux + amorce `.dtkids::before`),
+   - une BRANCHE horizontale du tronc vers chaque nœud (l'élément `.dtedge`). ~2px, theme-aware. */
+.dtnode::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: -6px;
+  width: 2px;
+  height: calc(50% + 6px); /* descend jusqu'au centre du nœud (= point de branche) */
+  background: var(--dt-line);
+  pointer-events: none;
+}
+/* Tout nœud sauf le dernier prolonge le tronc jusqu'au nœud suivant (comble le gap). */
+.dtnode:not(:last-child)::before {
+  height: calc(100% + 6px);
+}
+/* Branche horizontale (élément `.dtedge`), au centre du nœud, jusqu'à sa barre d'accent. */
 .dtnode .dtedge {
   position: absolute;
-  left: -16px;
-  top: -4px;
-  width: 12px;
-  height: calc(50% + 4px);
-  border-left: 1.5px solid color-mix(in srgb, var(--text-3) 35%, transparent);
-  border-bottom: 1.5px solid color-mix(in srgb, var(--text-3) 35%, transparent);
-  border-bottom-left-radius: 8px;
+  left: -15px;
+  top: 50%;
+  width: 15px;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--dt-line);
+  border-radius: 1px;
   pointer-events: none;
+}
+/* Bonus lisibilité : la branche reprend discrètement la couleur du statut. */
+.dtnode.running .dtedge {
+  background: var(--dt-amber);
+}
+.dtnode.done .dtedge {
+  background: var(--dt-green);
 }
 .dtav {
   width: 28px;

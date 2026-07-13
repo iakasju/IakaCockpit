@@ -77,6 +77,31 @@ describe("DelegationTree — arbre des délégations (L28)", () => {
     expect(screen.getByText(/2 en cours/)).toBeTruthy();
   });
 
+  it("liaisons : une branche `.dtedge` par délégué quand tasks>0 (tronc+branches visibles)", () => {
+    const { container } = render(
+      <DelegationTree
+        coordinator="Aragorn"
+        tasks={[
+          task({ id: "t1", agent: "gimli", status: "running" }),
+          task({ id: "t2", agent: "legolas", status: "done" }),
+          task({ id: "t3", agent: "loki", status: "done" }),
+        ]}
+      />,
+    );
+    // Un connecteur horizontal (`.dtedge`) par nœud enfant → liaison coordinateur→délégué.
+    expect(container.querySelectorAll(".dtnode .dtedge")).toHaveLength(3);
+    // Le conteneur des enfants porte le tronc (amorce via `.dtkids`).
+    expect(container.querySelector(".dtkids")).toBeTruthy();
+  });
+
+  it("vide → aucune liaison rendue (pas de tronc sans délégué)", () => {
+    const { container } = render(
+      <DelegationTree coordinator="Aragorn" tasks={[]} />,
+    );
+    expect(container.querySelectorAll(".dtedge")).toHaveLength(0);
+    expect(container.querySelector(".dtkids")).toBeNull();
+  });
+
   it("vignette d'agent quand resolveAvatar renvoie une URL (alt = nom)", () => {
     render(
       <DelegationTree
