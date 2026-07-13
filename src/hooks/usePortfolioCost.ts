@@ -12,6 +12,7 @@ import { backend, type Backend, type AnalyticsCost } from "../api/backend";
 export function usePortfolioCost(
   fromMs: number,
   toMs: number,
+  project?: string,
   api: Backend = backend,
 ): AnalyticsCost | null {
   const [cost, setCost] = useState<AnalyticsCost | null>(null);
@@ -24,7 +25,7 @@ export function usePortfolioCost(
     }
     let alive = true;
     api
-      .analyticsCost(fromMs, toMs)
+      .analyticsCost(fromMs, toMs, project)
       .then((c) => {
         if (alive) setCost(c);
       })
@@ -34,7 +35,7 @@ export function usePortfolioCost(
     return () => {
       alive = false;
     };
-  }, [api, fromMs, toMs]);
+  }, [api, fromMs, toMs, project]);
 
   return cost;
 }

@@ -380,10 +380,18 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
-/// Intègre UNE ligne JSONL dans l'accumulateur de coût, filtrée par période `[from, to]`.
-/// PUR/testable. Sépare les 4 buckets, tarife via `pricing`, ignore proprement tout record
-/// non pertinent / hors période / non daté.
-fn fold_cost_line(acc: &mut CostAcc, line: &str, from: i64, to: i64, pricing: &PricingSnapshot) {
+/// Intègre UNE ligne JSONL dans l'accumulateur de coût, filtrée par période `[from, to]` et,
+/// optionnellement, par projet (`project = Some(p)` → ne compte que les lignes dont
+/// `project_of(cwd) == p` ; `None` = tout le portefeuille). PUR/testable. Sépare les 4 buckets,
+/// tarife via `pricing`, ignore proprement tout record non pertinent / hors période / non daté.
+fn fold_cost_line(
+    acc: &mut CostAcc,
+    line: &str,
+    from: i64,
+    to: i64,
+    pricing: &PricingSnapshot,
+    project: Option<&str>,
+) {
     let line = line.trim();
     if line.is_empty() {
         return;
@@ -394,6 +402,18 @@ fn fold_cost_line(acc: &mut CostAcc, line: &str, from: i64, to: i64, pricing: &P
     };
     if v.get("type").and_then(Value::as_str) != Some("assistant") {
         return;
+    }
+    // Scope projet : le projet d'une ligne = dernier segment de son `cwd` (même clé que le
+    // Périmètre). Hors du projet ciblé → ignorée (jamais de fausse donnée).
+    if let Some(target) = project {
+        if v.get("cwd")
+            .and_then(Value::as_str)
+            .and_then(project_of)
+            .as_deref()
+            != Some(target)
+        {
+            return;
+        }
     }
     let message = match v.get("message") {
         Some(m) => m,
@@ -501,6 +521,7 @@ fn scan_projects_cost(
     from: i64,
     to: i64,
     pricing: &PricingSnapshot,
+    project: Option<&str>,
 ) -> AnalyticsCost {
     let mut acc = CostAcc::default();
     if let Ok(dirs) = std::fs::read_dir(projects_dir) {
@@ -516,7 +537,7 @@ fn scan_projects_cost(
                 }
                 if let Ok(content) = std::fs::read_to_string(&p) {
                     for line in content.lines() {
-                        fold_cost_line(&mut acc, line, from, to, pricing);
+                        fold_cost_line(&mut acc, line, from, to, pricing, project);
                     }
                 }
             }
@@ -526,13 +547,24 @@ fn scan_projects_cost(
 }
 
 /// Commande : coût $ réel agrégé sur la période `[from, to]` (ms epoch, du sélecteur de plage)
-/// depuis les transcripts de session. Table de prix = snapshot courant (embarquée + refresh
-/// background). Lecture seule, défensive (vide / hors-Tauri → coût 0, listes vides).
+/// depuis les transcripts de session. `project = Some(p)` scope au projet du Périmètre (dernier
+/// segment du cwd) ; `None`/absent = tout le portefeuille. Table de prix = snapshot courant
+/// (embarquée + refresh background). Lecture seule, défensive (vide / hors-Tauri → coût 0).
 #[tauri::command]
-pub fn analytics_cost(from: i64, to: i64) -> Result<AnalyticsCost, String> {
+pub fn analytics_cost(
+    from: i64,
+    to: i64,
+    project: Option<String>,
+) -> Result<AnalyticsCost, String> {
     let pricing = pricing::snapshot();
     match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_cost(&dir, from, to, &pricing)),
+        Some(dir) => Ok(scan_projects_cost(
+            &dir,
+            from,
+            to,
+            &pricing,
+            project.as_deref(),
+        )),
         None => Ok(finalize_cost(CostAcc::default(), pricing.priced_at.clone())),
     }
 }
@@ -565,7 +597,9 @@ struct DelegAcc {
 
 /// Intègre UNE ligne JSONL dans l'accumulateur de délégations. PUR/testable. Collecte les
 /// `tool_use` de délégation (côté assistant) et les `tool_result` (côté user) par `tool_use_id`.
-fn fold_deleg_line(acc: &mut DelegAcc, line: &str) {
+/// `project = Some(p)` scope au projet (`project_of(cwd) == p`, use ET result d'une même session
+/// partagent le cwd → appariement cohérent) ; `None` = tout le portefeuille.
+fn fold_deleg_line(acc: &mut DelegAcc, line: &str, project: Option<&str>) {
     let line = line.trim();
     if line.is_empty() {
         return;
@@ -578,6 +612,17 @@ fn fold_deleg_line(acc: &mut DelegAcc, line: &str) {
         Some(t) => t,
         None => return,
     };
+    // Scope projet (même clé que le Périmètre : dernier segment du cwd).
+    if let Some(target) = project {
+        if v.get("cwd")
+            .and_then(Value::as_str)
+            .and_then(project_of)
+            .as_deref()
+            != Some(target)
+        {
+            return;
+        }
+    }
     let ms = v
         .get("timestamp")
         .and_then(Value::as_str)
@@ -656,7 +701,12 @@ fn finalize_deleg(acc: DelegAcc, from: i64, to: i64) -> Vec<AgentDelegations> {
 }
 
 /// Scanne un dossier `projects/` et agrège les délégations par agent sur la période. Défensif.
-fn scan_projects_deleg(projects_dir: &Path, from: i64, to: i64) -> Vec<AgentDelegations> {
+fn scan_projects_deleg(
+    projects_dir: &Path,
+    from: i64,
+    to: i64,
+    project: Option<&str>,
+) -> Vec<AgentDelegations> {
     let mut acc = DelegAcc::default();
     if let Ok(dirs) = std::fs::read_dir(projects_dir) {
         for sess_dir in dirs.flatten() {
@@ -671,7 +721,7 @@ fn scan_projects_deleg(projects_dir: &Path, from: i64, to: i64) -> Vec<AgentDele
                 }
                 if let Ok(content) = std::fs::read_to_string(&p) {
                     for line in content.lines() {
-                        fold_deleg_line(&mut acc, line);
+                        fold_deleg_line(&mut acc, line, project);
                     }
                 }
             }
@@ -681,12 +731,17 @@ fn scan_projects_deleg(projects_dir: &Path, from: i64, to: i64) -> Vec<AgentDele
 }
 
 /// Commande : délégations réelles par agent nommé sur la période `[from, to]` (ms epoch),
-/// depuis les transcripts. Comptes + durées (use→result) uniquement — PAS de tokens/$ (pas de
+/// depuis les transcripts. `project = Some(p)` scope au projet du Périmètre ; `None`/absent =
+/// tout le portefeuille. Comptes + durées (use→result) uniquement — PAS de tokens/$ (pas de
 /// source, cf. constat). Lecture seule, défensive (vide / hors-Tauri → liste vide).
 #[tauri::command]
-pub fn delegations_by_agent(from: i64, to: i64) -> Result<Vec<AgentDelegations>, String> {
+pub fn delegations_by_agent(
+    from: i64,
+    to: i64,
+    project: Option<String>,
+) -> Result<Vec<AgentDelegations>, String> {
     match claude_projects_dir() {
-        Some(dir) => Ok(scan_projects_deleg(&dir, from, to)),
+        Some(dir) => Ok(scan_projects_deleg(&dir, from, to, project.as_deref())),
         None => Ok(Vec::new()),
     }
 }
@@ -906,6 +961,7 @@ mod tests {
             0,
             i64::MAX,
             &pr,
+            None,
         );
         let cost = finalize_cost(acc, None);
         assert!(
@@ -930,6 +986,7 @@ mod tests {
             0,
             i64::MAX,
             &pr,
+            None,
         );
         let cost = finalize_cost(acc, None);
         assert_eq!(cost.cost_total, 0.0);
@@ -948,6 +1005,7 @@ mod tests {
             0,
             i64::MAX,
             &pr,
+            None,
         );
         let cost = finalize_cost(acc, None);
         assert_eq!(cost.cost_total, 0.0); // non compté
@@ -966,10 +1024,10 @@ mod tests {
         let line = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":1000000,"output_tokens":0}}}"#;
         let ms = iso_to_epoch_ms("2026-06-30T10:00:00Z").unwrap();
         // Période EXCLUANT la ligne (fenêtre après) → rien.
-        fold_cost_line(&mut acc, line, ms + 1, ms + 1000, &pr);
+        fold_cost_line(&mut acc, line, ms + 1, ms + 1000, &pr, None);
         assert!(acc.by_model.is_empty(), "hors période → ignorée");
         // Période INCLUANT la ligne → comptée.
-        fold_cost_line(&mut acc, line, ms - 1000, ms + 1000, &pr);
+        fold_cost_line(&mut acc, line, ms - 1000, ms + 1000, &pr, None);
         assert_eq!(acc.by_model.len(), 1);
     }
 
@@ -989,7 +1047,7 @@ mod tests {
         let total_for = |from: i64| -> f64 {
             let mut acc = CostAcc::default();
             for line in [recent, mid, old] {
-                fold_cost_line(&mut acc, line, from, now, &pr);
+                fold_cost_line(&mut acc, line, from, now, &pr, None);
             }
             finalize_cost(acc, None).cost_total
         };
@@ -1014,6 +1072,7 @@ mod tests {
             0,
             i64::MAX,
             &pr,
+            None,
         );
         // user → ignorée.
         fold_cost_line(
@@ -1022,9 +1081,10 @@ mod tests {
             0,
             i64::MAX,
             &pr,
+            None,
         );
         // Que du JSON invalide → ignorée.
-        fold_cost_line(&mut acc, "pas du json", 0, i64::MAX, &pr);
+        fold_cost_line(&mut acc, "pas du json", 0, i64::MAX, &pr, None);
         assert!(acc.by_model.is_empty());
     }
 
@@ -1037,10 +1097,12 @@ mod tests {
         fold_deleg_line(
             &mut acc,
             r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Agent","input":{"subagent_type":"gimli","description":"code"}}]}}"#,
+            None,
         );
         fold_deleg_line(
             &mut acc,
             r#"{"type":"user","timestamp":"2026-06-30T10:00:05Z","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"}]}}"#,
+            None,
         );
         let out = finalize_deleg(acc, 0, i64::MAX);
         assert_eq!(out.len(), 1);
@@ -1057,6 +1119,7 @@ mod tests {
         fold_deleg_line(
             &mut acc,
             r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"toolu_2","name":"Task","input":{"subagent_type":"legolas","description":"gate"}}]}}"#,
+            None,
         );
         let out = finalize_deleg(acc, 0, i64::MAX);
         assert_eq!(out.len(), 1);
@@ -1075,6 +1138,7 @@ mod tests {
                 &format!(
                     r#"{{"type":"assistant","timestamp":"2026-06-30T10:00:0{i}Z","message":{{"content":[{{"type":"tool_use","id":"id{i}","name":"Agent","input":{{"subagent_type":"{agent}","description":"x"}}}}]}}}}"#
                 ),
+                None,
             );
         }
         let out = finalize_deleg(acc, 0, i64::MAX);
@@ -1092,6 +1156,7 @@ mod tests {
         fold_deleg_line(
             &mut acc,
             r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"b1","name":"Bash","input":{"command":"ls"}}]}}"#,
+            None,
         );
         let out = finalize_deleg(acc, 0, i64::MAX);
         assert!(out.is_empty());
@@ -1103,6 +1168,7 @@ mod tests {
         fold_deleg_line(
             &mut acc,
             r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#,
+            None,
         );
         let ms = iso_to_epoch_ms("2026-06-30T10:00:00Z").unwrap();
         // Fenêtre après la délégation → exclue.
@@ -1117,5 +1183,59 @@ mod tests {
         .is_empty());
         // Fenêtre incluant la délégation → présente.
         assert_eq!(finalize_deleg(acc, ms - 1, ms + 1).len(), 1);
+    }
+
+    #[test]
+    fn fold_cost_scope_par_projet_via_cwd() {
+        // Deux tours dans deux projets distincts (via `cwd`). Le scope projet ne compte QUE le
+        // projet ciblé ; `None` = total (les deux). Prouve le fix Périmètre → coût.
+        let pr = pricing_test();
+        let l_a = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/Users/x/work/proj-a","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":1000000,"output_tokens":0}}}"#;
+        let l_b = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/Users/x/work/proj-b","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":3000000,"output_tokens":0}}}"#;
+
+        let total_for = |project: Option<&str>| -> f64 {
+            let mut acc = CostAcc::default();
+            fold_cost_line(&mut acc, l_a, 0, i64::MAX, &pr, project);
+            fold_cost_line(&mut acc, l_b, 0, i64::MAX, &pr, project);
+            finalize_cost(acc, None).cost_total
+        };
+
+        let all = total_for(None);
+        let a = total_for(Some("proj-a"));
+        let b = total_for(Some("proj-b"));
+        assert!(a > 0.0 && b > 0.0);
+        assert!(
+            a < all,
+            "scope proj-a ({a}) doit être strictement < total ({all})"
+        );
+        assert!(
+            b < all,
+            "scope proj-b ({b}) doit être strictement < total ({all})"
+        );
+        assert!((a + b - all).abs() < 1e-6, "a+b doit reconstituer le total");
+        // proj-b (3 M input) coûte plus que proj-a (1 M) → scopes bien distincts.
+        assert!(b > a);
+    }
+
+    #[test]
+    fn fold_deleg_scope_par_projet_via_cwd() {
+        // Une délégation par projet (cwd distinct). Le scope ne garde que le projet ciblé.
+        let use_a = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/proj-a","message":{"content":[{"type":"tool_use","id":"ida","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#;
+        let use_b = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/proj-b","message":{"content":[{"type":"tool_use","id":"idb","name":"Agent","input":{"subagent_type":"legolas","description":"y"}}]}}"#;
+
+        let agents_for = |project: Option<&str>| -> Vec<String> {
+            let mut acc = DelegAcc::default();
+            fold_deleg_line(&mut acc, use_a, project);
+            fold_deleg_line(&mut acc, use_b, project);
+            finalize_deleg(acc, 0, i64::MAX)
+                .into_iter()
+                .map(|d| d.agent)
+                .collect()
+        };
+
+        let all = agents_for(None);
+        assert_eq!(all.len(), 2, "ALL = les deux délégations");
+        assert_eq!(agents_for(Some("proj-a")), vec!["gimli".to_string()]);
+        assert_eq!(agents_for(Some("proj-b")), vec!["legolas".to_string()]);
     }
 }

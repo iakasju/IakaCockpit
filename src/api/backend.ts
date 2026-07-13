@@ -278,28 +278,37 @@ export interface AgentDelegations {
 
 /**
  * Coût $ réel sur la période `[fromMs, toMs]` (bornes du sélecteur de plage Analytics), dérivé
- * des transcripts + table de prix par modèle côté Rust. Lecture seule ; vide (coût 0, listes
- * vides) si aucun transcript / hors Tauri. Le refresh de la table de prix est background Rust.
+ * des transcripts + table de prix par modèle côté Rust. `project` scope au projet du Périmètre
+ * (dernier segment du cwd) ; omis/undefined = tout le portefeuille. Lecture seule ; vide (coût
+ * 0, listes vides) si aucun transcript / hors Tauri. Le refresh des prix est background Rust.
  */
-export function analyticsCost(fromMs: number, toMs: number): Promise<AnalyticsCost> {
+export function analyticsCost(
+  fromMs: number,
+  toMs: number,
+  project?: string,
+): Promise<AnalyticsCost> {
   return call<AnalyticsCost>("analytics_cost", {
     from: Math.round(fromMs),
     to: Math.round(toMs),
+    project,
   });
 }
 
 /**
  * Délégations réelles par agent nommé sur la période `[fromMs, toMs]` (comptes + durées
- * use→result). PAS de tokens/$ par agent (pas de source, cf. constat transcript). Lecture
- * seule ; vide si aucun transcript / hors Tauri.
+ * use→result). `project` scope au projet du Périmètre ; omis/undefined = tout le portefeuille.
+ * PAS de tokens/$ par agent (pas de source, cf. constat transcript). Lecture seule ; vide si
+ * aucun transcript / hors Tauri.
  */
 export function delegationsByAgent(
   fromMs: number,
   toMs: number,
+  project?: string,
 ): Promise<AgentDelegations[]> {
   return call<AgentDelegations[]>("delegations_by_agent", {
     from: Math.round(fromMs),
     to: Math.round(toMs),
+    project,
   });
 }
 

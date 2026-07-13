@@ -69,11 +69,14 @@ export function AnalyticsView({
     }
     return rangeFromPreset(preset, now);
   }, [preset, now, customFrom, customTo]);
-  // Coût $ réel + délégations réelles (L30-P2), RANGE-BORNÉS côté Rust : le sélecteur de plage
-  // vit ici, donc le fetch range-borné vit ici (façade unique D7 ; hors-Tauri → null → démo/
-  // placeholder). Re-fetch au changement de bornes.
-  const cost = usePortfolioCost(range.fromMs, range.toMs);
-  const delegations = useDelegationsByAgent(range.fromMs, range.toMs);
+  // Coût $ réel + délégations réelles (L30-P2), RANGE-BORNÉS **et SCOPE-BORNÉS** côté Rust : le
+  // sélecteur de plage ET le Périmètre vivent ici, donc le fetch (façade unique D7 ; hors-Tauri
+  // → null → démo/placeholder) aussi. Scope `ALL` → `undefined` (tout le portefeuille) ; un
+  // projet → son id (= dernier segment du cwd) → coût + délégations filtrés. Re-fetch au
+  // changement de bornes OU de scope (le KPI coût et les délégations suivent le Périmètre).
+  const projectScope = scope === ALL_SCOPE ? undefined : scope;
+  const cost = usePortfolioCost(range.fromMs, range.toMs, projectScope);
+  const delegations = useDelegationsByAgent(range.fromMs, range.toMs, projectScope);
   const real = useAnalytics(economy, activity, scope, range, cost, delegations);
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 

@@ -11,6 +11,7 @@ import { backend, type Backend, type AgentDelegations } from "../api/backend";
 export function useDelegationsByAgent(
   fromMs: number,
   toMs: number,
+  project?: string,
   api: Backend = backend,
 ): AgentDelegations[] | null {
   const [rows, setRows] = useState<AgentDelegations[] | null>(null);
@@ -22,7 +23,7 @@ export function useDelegationsByAgent(
     }
     let alive = true;
     api
-      .delegationsByAgent(fromMs, toMs)
+      .delegationsByAgent(fromMs, toMs, project)
       .then((r) => {
         if (alive) setRows(r);
       })
@@ -32,7 +33,7 @@ export function useDelegationsByAgent(
     return () => {
       alive = false;
     };
-  }, [api, fromMs, toMs]);
+  }, [api, fromMs, toMs, project]);
 
   return rows;
 }
