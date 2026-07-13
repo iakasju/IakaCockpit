@@ -185,6 +185,73 @@ describe("AgentSwimlanes — arbre horizontal / variante B (L29)", () => {
     expect(axLabels[0].textContent).toMatch(/^\d{2}:\d{2}$/);
   });
 
+  it("R2 — labels d'heure incluent le JOUR quand l'axe couvre plusieurs jours (pas de HH:MM répété)", () => {
+    const { container } = render(
+      <AgentSwimlanes
+        coordinator="Aragorn"
+        tasks={[
+          task({
+            id: "t1",
+            agent: "gimli",
+            status: "done",
+            // Plage de ~60 h → axe à cheval sur plusieurs jours civils (quel que soit le TZ).
+            ts: "2026-06-27T09:00:00Z",
+            doneTs: "2026-06-29T21:00:00Z",
+          }),
+        ]}
+      />,
+    );
+    const labels = Array.from(
+      container.querySelectorAll(".swimscene .swimax"),
+    ).map((n) => n.textContent ?? "");
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    // Chaque label porte le jour (MM-DD HH:MM) → plus aucune répétition d'heure « nue ».
+    for (const l of labels) expect(l).toMatch(/^\d{2}-\d{2} \d{2}:\d{2}$/);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("R3 — le zoom RÉÉCHELONNE réellement l'axe sur une fenêtre courte (~25 min) : largeur + étalement des repères", () => {
+    // Fenêtre courte = le cas de recette qui restait PINNÉ (échelle figée) avant le fix.
+    const { container } = render(
+      <AgentSwimlanes
+        coordinator="Aragorn"
+        tasks={[
+          task({
+            id: "t1",
+            agent: "gimli",
+            status: "done",
+            ts: "2026-06-27T10:00:00Z",
+            doneTs: "2026-06-27T10:25:00Z",
+          }),
+        ]}
+      />,
+    );
+    const sceneW = (): number =>
+      Number(
+        (container.querySelector(".swimscene") as SVGSVGElement).getAttribute(
+          "width",
+        ),
+      );
+    // Position réelle du repère le plus à droite (pas un simple data-px-min).
+    const rightmostTick = (): number =>
+      Math.max(
+        ...Array.from(
+          container.querySelectorAll(".swimscene .swimgrid"),
+        ).map((l) => Number((l as SVGLineElement).getAttribute("x1"))),
+      );
+
+    const w0 = sceneW();
+    const tick0 = rightmostTick();
+    // `+` : l'axe s'élargit ET les repères s'étalent réellement (positions réelles).
+    fireEvent.click(screen.getByLabelText("Zoomer l'axe du temps"));
+    expect(sceneW()).toBeGreaterThan(w0);
+    expect(rightmostTick()).toBeGreaterThan(tick0);
+    // `−` (repasse sous la base) : l'axe se resserre.
+    fireEvent.click(screen.getByLabelText("Dézoomer l'axe du temps"));
+    fireEvent.click(screen.getByLabelText("Dézoomer l'axe du temps"));
+    expect(sceneW()).toBeLessThan(w0);
+  });
+
   it("R2 — la densité de ticks AUGMENTE au zoom (plus de repères quand on zoome)", () => {
     const spanTasks = [
       task({

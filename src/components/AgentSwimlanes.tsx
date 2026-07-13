@@ -37,8 +37,12 @@ export interface AgentSwimlanesProps {
 
 const MIN_PX = 60_000; // 1 min : borne basse de la marge temporelle.
 const PX_PER_MIN = 9; // densité horizontale de base (px par minute de session).
-const MIN_SCENE = 360; // largeur mini de la scène scrollable.
-const MAX_W = 4200; // garde-fou (sessions très longues) : scroll, pas d'explosion.
+// Bornes VOLONTAIREMENT généreuses : elles ne doivent JAMAIS avaler la plage de zoom.
+const MIN_SCENE = 80; // plancher de sécurité (évite une scène dégénérée), assez bas
+// pour laisser le zoom rétrécir l'axe sur des fenêtres courtes (dizaines de minutes).
+const MAX_W = 20_000; // plafond de sécurité (perf/scroll), assez haut pour laisser le
+// zoom élargir l'axe sur plusieurs heures sans être bridé.
+const DAY_MS = 86_400_000;
 
 // Zoom (R3) : facteur d'échelle multiplié sur PX_PER_MIN, borné ÷4 … ×4 (état local).
 const ZOOM_MIN = 0.25;
@@ -77,6 +81,19 @@ const p2 = (n: number): string => String(n).padStart(2, "0");
 const hhmm = (ts: number): string => {
   const d = new Date(ts);
   return `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+};
+/** Clé de jour civil (local) pour détecter un axe multi-jours. */
+const dayKey = (ts: number): string => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+};
+/** Label d'heure adaptatif : `HH:MM` sur un seul jour, `MM-DD HH:MM` si l'axe couvre
+ *  plusieurs jours (sinon deux ticks de jours différents afficheraient la même heure).
+ *  Format neutre (locale-agnostique), stable en test. */
+const tickLabel = (ts: number, multiDay: boolean): string => {
+  if (!multiDay) return hhmm(ts);
+  const d = new Date(ts);
+  return `${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${hhmm(ts)}`;
 };
 
 interface Lane {
@@ -164,12 +181,16 @@ export function AgentSwimlanes({
   maxT += pad;
   const span = maxT - minT || 1;
 
-  // Largeur de la SCÈNE ∝ durée × échelle (zoom). Bornée [MIN_SCENE, MAX_W] → scroll X.
+  // Largeur de la SCÈNE = durée × échelle (zoom) : SEULE source de l'échelle visuelle —
+  // positions x(), pxPerMs et densité de ticks en dérivent TOUS. Les bornes sont
+  // généreuses (plancher/plafond de sécurité) et n'avalent PAS la plage de zoom : sur une
+  // fenêtre réaliste (dizaines de minutes → heures), `+`/`−` élargit/resserre réellement
+  // l'axe et étale/rapproche les repères. Si la scène est plus étroite que le viewport,
+  // tant pis (`.swimscroll` est plus large) — la priorité est l'effet visible du zoom.
   const pxPerMin = PX_PER_MIN * zoom;
   const spanMin = span / 60_000;
-  const Ws = Math.round(
-    Math.min(MAX_W, Math.max(MIN_SCENE, SL + R + spanMin * pxPerMin)),
-  );
+  const scaledW = SL + R + spanMin * pxPerMin;
+  const Ws = Math.round(Math.min(MAX_W, Math.max(MIN_SCENE, scaledW)));
 
   const H = T + lanes.length * laneH + B;
   const x = (ts: number): number => SL + ((ts - minT) / span) * (Ws - SL - R);
@@ -180,9 +201,12 @@ export function AgentSwimlanes({
   const targetMs = TARGET_TICK_PX / Math.max(pxPerMs, 1e-9);
   const stepMs =
     STEPS_MS.find((s) => s >= targetMs) ?? STEPS_MS[STEPS_MS.length - 1];
+  // Multi-jours : pas ≥ 1 jour OU plage à cheval sur ≥ 2 jours civils → le label porte le
+  // jour, sinon deux ticks de jours différents afficheraient la même heure (bug recette).
+  const multiDay = stepMs >= DAY_MS || dayKey(minT) !== dayKey(maxT);
   const ticks: { px: number; label: string }[] = [];
   for (let ts = Math.ceil(minT / stepMs) * stepMs; ts <= maxT; ts += stepMs) {
-    ticks.push({ px: x(ts), label: hhmm(ts) });
+    ticks.push({ px: x(ts), label: tickLabel(ts, multiDay) });
   }
 
   const zoomLevel = Math.round(zoom * 100) / 100;
