@@ -248,6 +248,37 @@ describe("useDemoSeed — bootstrap démo (L7 réconcilié L8/D7)", () => {
     expect(seedTasks).not.toHaveBeenCalled();
   });
 
+  it("demoData:false (débranché-gardé) → INFRA active mais AUCUNE data démo injectée", async () => {
+    const api = makeApi(SEEDED);
+    const openConversation = makeOpenConv();
+    const refreshPortfolio = vi.fn(async () => {});
+    const addToWorkset = vi.fn();
+    const seedTasks = vi.fn();
+    const onDemoWidgets = vi.fn();
+
+    renderHook(() =>
+      useDemoSeed({
+        api,
+        conversationsCount: 0,
+        openConversation,
+        refreshPortfolio,
+        addToWorkset,
+        seedTasks,
+        onDemoWidgets,
+        demoData: false,
+      }),
+    );
+
+    // INFRA conservée : la conversation s'ouvre + le workset est alimenté + refresh.
+    await waitFor(() => expect(openConversation).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(addToWorkset).toHaveBeenCalledWith(DEMO_PROJECT_ID));
+    // Mais VIDE de data démo : historique préchargé = undefined (conversation réelle vide).
+    expect(openConversation.mock.calls[0][4]).toBeUndefined();
+    // Ni tâches ni signal widgets démo.
+    expect(seedTasks).not.toHaveBeenCalled();
+    expect(onDemoWidgets).not.toHaveBeenCalled();
+  });
+
   it("seeded:true mais une conversation déjà active (>0) → n'ouvre PAS (non-doublon)", async () => {
     const api = makeApi(SEEDED);
     const openConversation = makeOpenConv();

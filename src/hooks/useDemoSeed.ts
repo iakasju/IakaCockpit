@@ -85,6 +85,16 @@ export interface DemoSeedDeps {
    * le bloc `seeded:true` (dev). Absent en test → no-op.
    */
   onDemoWidgets?: () => void;
+  /**
+   * Injecte les DATA de démo (historique de conversation préchargé, tâches/délégations
+   * du panneau, signal widgets) — SÉPARÉ de l'infra du seed (mini-repo git réel, config
+   * par défaut, ouverture d'UNE conversation, entrée workset), qui reste TOUJOURS active.
+   * Débranché-gardé (décision Stéphane 2026-07-13) : `App` passe `DEMO_DATA_ENABLED=false`
+   * → la démo tourne sur du RÉEL + placeholders (comportement prod), conversation `iaka-demo`
+   * VIDE, panneau Tâches vide. Défaut `true` (rétro-compat des autres usages/tests). Les
+   * mocks (`demoConversation`/`demoTasks`) sont conservés, juste plus consommés.
+   */
+  demoData?: boolean;
 }
 
 export function useDemoSeed(deps: DemoSeedDeps): void {
@@ -98,6 +108,7 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
     resolveCoordinator,
     seedTasks,
     onDemoWidgets,
+    demoData = true,
   } = deps;
 
   // Garde d'exécution unique par session (R-L7-7) : indépendante du re-render.
@@ -119,6 +130,8 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
   seedTasksRef.current = seedTasks;
   const onDemoWidgetsRef = useRef(onDemoWidgets);
   onDemoWidgetsRef.current = onDemoWidgets;
+  const demoDataRef = useRef(demoData);
+  demoDataRef.current = demoData;
 
   useEffect(() => {
     if (ranRef.current) return;
@@ -140,8 +153,10 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
       // la config team pour que la liaison soit connue côté front (pas de popup).
       onSeededRef.current?.();
 
-      // Non-doublon (D7) : n'ouvre la conversation démo que si aucune n'est active.
-      // L9-C.1 : on précharge l'historique de démo (chaîne de badges iakaframe).
+      // INFRA (toujours active) : ouvre UNE conversation pour `iaka-demo` si aucune n'est
+      // active (non-doublon D7). L'HISTORIQUE préchargé (data démo, chaîne de badges
+      // iakaframe) n'est injecté QUE si `demoData` — sinon la conversation s'ouvre VIDE
+      // (réelle). Débranché-gardé (Stéphane 2026-07-13).
       if (countRef.current === 0) {
         // L11 : interlocuteur = coordinateur RÉSOLU de la team du projet démo (plus le
         // littéral « Aragorn »). `undefined` si non fourni (repli `DEFAULT_RESPONSIBLE`).
@@ -151,20 +166,23 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
           DEMO_PROJECT_ID,
           report.demo_path,
           coordinator,
-          [...DEMO_HISTORY],
+          demoDataRef.current ? [...DEMO_HISTORY] : undefined,
         );
       }
 
-      // Vitrine du panneau « Tâches en cours » (L-taches) : précharge des délégations
-      // de démo pour le SEUL projet `iaka-demo`. Démo-only (dans ce bloc `seeded:true`),
-      // non destructif (`seed` no-op si des tâches live existent déjà).
-      // Ancrées sur « maintenant » au moment du seed (fenêtre récente) → swimlanes
-      // discrètes et bornées, quelle que soit la date d'exécution (L29 recette).
-      seedTasksRef.current?.(DEMO_PROJECT_ID, demoTasks());
+      // DATA DÉMO (débranché-gardé) : tâches/délégations du panneau + signal widgets dérivés.
+      // Injectées UNIQUEMENT si `demoData` ; sinon l'app tourne sur du RÉEL + placeholders
+      // (panneau Tâches vide, widgets réels/vides), comportement prod. Les mocks restent.
+      if (demoDataRef.current) {
+        // Vitrine du panneau « Tâches en cours » (L-taches) : précharge des délégations
+        // de démo pour le SEUL projet `iaka-demo`. Non destructif (`seed` no-op si des
+        // tâches live existent déjà). Ancrées sur « maintenant » (fenêtre récente).
+        seedTasksRef.current?.(DEMO_PROJECT_ID, demoTasks());
 
-      // Vitrine des widgets dérivés (L18 #3/#5/#6/#7) : signale à `App` d'activer les
-      // données de démo (Plan/Économie/Mémoire/Effets) pour `iaka-demo`. Démo-only.
-      onDemoWidgetsRef.current?.();
+        // Vitrine des widgets dérivés (L18 #3/#5/#6/#7) : signale à `App` d'activer les
+        // données de démo (Plan/Économie/Mémoire/Effets) pour `iaka-demo`.
+        onDemoWidgetsRef.current?.();
+      }
 
       // L9-B : le projet démo entre dans le set de Work (idempotent, non destructif).
       // Borné par le flag dev (`seeded:true`) → inerte en prod. Reste sur Portfolio (AR-4).

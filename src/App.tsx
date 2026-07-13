@@ -70,6 +70,18 @@ import "./theme/cadre.css";
 // Page « Analytics » (L30-P1) : style scopé sous `.analytics` (calque mocks analytics/v1..v4).
 import "./theme/analytics.css";
 
+/**
+ * DÉBRANCHÉ-GARDÉ (décision Stéphane 2026-07-13) : on ARRÊTE de recetter sur de la donnée
+ * démo. Ce booléen coupe les TROIS injections de data démo (widgets dérivés, tâches/
+ * délégations du panneau, historique de conversation préchargé) → en dev, l'app tourne sur
+ * du RÉEL + placeholders honnêtes PARTOUT (comportement prod). L'INFRA du seed `iaka-demo`
+ * (mini-repo git réel, config par défaut, UNE conversation ouverte, entrée workset) reste
+ * active : on garde un vrai projet à exercer, sans fausse data. Repasser à `true` réactive la
+ * vitrine démo — tous les mocks (`demoAnalytics`/`demoWidgets`/`demoTasks`/`demoConversation`)
+ * sont CONSERVÉS, juste plus consommés. La garde prod existante est inchangée.
+ */
+const DEMO_DATA_ENABLED = false;
+
 export default function App(): JSX.Element {
   const { t } = useTranslation();
   const portfolio = usePortfolio();
@@ -167,6 +179,10 @@ export default function App(): JSX.Element {
     // (vitrine) pour le seul `iaka-demo`. Démo-only (gardé par le flag dev du seed).
     seedTasks: agentTasks.seed,
     onDemoWidgets: () => setDemoWidgetsOn(true),
+    // Débranché-gardé (2026-07-13) : coupe les 3 injections de data démo (historique de
+    // conversation, tâches, widgets). L'infra du seed reste active. `seedTasks`/`onDemoWidgets`
+    // ci-dessus restent branchés mais ne sont PLUS appelés quand `demoData=false`.
+    demoData: DEMO_DATA_ENABLED,
   });
 
   // Projets du set de Work (intersection ids ⨯ projets réels).
