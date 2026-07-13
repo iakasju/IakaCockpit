@@ -313,6 +313,21 @@ export interface IndexStatus {
   attrib_ready: boolean;
 }
 
+/** Ligne de la table de prix (miroir `pricing::ModelPriceRow`) — $/M tokens par bucket. */
+export interface ModelPriceRow {
+  model: string;
+  input: number;
+  output: number;
+  cache_write: number;
+  cache_read: number;
+}
+
+/** Table de prix courante (miroir `pricing::PricingTable`) — sert le re-tarifage d'hypothèse V3-B. */
+export interface PricingTable {
+  models: ModelPriceRow[];
+  priced_at: string | null;
+}
+
 /**
  * Coût $ réel sur la période `[fromMs, toMs]` (bornes du sélecteur de plage Analytics), dérivé
  * des transcripts + table de prix par modèle côté Rust. `project` scope au projet du Périmètre
@@ -384,6 +399,14 @@ export function analyticsRefresh(): Promise<void> {
  */
 export function analyticsIndexStatus(): Promise<IndexStatus> {
   return call<IndexStatus>("analytics_index_status", {});
+}
+
+/**
+ * Table de prix courante ($/M tokens par modèle, 4 buckets). Sert le re-tarifage d'hypothèse V3-B :
+ * le front recalcule des $ (tokens observés × prix cible), JAMAIS des tokens. Lecture seule.
+ */
+export function pricingTable(): Promise<PricingTable> {
+  return call<PricingTable>("pricing_table", {});
 }
 
 /**
@@ -954,6 +977,7 @@ export const backend = {
   agentAttribution,
   analyticsRefresh,
   analyticsIndexStatus,
+  pricingTable,
   addProject,
   listExtraProjects,
   pickDirectory,

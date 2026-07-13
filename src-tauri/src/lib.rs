@@ -82,6 +82,7 @@ pub fn run() {
             economy::agent_attribution,
             economy::analytics_index_status,
             economy::analytics_refresh,
+            pricing::pricing_table,
             services::check_services,
             config::get_root,
             config::set_root,

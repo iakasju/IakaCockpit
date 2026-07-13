@@ -24,7 +24,7 @@
 
 use std::sync::{OnceLock, RwLock};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Prix d'un modèle en **$/million de tokens**, séparé par bucket de `message.usage`.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -278,6 +278,51 @@ impl PricingSnapshot {
     pub fn price_for(&self, model: &str) -> Option<ModelPrice> {
         match_price(model, &self.table)
     }
+
+    /// Table courante en lignes triées (nom asc) pour le front (V3-B : re-tarifage d'hypothèse ;
+    /// le front recalcule des $ à partir de tokens observés, jamais des tokens).
+    pub fn to_table(&self) -> PricingTable {
+        let mut models: Vec<ModelPriceRow> = self
+            .table
+            .iter()
+            .map(|(m, p)| ModelPriceRow {
+                model: m.clone(),
+                input: p.input,
+                output: p.output,
+                cache_write: p.cache_write,
+                cache_read: p.cache_read,
+            })
+            .collect();
+        models.sort_by(|a, b| a.model.cmp(&b.model));
+        PricingTable {
+            models,
+            priced_at: self.priced_at.clone(),
+        }
+    }
+}
+
+/// Ligne de la table de prix exposée au front (miroir TS `ModelPriceRow`) — $/M tokens par bucket.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ModelPriceRow {
+    pub model: String,
+    pub input: f64,
+    pub output: f64,
+    pub cache_write: f64,
+    pub cache_read: f64,
+}
+
+/// Table de prix courante (miroir TS `PricingTable`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct PricingTable {
+    pub models: Vec<ModelPriceRow>,
+    pub priced_at: Option<String>,
+}
+
+/// Commande : table de prix courante (snapshot). Lecture seule. Sert le re-tarifage d'hypothèse
+/// V3-B côté front. Toujours disponible (embarquée par défaut ; rafraîchie en fond).
+#[tauri::command]
+pub fn pricing_table() -> Result<PricingTable, String> {
+    Ok(snapshot().to_table())
 }
 
 /// Cache process-global de la table (init paresseuse sur l'embarquée). Le rafraîchissement
@@ -553,6 +598,27 @@ mod tests {
     fn parse_pricing_json_invalide_ou_vide_donne_none() {
         assert!(parse_pricing_json("pas du json").is_none());
         assert!(parse_pricing_json(r#"{"models":{}}"#).is_none());
+    }
+
+    #[test]
+    fn to_table_expose_la_table_embarquee_triee() {
+        let snap = PricingSnapshot::embedded();
+        let table = snap.to_table();
+        assert!(!table.models.is_empty());
+        assert!(table.priced_at.is_none());
+        // Triée par nom asc.
+        let names: Vec<&str> = table.models.iter().map(|m| m.model.as_str()).collect();
+        let mut sorted = names.clone();
+        sorted.sort_unstable();
+        assert_eq!(names, sorted);
+        // Un modèle connu porte ses 4 prix (opus-4 : input 15, output 75).
+        let opus = table
+            .models
+            .iter()
+            .find(|m| m.model == "claude-opus-4")
+            .expect("claude-opus-4 présent");
+        assert_eq!(opus.input, 15.0);
+        assert_eq!(opus.output, 75.0);
     }
 
     #[test]
