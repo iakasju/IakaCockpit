@@ -2568,9 +2568,41 @@ button {
 }
 .swimh {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   padding: 0 0 10px;
+}
+/* R3 — Zoom de l'axe du temps : poussé à droite du bandeau. */
+.swimzoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.swimzb {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--text-3) 24%, transparent);
+  border-radius: 6px;
+  background: var(--surf-2);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.swimzb:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.swimzlvl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  min-width: 30px;
+  text-align: center;
 }
 .swimt {
   font-family: var(--font-display);
@@ -2588,14 +2620,25 @@ button {
   color: var(--text-3);
   padding: 2px 0;
 }
-/* Ascenseur HORIZONTAL : le SVG a une largeur px (∝ durée) ; s'il déborde du
-   bandeau, il scrolle en X. Hauteur bornée par le `.treeband` parent. */
+/* R1 — Corps en deux blocs côte à côte, alignés en Y : colonne de labels FIGÉE
+   (avatar + nom, hors ascenseur) | scène scrollable (axe + barres + flèches). */
+.swimbody {
+  display: flex;
+  align-items: flex-start;
+}
+.swimlabels {
+  flex: 0 0 auto;
+  display: block;
+}
+/* Ascenseur HORIZONTAL : la scène a une largeur px (∝ durée × zoom) ; si elle déborde
+   du bandeau, elle scrolle en X — la colonne de labels reste visible. */
 .swimscroll {
   overflow-x: auto;
   overflow-y: hidden;
-  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
 }
-.swimsvg {
+.swimscene {
   display: block;
 }
 .swimgrid {

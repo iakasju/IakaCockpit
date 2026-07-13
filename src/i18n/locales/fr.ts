@@ -53,6 +53,9 @@ export const fr = {
     empty: "Aucune délégation.",
     barRunning: "{{agent}} · en cours",
     barDone: "{{agent}} · terminé",
+    zoomIn: "Zoomer l'axe du temps",
+    zoomOut: "Dézoomer l'axe du temps",
+    zoomLevel: "×{{level}}",
   },
 
   memory: {

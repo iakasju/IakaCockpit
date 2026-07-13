@@ -54,6 +54,9 @@ export const en: Resources = {
     empty: "No delegation.",
     barRunning: "{{agent}} · running",
     barDone: "{{agent}} · done",
+    zoomIn: "Zoom in the time axis",
+    zoomOut: "Zoom out the time axis",
+    zoomLevel: "×{{level}}",
   },
 
   memory: {

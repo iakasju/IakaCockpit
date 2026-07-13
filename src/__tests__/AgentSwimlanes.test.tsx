@@ -1,5 +1,11 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 import { AgentSwimlanes } from "../components/AgentSwimlanes";
 import type { AgentTask } from "../hooks/useAgentTasks";
 
@@ -132,5 +138,119 @@ describe("AgentSwimlanes — arbre horizontal / variante B (L29)", () => {
     );
     const band = screen.getByLabelText("Couloirs d'agents (délégations)");
     expect(within(band).getByText(/2 délégation/)).toBeTruthy();
+  });
+
+  // --- R1 : labels d'agents FIGÉS hors de la zone scrollable. ---
+  it("R1 — les labels d'agents sont rendus HORS du conteneur scrollable (colonne figée)", () => {
+    const { container } = render(
+      <AgentSwimlanes
+        coordinator="aragorn"
+        tasks={[task({ id: "t1", agent: "gandalf" })]}
+      />,
+    );
+    // Les labels vivent dans la colonne figée `.swimlabels`, jamais dans `.swimscroll`.
+    expect(container.querySelector(".swimlabels .swimlab")).not.toBeNull();
+    expect(container.querySelector(".swimscroll .swimlab")).toBeNull();
+    // La colonne figée est un frère (pas un descendant) de la zone scrollable.
+    const labels = container.querySelector(".swimlabels");
+    expect(labels?.closest(".swimscroll")).toBeNull();
+    // Toujours présents : coordinateur + délégué.
+    const names = Array.from(
+      container.querySelectorAll(".swimlabels .swimlab"),
+    ).map((n) => n.textContent);
+    expect(names).toEqual(["Aragorn", "Gandalf"]);
+  });
+
+  // --- R2 : repères d'heure (gridlines + labels) toujours présents. ---
+  it("R2 — gridlines verticales + labels d'heure dans la scène (au moins 2 ticks)", () => {
+    const { container } = render(
+      <AgentSwimlanes
+        coordinator="Aragorn"
+        tasks={[
+          task({
+            id: "t1",
+            agent: "gimli",
+            status: "done",
+            ts: "2026-06-27T10:00:00Z",
+            doneTs: "2026-06-27T10:40:00Z",
+          }),
+        ]}
+      />,
+    );
+    const grid = container.querySelectorAll(".swimscene .swimgrid");
+    const axLabels = container.querySelectorAll(".swimscene .swimax");
+    expect(grid.length).toBeGreaterThanOrEqual(2);
+    // Un label d'heure par gridline, au format HH:MM.
+    expect(axLabels.length).toBe(grid.length);
+    expect(axLabels[0].textContent).toMatch(/^\d{2}:\d{2}$/);
+  });
+
+  it("R2 — la densité de ticks AUGMENTE au zoom (plus de repères quand on zoome)", () => {
+    const spanTasks = [
+      task({
+        id: "t1",
+        agent: "gimli",
+        status: "done",
+        ts: "2026-06-27T10:00:00Z",
+        doneTs: "2026-06-27T11:00:00Z",
+      }),
+    ];
+    const { container } = render(
+      <AgentSwimlanes coordinator="Aragorn" tasks={spanTasks} />,
+    );
+    const before = container.querySelectorAll(".swimscene .swimgrid").length;
+    fireEvent.click(screen.getByLabelText("Zoomer l'axe du temps"));
+    fireEvent.click(screen.getByLabelText("Zoomer l'axe du temps"));
+    const after = container.querySelectorAll(".swimscene .swimgrid").length;
+    expect(after).toBeGreaterThan(before);
+  });
+
+  // --- R3 : zoom +/- change l'échelle px/minute, borné. ---
+  it("R3 — `+` augmente l'échelle (px/min + largeur), `−` la diminue", () => {
+    const { container } = render(
+      <AgentSwimlanes
+        coordinator="Aragorn"
+        tasks={[
+          task({
+            id: "t1",
+            agent: "gimli",
+            status: "done",
+            ts: "2026-06-27T10:00:00Z",
+            doneTs: "2026-06-27T11:00:00Z",
+          }),
+        ]}
+      />,
+    );
+    const scene = (): SVGSVGElement =>
+      container.querySelector(".swimscene") as SVGSVGElement;
+    const pxMin = (): number => Number(scene().getAttribute("data-px-min"));
+    const width = (): number => Number(scene().getAttribute("width"));
+
+    const base = pxMin();
+    const baseW = width();
+    fireEvent.click(screen.getByLabelText("Zoomer l'axe du temps"));
+    expect(pxMin()).toBeGreaterThan(base);
+    expect(width()).toBeGreaterThan(baseW);
+
+    fireEvent.click(screen.getByLabelText("Dézoomer l'axe du temps"));
+    fireEvent.click(screen.getByLabelText("Dézoomer l'axe du temps"));
+    expect(pxMin()).toBeLessThan(base);
+  });
+
+  it("R3 — l'échelle est bornée (plancher ÷4 / plafond ×4)", () => {
+    render(
+      <AgentSwimlanes
+        coordinator="Aragorn"
+        tasks={[task({ id: "t1", agent: "gimli" })]}
+      />,
+    );
+    const zin = screen.getByLabelText("Zoomer l'axe du temps");
+    const zout = screen.getByLabelText("Dézoomer l'axe du temps");
+    // Plafond : cliquer + jusqu'à saturation → bouton + désactivé.
+    for (let i = 0; i < 8; i++) fireEvent.click(zin);
+    expect((zin as HTMLButtonElement).disabled).toBe(true);
+    // Plancher : cliquer − jusqu'à saturation → bouton − désactivé.
+    for (let i = 0; i < 12; i++) fireEvent.click(zout);
+    expect((zout as HTMLButtonElement).disabled).toBe(true);
   });
 });
