@@ -29,7 +29,7 @@ import { backend, type Backend } from "../api/backend";
 import type { ChatTurn } from "./useConversations";
 import type { AgentTask } from "./useAgentTasks";
 import { DEMO_HISTORY } from "../mock/demoConversation";
-import { DEMO_TASKS } from "../mock/demoTasks";
+import { demoTasks } from "../mock/demoTasks";
 
 /** Id/libellé logique de la conversation démo (projet `iaka-demo`). */
 export const DEMO_PROJECT_ID = "iaka-demo";
@@ -158,7 +158,9 @@ export function useDemoSeed(deps: DemoSeedDeps): void {
       // Vitrine du panneau « Tâches en cours » (L-taches) : précharge des délégations
       // de démo pour le SEUL projet `iaka-demo`. Démo-only (dans ce bloc `seeded:true`),
       // non destructif (`seed` no-op si des tâches live existent déjà).
-      seedTasksRef.current?.(DEMO_PROJECT_ID, DEMO_TASKS);
+      // Ancrées sur « maintenant » au moment du seed (fenêtre récente) → swimlanes
+      // discrètes et bornées, quelle que soit la date d'exécution (L29 recette).
+      seedTasksRef.current?.(DEMO_PROJECT_ID, demoTasks());
 
       // Vitrine des widgets dérivés (L18 #3/#5/#6/#7) : signale à `App` d'activer les
       // données de démo (Plan/Économie/Mémoire/Effets) pour `iaka-demo`. Démo-only.
