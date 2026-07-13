@@ -112,10 +112,13 @@ pub(crate) const TOOL_INPUT_MAX: usize = 200;
 /// (même schéma d'entrée `{subagent_type, description, prompt}`). On reconnaît **les
 /// deux** (robustesse aux versions). `"TaskCreate"` (tâche asynchrone de fond) N'EST
 /// PAS une délégation de sous-agent → reste un geste ordinaire.
-const DELEGATION_TOOLS: &[&str] = &["Agent", "Task"];
+/// `pub(crate)` : réutilisé par `economy.rs` (délégations réelles par agent, L30-P2) pour
+/// reconnaître les mêmes outils de délégation — une seule source de vérité.
+pub(crate) const DELEGATION_TOOLS: &[&str] = &["Agent", "Task"];
 
-/// Un `tool_use` `name` désigne-t-il une délégation de sous-agent ?
-fn is_delegation_tool(name: &str) -> bool {
+/// Un `tool_use` `name` désigne-t-il une délégation de sous-agent ? `pub(crate)` : partagé
+/// avec `economy.rs` (L30-P2) pour l'agrégat délégations/agent.
+pub(crate) fn is_delegation_tool(name: &str) -> bool {
     DELEGATION_TOOLS.contains(&name)
 }
 

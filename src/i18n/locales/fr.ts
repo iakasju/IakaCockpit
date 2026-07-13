@@ -527,6 +527,14 @@ export const fr = {
     runnerMix: "Mix par runner",
     modelMix: "Mix par modèle",
     tokensWord: "tokens équipe",
+    // Réel L30-P2 (délégations par agent + mix par modèle)
+    colDelegations: "Délégations",
+    delegByAgent: "Délégations par agent",
+    delegByAgentSub: "réel · nombre & durée moyenne",
+    modelCostTitle: "Mix par modèle · coût réel",
+    modelCostSub: "coût $ observé par modèle sur la plage",
+    untariffedNote: "Modèle(s) sans tarif (coût non compté) : {{models}}",
+    perAgentNoSource: "Tokens et coût par agent nommé : pas de source réelle — les sous-agents délégués tournent hors du transcript parent (attribution par agent = à venir).",
   },
 
   teams: {

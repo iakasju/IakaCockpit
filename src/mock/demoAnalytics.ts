@@ -311,6 +311,22 @@ export function makeDemoAnalytics(now: number, range: TimeRange): AnalyticsModel
     cumulativeCost,
     agentHours: daily.map((d, i) => ({ date: d.date, hours: CYCLE_HOURS[i % 7] })),
     compare: DEMO_COMPARE,
+    // L30-P2 : mix par modèle (démo) — coût $ agrégé par modèle sur la plage.
+    modelCost: [
+      { model: "claude-sonnet-4-5", tokens: Math.round(1_900_000 * factor), cost: Number((5.7 * factor).toFixed(2)), untariffed: false },
+      { model: "claude-opus-4-8", tokens: Math.round(720_000 * factor), cost: Number((3.9 * factor).toFixed(2)), untariffed: false },
+      { model: "gpt-5-codex", tokens: Math.round(940_000 * factor), cost: Number((1.6 * factor).toFixed(2)), untariffed: false },
+      { model: "llama3.1:8b", tokens: Math.round(160_000 * factor), cost: 0, untariffed: false },
+    ],
+    // L30-P2 : délégations par agent (démo) — comptes + durées (PAS tokens/$).
+    perAgentDelegations: [
+      { agent: "gimli", count: Math.round(28 * factor), totalMs: Math.round(28 * 51_000 * factor), avgMs: 51_000 },
+      { agent: "legolas", count: Math.round(19 * factor), totalMs: Math.round(19 * 29_000 * factor), avgMs: 29_000 },
+      { agent: "loki", count: Math.round(11 * factor), totalMs: Math.round(11 * 63_000 * factor), avgMs: 63_000 },
+      { agent: "gandalf", count: Math.round(7 * factor), totalMs: Math.round(7 * 38_000 * factor), avgMs: 38_000 },
+    ],
+    untariffedModels: [],
+    pricedAt: null,
     hasRealData: true,
   };
 }

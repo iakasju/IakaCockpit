@@ -20,6 +20,16 @@ export function fmtPct(share: number): string {
   return `${Math.round(share * 100)} %`;
 }
 
+/** Durée en ms → `51 s` / `2 min` / `2 min 05 s`. `0`/négatif → `—` (durée inconnue). */
+export function fmtDurationMs(ms: number): string {
+  if (ms <= 0) return "—";
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return r === 0 ? `${m} min` : `${m} min ${String(r).padStart(2, "0")} s`;
+}
+
 /** Étiquette de plage lisible depuis deux bornes ms (ex. `6 juil. → 13 juil.`). */
 export function fmtRangeLabel(fromMs: number, toMs: number, locale: string): string {
   const opt: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };

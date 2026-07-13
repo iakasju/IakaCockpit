@@ -21,6 +21,8 @@ import {
   ALL_SCOPE,
   type RangePreset,
 } from "../hooks/useAnalytics";
+import { usePortfolioCost } from "../hooks/usePortfolioCost";
+import { useDelegationsByAgent } from "../hooks/useDelegationsByAgent";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import { PerimeterColumn } from "../components/analytics/PerimeterColumn";
 import { TimeRangeControl } from "../components/analytics/TimeRangeControl";
@@ -67,7 +69,12 @@ export function AnalyticsView({
     }
     return rangeFromPreset(preset, now);
   }, [preset, now, customFrom, customTo]);
-  const real = useAnalytics(economy, activity, scope, range);
+  // Coût $ réel + délégations réelles (L30-P2), RANGE-BORNÉS côté Rust : le sélecteur de plage
+  // vit ici, donc le fetch range-borné vit ici (façade unique D7 ; hors-Tauri → null → démo/
+  // placeholder). Re-fetch au changement de bornes.
+  const cost = usePortfolioCost(range.fromMs, range.toMs);
+  const delegations = useDelegationsByAgent(range.fromMs, range.toMs);
+  const real = useAnalytics(economy, activity, scope, range, cost, delegations);
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 
   // Fusion démo PAR CHAMP (recette L30-P1) : en dev (`demoOn`), on prend le RÉEL là où il

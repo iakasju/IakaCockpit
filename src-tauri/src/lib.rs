@@ -21,6 +21,7 @@ pub mod notify;
 pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
+pub mod pricing;
 pub mod resume;
 pub mod secrets;
 pub mod seed;
@@ -38,6 +39,7 @@ fn ping() -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::Manager;
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(terminal::TermState::default())
@@ -46,9 +48,23 @@ pub fn run() {
             // Garantit une racine de chapeau persistée dès le premier boot
             // (défaut calculé par OS via `paths`). Best-effort : un échec d'I/O
             // ne doit pas empêcher l'app de démarrer.
+            let mut pricing_url: Option<String> = None;
             if let Ok(conn) = db::open(app.handle()) {
                 let _ = config::ensure_root(&conn);
+                // L30-P2 : URL du `pricing.json` autoritaire (coût $ réel), config non sensible.
+                pricing_url = config::get(&conn, config::KEY_PRICING_URL)
+                    .ok()
+                    .flatten()
+                    .filter(|u| !u.trim().is_empty());
             }
+            // L30-P2 : rafraîchit la table de prix EN TÂCHE DE FOND (non bloquant, repli
+            // OFFLINE sur l'embarquée). Cache disque = `<app_data_dir>/pricing.json`.
+            let cache_path = app
+                .path()
+                .app_data_dir()
+                .ok()
+                .map(|d| d.join("pricing.json"));
+            pricing::spawn_refresh(pricing_url, cache_path);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -58,6 +74,8 @@ pub fn run() {
             portfolio::list_extra_projects,
             economy::portfolio_economy,
             economy::portfolio_activity,
+            economy::analytics_cost,
+            economy::delegations_by_agent,
             services::check_services,
             config::get_root,
             config::set_root,

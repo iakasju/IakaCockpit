@@ -273,6 +273,424 @@ pub fn portfolio_activity() -> Result<Vec<ProjectActivity>, String> {
     }
 }
 
+// ============================ Coût $ réel par période (L30-P2, volet B) ============================
+//
+// Le transcript ne porte pas de coût : il porte `message.model` + `message.usage` (4 buckets).
+// On DÉRIVE le coût $ en multipliant chaque bucket par le prix du modèle (`pricing.rs`). On
+// SÉPARE les 4 buckets (ne PAS réutiliser le mélange de `fold_line`, qui somme input+caches).
+// Agrégation PAR PÉRIODE (bornes `from`/`to` ms epoch venant du sélecteur de plage), par modèle
+// et par jour. Modèle sans tarif → coût NON compté + signalé (`untariffed`), jamais inventé.
+// LECTURE SEULE, défensif.
+
+use crate::pricing::{self, PricingSnapshot};
+
+/// Coût agrégé d'un modèle sur la période (miroir TS `ModelCost`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ModelCost {
+    pub model: String,
+    /// Total des 4 buckets de tokens attribués à ce modèle.
+    pub tokens: u64,
+    /// Coût $ (0.0 si `untariffed` — non compté dans `cost_total`).
+    pub cost: f64,
+    /// `true` = modèle absent de la table de prix → coût non tarifé (marqueur honnête).
+    pub untariffed: bool,
+}
+
+/// Coût $ d'un jour (miroir TS `DayCost`) — tendance + cumul côté front.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DayCost {
+    pub date: String,
+    pub cost: f64,
+}
+
+/// Coût $ réel agrégé sur une période (miroir TS `AnalyticsCost`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AnalyticsCost {
+    /// Somme des coûts TARIFÉS sur la période (les untariffed comptent 0).
+    pub cost_total: f64,
+    /// Coût par modèle (tri coût desc), avec marqueur `untariffed`.
+    pub by_model: Vec<ModelCost>,
+    /// Coût par jour (tri date asc) — pour tendance + cumulé.
+    pub by_day: Vec<DayCost>,
+    /// Noms des modèles rencontrés SANS tarif (coût non compté ; front les signale).
+    pub untariffed_models: Vec<String>,
+    /// Date de la table de prix (`pricing.json`), ou `None` si table embarquée.
+    pub priced_at: Option<String>,
+}
+
+/// Accumulateur de coût : par modèle (tokens, cost, untariffed) + par jour (cost).
+#[derive(Default)]
+struct CostAcc {
+    by_model: HashMap<String, (u64, f64, bool)>,
+    by_day: HashMap<String, f64>,
+}
+
+/// Convertit un timestamp ISO-8601 UTC (`2026-06-30T12:00:00Z`, avec ms optionnelles) en
+/// millisecondes epoch. `None` si la forme n'est pas datable (défensif). Algorithme
+/// `days_from_civil` (Howard Hinnant) — pas de dépendance `chrono`, hypothèse UTC (les
+/// transcripts Claude/Codex écrivent en `Z`).
+fn iso_to_epoch_ms(ts: &str) -> Option<i64> {
+    let b = ts.as_bytes();
+    if b.len() < 19 {
+        return None;
+    }
+    if b[4] != b'-'
+        || b[7] != b'-'
+        || (b[10] != b'T' && b[10] != b' ')
+        || b[13] != b':'
+        || b[16] != b':'
+    {
+        return None;
+    }
+    let year: i64 = ts.get(0..4)?.parse().ok()?;
+    let month: i64 = ts.get(5..7)?.parse().ok()?;
+    let day: i64 = ts.get(8..10)?.parse().ok()?;
+    let hour: i64 = ts.get(11..13)?.parse().ok()?;
+    let min: i64 = ts.get(14..16)?.parse().ok()?;
+    let sec: i64 = ts.get(17..19)?.parse().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+    let days = days_from_civil(year, month, day);
+    let mut ms = (days * 86_400 + hour * 3_600 + min * 60 + sec) * 1_000;
+    // Millisecondes optionnelles après un `.` (on garde jusqu'à 3 chiffres).
+    if b.len() > 19 && b[19] == b'.' {
+        let frac: String = ts[20..]
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .take(3)
+            .collect();
+        if !frac.is_empty() {
+            let padded = format!("{frac:0<3}");
+            if let Ok(m) = padded.parse::<i64>() {
+                ms += m;
+            }
+        }
+    }
+    Some(ms)
+}
+
+/// Jours depuis 1970-01-01 pour une date civile (UTC), algorithme de Howard Hinnant.
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = (if y >= 0 { y } else { y - 399 }) / 400;
+    let yoe = y - era * 400; // [0, 399]
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1; // [0, 365]
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // [0, 146096]
+    era * 146_097 + doe - 719_468
+}
+
+/// Intègre UNE ligne JSONL dans l'accumulateur de coût, filtrée par période `[from, to]`.
+/// PUR/testable. Sépare les 4 buckets, tarife via `pricing`, ignore proprement tout record
+/// non pertinent / hors période / non daté.
+fn fold_cost_line(acc: &mut CostAcc, line: &str, from: i64, to: i64, pricing: &PricingSnapshot) {
+    let line = line.trim();
+    if line.is_empty() {
+        return;
+    }
+    let v: Value = match serde_json::from_str(line) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    if v.get("type").and_then(Value::as_str) != Some("assistant") {
+        return;
+    }
+    let message = match v.get("message") {
+        Some(m) => m,
+        None => return,
+    };
+    let usage = match message.get("usage") {
+        Some(u) => u,
+        None => return,
+    };
+    // Période : sans timestamp datable → on ne peut pas placer la ligne (ignorée).
+    let ts = match v.get("timestamp").and_then(Value::as_str) {
+        Some(t) => t,
+        None => return,
+    };
+    let ms = match iso_to_epoch_ms(ts) {
+        Some(ms) => ms,
+        None => return,
+    };
+    if ms < from || ms > to {
+        return;
+    }
+    let day = match day_of(ts) {
+        Some(d) => d,
+        None => return,
+    };
+    let n = |k: &str| usage.get(k).and_then(Value::as_u64).unwrap_or(0);
+    let input = n("input_tokens");
+    let output = n("output_tokens");
+    let cache_write = n("cache_creation_input_tokens");
+    let cache_read = n("cache_read_input_tokens");
+    let tokens = input + output + cache_write + cache_read;
+    if tokens == 0 {
+        return;
+    }
+    // Modèle : `message.model` (le nom réel du tour). Absent → clé « unknown » untariffed.
+    let model = message
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown")
+        .to_string();
+
+    let (cost, untariffed) = match pricing.price_for(&model) {
+        Some(p) => (p.cost_of(input, output, cache_write, cache_read), false),
+        None => (0.0, true),
+    };
+
+    let e = acc.by_model.entry(model).or_insert((0, 0.0, false));
+    e.0 += tokens;
+    e.1 += cost;
+    e.2 |= untariffed;
+
+    // Le jour ne cumule que le coût TARIFÉ (les untariffed ajoutent 0 — pas de faux coût).
+    *acc.by_day.entry(day).or_insert(0.0) += cost;
+}
+
+/// Convertit l'accumulateur de coût en `AnalyticsCost` (par modèle tri coût desc, par jour tri
+/// date asc, total = somme des coûts tarifés, liste des modèles sans tarif).
+fn finalize_cost(acc: CostAcc, priced_at: Option<String>) -> AnalyticsCost {
+    let mut by_model: Vec<ModelCost> = acc
+        .by_model
+        .into_iter()
+        .map(|(model, (tokens, cost, untariffed))| ModelCost {
+            model,
+            tokens,
+            cost,
+            untariffed,
+        })
+        .collect();
+    by_model.sort_by(|a, b| {
+        b.cost
+            .partial_cmp(&a.cost)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.tokens.cmp(&a.tokens))
+    });
+
+    let mut untariffed_models: Vec<String> = by_model
+        .iter()
+        .filter(|m| m.untariffed)
+        .map(|m| m.model.clone())
+        .collect();
+    untariffed_models.sort();
+    untariffed_models.dedup();
+
+    let cost_total: f64 = by_model.iter().map(|m| m.cost).sum();
+
+    let mut by_day: Vec<DayCost> = acc
+        .by_day
+        .into_iter()
+        .map(|(date, cost)| DayCost { date, cost })
+        .collect();
+    by_day.sort_by(|a, b| a.date.cmp(&b.date));
+
+    AnalyticsCost {
+        cost_total,
+        by_model,
+        by_day,
+        untariffed_models,
+        priced_at,
+    }
+}
+
+/// Scanne un dossier `projects/` et agrège le coût $ sur la période. Défensif.
+fn scan_projects_cost(
+    projects_dir: &Path,
+    from: i64,
+    to: i64,
+    pricing: &PricingSnapshot,
+) -> AnalyticsCost {
+    let mut acc = CostAcc::default();
+    if let Ok(dirs) = std::fs::read_dir(projects_dir) {
+        for sess_dir in dirs.flatten() {
+            let files = match std::fs::read_dir(sess_dir.path()) {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+            for f in files.flatten() {
+                let p = f.path();
+                if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+                    continue;
+                }
+                if let Ok(content) = std::fs::read_to_string(&p) {
+                    for line in content.lines() {
+                        fold_cost_line(&mut acc, line, from, to, pricing);
+                    }
+                }
+            }
+        }
+    }
+    finalize_cost(acc, pricing.priced_at.clone())
+}
+
+/// Commande : coût $ réel agrégé sur la période `[from, to]` (ms epoch, du sélecteur de plage)
+/// depuis les transcripts de session. Table de prix = snapshot courant (embarquée + refresh
+/// background). Lecture seule, défensive (vide / hors-Tauri → coût 0, listes vides).
+#[tauri::command]
+pub fn analytics_cost(from: i64, to: i64) -> Result<AnalyticsCost, String> {
+    let pricing = pricing::snapshot();
+    match claude_projects_dir() {
+        Some(dir) => Ok(scan_projects_cost(&dir, from, to, &pricing)),
+        None => Ok(finalize_cost(CostAcc::default(), pricing.priced_at.clone())),
+    }
+}
+
+// ==================== Délégations réelles par agent (L30-P2, transcript) ====================
+//
+// Les tokens PAR AGENT NOMMÉ n'ont pas de source réelle (`isSidechain` toujours false → tokens
+// des sous-agents hors transcript parent). Ce qui EST réel : les `tool_use "Agent"`/`"Task"`
+// (avec `subagent_type` = nom d'agent) et leur `tool_result` apparié (durée = ts result − ts
+// use). On agrège en COMPTES + DURÉES par agent (PAS de tokens/$, cf. constat). LECTURE SEULE.
+
+/// Agrégat de délégations pour un agent nommé (miroir TS `AgentDelegations`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AgentDelegations {
+    pub agent: String,
+    /// Nombre de délégations à cet agent dans la période.
+    pub count: u64,
+    /// Durée totale (ms) des délégations APPARIÉES (use → result).
+    pub total_ms: i64,
+    /// Durée moyenne (ms) sur les délégations appariées (0 si aucune appariée).
+    pub avg_ms: i64,
+}
+
+/// Accumulateur de délégations : `tool_use_id` → (agent, ts_use_ms) et `tool_use_id` → ts_result_ms.
+#[derive(Default)]
+struct DelegAcc {
+    uses: HashMap<String, (String, i64)>,
+    results: HashMap<String, i64>,
+}
+
+/// Intègre UNE ligne JSONL dans l'accumulateur de délégations. PUR/testable. Collecte les
+/// `tool_use` de délégation (côté assistant) et les `tool_result` (côté user) par `tool_use_id`.
+fn fold_deleg_line(acc: &mut DelegAcc, line: &str) {
+    let line = line.trim();
+    if line.is_empty() {
+        return;
+    }
+    let v: Value = match serde_json::from_str(line) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let ty = match v.get("type").and_then(Value::as_str) {
+        Some(t) => t,
+        None => return,
+    };
+    let ms = v
+        .get("timestamp")
+        .and_then(Value::as_str)
+        .and_then(iso_to_epoch_ms);
+    let blocks = match v.get("message").and_then(|m| m.get("content")) {
+        Some(Value::Array(b)) => b,
+        _ => return,
+    };
+    for blk in blocks {
+        let bt = blk.get("type").and_then(Value::as_str).unwrap_or("");
+        match (ty, bt) {
+            ("assistant", "tool_use") => {
+                let name = blk.get("name").and_then(Value::as_str).unwrap_or("");
+                if !crate::transcript::is_delegation_tool(name) {
+                    continue;
+                }
+                let id = match blk.get("id").and_then(Value::as_str) {
+                    Some(i) => i.to_string(),
+                    None => continue,
+                };
+                let agent = blk
+                    .get("input")
+                    .and_then(|i| i.get("subagent_type"))
+                    .and_then(Value::as_str);
+                if let (Some(agent), Some(ms)) = (agent, ms) {
+                    acc.uses.insert(id, (agent.to_string(), ms));
+                }
+            }
+            ("user", "tool_result") => {
+                let id = blk.get("tool_use_id").and_then(Value::as_str);
+                if let (Some(id), Some(ms)) = (id, ms) {
+                    // Premier résultat gagne (le tool_result est unique par id).
+                    acc.results.entry(id.to_string()).or_insert(ms);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Convertit l'accumulateur en liste par agent (comptes + durées), filtrée par période sur le
+/// ts de la DÉLÉGATION (use). Tri par nombre de délégations desc puis nom. Durée moyenne sur les
+/// seules délégations appariées (result trouvé).
+fn finalize_deleg(acc: DelegAcc, from: i64, to: i64) -> Vec<AgentDelegations> {
+    // agent → (count, total_ms, paired_count)
+    let mut by_agent: HashMap<String, (u64, i64, u64)> = HashMap::new();
+    for (id, (agent, use_ms)) in &acc.uses {
+        if *use_ms < from || *use_ms > to {
+            continue;
+        }
+        let e = by_agent.entry(agent.clone()).or_insert((0, 0, 0));
+        e.0 += 1;
+        if let Some(res_ms) = acc.results.get(id) {
+            let dur = res_ms - use_ms;
+            if dur >= 0 {
+                e.1 += dur;
+                e.2 += 1;
+            }
+        }
+    }
+    let mut out: Vec<AgentDelegations> = by_agent
+        .into_iter()
+        .map(|(agent, (count, total_ms, paired))| AgentDelegations {
+            agent,
+            count,
+            total_ms,
+            avg_ms: if paired > 0 {
+                total_ms / paired as i64
+            } else {
+                0
+            },
+        })
+        .collect();
+    out.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.agent.cmp(&b.agent)));
+    out
+}
+
+/// Scanne un dossier `projects/` et agrège les délégations par agent sur la période. Défensif.
+fn scan_projects_deleg(projects_dir: &Path, from: i64, to: i64) -> Vec<AgentDelegations> {
+    let mut acc = DelegAcc::default();
+    if let Ok(dirs) = std::fs::read_dir(projects_dir) {
+        for sess_dir in dirs.flatten() {
+            let files = match std::fs::read_dir(sess_dir.path()) {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+            for f in files.flatten() {
+                let p = f.path();
+                if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+                    continue;
+                }
+                if let Ok(content) = std::fs::read_to_string(&p) {
+                    for line in content.lines() {
+                        fold_deleg_line(&mut acc, line);
+                    }
+                }
+            }
+        }
+    }
+    finalize_deleg(acc, from, to)
+}
+
+/// Commande : délégations réelles par agent nommé sur la période `[from, to]` (ms epoch),
+/// depuis les transcripts. Comptes + durées (use→result) uniquement — PAS de tokens/$ (pas de
+/// source, cf. constat). Lecture seule, défensive (vide / hors-Tauri → liste vide).
+#[tauri::command]
+pub fn delegations_by_agent(from: i64, to: i64) -> Result<Vec<AgentDelegations>, String> {
+    match claude_projects_dir() {
+        Some(dir) => Ok(scan_projects_deleg(&dir, from, to)),
+        None => Ok(Vec::new()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -446,5 +864,228 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["2026-06-28", "2026-06-30"]
         );
+    }
+
+    // ---------------- Coût $ réel par période (L30-P2) ----------------
+
+    fn pricing_test() -> PricingSnapshot {
+        pricing::snapshot() // embarquée par défaut en test (aucun refresh)
+    }
+
+    #[test]
+    fn iso_to_epoch_ms_parse_utc_et_millisecondes() {
+        // 1970-01-01T00:00:00Z = 0.
+        assert_eq!(iso_to_epoch_ms("1970-01-01T00:00:00Z"), Some(0));
+        // Une heure plus tard = 3_600_000 ms.
+        assert_eq!(iso_to_epoch_ms("1970-01-01T01:00:00Z"), Some(3_600_000));
+        // Millisecondes prises en compte.
+        assert_eq!(iso_to_epoch_ms("1970-01-01T00:00:00.250Z"), Some(250));
+        // Formes non datables → None.
+        assert_eq!(iso_to_epoch_ms("pas-une-date"), None);
+        assert_eq!(iso_to_epoch_ms(""), None);
+        assert_eq!(iso_to_epoch_ms("2026-13-01T00:00:00Z"), None); // mois invalide
+    }
+
+    #[test]
+    fn iso_to_epoch_ms_coherent_avec_une_date_connue() {
+        // 2026-06-30T00:00:00Z. Vérifie via reconstruction jour (days_from_civil).
+        let ms = iso_to_epoch_ms("2026-06-30T12:00:00Z").unwrap();
+        // midi le 30 juin → doit tomber le bon jour (préfixe date via day_of du même ts).
+        assert_eq!(day_of("2026-06-30T12:00:00Z"), Some("2026-06-30".into()));
+        assert!(ms > 1_700_000_000_000); // postérieur à 2023
+    }
+
+    #[test]
+    fn fold_cost_separe_les_quatre_buckets_et_tarife() {
+        let pr = pricing_test();
+        let mut acc = CostAcc::default();
+        // Ligne sonnet : input 1M @3, output 1M @15, cache_creation 1M @3.75, cache_read 1M @0.30.
+        fold_cost_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":1000000,"output_tokens":1000000,"cache_creation_input_tokens":1000000,"cache_read_input_tokens":1000000}}}"#,
+            0,
+            i64::MAX,
+            &pr,
+        );
+        let cost = finalize_cost(acc, None);
+        assert!(
+            (cost.cost_total - 22.05).abs() < 1e-6,
+            "total = {}",
+            cost.cost_total
+        );
+        assert_eq!(cost.by_model.len(), 1);
+        assert_eq!(cost.by_model[0].tokens, 4_000_000);
+        assert!(!cost.by_model[0].untariffed);
+        assert_eq!(cost.by_day.len(), 1);
+        assert_eq!(cost.by_day[0].date, "2026-06-30");
+    }
+
+    #[test]
+    fn fold_cost_modele_local_coute_zero() {
+        let pr = pricing_test();
+        let mut acc = CostAcc::default();
+        fold_cost_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"model":"llama3.1:8b","usage":{"input_tokens":500000,"output_tokens":500000}}}"#,
+            0,
+            i64::MAX,
+            &pr,
+        );
+        let cost = finalize_cost(acc, None);
+        assert_eq!(cost.cost_total, 0.0);
+        assert_eq!(cost.by_model[0].tokens, 1_000_000); // tokens comptés, coût nul
+        assert!(!cost.by_model[0].untariffed); // local = tarifé (à 0), pas untariffed
+        assert!(cost.untariffed_models.is_empty());
+    }
+
+    #[test]
+    fn fold_cost_modele_inconnu_est_untariffed_sans_cout() {
+        let pr = pricing_test();
+        let mut acc = CostAcc::default();
+        fold_cost_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"model":"mistral-large-2411","usage":{"input_tokens":1000000,"output_tokens":1000000}}}"#,
+            0,
+            i64::MAX,
+            &pr,
+        );
+        let cost = finalize_cost(acc, None);
+        assert_eq!(cost.cost_total, 0.0); // non compté
+        assert!(cost.by_model[0].untariffed);
+        assert_eq!(
+            cost.untariffed_models,
+            vec!["mistral-large-2411".to_string()]
+        );
+    }
+
+    #[test]
+    fn fold_cost_borne_la_periode() {
+        let pr = pricing_test();
+        let mut acc = CostAcc::default();
+        // Ligne à 2026-06-30T10:00:00Z.
+        let line = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":1000000,"output_tokens":0}}}"#;
+        let ms = iso_to_epoch_ms("2026-06-30T10:00:00Z").unwrap();
+        // Période EXCLUANT la ligne (fenêtre après) → rien.
+        fold_cost_line(&mut acc, line, ms + 1, ms + 1000, &pr);
+        assert!(acc.by_model.is_empty(), "hors période → ignorée");
+        // Période INCLUANT la ligne → comptée.
+        fold_cost_line(&mut acc, line, ms - 1000, ms + 1000, &pr);
+        assert_eq!(acc.by_model.len(), 1);
+    }
+
+    #[test]
+    fn fold_cost_ignore_sans_timestamp_sans_usage_et_non_assistant() {
+        let pr = pricing_test();
+        let mut acc = CostAcc::default();
+        // Pas de timestamp → ignorée (impossible à placer dans la période).
+        fold_cost_line(
+            &mut acc,
+            r#"{"type":"assistant","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":10}}}"#,
+            0,
+            i64::MAX,
+            &pr,
+        );
+        // user → ignorée.
+        fold_cost_line(
+            &mut acc,
+            r#"{"type":"user","timestamp":"2026-06-30T10:00:00Z","message":{"content":"x"}}"#,
+            0,
+            i64::MAX,
+            &pr,
+        );
+        // Que du JSON invalide → ignorée.
+        fold_cost_line(&mut acc, "pas du json", 0, i64::MAX, &pr);
+        assert!(acc.by_model.is_empty());
+    }
+
+    // ---------------- Délégations réelles par agent (L30-P2) ----------------
+
+    #[test]
+    fn fold_deleg_apparie_use_et_result_et_calcule_la_duree() {
+        let mut acc = DelegAcc::default();
+        // Délégation à gimli à T=...:00, résultat à T=...:05 → durée 5000 ms.
+        fold_deleg_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Agent","input":{"subagent_type":"gimli","description":"code"}}]}}"#,
+        );
+        fold_deleg_line(
+            &mut acc,
+            r#"{"type":"user","timestamp":"2026-06-30T10:00:05Z","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"ok"}]}}"#,
+        );
+        let out = finalize_deleg(acc, 0, i64::MAX);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].agent, "gimli");
+        assert_eq!(out[0].count, 1);
+        assert_eq!(out[0].total_ms, 5_000);
+        assert_eq!(out[0].avg_ms, 5_000);
+    }
+
+    #[test]
+    fn fold_deleg_compte_les_delegations_non_appariees_sans_duree() {
+        let mut acc = DelegAcc::default();
+        // Délégation sans tool_result → comptée, durée 0 (avg 0, paire absente).
+        fold_deleg_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"toolu_2","name":"Task","input":{"subagent_type":"legolas","description":"gate"}}]}}"#,
+        );
+        let out = finalize_deleg(acc, 0, i64::MAX);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].agent, "legolas");
+        assert_eq!(out[0].count, 1);
+        assert_eq!(out[0].total_ms, 0);
+        assert_eq!(out[0].avg_ms, 0);
+    }
+
+    #[test]
+    fn fold_deleg_agrege_par_agent_et_trie_par_compte() {
+        let mut acc = DelegAcc::default();
+        for (i, agent) in [(1, "gimli"), (2, "gimli"), (3, "loki")] {
+            fold_deleg_line(
+                &mut acc,
+                &format!(
+                    r#"{{"type":"assistant","timestamp":"2026-06-30T10:00:0{i}Z","message":{{"content":[{{"type":"tool_use","id":"id{i}","name":"Agent","input":{{"subagent_type":"{agent}","description":"x"}}}}]}}}}"#
+                ),
+            );
+        }
+        let out = finalize_deleg(acc, 0, i64::MAX);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].agent, "gimli"); // 2 délégations (tri desc)
+        assert_eq!(out[0].count, 2);
+        assert_eq!(out[1].agent, "loki");
+        assert_eq!(out[1].count, 1);
+    }
+
+    #[test]
+    fn fold_deleg_ignore_les_outils_non_delegation() {
+        let mut acc = DelegAcc::default();
+        // Bash n'est PAS une délégation → rien collecté.
+        fold_deleg_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"b1","name":"Bash","input":{"command":"ls"}}]}}"#,
+        );
+        let out = finalize_deleg(acc, 0, i64::MAX);
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn finalize_deleg_borne_la_periode_sur_le_ts_de_delegation() {
+        let mut acc = DelegAcc::default();
+        fold_deleg_line(
+            &mut acc,
+            r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","message":{"content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#,
+        );
+        let ms = iso_to_epoch_ms("2026-06-30T10:00:00Z").unwrap();
+        // Fenêtre après la délégation → exclue.
+        assert!(finalize_deleg(
+            DelegAcc {
+                uses: acc.uses.clone(),
+                results: acc.results.clone(),
+            },
+            ms + 1,
+            ms + 1000
+        )
+        .is_empty());
+        // Fenêtre incluant la délégation → présente.
+        assert_eq!(finalize_deleg(acc, ms - 1, ms + 1).len(), 1);
     }
 }

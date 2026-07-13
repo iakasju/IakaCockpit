@@ -15,7 +15,11 @@
  */
 import { useMemo } from "react";
 import type { TreemapItem } from "../components/TreemapPanel";
-import type { ProjectActivity } from "../api/backend";
+import type {
+  ProjectActivity,
+  AnalyticsCost,
+  AgentDelegations,
+} from "../api/backend";
 
 /** Périmètre spécial « tout le portefeuille » (somme cross-projet). */
 export const ALL_SCOPE = "ALL";
@@ -80,6 +84,23 @@ export interface AgentDatum {
   share: number;
   turns: number | null;
   avgDuration: string | null;
+}
+
+/** RÉEL (L30-P2) : coût $ par modèle sur la plage — alimente le mix par modèle (V4). */
+export interface ModelCostDatum {
+  model: string;
+  tokens: number;
+  cost: number;
+  /** Modèle sans tarif (coût non compté) — marqueur honnête. */
+  untariffed: boolean;
+}
+
+/** RÉEL (L30-P2) : délégations d'un agent nommé (comptes + durées, PAS de tokens/$). */
+export interface AgentDelegationDatum {
+  agent: string;
+  count: number;
+  totalMs: number;
+  avgMs: number;
 }
 
 /** Une délégation coûteuse (top V1) — coût $ = démo/P2. */
@@ -166,6 +187,14 @@ export interface AnalyticsModel {
   agentHours: { date: string; hours: number }[] | null;
   /** Placeholder/démo : comparaison de config (V3). */
   compare: CompareModel | null;
+  /** RÉEL (L30-P2) : coût $ par modèle sur la plage — mix par modèle (V4). */
+  modelCost: ModelCostDatum[] | null;
+  /** RÉEL (L30-P2) : délégations par agent (comptes/durées, PAS tokens/$) — V4. */
+  perAgentDelegations: AgentDelegationDatum[] | null;
+  /** RÉEL (L30-P2) : modèles rencontrés SANS tarif (marqueur honnête, jamais un coût inventé). */
+  untariffedModels: string[];
+  /** RÉEL (L30-P2) : date de la table de prix (`pricing.json`), ou null (table embarquée). */
+  pricedAt: string | null;
   /** Vrai si au moins une donnée RÉELLE de tokens existe (economy non vide). */
   hasRealData: boolean;
 }
@@ -186,12 +215,18 @@ function dateToMs(date: string): number {
  * @param activity tokens/jour/projet (`usePortfolioActivity`).
  * @param scope    `ALL_SCOPE` ou un id de projet.
  * @param range    bornes de temps (ms).
+ * @param cost     coût $ RÉEL de la plage (L30-P2, `usePortfolioCost`) — déjà range-borné côté
+ *                 Rust. `null`/absent → coût en placeholder/démo (garde « zéro fausse donnée »).
+ * @param delegations délégations RÉELLES par agent (L30-P2, `useDelegationsByAgent`) — déjà
+ *                 range-bornées côté Rust. `null`/absent → placeholder.
  */
 export function deriveAnalytics(
   economy: readonly TreemapItem[],
   activity: readonly ProjectActivity[],
   scope: string,
   range: TimeRange,
+  cost?: AnalyticsCost | null,
+  delegations?: AgentDelegations[] | null,
 ): AnalyticsModel {
   // Périmètre : projets triés tokens desc + ALL (somme) en tête.
   const projects = [...economy].sort((a, b) => b.tokens - a.tokens);
@@ -253,6 +288,46 @@ export function deriveAnalytics(
 
   const hasRealData = allTokens > 0 || daily.length > 0;
 
+  // --- Coût $ RÉEL (L30-P2) : déjà range-borné côté Rust. On n'affiche du réel que si la
+  // source EXISTE (by_model / by_day non vides) → sinon placeholder honnête (jamais un $0
+  // fabriqué). La série by_day (coût/jour) donne tendance (V1) et cumulé (V2).
+  const costObj = cost ?? null;
+  const hasCost = costObj != null && costObj.by_model.length > 0;
+  const realCost = hasCost ? costObj!.cost_total : null;
+  const hasDayCost = costObj != null && costObj.by_day.length > 0;
+  const realCostTrend = hasDayCost ? costObj!.by_day.map((d) => d.cost) : null;
+  let realCumulative: number[] | null = null;
+  if (hasDayCost) {
+    let run = 0;
+    realCumulative = costObj!.by_day.map((d) => {
+      run += d.cost;
+      return run;
+    });
+  }
+  const realModelCost: ModelCostDatum[] | null = hasCost
+    ? costObj!.by_model.map((m) => ({
+        model: m.model,
+        tokens: m.tokens,
+        cost: m.cost,
+        untariffed: m.untariffed,
+      }))
+    : null;
+  const untariffedModels = costObj?.untariffed_models ?? [];
+  const pricedAt = costObj?.priced_at ?? null;
+
+  // --- Délégations RÉELLES par agent (L30-P2) : comptes + durées seulement (pas tokens/$).
+  const delg = delegations ?? null;
+  const realDelegations = delg != null ? delg.reduce((s, d) => s + d.count, 0) : null;
+  const realPerAgentDeleg: AgentDelegationDatum[] | null =
+    delg != null && delg.length > 0
+      ? delg.map((d) => ({
+          agent: d.agent,
+          count: d.count,
+          totalMs: d.total_ms,
+          avgMs: d.avg_ms,
+        }))
+      : null;
+
   return {
     perimeter,
     scopeId: scope,
@@ -260,15 +335,22 @@ export function deriveAnalytics(
     tokens,
     coordVsSub,
     daily,
-    // Non couverts par la donnée réelle → placeholder honnête (P2/P3).
-    cost: null,
+    // Coût $ RÉEL (L30-P2) là où la source existe ; sinon placeholder honnête.
+    cost: realCost,
+    costTrend: realCostTrend,
+    cumulativeCost: realCumulative,
+    modelCost: realModelCost,
+    untariffedModels,
+    pricedAt,
+    // Délégations RÉELLES par agent (L30-P2) : KPI (somme) + par-agent (comptes/durées).
+    delegations: realDelegations,
+    perAgentDelegations: realPerAgentDeleg,
+    // Toujours placeholder/démo (pas de source réelle propre) : temps agent, tokens/$ par
+    // agent nommé, top délégations chères ($), callout de variation, heures/jour, compare.
     agentTime: null,
-    delegations: null,
     perAgent: null,
-    costTrend: null,
     topDelegations: null,
     variation: null,
-    cumulativeCost: null,
     agentHours: null,
     compare: null,
     hasRealData,
@@ -302,6 +384,11 @@ export function mergeDemo(real: AnalyticsModel, demo: AnalyticsModel): Analytics
     cumulativeCost: real.cumulativeCost ?? demo.cumulativeCost,
     agentHours: real.agentHours ?? demo.agentHours,
     compare: real.compare ?? demo.compare,
+    modelCost: real.modelCost ?? demo.modelCost,
+    perAgentDelegations: real.perAgentDelegations ?? demo.perAgentDelegations,
+    // Marqueurs RÉELS (jamais démo) : untariffed = fait réel, pricedAt vient du réel si présent.
+    untariffedModels: real.untariffedModels,
+    pricedAt: real.pricedAt ?? demo.pricedAt,
     hasRealData: real.hasRealData,
   };
 }
@@ -315,9 +402,11 @@ export function useAnalytics(
   activity: readonly ProjectActivity[],
   scope: string,
   range: TimeRange,
+  cost?: AnalyticsCost | null,
+  delegations?: AgentDelegations[] | null,
 ): AnalyticsModel {
   return useMemo(
-    () => deriveAnalytics(economy, activity, scope, range),
-    [economy, activity, scope, range],
+    () => deriveAnalytics(economy, activity, scope, range, cost, delegations),
+    [economy, activity, scope, range, cost, delegations],
   );
 }
