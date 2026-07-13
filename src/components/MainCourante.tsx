@@ -12,6 +12,8 @@ import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { ALL_CANAUX, filterFeed, type Canal } from "../mock/feed";
 import { useMainCourante } from "../hooks/useMainCourante";
+import { deriveDelegationsFromFeed } from "../hooks/deriveDelegations";
+import { DelegationTree } from "./DelegationTree";
 
 /** Libellé i18n d'un canal. */
 function canalLabel(c: Canal, t: TFunction): string {
@@ -71,6 +73,14 @@ export function MainCourante(): JSX.Element {
         ? mc.events.filter((e) => e.project === project && e.canal === "geste")
         : [],
     [mc.events, project],
+  );
+
+  // L28/F3 — arbre des délégations du projet filtré, dérivé du feed (canal geste).
+  // `deriveDelegationsFromFeed` est PUR et n'invente aucun statut `done` (zéro fausse
+  // donnée) : sans signal de fin explicite dans `meta`, la délégation reste « en cours ».
+  const sessionTasks = useMemo(
+    () => deriveDelegationsFromFeed(sessionDelegations),
+    [sessionDelegations],
   );
 
   return (
@@ -167,9 +177,18 @@ export function MainCourante(): JSX.Element {
 
       {mc.loading && <div className="mcnote">{t("journal.loading")}</div>}
 
-      {/* Widget de session (décision mock) : 1 projet filtré → arbre des délégations
-          (events canal geste = délégations machine L5). La frise mémoire colorée par
-          agent reste différée (donnée token-par-agent hors flux Journal). */}
+      {/* L28/F3 — Widget de session : 1 projet filtré → ARBRE DES DÉLÉGATIONS (le même
+          `DelegationTree` qu'en Travail), dérivé du feed (canal geste = délégations
+          machine L5). Racine = le projet (contexte de session) ; enfants = agents.
+          Statut best-effort : `done` seulement si déductible du feed, sinon « en cours »
+          (zéro fausse donnée). Raffinement (appariement fin) différé.
+          L'ancienne liste `sdlist` est débranchée-gardée (commentée ci-dessous). */}
+      {project && sessionTasks.length > 0 && (
+        <div className="sessdeleg">
+          <DelegationTree coordinator={project} tasks={sessionTasks} />
+        </div>
+      )}
+      {/* Ancien rendu liste (débranché-gardé L28 — réactivable) :
       {project && sessionDelegations.length > 0 && (
         <section
           className="sessdeleg"
@@ -190,6 +209,7 @@ export function MainCourante(): JSX.Element {
           </ul>
         </section>
       )}
+      */}
 
       <div className="feed">
         {!mc.loading && events.length === 0 && (

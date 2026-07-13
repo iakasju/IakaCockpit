@@ -32,6 +32,18 @@ export const en: Resources = {
     legCascade: "cascade slip",
   },
 
+  delegTree: {
+    ariaLabel: "Delegation tree",
+    title: "Delegation tree",
+    toggle: "Tree",
+    coordinator: "coordinator",
+    count: "{{count}} delegation(s)",
+    running: "{{count}} running",
+    statusRunning: "running",
+    statusDone: "done",
+    empty: "No delegation.",
+  },
+
   memory: {
     ariaLabel: "Memory / context",
     title: "Memory",

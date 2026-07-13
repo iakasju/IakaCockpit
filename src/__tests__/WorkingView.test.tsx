@@ -199,6 +199,71 @@ describe("WorkingView — @agent borné à la team (L11/C2)", () => {
   });
 });
 
+// --- L28 : arbre des délégations remplace le Gantt en Travail ---
+
+describe("WorkingView — L28 arbre des délégations (remplace le Gantt)", () => {
+  function renderTree(
+    tasks: { id: string; agent: string; description: string; status: "running" | "done" }[],
+  ) {
+    const c = conv({ mode: "chat" });
+    return rtlRender(
+      <WorkingView
+        worksetProjects={[]}
+        conversations={[c]}
+        active={c}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
+        onSelectConversation={() => {}}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={() => {}}
+        onStartRunner={() => {}}
+        onRequestNextStep={() => {}}
+        tasks={tasks}
+        resolveRunner={() => ({
+          kind: "claude-code",
+          model: "",
+          coordinator: "Aragorn",
+        })}
+      />,
+    );
+  }
+
+  it("le bandeau Gantt N'EST PLUS rendu ; l'arbre des délégations est là (défaut ouvert)", () => {
+    const { container } = renderTree([
+      { id: "t1", agent: "gimli", description: "Coder", status: "running" },
+    ]);
+    // Gantt débranché : aucun bandeau `.gantband` / `.gantt`.
+    expect(container.querySelector(".gantband")).toBeNull();
+    expect(container.querySelector(".gantt")).toBeNull();
+    // Arbre présent, alimenté par les délégations de la conversation active.
+    const treeband = container.querySelector(".treeband") as HTMLElement;
+    expect(treeband.querySelector(".dtree")).not.toBeNull();
+    // Enfant délégué + racine = coordinateur résolu (scopés à l'arbre : les mêmes
+    // noms apparaissent aussi dans le Roster/convhead).
+    expect(within(treeband).getByText("Gimli")).toBeTruthy();
+    expect(within(treeband).getByText("Aragorn")).toBeTruthy();
+  });
+
+  it("le bouton convhead pilote l'affichage de l'arbre (repli/ouverture)", () => {
+    const { container } = renderTree([
+      { id: "t1", agent: "gimli", description: "Coder", status: "running" },
+    ]);
+    const btn = screen.getByRole("button", { name: "Arbre" });
+    // Ouvert par défaut.
+    expect(container.querySelector(".treeband")).not.toBeNull();
+    fireEvent.click(btn);
+    expect(container.querySelector(".treeband")).toBeNull();
+    fireEvent.click(btn);
+    expect(container.querySelector(".treeband")).not.toBeNull();
+  });
+});
+
 // --- L23 : bouton « retirer de la table » + statut de préparation ---
 
 function proj(over: Partial<Project> = {}): Project {

@@ -31,6 +31,18 @@ export const fr = {
     legCascade: "décalage cascade",
   },
 
+  delegTree: {
+    ariaLabel: "Arbre des délégations",
+    title: "Arbre des délégations",
+    toggle: "Arbre",
+    coordinator: "coordinateur",
+    count: "{{count}} délégation(s)",
+    running: "{{count}} en cours",
+    statusRunning: "en cours",
+    statusDone: "terminé",
+    empty: "Aucune délégation.",
+  },
+
   memory: {
     ariaLabel: "Mémoire / contexte",
     title: "Mémoire",

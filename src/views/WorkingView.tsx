@@ -36,6 +36,7 @@ import { EconomyPanel } from "../components/EconomyPanel";
 import { MemoryGauge } from "../components/MemoryGauge";
 import { EffectsPanel } from "../components/EffectsPanel";
 import { GanttPanel } from "../components/GanttPanel";
+import { DelegationTree } from "../components/DelegationTree";
 import type { EcoPoint } from "../hooks/useEconomy";
 import type { FileEffect } from "../hooks/useEffects";
 import type { PlanTimeline } from "../hooks/derivePlanTimeline";
@@ -204,8 +205,14 @@ export function WorkingView({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Panneau « prochaine étape » repliable (D5 : conservé, repositionné).
   const [showNextStep, setShowNextStep] = useState(false);
-  // Bandeau Gantt (L19) : ouvert par défaut (au-dessus du chat, large & lisible).
-  const [showGantt, setShowGantt] = useState(true);
+  // Bandeau « Arbre des délégations » (L28) : ouvert par défaut (au-dessus du chat).
+  // REMPLACE le bandeau Gantt (débranché-gardé ci-dessous). L'état réutilise l'ancien
+  // `showGantt` renommé `showTree` (même sémantique : bandeau central repliable).
+  const [showTree, setShowTree] = useState(true);
+  // GANTT DÉBRANCHÉ-GARDÉ (L28) : l'arbre des délégations le remplace en Travail. Le
+  // Gantt reste dans le code (import `GanttPanel` + prop `timeline` conservés, cf. rendu
+  // plus bas gardé sous ce flag) et redevient réactivable en passant ce flag à `true`.
+  const GANTT_ENABLED = false as boolean;
 
   // Statut roster VIVANT (L10b/P3) : agents « au travail » dérivés du transcript
   // (délégations) de la conversation active. Recalculé à chaque nouveau tour.
@@ -462,11 +469,11 @@ export function WorkingView({
               </button>
               <button
                 type="button"
-                className={`btn sm${showGantt ? " accent" : ""}`}
-                aria-pressed={showGantt}
-                onClick={() => setShowGantt((v) => !v)}
+                className={`btn sm${showTree ? " accent" : ""}`}
+                aria-pressed={showTree}
+                onClick={() => setShowTree((v) => !v)}
               >
-                {t("gantt.title")}
+                {t("delegTree.toggle")}
               </button>
             </div>
 
@@ -480,8 +487,24 @@ export function WorkingView({
               />
             )}
 
-            {/* Bandeau Gantt CENTRAL (L19) : large & lisible, au-dessus du chat. */}
-            {showGantt && timeline && (
+            {/* Bandeau « Arbre des délégations » CENTRAL (L28) : coordinateur → agents
+                délégués, coloré par avancement (ambre = en cours, vert = terminé).
+                REMPLACE le Gantt. Alimenté par les délégations de la conversation
+                active (`tasks` / useAgentTasks) ; coordinateur = activeRunner. */}
+            {showTree && activeRunner && (
+              <div className="treeband">
+                <DelegationTree
+                  coordinator={activeRunner.coordinator}
+                  tasks={tasks ?? []}
+                  resolveAvatar={resolveAvatar}
+                />
+              </div>
+            )}
+
+            {/* Bandeau Gantt CENTRAL (L19) — DÉBRANCHÉ-GARDÉ (L28) : remplacé par
+                l'arbre ci-dessus, conservé dans le code (réactivable via GANTT_ENABLED).
+                `GanttPanel`/`timeline` restent référencés (aucune suppression). */}
+            {GANTT_ENABLED && showTree && timeline && (
               <div className="gantband">
                 <GanttPanel timeline={timeline} />
               </div>
