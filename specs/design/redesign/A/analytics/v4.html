@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytics · V4 — Drill-down par agent</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="../concepts/concepts.css">
+<link rel="stylesheet" href="../concepts/app/viz.css">
+<style>
+/* ============ chrome COMMUN ============ */
+.alayout{display:grid;grid-template-columns:238px minmax(0,1fr);height:100vh;overflow:hidden}
+.projcol{border-right:1px solid var(--line-soft);overflow:auto;padding:20px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.projcol .pch{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:2px 8px 4px}
+.projcol .psub{font-size:11px;color:var(--ink3);padding:0 8px 12px;line-height:1.4}
+.pitem{display:block;padding:9px 10px 10px;border-radius:12px;cursor:pointer;text-decoration:none;color:inherit;transition:.12s}
+.pitem:hover{background:var(--card)}
+.pitem.on{background:var(--card);box-shadow:0 1px 0 var(--line-soft),0 10px 24px -20px rgba(20,22,28,.4)}
+.pitem .pr1{display:flex;align-items:center;gap:8px}
+.pitem .pnm{font-family:var(--display);font-weight:600;font-size:13px}
+.pitem.all .pnm{letter-spacing:.03em}
+.pitem .ptok{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.pitem.on .ptok{color:var(--acc)}
+.pitem .pbar{height:4px;border-radius:99px;background:var(--deep);overflow:hidden;margin-top:7px}
+.pitem .pbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.pitem.all .pbar i{background:var(--ink)}
+.projcol .psep{height:1px;background:var(--line-soft);margin:9px 6px}
+.amain{overflow:auto;height:100vh}
+.apad{max-width:1150px;margin:0 auto;padding:32px 40px 72px}
+.trange{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 6px}
+.presets{display:flex;background:var(--deep);border-radius:11px;padding:3px;gap:2px}
+.presets a{font-family:var(--display);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;transition:.12s}
+.presets a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,22,28,.12)}
+.presets a:not(.on):hover{color:var(--ink)}
+.daterange{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:var(--card);border-radius:10px;padding:8px 13px;box-shadow:0 1px 0 var(--line-soft)}
+.daterange b{color:var(--ink)}
+.tspacer{flex:1}
+.scopepill{font-size:11.5px;font-weight:600;font-family:var(--text);padding:6px 13px;border-radius:99px;background:rgba(var(--acc-rgb),.12);color:var(--acc);display:inline-flex;align-items:center;gap:8px}
+.scopepill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc)}
+/* ============ propre à V4 ============ */
+.lead{width:100%;border-collapse:collapse;margin-top:4px}
+.lead th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:0 12px 11px;font-family:var(--mono)}
+.lead th.r,.lead td.r{text-align:right}
+.lead td{padding:12px;border-top:1px solid var(--line-soft);vertical-align:middle}
+.lead tr{cursor:pointer}
+.lead tr.on td{background:var(--bg)}
+.lead tr.on td:first-child{box-shadow:inset 3px 0 0 var(--acc)}
+.acell{display:flex;align-items:center;gap:11px}
+.acell img{width:30px;height:30px;border-radius:9px;object-fit:cover}
+.acell .nm{font-family:var(--display);font-weight:600;font-size:13.5px}
+.acell .rl{font-size:10.5px;color:var(--ink3)}
+.rchip{font-family:var(--mono);font-size:10.5px;color:var(--ink2);background:var(--deep);padding:3px 9px;border-radius:7px;white-space:nowrap}
+.rchip.codex{background:rgba(245,166,35,.15);color:#b8770a}
+.rchip.ollama{background:rgba(18,165,148,.13);color:var(--cyan)}
+.rchip.opus{background:rgba(142,78,198,.12);color:var(--purple)}
+.tkcell{display:flex;align-items:center;gap:10px;min-width:170px}
+.tkcell .bar{flex:1;height:7px;border-radius:99px;background:var(--deep);overflow:hidden}
+.tkcell .bar i{display:block;height:100%;border-radius:99px}
+.tkcell .v{font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
+.costcell{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.mono2{font-family:var(--mono);font-size:12px;color:var(--ink2)}
+.free{color:var(--cyan)}
+/* détail agent + mix */
+.drow{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-top:20px;align-items:start}
+.dethead{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.dethead img{width:44px;height:44px;border-radius:12px;object-fit:cover}
+.dethead .dn{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:-.01em}
+.dethead .dr{font-size:12px;color:var(--ink3)}
+.dethead .dtag{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--acc);background:rgba(var(--acc-rgb),.1);padding:4px 10px;border-radius:8px}
+.detkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.detkpi .k{background:var(--bg);border-radius:12px;padding:11px 13px}
+.detkpi .k .kl{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.detkpi .k .kv{font-family:var(--display);font-weight:600;font-size:17px;margin-top:4px}
+.pjbreak{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.pjrow{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:11px;font-size:12.5px}
+.pjrow .pn{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.pjrow .pb{height:8px;border-radius:99px;background:var(--deep);overflow:hidden}
+.pjrow .pb i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),#6aa6ff)}
+.pjrow .pv{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.mixbar{height:30px;border-radius:10px;overflow:hidden;display:flex;margin:2px 0 12px}
+.mixbar div{height:100%;display:grid;place-items:center;color:#fff;font-family:var(--mono);font-size:10.5px;font-weight:600}
+.mixkey{display:flex;flex-direction:column;gap:8px}
+.mixkey .r{display:flex;align-items:center;gap:9px;font-size:12px}
+.mixkey .r .sw{width:11px;height:11px;border-radius:4px}
+.mixkey .r .nm{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.mixkey .r .pc{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink3)}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="../concepts/app/portefeuille.html" title="Étagère"><small>Étagère</small></a>
+  <a href="../concepts/app/travail.html" title="Table"><small>Table</small></a>
+  <a href="../concepts/app/journal.html" title="Journal"><small>Log</small></a>
+  <a href="../concepts/app/equipes.html" title="Équipes"><small>Team</small></a>
+  <a class="on" href="v4.html" title="Analytics"><small>Stats</small></a>
+  <div class="sep"></div>
+  <a href="../concepts/app/reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+
+<div class="alayout">
+  <aside class="projcol">
+    <div class="pch">Périmètre</div>
+    <div class="psub">Trié par volume de tokens sur la plage. Sélectionner scope toute la page.</div>
+    <a class="pitem all on"><div class="pr1"><span class="pnm">ALL · portefeuille</span><span class="ptok">3,87 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <div class="psep"></div>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakacockpit</span><span class="ptok">1,42 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakagraph</span><span class="ptok">984 k</span></div><div class="pbar"><i style="width:69%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iaka-demo</span><span class="ptok">612 k</span></div><div class="pbar"><i style="width:43%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakaframe</span><span class="ptok">431 k</span></div><div class="pbar"><i style="width:30%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakabox</span><span class="ptok">218 k</span></div><div class="pbar"><i style="width:15%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">portefeuille</span><span class="ptok">112 k</span></div><div class="pbar"><i style="width:8%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakasuite</span><span class="ptok">93 k</span></div><div class="pbar"><i style="width:7%"></i></div></a>
+  </aside>
+
+  <main class="amain"><div class="apad">
+    <div class="eyebrow">Analytics · par acteur</div>
+    <h1 class="title">Qui coûte quoi</h1>
+    <p class="sub">Entrée par agent : comparer les acteurs de la config (rôle, runner, modèle) et déplier le détail de chacun — répartition par projet, par modèle, par runner.</p>
+
+    <div class="trange">
+      <div class="presets"><a href="#">24 h</a><a class="on" href="#">7 j</a><a href="#">30 j</a><a href="#">Custom</a></div>
+      <div class="daterange">🗓 <b>6 juil.</b> → <b>13 juil. 2026</b> · 7 jours</div>
+      <span class="tspacer"></span>
+      <span class="scopepill">ALL · tout le portefeuille</span>
+    </div>
+
+    <!-- classement des agents -->
+    <div class="vcard" style="margin-top:22px">
+      <div class="vh"><span class="vt">Classement des agents</span><span class="vs">7 agents · trié par tokens · clic = détail</span></div>
+      <table class="lead">
+        <thead><tr><th>Agent</th><th>Runner / modèle</th><th>Tokens</th><th class="r">Coût</th><th class="r">Tours</th><th class="r">Durée moy.</th></tr></thead>
+        <tbody>
+          <tr class="on"><td><div class="acell"><img src="../../assets/aragorn.png"><div><div class="nm">Aragorn</div><div class="rl">Coordinateur · projet</div></div></div></td>
+            <td><span class="rchip">claude / sonnet</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:100%;background:#3b82f6"></i></div><span class="v">1,18 M</span></div></td>
+            <td class="r costcell">$3,66</td><td class="r mono2">61</td><td class="r mono2">42 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/gimli.png"><div><div class="nm">Gimli</div><div class="rl">Exécution · code</div></div></div></td>
+            <td><span class="rchip codex">codex / gpt-5</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:80%;background:#30a46c"></i></div><span class="v">942 k</span></div></td>
+            <td class="r costcell">$2,36</td><td class="r mono2">45</td><td class="r mono2">51 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/gandalf.png"><div><div class="nm">Gandalf</div><div class="rl">Analyse · specs</div></div></div></td>
+            <td><span class="rchip">claude / sonnet</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:52%;background:#8e4ec6"></i></div><span class="v">610 k</span></div></td>
+            <td class="r costcell">$2,14</td><td class="r mono2">30</td><td class="r mono2">38 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/gandalf.png"><div><div class="nm">Loki</div><div class="rl">Design · supports</div></div></div></td>
+            <td><span class="rchip opus">claude / opus</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:39%;background:#f5a623"></i></div><span class="v">458 k</span></div></td>
+            <td class="r costcell">$2,29</td><td class="r mono2">22</td><td class="r mono2">63 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/aragorn.png"><div><div class="nm">Odin</div><div class="rl">Portefeuille · pilotage</div></div></div></td>
+            <td><span class="rchip">claude / sonnet</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:26%;background:#16181d"></i></div><span class="v">312 k</span></div></td>
+            <td class="r costcell">$0,97</td><td class="r mono2">15</td><td class="r mono2">33 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/frodo.png"><div><div class="nm">Frodo</div><div class="rl">Livraison · porteur</div></div></div></td>
+            <td><span class="rchip">claude / haiku</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:18%;background:#12a594"></i></div><span class="v">210 k</span></div></td>
+            <td class="r costcell">$0,21</td><td class="r mono2">12</td><td class="r mono2">22 s</td></tr>
+          <tr><td><div class="acell"><img src="../../assets/legolas.png"><div><div class="nm">Legolas</div><div class="rl">Qualité · gate</div></div></div></td>
+            <td><span class="rchip ollama">ollama / llama3.1</span></td>
+            <td><div class="tkcell"><div class="bar"><i style="width:13%;background:#b8770a"></i></div><span class="v">158 k</span></div></td>
+            <td class="r costcell free">local · $0</td><td class="r mono2">8</td><td class="r mono2">29 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- détail de l'agent sélectionné + mix runner/modèle -->
+    <div class="drow">
+      <div class="vcard">
+        <div class="dethead"><img src="../../assets/aragorn.png"><div><div class="dn">Aragorn</div><div class="dr">Coordinateur · projet — claude-code / sonnet</div></div><span class="dtag">sélectionné</span></div>
+        <div class="detkpi">
+          <div class="k"><div class="kl">Tokens</div><div class="kv">1,18 M</div></div>
+          <div class="k"><div class="kl">Coût</div><div class="kv">$3,66</div></div>
+          <div class="k"><div class="kl">Tours</div><div class="kv">61</div></div>
+          <div class="k"><div class="kl">Durée moy.</div><div class="kv">42 s</div></div>
+        </div>
+        <div class="eb" style="margin-bottom:10px">Répartition par projet</div>
+        <div class="pjbreak">
+          <div class="pjrow"><span class="pn">iakacockpit</span><div class="pb"><i style="width:100%"></i></div><span class="pv">480 k · 41%</span></div>
+          <div class="pjrow"><span class="pn">iakagraph</span><div class="pb"><i style="width:65%"></i></div><span class="pv">310 k · 26%</span></div>
+          <div class="pjrow"><span class="pn">iaka-demo</span><div class="pb"><i style="width:38%"></i></div><span class="pv">180 k · 15%</span></div>
+          <div class="pjrow"><span class="pn">iakaframe</span><div class="pb"><i style="width:27%"></i></div><span class="pv">130 k · 11%</span></div>
+          <div class="pjrow"><span class="pn">autres</span><div class="pb"><i style="width:17%"></i></div><span class="pv">80 k · 7%</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="vcard">
+          <div class="vh"><span class="vt">Mix par runner</span><span class="vs">tokens équipe</span></div>
+          <div class="mixbar"><div style="width:72%;background:#3b82f6">72%</div><div style="width:24%;background:#f5a623">24%</div><div style="width:4%;background:#12a594"></div></div>
+          <div class="mixkey">
+            <div class="r"><span class="sw" style="background:#3b82f6"></span><span class="nm">claude-code</span><span class="pc">2,77 M · 4 agents</span></div>
+            <div class="r"><span class="sw" style="background:#f5a623"></span><span class="nm">codex</span><span class="pc">942 k · Gimli</span></div>
+            <div class="r"><span class="sw" style="background:#12a594"></span><span class="nm">ollama (local)</span><span class="pc">158 k · Legolas</span></div>
+          </div>
+        </div>
+        <div class="vcard">
+          <div class="vh"><span class="vt">Mix par modèle</span><span class="vs">coût $</span></div>
+          <div class="mixbar"><div style="width:44%;background:#3b82f6">sonnet</div><div style="width:20%;background:#8e4ec6">opus</div><div style="width:20%;background:#f5a623">gpt-5</div><div style="width:9%;background:#12a594"></div><div style="width:7%;background:#b8770a"></div></div>
+          <div class="mixkey">
+            <div class="r"><span class="sw" style="background:#3b82f6"></span><span class="nm">sonnet</span><span class="pc">$5,60 · 48%</span></div>
+            <div class="r"><span class="sw" style="background:#8e4ec6"></span><span class="nm">opus</span><span class="pc">$2,29 · 20%</span></div>
+            <div class="r"><span class="sw" style="background:#f5a623"></span><span class="nm">gpt-5-codex</span><span class="pc">$2,36 · 20%</span></div>
+            <div class="r"><span class="sw" style="background:#12a594"></span><span class="nm">haiku</span><span class="pc">$0,21 · 2%</span></div>
+            <div class="r"><span class="sw" style="background:#b8770a"></span><span class="nm">llama3.1 (local)</span><span class="pc">$0 · gate</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</body></html>

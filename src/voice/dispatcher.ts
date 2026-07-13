@@ -24,6 +24,7 @@ const VIEW_SYNONYMS: Record<ViewId, readonly string[]> = {
   portfolio: ["portefeuille", "portfolio", "etagere"],
   working: ["travail", "working", "table", "chantier"],
   journal: ["journal", "main courante", "mains courantes", "historique", "log", "logs"],
+  analytics: ["analytics", "analyse", "statistiques", "stats", "metriques"],
   teams: ["equipes", "equipe", "team", "teams", "roster", "agents"],
   cadre: ["cadre", "frame", "regles", "regle"],
   settings: [
@@ -43,6 +44,7 @@ const VIEW_PRIORITY: readonly ViewId[] = [
   "portfolio",
   "working",
   "journal",
+  "analytics",
   "teams",
   "cadre",
   "settings",

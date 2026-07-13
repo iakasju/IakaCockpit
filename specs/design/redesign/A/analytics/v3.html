@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytics · V3 — Comparaison de config</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="../concepts/concepts.css">
+<link rel="stylesheet" href="../concepts/app/viz.css">
+<style>
+/* ============ chrome COMMUN ============ */
+.alayout{display:grid;grid-template-columns:238px minmax(0,1fr);height:100vh;overflow:hidden}
+.projcol{border-right:1px solid var(--line-soft);overflow:auto;padding:20px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.projcol .pch{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:2px 8px 4px}
+.projcol .psub{font-size:11px;color:var(--ink3);padding:0 8px 12px;line-height:1.4}
+.pitem{display:block;padding:9px 10px 10px;border-radius:12px;cursor:pointer;text-decoration:none;color:inherit;transition:.12s}
+.pitem:hover{background:var(--card)}
+.pitem.on{background:var(--card);box-shadow:0 1px 0 var(--line-soft),0 10px 24px -20px rgba(20,22,28,.4)}
+.pitem .pr1{display:flex;align-items:center;gap:8px}
+.pitem .pnm{font-family:var(--display);font-weight:600;font-size:13px}
+.pitem.all .pnm{letter-spacing:.03em}
+.pitem .ptok{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.pitem.on .ptok{color:var(--acc)}
+.pitem .pbar{height:4px;border-radius:99px;background:var(--deep);overflow:hidden;margin-top:7px}
+.pitem .pbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.pitem.all .pbar i{background:var(--ink)}
+.projcol .psep{height:1px;background:var(--line-soft);margin:9px 6px}
+.amain{overflow:auto;height:100vh}
+.apad{max-width:1150px;margin:0 auto;padding:32px 40px 72px}
+.tspacer{flex:1}
+.scopepill{font-size:11.5px;font-weight:600;font-family:var(--text);padding:6px 13px;border-radius:99px;background:rgba(var(--acc-rgb),.12);color:var(--acc);display:inline-flex;align-items:center;gap:8px}
+.scopepill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc)}
+/* ============ propre à V3 ============ */
+/* double sélecteur de période */
+.cmpbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 6px}
+.perpick{display:inline-flex;align-items:center;gap:9px;background:var(--card);border-radius:12px;padding:9px 14px;box-shadow:0 1px 0 var(--line-soft)}
+.perpick .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.perpick.a .tag{background:var(--deep);color:var(--ink2)}
+.perpick.b .tag{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.perpick .rg{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.vs{font-family:var(--display);font-weight:700;font-size:13px;color:var(--ink3)}
+/* deux cartes de config */
+.cfgrow{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.cfgcard{background:var(--card);border-radius:18px;padding:18px 20px;box-shadow:0 1px 0 var(--line-soft),0 18px 40px -34px rgba(20,22,28,.28)}
+.cfgcard.b{box-shadow:0 0 0 1.5px rgba(var(--acc-rgb),.35),0 18px 40px -34px rgba(20,22,28,.28)}
+.cfgcard .ch{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.cfgcard .ch .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:7px}
+.cfgcard.a .ch .tag{background:var(--deep);color:var(--ink2)}
+.cfgcard.b .ch .tag{background:rgba(var(--acc-rgb),.12);color:var(--acc)}
+.cfgcard .ch .cn{font-family:var(--display);font-weight:600;font-size:15px}
+.cfgcard .cmeta{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:14px}
+.aglist{display:flex;flex-direction:column;gap:7px}
+.agrow{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.agrow img{width:22px;height:22px;border-radius:6px;object-fit:cover}
+.agrow .an{font-family:var(--display);font-weight:600;font-size:12.5px}
+.agrow .rm{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-left:auto}
+.agrow .flag{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px}
+.flag.new{background:rgba(48,164,108,.13);color:var(--green)}
+.flag.chg{background:rgba(245,166,35,.16);color:#b8770a}
+/* bandeau de deltas */
+.dmets{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:18px}
+.dmet{background:var(--card);border-radius:16px;padding:15px 16px;box-shadow:0 1px 0 var(--line-soft)}
+.dmet .dl{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.dmet .dv{display:flex;align-items:baseline;gap:6px;margin:8px 0 6px;font-family:var(--mono)}
+.dmet .dv .a{font-size:12px;color:var(--ink3)}
+.dmet .dv .ar{color:var(--ink3);font-size:12px}
+.dmet .dv .b{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.02em;color:var(--ink)}
+.dchip{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px}
+.dchip.pos{background:rgba(48,164,108,.13);color:var(--green)}
+.dchip.neg{background:rgba(229,72,77,.1);color:var(--red)}
+.dchip.neu{background:var(--deep);color:var(--ink2)}
+/* comparaison par agent (barres A vs B) */
+.hbars{display:flex;flex-direction:column;gap:14px;margin-top:4px}
+.hb{display:grid;grid-template-columns:88px 1fr;align-items:center;gap:12px}
+.hb .hlab{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:600;font-size:12px}
+.hb .hlab img{width:19px;height:19px;border-radius:6px}
+.hb .hcol{display:flex;flex-direction:column;gap:5px}
+.hb .row{display:flex;align-items:center;gap:9px}
+.hb .row .t{height:11px;border-radius:6px;min-width:2px}
+.hb .row .t.a{background:var(--deep)}
+.hb .row .lg{font-family:var(--mono);font-size:10px;color:var(--ink3);white-space:nowrap}
+.hb .row .k{font-family:var(--mono);font-size:10.5px;color:var(--ink2);white-space:nowrap}
+/* verdict */
+.verdict{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:16px;padding:15px 18px;margin-top:18px;
+  border-left:3px solid var(--green);box-shadow:0 1px 0 var(--line-soft)}
+.verdict .vi{width:40px;height:40px;border-radius:12px;background:rgba(48,164,108,.1);color:var(--green);display:grid;place-items:center;font-size:19px;flex:none}
+.verdict .vt{font-family:var(--display);font-weight:600;font-size:14.5px;margin-bottom:2px}
+.verdict .vd{font-size:13px;color:var(--ink2);line-height:1.5}.verdict .vd b{color:var(--ink)}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="../concepts/app/portefeuille.html" title="Étagère"><small>Étagère</small></a>
+  <a href="../concepts/app/travail.html" title="Table"><small>Table</small></a>
+  <a href="../concepts/app/journal.html" title="Journal"><small>Log</small></a>
+  <a href="../concepts/app/equipes.html" title="Équipes"><small>Team</small></a>
+  <a class="on" href="v3.html" title="Analytics"><small>Stats</small></a>
+  <div class="sep"></div>
+  <a href="../concepts/app/reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+
+<div class="alayout">
+  <aside class="projcol">
+    <div class="pch">Périmètre</div>
+    <div class="psub">Trié par volume de tokens sur la plage. Sélectionner scope toute la page.</div>
+    <a class="pitem all on"><div class="pr1"><span class="pnm">ALL · portefeuille</span><span class="ptok">3,87 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <div class="psep"></div>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakacockpit</span><span class="ptok">1,42 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakagraph</span><span class="ptok">984 k</span></div><div class="pbar"><i style="width:69%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iaka-demo</span><span class="ptok">612 k</span></div><div class="pbar"><i style="width:43%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakaframe</span><span class="ptok">431 k</span></div><div class="pbar"><i style="width:30%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakabox</span><span class="ptok">218 k</span></div><div class="pbar"><i style="width:15%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">portefeuille</span><span class="ptok">112 k</span></div><div class="pbar"><i style="width:8%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakasuite</span><span class="ptok">93 k</span></div><div class="pbar"><i style="width:7%"></i></div></a>
+  </aside>
+
+  <main class="amain"><div class="apad">
+    <div class="eyebrow">Analytics · comparaison</div>
+    <h1 class="title">Avant / après un changement de config</h1>
+    <p class="sub">Mettre deux périodes en regard pour lire l'effet d'un changement d'équipe (agents, runners, modèles) sur le coût, les tokens et l'efficacité.</p>
+
+    <!-- double sélecteur de période -->
+    <div class="cmpbar">
+      <div class="perpick a"><span class="tag">Période A</span><span class="rg">30 juin → 6 juil.</span></div>
+      <span class="vs">vs</span>
+      <div class="perpick b"><span class="tag">Période B</span><span class="rg">6 juil. → 13 juil.</span></div>
+      <span class="tspacer"></span>
+      <span class="scopepill">ALL · tout le portefeuille</span>
+    </div>
+
+    <!-- deux configs -->
+    <div class="cfgrow">
+      <div class="cfgcard a">
+        <div class="ch"><span class="tag">Config A</span><span class="cn">5 agents · tout Claude</span></div>
+        <div class="cmeta">3,21 M tokens · $12,80 · claude-code / sonnet partout</div>
+        <div class="aglist">
+          <div class="agrow"><img src="../../assets/aragorn.png"><span class="an">Aragorn</span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/gandalf.png"><span class="an">Gandalf</span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/gimli.png"><span class="an">Gimli</span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/legolas.png"><span class="an">Legolas</span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/frodo.png"><span class="an">Frodo</span><span class="rm">claude / sonnet</span></div>
+        </div>
+      </div>
+      <div class="cfgcard b">
+        <div class="ch"><span class="tag">Config B</span><span class="cn">7 agents · runners mixtes</span></div>
+        <div class="cmeta">3,87 M tokens · $11,64 · +2 agents, Gimli→codex, Frodo→haiku</div>
+        <div class="aglist">
+          <div class="agrow"><img src="../../assets/aragorn.png"><span class="an">Aragorn</span><span class="flag" style="background:transparent"></span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/gandalf.png"><span class="an">Gandalf</span><span class="rm">claude / sonnet</span></div>
+          <div class="agrow"><img src="../../assets/gimli.png"><span class="an">Gimli</span><span class="flag chg">runner ↺</span><span class="rm">codex / gpt-5</span></div>
+          <div class="agrow"><img src="../../assets/legolas.png"><span class="an">Legolas</span><span class="rm">ollama / llama3.1</span></div>
+          <div class="agrow"><img src="../../assets/frodo.png"><span class="an">Frodo</span><span class="flag chg">modèle ↺</span><span class="rm">claude / haiku</span></div>
+          <div class="agrow"><img src="../../assets/gandalf.png"><span class="an">Loki</span><span class="flag new">+ ajout</span><span class="rm">claude / opus</span></div>
+          <div class="agrow"><img src="../../assets/aragorn.png"><span class="an">Odin</span><span class="flag new">+ ajout</span><span class="rm">claude / sonnet</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- deltas -->
+    <div class="dmets">
+      <div class="dmet"><div class="dl">Tokens</div><div class="dv"><span class="a">3,21 M</span><span class="ar">→</span><span class="b">3,87 M</span></div><span class="dchip neu">↑ 20 %</span></div>
+      <div class="dmet"><div class="dl">Coût</div><div class="dv"><span class="a">$12,80</span><span class="ar">→</span><span class="b">$11,64</span></div><span class="dchip pos">↓ 9 %</span></div>
+      <div class="dmet"><div class="dl">Coût / M tokens</div><div class="dv"><span class="a">$3,99</span><span class="ar">→</span><span class="b">$3,01</span></div><span class="dchip pos">↓ 25 %</span></div>
+      <div class="dmet"><div class="dl">Délégations</div><div class="dv"><span class="a">148</span><span class="ar">→</span><span class="b">186</span></div><span class="dchip neu">↑ 26 %</span></div>
+      <div class="dmet"><div class="dl">Temps agent</div><div class="dv"><span class="a">13 h 15</span><span class="ar">→</span><span class="b">14 h 20</span></div><span class="dchip neu">↑ 8 %</span></div>
+    </div>
+
+    <!-- comparaison par agent -->
+    <div class="vcard" style="margin-top:18px">
+      <div class="vh"><span class="vt">Tokens par agent · A vs B</span><span class="vs">gris = A · couleur = B</span></div>
+      <div class="hbars">
+        <div class="hb"><div class="hlab"><img src="../../assets/aragorn.png">Aragorn</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:75%"></div><span class="lg">A 1,08 M</span></div>
+          <div class="row"><div class="t" style="width:82%;background:#3b82f6"></div><span class="k">B 1,18 M</span></div></div></div>
+        <div class="hb"><div class="hlab"><img src="../../assets/gimli.png">Gimli</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:71%"></div><span class="lg">A 1,02 M</span></div>
+          <div class="row"><div class="t" style="width:65%;background:#30a46c"></div><span class="k">B 942 k ↓</span></div></div></div>
+        <div class="hb"><div class="hlab"><img src="../../assets/gandalf.png">Gandalf</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:44%"></div><span class="lg">A 640 k</span></div>
+          <div class="row"><div class="t" style="width:42%;background:#8e4ec6"></div><span class="k">B 610 k</span></div></div></div>
+        <div class="hb"><div class="hlab"><img src="../../assets/frodo.png">Frodo</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:18%"></div><span class="lg">A 260 k</span></div>
+          <div class="row"><div class="t" style="width:14%;background:#12a594"></div><span class="k">B 210 k · haiku</span></div></div></div>
+        <div class="hb"><div class="hlab"><img src="../../assets/gandalf.png">Loki</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:0%"></div><span class="lg">A —</span></div>
+          <div class="row"><div class="t" style="width:32%;background:#f5a623"></div><span class="k">B 458 k · nouveau</span></div></div></div>
+        <div class="hb"><div class="hlab"><img src="../../assets/aragorn.png">Odin</div><div class="hcol">
+          <div class="row"><div class="t a" style="width:0%"></div><span class="lg">A —</span></div>
+          <div class="row"><div class="t" style="width:22%;background:#16181d"></div><span class="k">B 312 k · nouveau</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- verdict -->
+    <div class="verdict">
+      <div class="vi">✓</div>
+      <div><div class="vt">Config B plus efficiente malgré plus de volume</div>
+      <div class="vd">+20 % de tokens mais <b>−25 % de coût par million</b> : basculer <b>Gimli sur Codex</b> et <b>Frodo sur Haiku</b> a fait chuter le coût unitaire ; les 2 agents ajoutés élargissent la couverture sans dériver le budget.</div></div>
+    </div>
+  </div></main>
+</div>
+</body></html>

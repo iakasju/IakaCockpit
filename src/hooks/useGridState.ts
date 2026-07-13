@@ -19,6 +19,7 @@ export type ViewId =
   | "portfolio"
   | "working"
   | "journal"
+  | "analytics"
   | "teams"
   | "cadre"
   | "settings";

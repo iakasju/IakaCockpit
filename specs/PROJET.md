@@ -40,6 +40,15 @@
   de projet** (un agent). C'est l'objet vivant du travail.
 
 ### 0.2 L'agent = runner + modèle + skills ; le CHEF = interlocuteur unique de Stéphane
+
+> **AMENDÉ (2026-07-07, modèle 3 couches E1 — décision portefeuille « deux logiciels séparés »).** La
+> **définition** d'une team (personas, rôles, **skills**, gardes, workflow) est **PURE** et a pour
+> **origine la forge** ; le **runner + modèle** ne sont plus dans la définition d'agent mais dans une
+> **couche « Binding » (liaison) séparée** — toujours réglables **par persona**, côté Cockpit (override)
+> / forge (défaut). Le Cockpit **RÉCEPTIONNE** une team (origine forge), la **MODIFIE si besoin** (« Le
+> Cadre » L22 conservé, édition locale permise + tracée — **pas** de lecture seule), **applique/override
+> le Binding**, et **PILOTE**. Cf. `specs/instructions/recentrage-cockpit-binding.md`.
+
 - **Chaque agent est un agent IA = un RUNNER + un MODÈLE.**
   - **Runner** ∈ { ollama local, ollama lan, litellm local, litellm lan, **claude code**,
     chatgpt, … } — le harnais qui exécute.
@@ -48,8 +57,10 @@
 - **La conversation = MOI (Stéphane) ↔ le CHEF DE PROJET.** Le chef me parle avec **son** modèle.
   C'est **LUI** qui parle aux agents de la team, **délègue**, et **rend compte en VERBATIM** des
   actions de la team (jamais de ventriloquie — cf. méthode iakaframe, restitution en relais).
-- **Settings = par agent** : runner + modèle + skills se règlent **agent par agent** (la cible ;
-  cf. § 0.4 pour l'étape actuelle où les settings sont globaux avec un set par défaut).
+- **Settings = par persona** : les **skills** se règlent dans la **définition** (Team pure, forge) ;
+  le **runner + modèle** se règlent **par persona** dans la **couche Binding** (liaison, override
+  Cockpit). *(Amendé — cf. encadré ci-dessus ; § 0.4 pour l'étape actuelle, settings globaux + set
+  par défaut.)*
 
 ### 0.3 LE TERMINAL = source de vérité ; LE CHAT = vue filtrée + entrée partagée
 > C'est le point qui **SUPERSEDE le modèle de conversation de L8**. En L8 le chat était un

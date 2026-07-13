@@ -44,6 +44,7 @@ import {
 import { PortfolioView } from "./views/PortfolioView";
 import { WorkingView, type ResolvedRunner } from "./views/WorkingView";
 import { JournalView } from "./views/JournalView";
+import { AnalyticsView } from "./views/AnalyticsView";
 import { TeamsView } from "./views/TeamsView";
 import { CadreView } from "./views/CadreView";
 import { SettingsView } from "./views/SettingsView";
@@ -66,6 +67,8 @@ import "./assets/chartes/chartes.css";
 import "./theme/app.css";
 // Vue « Cadre » (L22) : style scopé sous `.cadre` (refonte ergonomique mock Loki).
 import "./theme/cadre.css";
+// Page « Analytics » (L30-P1) : style scopé sous `.analytics` (calque mocks analytics/v1..v4).
+import "./theme/analytics.css";
 
 export default function App(): JSX.Element {
   const { t } = useTranslation();
@@ -503,13 +506,16 @@ export default function App(): JSX.Element {
             <span className="nu">{conversations.conversations.length}</span>
           )}
         </button>
+        {/* L30-P1 — le bouton rail « Journal » est remplacé par « Analytics ». Journal reste
+            DÉBRANCHÉ-GARDÉ (JournalView, MainCourante, la route et le membre "journal" de
+            ViewId sont conservés — comme « Cadre ») : seule la CIBLE du bouton change. */}
         <button
           type="button"
-          className={`railitem${grid.activeView === "journal" ? " on" : ""}`}
-          aria-current={grid.activeView === "journal" ? "page" : undefined}
-          onClick={() => grid.setActiveView("journal")}
+          className={`railitem${grid.activeView === "analytics" ? " on" : ""}`}
+          aria-current={grid.activeView === "analytics" ? "page" : undefined}
+          onClick={() => grid.setActiveView("analytics")}
         >
-          <span className="rlabel">{t("nav.journal")}</span>
+          <span className="rlabel">{t("nav.analytics")}</span>
         </button>
         <button
           type="button"
@@ -606,7 +612,15 @@ export default function App(): JSX.Element {
             onToggleFocus={toggleWorkFocus}
           />
         )}
+        {/* Journal débranché-gardé (L30-P1) : la route reste, seul le bouton rail a changé. */}
         {grid.activeView === "journal" && <JournalView />}
+        {grid.activeView === "analytics" && (
+          <AnalyticsView
+            economy={portfolioEco}
+            activity={portfolioAct}
+            demoOn={demoWidgetsOn}
+          />
+        )}
         {grid.activeView === "teams" && (
           <TeamsView teams={teams} theme={settings.theme} />
         )}

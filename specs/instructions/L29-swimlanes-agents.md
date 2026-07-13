@@ -71,6 +71,25 @@ variante B « vue d'ensemble » (montre la simultanéité), par opposition à l'
 4. `npm run typecheck` + `lint` + `test` verts ; Rust non modifié. Tests : `AgentSwimlanes`
    (couloirs/barres/flèches/vide), `reduceAgentTasks` (`doneTs`), toggle Travail.
 
+## 5bis — Révision recette (2026-07-13, retour terrain Stéphane)
+Trois ajustements sur `AgentSwimlanes` (front seul) :
+- **R1 — Labels d'agents FIXES** : la **colonne de gauche** (avatar + nom de chaque couloir) doit
+  **rester visible** quand on défile horizontalement (colonne gelée / sticky). → Restructurer :
+  une **colonne de labels hors du conteneur `overflow-x`** + une **zone scrollable** (axe temps +
+  barres) alignée en Y sur les mêmes couloirs (patron « 1ʳᵉ colonne figée » d'un Gantt). Les deux
+  restent parfaitement alignés verticalement.
+- **R2 — Repères d'heure toujours lisibles** : **jamais** de portion visible **sans indication
+  d'heure**. → Ajouter des **lignes de repère verticales** (gridlines) qui traversent les couloirs
+  à chaque tick, avec **labels d'heure** ; densité de ticks **adaptée au zoom** pour qu'aucun
+  intervalle affiché à l'écran ne soit sans repère. (L'axe reste aligné avec les barres — il
+  scrolle avec elles.)
+- **R3 — Zoom sur l'axe du temps** : ajouter **deux boutons `+` / `−`** (dans l'en-tête du bandeau
+  swimlanes) qui **zooment l'axe temps** (change l'échelle px/minute, état local, borné min/max).
+  Le zoom recalcule largeur, barres, flèches et densité des ticks. `title`/`aria-label` i18n.
+
+Gardes inchangées (front seul, présentationnel D8, zéro fausse donnée, i18n parité). Tests :
+labels présents hors zone scrollable, ticks/gridlines présents, boutons +/- changent l'échelle.
+
 ## 6. Différés / hors-lot
 - **Sous-délégations imbriquées** (flèches multi-niveaux via parent réel `parentUuid`/`isSidechain`)
   — MVP = 1 niveau coordinateur → délégué.

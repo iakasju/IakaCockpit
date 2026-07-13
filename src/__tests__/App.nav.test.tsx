@@ -16,18 +16,23 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn(() => Promise.resolve(null)),
 }));
 
-describe("App — nav vers Journal (L12)", () => {
-  it("affiche la vue Journal au clic du bouton de nav", () => {
+describe("App — nav vers Analytics (L30-P1)", () => {
+  it("affiche la vue Analytics au clic du bouton de nav (Journal débranché-gardé)", () => {
     render(<App />);
-    // Démarre sur Portfolio : pas encore de main courante visible.
-    expect(screen.queryByRole("complementary", { name: "Main courante" })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Journal" }));
-
-    // La vue Journal héberge la main courante (L4) en pleine page.
+    // Démarre sur Portfolio : la page Analytics n'est pas visible.
     expect(
-      screen.getByRole("complementary", { name: "Main courante" }),
+      screen.queryByRole("heading", { name: "Performance de l'équipe" }),
+    ).toBeNull();
+    // Le bouton rail « Journal » est remplacé par « Analytics ».
+    expect(screen.queryByRole("button", { name: "Journal" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Analytics" }));
+
+    // La vue Analytics héberge la colonne Périmètre + le titre de la page.
+    expect(
+      screen.getByRole("heading", { name: "Performance de l'équipe" }),
     ).toBeTruthy();
+    expect(screen.getByRole("complementary", { name: "Périmètre" })).toBeTruthy();
   });
 });
 

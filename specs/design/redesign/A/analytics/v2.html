@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytics · V2 — Évolution dans le temps</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="../concepts/concepts.css">
+<link rel="stylesheet" href="../concepts/app/viz.css">
+<style>
+/* ============ chrome COMMUN ============ */
+.alayout{display:grid;grid-template-columns:238px minmax(0,1fr);height:100vh;overflow:hidden}
+.projcol{border-right:1px solid var(--line-soft);overflow:auto;padding:20px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.projcol .pch{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:2px 8px 4px}
+.projcol .psub{font-size:11px;color:var(--ink3);padding:0 8px 12px;line-height:1.4}
+.pitem{display:block;padding:9px 10px 10px;border-radius:12px;cursor:pointer;text-decoration:none;color:inherit;transition:.12s}
+.pitem:hover{background:var(--card)}
+.pitem.on{background:var(--card);box-shadow:0 1px 0 var(--line-soft),0 10px 24px -20px rgba(20,22,28,.4)}
+.pitem .pr1{display:flex;align-items:center;gap:8px}
+.pitem .pnm{font-family:var(--display);font-weight:600;font-size:13px}
+.pitem.all .pnm{letter-spacing:.03em}
+.pitem .ptok{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.pitem.on .ptok{color:var(--acc)}
+.pitem .pbar{height:4px;border-radius:99px;background:var(--deep);overflow:hidden;margin-top:7px}
+.pitem .pbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.pitem.all .pbar i{background:var(--ink)}
+.projcol .psep{height:1px;background:var(--line-soft);margin:9px 6px}
+.amain{overflow:auto;height:100vh}
+.apad{max-width:1150px;margin:0 auto;padding:32px 40px 72px}
+.trange{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 6px}
+.presets{display:flex;background:var(--deep);border-radius:11px;padding:3px;gap:2px}
+.presets a{font-family:var(--display);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;transition:.12s}
+.presets a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,22,28,.12)}
+.presets a:not(.on):hover{color:var(--ink)}
+.daterange{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:var(--card);border-radius:10px;padding:8px 13px;box-shadow:0 1px 0 var(--line-soft)}
+.daterange b{color:var(--ink)}
+.tspacer{flex:1}
+.scopepill{font-size:11.5px;font-weight:600;font-family:var(--text);padding:6px 13px;border-radius:99px;background:rgba(var(--acc-rgb),.12);color:var(--acc);display:inline-flex;align-items:center;gap:8px}
+.scopepill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc)}
+/* ============ propre à V2 ============ */
+.callout{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:16px;padding:15px 18px;margin-top:22px;
+  border-left:3px solid var(--red);box-shadow:0 1px 0 var(--line-soft),0 16px 36px -32px rgba(20,22,28,.3)}
+.callout .ci{width:40px;height:40px;border-radius:12px;background:rgba(229,72,77,.1);color:var(--red);display:grid;place-items:center;font-size:19px;flex:none}
+.callout .ct{font-family:var(--display);font-weight:600;font-size:14.5px;margin-bottom:2px}
+.callout .cd{font-size:13px;color:var(--ink2);line-height:1.5}
+.callout .cd b{color:var(--ink)}
+.evochart{margin-top:20px}
+.evoleg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-top:12px}
+.evoleg span{display:inline-flex;align-items:center;gap:7px}.evoleg i{width:16px;height:3px;border-radius:2px}
+.evoleg .area i{width:12px;height:12px;border-radius:3px}
+.agrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:18px}
+.agrid .span2{grid-column:1 / -1}
+.bars{display:flex;align-items:flex-end;gap:9px;height:132px;padding-top:8px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bars .col .stk{width:100%;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden}
+.bars .col .stk .in{background:var(--acc)}.bars .col .stk .out{background:var(--acc-l)}
+.bars .col.hot .stk .in{background:var(--red)}.bars .col.hot .stk .out{background:#f3888c}
+.bars .col .lb{font-family:var(--mono);font-size:9px;color:var(--ink3)}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="../concepts/app/portefeuille.html" title="Étagère"><small>Étagère</small></a>
+  <a href="../concepts/app/travail.html" title="Table"><small>Table</small></a>
+  <a href="../concepts/app/journal.html" title="Journal"><small>Log</small></a>
+  <a href="../concepts/app/equipes.html" title="Équipes"><small>Team</small></a>
+  <a class="on" href="v2.html" title="Analytics"><small>Stats</small></a>
+  <div class="sep"></div>
+  <a href="../concepts/app/reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+
+<div class="alayout">
+  <aside class="projcol">
+    <div class="pch">Périmètre</div>
+    <div class="psub">Trié par volume de tokens sur la plage. Sélectionner scope toute la page.</div>
+    <a class="pitem all on"><div class="pr1"><span class="pnm">ALL · portefeuille</span><span class="ptok">3,87 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <div class="psep"></div>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakacockpit</span><span class="ptok">1,42 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakagraph</span><span class="ptok">984 k</span></div><div class="pbar"><i style="width:69%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iaka-demo</span><span class="ptok">612 k</span></div><div class="pbar"><i style="width:43%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakaframe</span><span class="ptok">431 k</span></div><div class="pbar"><i style="width:30%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakabox</span><span class="ptok">218 k</span></div><div class="pbar"><i style="width:15%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">portefeuille</span><span class="ptok">112 k</span></div><div class="pbar"><i style="width:8%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakasuite</span><span class="ptok">93 k</span></div><div class="pbar"><i style="width:7%"></i></div></a>
+  </aside>
+
+  <main class="amain"><div class="apad">
+    <div class="eyebrow">Analytics · évolution</div>
+    <h1 class="title">La performance dans le temps</h1>
+    <p class="sub">L'axe temps est central : suivre la dérive du coût, des tokens et des durées jour par jour, et repérer d'un coup d'œil <b>quand</b> la config a coûté cher.</p>
+
+    <div class="trange">
+      <div class="presets"><a href="#">24 h</a><a class="on" href="#">7 j</a><a href="#">30 j</a><a href="#">Custom</a></div>
+      <div class="daterange">🗓 <b>6 juil.</b> → <b>13 juil. 2026</b> · 7 jours · pas = jour</div>
+      <span class="tspacer"></span>
+      <span class="scopepill">ALL · tout le portefeuille</span>
+    </div>
+
+    <!-- variation détectée -->
+    <div class="callout">
+      <div class="ci">⚠</div>
+      <div><div class="ct">Variation détectée — mercredi</div>
+      <div class="cd"><b>910 k tokens · $2,73</b> en une journée, soit <b>+68 %</b> vs la médiane. Cause probable : refonte des chartes iakagraph (Gimli + Loki en parallèle, pic de contexte).</div></div>
+    </div>
+
+    <!-- COURBE D'ÉVOLUTION (centerpiece) -->
+    <div class="vcard evochart">
+      <div class="vh"><span class="vt">Évolution des tokens · jour par jour</span><span class="vs">aire = total portefeuille · lignes = agents</span></div>
+      <svg viewBox="0 0 720 220" width="100%" style="display:block">
+        <!-- grille -->
+        <g stroke="#eef0f3" stroke-width="1">
+          <line x1="40" y1="200" x2="710" y2="200"/><line x1="40" y1="150" x2="710" y2="150"/>
+          <line x1="40" y1="100" x2="710" y2="100"/><line x1="40" y1="50" x2="710" y2="50"/>
+        </g>
+        <g font-family="ui-monospace,monospace" font-size="8.5" fill="#c5c9d2">
+          <text x="6" y="53">900k</text><text x="6" y="103">600k</text><text x="6" y="153">300k</text>
+        </g>
+        <!-- aire = total -->
+        <defs><linearGradient id="tot" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#16181d" stop-opacity=".12"/><stop offset="1" stop-color="#16181d" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="M40 65.5 L150 99 L260 30 L370 110 L480 80 L590 142 L700 150 L700 200 L40 200 Z" fill="url(#tot)"/>
+        <path d="M40 65.5 L150 99 L260 30 L370 110 L480 80 L590 142 L700 150" fill="none" stroke="#16181d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- lignes agents -->
+        <polyline fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="40,161 150,170 260,146 370,172 480,166 590,179 700,185"/>
+        <polyline fill="none" stroke="#30a46c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="40,166 150,178 260,151 370,174 480,172 590,189 700,193"/>
+        <polyline fill="none" stroke="#8e4ec6" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="40,174 150,183 260,166 370,189 480,183 590,193 700,194"/>
+        <polyline fill="none" stroke="#f5a623" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="40,189 150,185 260,183 370,191 480,178 590,194 700,195"/>
+        <!-- pic mercredi -->
+        <circle cx="260" cy="30" r="4.5" fill="#e5484d"/>
+        <line x1="260" y1="34" x2="260" y2="200" stroke="#e5484d" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>
+        <g font-family="ui-monospace,monospace" font-size="9" fill="#9aa0ad">
+          <text x="30" y="215">Lun</text><text x="140" y="215">Mar</text><text x="248" y="215" fill="#e5484d" font-weight="700">Mer ⟂</text><text x="360" y="215">Jeu</text><text x="470" y="215">Ven</text><text x="580" y="215">Sam</text><text x="690" y="215">Dim</text>
+        </g>
+      </svg>
+      <div class="evoleg">
+        <span class="area"><i style="background:#16181d"></i> total portefeuille</span>
+        <span><i style="background:#3b82f6"></i> Aragorn</span>
+        <span><i style="background:#30a46c"></i> Gimli</span>
+        <span><i style="background:#8e4ec6"></i> Gandalf</span>
+        <span><i style="background:#f5a623"></i> Loki</span>
+      </div>
+    </div>
+
+    <div class="agrid">
+      <!-- coût cumulé -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Coût cumulé sur la plage</span><span class="vs">$11,64 au total</span></div>
+        <svg viewBox="0 0 340 130" width="100%" style="display:block">
+          <defs><linearGradient id="cum" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5b5bd6" stop-opacity=".24"/><stop offset="1" stop-color="#5b5bd6" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="M10 112 L58 100 L106 92 L154 58 L202 48 L250 30 L330 20 L330 118 L10 118 Z" fill="url(#cum)"/>
+          <path d="M10 112 L58 100 L106 92 L154 58 L202 48 L250 30 L330 20" fill="none" stroke="#5b5bd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="330" cy="20" r="4" fill="#5b5bd6"/>
+          <g font-family="ui-monospace,monospace" font-size="8.5" fill="#9aa0ad"><text x="10" y="128">Lun · $1,20</text><text x="286" y="128">Dim · $11,6</text></g>
+        </svg>
+      </div>
+
+      <!-- durées par jour -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Temps agent par jour</span><span class="vs">heures cumulées · 14 h 20</span></div>
+        <div class="bars">
+          <div class="col"><div class="stk"><div class="in" style="height:72px"></div></div><div class="lb">Lun</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:54px"></div></div><div class="lb">Mar</div></div>
+          <div class="col hot"><div class="stk"><div class="in" style="height:98px"></div></div><div class="lb">Mer</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:48px"></div></div><div class="lb">Jeu</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:66px"></div></div><div class="lb">Ven</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:32px"></div></div><div class="lb">Sam</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:28px"></div></div><div class="lb">Dim</div></div>
+        </div>
+        <div class="legend2" style="margin-top:12px"><span><i style="background:var(--acc)"></i> temps agent / jour</span><span><i style="background:var(--red)"></i> mercredi · 3 h 10</span></div>
+      </div>
+    </div>
+  </div></main>
+</div>
+</body></html>

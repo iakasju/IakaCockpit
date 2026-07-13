@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytics · V1 — Tableau de bord KPI</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="../concepts/concepts.css">
+<link rel="stylesheet" href="../concepts/app/viz.css">
+<style>
+/* ============ chrome COMMUN aux 4 versions Analytics ============ */
+.alayout{display:grid;grid-template-columns:238px minmax(0,1fr);height:100vh;overflow:hidden}
+/* colonne projets (ALL + tri tokens desc) */
+.projcol{border-right:1px solid var(--line-soft);overflow:auto;padding:20px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.projcol .pch{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding:2px 8px 4px}
+.projcol .psub{font-size:11px;color:var(--ink3);padding:0 8px 12px;line-height:1.4}
+.pitem{display:block;padding:9px 10px 10px;border-radius:12px;cursor:pointer;text-decoration:none;color:inherit;transition:.12s}
+.pitem:hover{background:var(--card)}
+.pitem.on{background:var(--card);box-shadow:0 1px 0 var(--line-soft),0 10px 24px -20px rgba(20,22,28,.4)}
+.pitem .pr1{display:flex;align-items:center;gap:8px}
+.pitem .pnm{font-family:var(--display);font-weight:600;font-size:13px}
+.pitem.all .pnm{letter-spacing:.03em}
+.pitem .ptok{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.pitem.on .ptok{color:var(--acc)}
+.pitem .pbar{height:4px;border-radius:99px;background:var(--deep);overflow:hidden;margin-top:7px}
+.pitem .pbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc-l))}
+.pitem.all .pbar i{background:var(--ink)}
+.projcol .psep{height:1px;background:var(--line-soft);margin:9px 6px}
+/* main + barre de plage */
+.amain{overflow:auto;height:100vh}
+.apad{max-width:1150px;margin:0 auto;padding:32px 40px 72px}
+.trange{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 6px}
+.presets{display:flex;background:var(--deep);border-radius:11px;padding:3px;gap:2px}
+.presets a{font-family:var(--display);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;transition:.12s}
+.presets a.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,22,28,.12)}
+.presets a:not(.on):hover{color:var(--ink)}
+.daterange{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:var(--card);border-radius:10px;padding:8px 13px;box-shadow:0 1px 0 var(--line-soft)}
+.daterange b{color:var(--ink)}
+.tspacer{flex:1}
+.scopepill{font-size:11.5px;font-weight:600;font-family:var(--text);padding:6px 13px;border-radius:99px;background:rgba(var(--acc-rgb),.12);color:var(--acc);display:inline-flex;align-items:center;gap:8px}
+.scopepill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc)}
+/* deltas KPI */
+.kpi .kd .neg{color:var(--red);font-weight:600}
+.kpi .kd .pos{color:var(--green);font-weight:600}
+.kpi .kd .neu{color:var(--ink2);font-weight:600}
+/* ============ propre à V1 ============ */
+.agrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:20px}
+.agrid .span2{grid-column:1 / -1}
+/* barres par jour (in/out empilées) */
+.bars{display:flex;align-items:flex-end;gap:9px;height:150px;padding-top:8px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bars .col .stk{width:100%;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden}
+.bars .col .stk .in{background:var(--acc)}.bars .col .stk .out{background:var(--acc-l)}
+.bars .col.hot .stk .in{background:var(--red)}.bars .col.hot .stk .out{background:#f3888c}
+.bars .col .lb{font-family:var(--mono);font-size:9px;color:var(--ink3)}
+/* top délégations */
+.deltbl{width:100%;border-collapse:collapse;font-size:13px}
+.deltbl td{padding:10px 6px;border-top:1px solid var(--line-soft);vertical-align:middle}
+.deltbl tr:first-child td{border-top:0}
+.deltbl .pair{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:600;font-size:12.5px}
+.deltbl .pair img{width:20px;height:20px;border-radius:6px}
+.deltbl .pair .ar{color:var(--ink3);font-weight:400}
+.deltbl .cost{text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.deltbl .tk{text-align:right;font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.deltbl .pj{font-family:var(--mono);font-size:11px;color:var(--acc)}
+</style></head>
+<body>
+<nav class="rail">
+  <div class="brand">i</div>
+  <div class="brandsub">atelier</div>
+  <a href="../concepts/app/portefeuille.html" title="Étagère"><small>Étagère</small></a>
+  <a href="../concepts/app/travail.html" title="Table"><small>Table</small></a>
+  <a href="../concepts/app/journal.html" title="Journal"><small>Log</small></a>
+  <a href="../concepts/app/equipes.html" title="Équipes"><small>Team</small></a>
+  <a class="on" href="v1.html" title="Analytics"><small>Stats</small></a>
+  <div class="sep"></div>
+  <a href="../concepts/app/reglages.html" title="Réglages"><small>Réglage</small></a>
+</nav>
+
+<div class="alayout">
+  <!-- ===== COLONNE PROJETS (commune) ===== -->
+  <aside class="projcol">
+    <div class="pch">Périmètre</div>
+    <div class="psub">Trié par volume de tokens sur la plage. Sélectionner scope toute la page.</div>
+    <a class="pitem all on">
+      <div class="pr1"><span class="pnm">ALL · portefeuille</span><span class="ptok">3,87 M</span></div>
+      <div class="pbar"><i style="width:100%"></i></div>
+    </a>
+    <div class="psep"></div>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakacockpit</span><span class="ptok">1,42 M</span></div><div class="pbar"><i style="width:100%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakagraph</span><span class="ptok">984 k</span></div><div class="pbar"><i style="width:69%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iaka-demo</span><span class="ptok">612 k</span></div><div class="pbar"><i style="width:43%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakaframe</span><span class="ptok">431 k</span></div><div class="pbar"><i style="width:30%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakabox</span><span class="ptok">218 k</span></div><div class="pbar"><i style="width:15%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">portefeuille</span><span class="ptok">112 k</span></div><div class="pbar"><i style="width:8%"></i></div></a>
+    <a class="pitem"><div class="pr1"><span class="pnm">iakasuite</span><span class="ptok">93 k</span></div><div class="pbar"><i style="width:7%"></i></div></a>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="amain"><div class="apad">
+    <div class="eyebrow">Analytics · rétrospective</div>
+    <h1 class="title">Performance de l'équipe</h1>
+    <p class="sub">Comment la <b>configuration d'équipe</b> (agents · rôles · runners · modèles) se traduit en coût, tokens, durées et efficacité — et où sont les variations.</p>
+
+    <!-- barre de plage temporelle -->
+    <div class="trange">
+      <div class="presets"><a href="#">24 h</a><a class="on" href="#">7 j</a><a href="#">30 j</a><a href="#">Custom</a></div>
+      <div class="daterange">🗓 <b>6 juil.</b> → <b>13 juil. 2026</b> · 7 jours</div>
+      <span class="tspacer"></span>
+      <span class="scopepill">ALL · tout le portefeuille</span>
+    </div>
+
+    <!-- bandeau KPI -->
+    <div class="kpis" style="margin-top:22px">
+      <div class="kpi"><div class="kl">Tokens</div><div class="kv">3,87 <small>M</small></div><div class="kd"><span class="neu">↑ 20 %</span> vs 7 j préc.</div></div>
+      <div class="kpi"><div class="kl">Coût</div><div class="kv">$11,64</div><div class="kd"><span class="pos">↓ 9 %</span> malgré +tokens</div></div>
+      <div class="kpi"><div class="kl">Temps agent</div><div class="kv">14 h 20</div><div class="kd"><span class="neu">↑ 1 h 05</span> cumulé</div></div>
+      <div class="kpi"><div class="kl">Délégations</div><div class="kv">186</div><div class="kd"><span class="neu">↑ 26 %</span> · 7 agents actifs</div></div>
+    </div>
+
+    <div class="agrid">
+
+      <!-- treemap coût par agent -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Tokens par agent</span><span class="vs">surface = tokens · 7 agents</span></div>
+        <div class="tmap">
+          <a class="t" style="width:61%;background:#3b82f6"><span class="nm">Aragorn</span><span class="v">1,18 M · 31 %<br><small>coordinateur</small></span></a>
+          <a class="t" style="width:36%;background:#30a46c"><span class="nm">Gimli</span><span class="v">942 k · 24 %<br><small>exécution</small></span></a>
+          <a class="t" style="width:45%;background:#8e4ec6"><span class="nm">Gandalf</span><span class="v">610 k · 16 %<br><small>analyse</small></span></a>
+          <a class="t" style="width:34%;background:#f5a623"><span class="nm">Loki</span><span class="v">458 k · 12 %<br><small>design</small></span></a>
+          <a class="t" style="width:32%;background:#16181d"><span class="nm">Odin</span><span class="v">312 k · 8%</span></a>
+          <a class="t" style="width:30%;background:#12a594"><span class="nm">Frodo</span><span class="v">210 k · 5%</span></a>
+          <a class="t" style="width:32%;background:#b8770a"><span class="nm">Legolas</span><span class="v">158 k · 4%</span></a>
+        </div>
+      </div>
+
+      <!-- part de voix (délégations) -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Part d'activité</span><span class="vs">186 délégations</span></div>
+        <div class="share">
+          <div style="width:33%;background:#3b82f6">33%</div>
+          <div style="width:24%;background:#30a46c">24%</div>
+          <div style="width:16%;background:#8e4ec6">16%</div>
+          <div style="width:12%;background:#f5a623">12%</div>
+          <div style="width:8%;background:#16181d"></div>
+          <div style="width:7%;background:#12a594"></div>
+        </div>
+        <div class="sharekey">
+          <div class="r"><span class="sw" style="background:#3b82f6"></span><span class="nm">Aragorn</span><span style="color:var(--ink3);font-size:11px">coordinateur · claude/sonnet</span><span class="pc">61 · 33%</span></div>
+          <div class="r"><span class="sw" style="background:#30a46c"></span><span class="nm">Gimli</span><span style="color:var(--ink3);font-size:11px">exécution · codex/gpt-5</span><span class="pc">45 · 24%</span></div>
+          <div class="r"><span class="sw" style="background:#8e4ec6"></span><span class="nm">Gandalf</span><span style="color:var(--ink3);font-size:11px">analyse · claude/sonnet</span><span class="pc">30 · 16%</span></div>
+          <div class="r"><span class="sw" style="background:#f5a623"></span><span class="nm">Loki</span><span style="color:var(--ink3);font-size:11px">design · claude/opus</span><span class="pc">22 · 12%</span></div>
+          <div class="r"><span class="sw" style="background:#16181d"></span><span class="nm">Odin</span><span style="color:var(--ink3);font-size:11px">portefeuille · claude/sonnet</span><span class="pc">15 · 8%</span></div>
+        </div>
+      </div>
+
+      <!-- tokens & coût par jour (bars in/out) -->
+      <div class="vcard span2">
+        <div class="vh"><span class="vt">Tokens par jour · entrée / sortie</span><span class="vs">pic mercredi · refonte iakagraph</span></div>
+        <div class="bars">
+          <div class="col"><div class="stk"><div class="in" style="height:70px"></div><div class="out" style="height:20px"></div></div><div class="lb">Lun</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:52px"></div><div class="out" style="height:16px"></div></div><div class="lb">Mar</div></div>
+          <div class="col hot"><div class="stk"><div class="in" style="height:96px"></div><div class="out" style="height:28px"></div></div><div class="lb">Mer</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:46px"></div><div class="out" style="height:14px"></div></div><div class="lb">Jeu</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:62px"></div><div class="out" style="height:18px"></div></div><div class="lb">Ven</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:30px"></div><div class="out" style="height:9px"></div></div><div class="lb">Sam</div></div>
+          <div class="col"><div class="stk"><div class="in" style="height:26px"></div><div class="out" style="height:8px"></div></div><div class="lb">Dim</div></div>
+        </div>
+        <div class="legend2" style="margin-top:14px">
+          <span><i style="background:var(--acc)"></i> entrée (contexte)</span>
+          <span><i style="background:var(--acc-l)"></i> sortie (génération)</span>
+          <span><i style="background:var(--red)"></i> jour le plus cher — 910 k · $2,73</span>
+        </div>
+      </div>
+
+      <!-- tendance (sparkline) -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Tendance du coût</span><span class="vs">$/jour sur 7 j</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin:2px 0 6px">
+          <span style="font-family:var(--display);font-weight:600;font-size:22px">$1,66</span>
+          <span style="font-size:12px;color:var(--ink3)">moyenne / jour · pic mercredi</span>
+        </div>
+        <svg viewBox="0 0 340 120" width="100%" style="display:block">
+          <defs><linearGradient id="ar1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5b5bd6" stop-opacity=".26"/><stop offset="1" stop-color="#5b5bd6" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="M8 60 L63 74 L118 26 L173 82 L228 56 L283 92 L332 96 L332 112 L8 112 Z" fill="url(#ar1)"/>
+          <path d="M8 60 L63 74 L118 26 L173 82 L228 56 L283 92 L332 96" fill="none" stroke="#5b5bd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="118" cy="26" r="4.2" fill="#e5484d"/>
+          <g font-family="ui-monospace,monospace" font-size="8.5" fill="#9aa0ad"><text x="8" y="119">Lun</text><text x="110" y="18">Mer</text><text x="316" y="119">Dim</text></g>
+        </svg>
+      </div>
+
+      <!-- top délégations coûteuses -->
+      <div class="vcard">
+        <div class="vh"><span class="vt">Délégations les plus chères</span><span class="vs">top 5 · tokens</span></div>
+        <table class="deltbl">
+          <tr><td><div class="pair"><img src="../../assets/aragorn.png"><span class="ar">→</span><img src="../../assets/gimli.png">Aragorn → Gimli</div><span class="pj">iakacockpit · refacto</span></td><td><div class="cost">$1,04</div><div class="tk">312 k</div></td></tr>
+          <tr><td><div class="pair"><img src="../../assets/aragorn.png"><span class="ar">→</span><img src="../../assets/gandalf.png">Aragorn → Gandalf</div><span class="pj">iakagraph · audit</span></td><td><div class="cost">$0,71</div><div class="tk">214 k</div></td></tr>
+          <tr><td><div class="pair"><img src="../../assets/aragorn.png"><span class="ar">→</span><img src="../../assets/frodo.png">Aragorn → Loki</div><span class="pj">iakagraph · chartes</span></td><td><div class="cost">$0,68</div><div class="tk">198 k</div></td></tr>
+          <tr><td><div class="pair"><img src="../../assets/gimli.png"><span class="ar">→</span><img src="../../assets/legolas.png">Gimli → Legolas</div><span class="pj">iaka-demo · gate</span></td><td><div class="cost">$0,42</div><div class="tk">126 k</div></td></tr>
+          <tr><td><div class="pair"><img src="../../assets/aragorn.png"><span class="ar">→</span><img src="../../assets/frodo.png">Aragorn → Frodo</div><span class="pj">iakaframe · livraison</span></td><td><div class="cost">$0,31</div><div class="tk">92 k</div></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div></main>
+</div>
+</body></html>
