@@ -424,7 +424,8 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       instantanés, coût calculé à la requête) ; **fix V2** (évolution scopée projet) ; **coordinateur en premier
       rang** attribué **par projet** puis agrégé par nom (Aragorn ≠ Odin en scope ALL, plus de fusion). Différés :
       **comparaison V3 bi-période réelle + hypothèse V3-B** (re-tarifage par agent désormais possible), index
-      **incrémental** (mtime), **arbre des délégations : liaisons non visibles (TODO recette)**.
+      **incrémental** (mtime). *(Patch `v0.27.1` : **liaisons de l'arbre des délégations rendues visibles**
+      — tronc + branches theme-aware, `ac0226b`, doc `docs/qualite/v0.27.1.md`.)*
 - [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
       *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
       600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
