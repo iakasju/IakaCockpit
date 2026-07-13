@@ -220,10 +220,21 @@ fn is_local_model(normalized: &str) -> bool {
     normalized.contains("llama") || normalized.contains("ollama")
 }
 
+/// Normalise un nom de modèle avant matching : minuscules, trim, et **retrait d'un suffixe
+/// entre crochets** type `[1m]` (variante contexte long des transcripts sous-agents, ex.
+/// `claude-opus-4-8[1m]` → `claude-opus-4-8`). Le suffixe crochet ne participe pas au prix.
+pub fn normalize_model(model: &str) -> String {
+    let lower = model.trim().to_lowercase();
+    match lower.split_once('[') {
+        Some((head, _)) => head.trim().to_string(),
+        None => lower,
+    }
+}
+
 /// Résout le prix d'un modèle dans une table `(prefixe, prix)` par **plus long préfixe**.
 /// Modèle local → `Some(ZERO)`. Aucun préfixe → `None` (untariffed).
 fn match_price(model: &str, table: &[(String, ModelPrice)]) -> Option<ModelPrice> {
-    let norm = model.trim().to_lowercase();
+    let norm = normalize_model(model);
     if norm.is_empty() {
         return None;
     }
@@ -478,6 +489,18 @@ mod tests {
         let s = match_price("claude-sonnet-4-5-20250929", &t).unwrap();
         assert_eq!(s.output, 15.0);
         assert_eq!(s.input, 3.0);
+    }
+
+    #[test]
+    fn normalise_le_suffixe_entre_crochets() {
+        // `[1m]` (contexte long des sous-agents) est retiré avant le prix.
+        assert_eq!(normalize_model("claude-opus-4-8[1m]"), "claude-opus-4-8");
+        assert_eq!(normalize_model("  GPT-5-Codex  "), "gpt-5-codex");
+        assert_eq!(normalize_model("claude-sonnet-4-5"), "claude-sonnet-4-5");
+        // Le prix se résout malgré le suffixe crochet.
+        let t = table();
+        let p = match_price("claude-opus-4-8[1m]", &t).unwrap();
+        assert_eq!(p.output, 75.0);
     }
 
     #[test]

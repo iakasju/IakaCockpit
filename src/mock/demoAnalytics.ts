@@ -295,6 +295,8 @@ export function makeDemoAnalytics(now: number, range: TimeRange): AnalyticsModel
     agentTime: fmtHours(14.33 * factor),
     delegations: Math.round(186 * factor),
     perAgent,
+    // Démo : quelques délégations « non attribuables » pour montrer la mention honnête P3.
+    attributionUnavailable: Math.round(3 * factor),
     costTrend,
     topDelegations: DEMO_TOP_DELEGATIONS,
     // Callout de variation : n'a de sens que sur une fenêtre ≥ 7 j (jour le plus cher vs

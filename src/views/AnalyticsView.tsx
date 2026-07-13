@@ -23,6 +23,7 @@ import {
 } from "../hooks/useAnalytics";
 import { usePortfolioCost } from "../hooks/usePortfolioCost";
 import { useDelegationsByAgent } from "../hooks/useDelegationsByAgent";
+import { useAgentAttribution } from "../hooks/useAgentAttribution";
 import { makeDemoAnalytics } from "../mock/demoAnalytics";
 import { PerimeterColumn } from "../components/analytics/PerimeterColumn";
 import { TimeRangeControl } from "../components/analytics/TimeRangeControl";
@@ -77,7 +78,18 @@ export function AnalyticsView({
   const projectScope = scope === ALL_SCOPE ? undefined : scope;
   const cost = usePortfolioCost(range.fromMs, range.toMs, projectScope);
   const delegations = useDelegationsByAgent(range.fromMs, range.toMs, projectScope);
-  const real = useAnalytics(economy, activity, scope, range, cost, delegations);
+  // Attribution par agent RÉELLE (L30-P3) : tokens + coût par agent nommé via `outputFile`.
+  // Range + scope-aware (le Rust lit les transcripts sous-agents ; le front ne lit rien).
+  const attribution = useAgentAttribution(range.fromMs, range.toMs, projectScope);
+  const real = useAnalytics(
+    economy,
+    activity,
+    scope,
+    range,
+    cost,
+    delegations,
+    attribution,
+  );
   const demo = useMemo(() => makeDemoAnalytics(now, range), [now, range]);
 
   // Fusion démo PAR CHAMP (recette L30-P1) : en dev (`demoOn`), on prend le RÉEL là où il

@@ -12,6 +12,7 @@ import type {
   ProjectActivity,
   AnalyticsCost,
   AgentDelegations,
+  AgentAttribution,
 } from "../api/backend";
 
 const NOW = new Date(2026, 6, 13, 12, 0, 0).getTime(); // 13 juil. 2026, midi local
@@ -207,6 +208,45 @@ describe("deriveAnalytics — délégations RÉELLES par agent (L30-P2)", () => 
     const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, []);
     expect(m.delegations).toBe(0);
     expect(m.perAgentDelegations).toBeNull();
+  });
+});
+
+describe("deriveAnalytics — attribution par agent RÉELLE (L30-P3)", () => {
+  const DELEG: AgentDelegations[] = [
+    { agent: "gimli", count: 3, total_ms: 90_000, avg_ms: 30_000 },
+  ];
+  const ATTRIB: AgentAttribution = {
+    agents: [
+      { agent: "gimli", tokens: 1_000_000, cost: 12, delegations: 3, model: "claude-opus-4-8[1m]", untariffed: false },
+      { agent: "legolas", tokens: 400_000, cost: 0, delegations: 2, model: "mistral-x", untariffed: true },
+    ],
+    unavailable: 2,
+    priced_at: "2026-07-13",
+  };
+
+  it("remplit perAgent depuis l'attribution réelle (tokens/coût), fusionne durées par nom", () => {
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, DELEG, ATTRIB);
+    expect(m.perAgent).toHaveLength(2);
+    // Tri tokens desc : gimli (1 M) devant legolas (400 k).
+    const gimli = m.perAgent![0];
+    expect(gimli.name).toBe("gimli");
+    expect(gimli.tokens).toBe(1_000_000);
+    expect(gimli.cost).toBe(12); // tarifé
+    expect(gimli.runner).toBe("claude-opus-4-8[1m]"); // resolvedModel
+    expect(gimli.share).toBeCloseTo(1_000_000 / 1_400_000, 5);
+    // Fusion par nom : durée moyenne des délégations (30 s) → "30 s".
+    expect(gimli.turns).toBe(3);
+    expect(gimli.avgDuration).toBe("30 s");
+    // legolas : modèle untariffed → coût affiché null (« — »), pas 0 fabriqué.
+    expect(m.perAgent![1].cost).toBeNull();
+    expect(m.attributionUnavailable).toBe(2);
+  });
+
+  it("attribution vide → perAgent null (placeholder), unavailable 0", () => {
+    const empty: AgentAttribution = { agents: [], unavailable: 0, priced_at: null };
+    const m = deriveAnalytics(ECONOMY, ACTIVITY, ALL_SCOPE, range7, null, DELEG, empty);
+    expect(m.perAgent).toBeNull();
+    expect(m.attributionUnavailable).toBe(0);
   });
 });
 

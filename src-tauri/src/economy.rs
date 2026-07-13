@@ -746,6 +746,310 @@ pub fn delegations_by_agent(
     }
 }
 
+// ==================== Attribution par agent RÉELLE (tokens + coût, L30-P3) ====================
+//
+// Source PROUVÉE (spike Aragorn, 50 délégations réelles) : dans le transcript PARENT, chaque
+// `tool_use "Agent"`/`"Task"` a un `tool_result` dont le champ RACINE `toolUseResult` porte
+// `resolvedModel` (modèle réel du sous-agent, ex. `claude-opus-4-8[1m]`) et `outputFile`
+// (chemin absolu du transcript JSONL du sous-agent). En ouvrant `outputFile` et en sommant les
+// 4 buckets `usage` de ses lignes, on obtient les tokens RÉELS de la délégation → coût =
+// tokens × prix(normalize(resolvedModel)). `subagent_type` (nom d'agent) vient du tool_use
+// apparié. `outputFile` disparu (tmp éphémère) → délégation `unavailable` (JAMAIS fabriquée).
+
+/// Tokens + coût RÉELS attribués à un agent nommé (miroir TS `AgentTokens`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AgentTokens {
+    pub agent: String,
+    /// Somme des 4 buckets `usage` des transcripts sous-agents attribués à cet agent.
+    pub tokens: u64,
+    /// Coût $ dérivé (prix du `resolvedModel` appliqué aux 4 buckets). 0 si modèle hors table.
+    pub cost: f64,
+    /// Nombre de délégations RÉELLEMENT attribuées (outputFile lu) pour cet agent.
+    pub delegations: u64,
+    /// Modèle représentatif (celui de la plus grosse délégation en tokens).
+    pub model: String,
+    /// Vrai si au moins une délégation a un modèle hors table de prix (coût non compté).
+    pub untariffed: bool,
+}
+
+/// Attribution par agent sur la période (miroir TS `AgentAttribution`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AgentAttribution {
+    pub agents: Vec<AgentTokens>,
+    /// Délégations DANS la période/scope non attribuables (outputFile absent/illisible).
+    pub unavailable: u32,
+    /// Date de la table de prix (`pricing.json`), ou `None` (embarquée).
+    pub priced_at: Option<String>,
+}
+
+/// Accumulateur d'attribution : `tool_use_id` → (agent, ts_use_ms) côté use, et
+/// `tool_use_id` → (resolvedModel, outputFile) côté result.
+#[derive(Default)]
+struct AttribAcc {
+    uses: HashMap<String, (String, i64)>,
+    results: HashMap<String, (String, String)>,
+}
+
+/// Intègre UNE ligne JSONL du transcript PARENT dans l'accumulateur d'attribution. PUR/testable.
+/// Filtre le scope projet (`project_of(cwd)`) comme les autres agrégats. Collecte : (a) les
+/// `tool_use` de délégation (agent + ts) ; (b) les `tool_result` porteurs de `toolUseResult`
+/// (resolvedModel + outputFile), appariés par `tool_use_id`.
+fn fold_attrib_line(acc: &mut AttribAcc, line: &str, project: Option<&str>) {
+    let line = line.trim();
+    if line.is_empty() {
+        return;
+    }
+    let v: Value = match serde_json::from_str(line) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let ty = match v.get("type").and_then(Value::as_str) {
+        Some(t) => t,
+        None => return,
+    };
+    if let Some(target) = project {
+        if v.get("cwd")
+            .and_then(Value::as_str)
+            .and_then(project_of)
+            .as_deref()
+            != Some(target)
+        {
+            return;
+        }
+    }
+    let ms = v
+        .get("timestamp")
+        .and_then(Value::as_str)
+        .and_then(iso_to_epoch_ms);
+    // Le `toolUseResult` (racine du record) porte resolvedModel/outputFile de CETTE délégation.
+    let tur = v.get("toolUseResult");
+    let blocks = match v.get("message").and_then(|m| m.get("content")) {
+        Some(Value::Array(b)) => b,
+        _ => return,
+    };
+    for blk in blocks {
+        let bt = blk.get("type").and_then(Value::as_str).unwrap_or("");
+        match (ty, bt) {
+            ("assistant", "tool_use") => {
+                let name = blk.get("name").and_then(Value::as_str).unwrap_or("");
+                if !crate::transcript::is_delegation_tool(name) {
+                    continue;
+                }
+                let id = match blk.get("id").and_then(Value::as_str) {
+                    Some(i) => i.to_string(),
+                    None => continue,
+                };
+                let agent = blk
+                    .get("input")
+                    .and_then(|i| i.get("subagent_type"))
+                    .and_then(Value::as_str);
+                if let (Some(agent), Some(ms)) = (agent, ms) {
+                    acc.uses.insert(id, (agent.to_string(), ms));
+                }
+            }
+            ("user", "tool_result") => {
+                let id = match blk.get("tool_use_id").and_then(Value::as_str) {
+                    Some(i) => i.to_string(),
+                    None => continue,
+                };
+                // resolvedModel + outputFile vivent dans le `toolUseResult` racine du record.
+                let (Some(tur), true) = (tur, !acc.results.contains_key(&id)) else {
+                    continue;
+                };
+                let model = tur
+                    .get("resolvedModel")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
+                let output = tur
+                    .get("outputFile")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
+                acc.results.insert(id, (model, output));
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Somme les 4 buckets `usage` sur les lignes JSONL d'un transcript sous-agent. Défensif : une
+/// ligne sans `usage` (à la racine OU sous `message`) est ignorée. PUR/testable.
+fn sum_usage_jsonl(content: &str) -> (u64, u64, u64, u64) {
+    let (mut i, mut o, mut cw, mut cr) = (0u64, 0u64, 0u64, 0u64);
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let v: Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        // `message.usage` (record assistant) OU `usage` à la racine (variante).
+        let usage = v
+            .get("message")
+            .and_then(|m| m.get("usage"))
+            .or_else(|| v.get("usage"));
+        let usage = match usage {
+            Some(u) => u,
+            None => continue,
+        };
+        let n = |k: &str| usage.get(k).and_then(Value::as_u64).unwrap_or(0);
+        i += n("input_tokens");
+        o += n("output_tokens");
+        cw += n("cache_creation_input_tokens");
+        cr += n("cache_read_input_tokens");
+    }
+    (i, o, cw, cr)
+}
+
+/// Lit un `outputFile` et somme ses 4 buckets `usage`. `None` si le fichier est illisible
+/// (tmp éphémère disparu) → la délégation sera comptée `unavailable`, JAMAIS fabriquée.
+fn read_output_usage(path: &str) -> Option<(u64, u64, u64, u64)> {
+    if path.trim().is_empty() {
+        return None;
+    }
+    let content = std::fs::read_to_string(path).ok()?;
+    Some(sum_usage_jsonl(&content))
+}
+
+/// Finalise l'attribution : pour chaque délégation DANS la période, lit son `outputFile` via
+/// `reader` (injectable pour les tests), somme les tokens, tarife via `pricing`. `outputFile`
+/// absent/illisible → `unavailable`. Agrège par agent (modèle représentatif = plus grosse
+/// délégation), tri tokens desc. PUR (l'I/O disque est dans `reader`).
+fn finalize_attrib<F>(
+    acc: AttribAcc,
+    from: i64,
+    to: i64,
+    pricing: &PricingSnapshot,
+    reader: F,
+) -> AgentAttribution
+where
+    F: Fn(&str) -> Option<(u64, u64, u64, u64)>,
+{
+    // agent → (tokens, cost, delegations, dominant_model, dominant_tokens, untariffed)
+    let mut by_agent: HashMap<String, (u64, f64, u64, String, u64, bool)> = HashMap::new();
+    let mut unavailable: u32 = 0;
+
+    for (id, (agent, use_ms)) in &acc.uses {
+        if *use_ms < from || *use_ms > to {
+            continue;
+        }
+        let (model, output) = match acc.results.get(id) {
+            Some(r) => r,
+            None => {
+                // Délégation sans tool_result (donc sans outputFile) → non attribuable.
+                unavailable += 1;
+                continue;
+            }
+        };
+        let (i, o, cw, cr) = match reader(output) {
+            Some(sums) => sums,
+            None => {
+                unavailable += 1;
+                continue;
+            }
+        };
+        let tokens = i + o + cw + cr;
+        let (cost, untariffed) = match pricing.price_for(model) {
+            Some(p) => (p.cost_of(i, o, cw, cr), false),
+            None => (0.0, true),
+        };
+        let e = by_agent
+            .entry(agent.clone())
+            .or_insert((0, 0.0, 0, String::new(), 0, false));
+        e.0 += tokens;
+        e.1 += cost;
+        e.2 += 1;
+        if tokens >= e.4 {
+            e.4 = tokens;
+            e.3 = model.clone();
+        }
+        e.5 |= untariffed;
+    }
+
+    let mut agents: Vec<AgentTokens> = by_agent
+        .into_iter()
+        .map(
+            |(agent, (tokens, cost, delegations, model, _dom, untariffed))| AgentTokens {
+                agent,
+                tokens,
+                cost,
+                delegations,
+                model,
+                untariffed,
+            },
+        )
+        .collect();
+    agents.sort_by(|a, b| b.tokens.cmp(&a.tokens).then_with(|| a.agent.cmp(&b.agent)));
+
+    AgentAttribution {
+        agents,
+        unavailable,
+        priced_at: pricing.priced_at.clone(),
+    }
+}
+
+/// Scanne les transcripts parents et attribue tokens+coût par agent. Défensif. Ne lit les
+/// `outputFile` QUE des délégations retenues (période + scope) — pas des milliers de fichiers.
+fn scan_projects_attrib(
+    projects_dir: &Path,
+    from: i64,
+    to: i64,
+    pricing: &PricingSnapshot,
+    project: Option<&str>,
+) -> AgentAttribution {
+    let mut acc = AttribAcc::default();
+    if let Ok(dirs) = std::fs::read_dir(projects_dir) {
+        for sess_dir in dirs.flatten() {
+            let files = match std::fs::read_dir(sess_dir.path()) {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+            for f in files.flatten() {
+                let p = f.path();
+                if p.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+                    continue;
+                }
+                if let Ok(content) = std::fs::read_to_string(&p) {
+                    for line in content.lines() {
+                        fold_attrib_line(&mut acc, line, project);
+                    }
+                }
+            }
+        }
+    }
+    finalize_attrib(acc, from, to, pricing, read_output_usage)
+}
+
+/// Commande : attribution par agent RÉELLE (tokens + coût) sur la période `[from, to]` (ms
+/// epoch), scopée par projet (`project`). Lit les transcripts sous-agents via `outputFile`.
+/// `unavailable` = délégations dont l'`outputFile` a expiré (jamais de token fabriqué). Lecture
+/// seule, défensive (vide / hors-Tauri → agents vides, unavailable 0).
+#[tauri::command]
+pub fn agent_attribution(
+    from: i64,
+    to: i64,
+    project: Option<String>,
+) -> Result<AgentAttribution, String> {
+    let pricing = pricing::snapshot();
+    match claude_projects_dir() {
+        Some(dir) => Ok(scan_projects_attrib(
+            &dir,
+            from,
+            to,
+            &pricing,
+            project.as_deref(),
+        )),
+        None => Ok(AgentAttribution {
+            agents: Vec::new(),
+            unavailable: 0,
+            priced_at: pricing.priced_at.clone(),
+        }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1215,6 +1519,129 @@ mod tests {
         assert!((a + b - all).abs() < 1e-6, "a+b doit reconstituer le total");
         // proj-b (3 M input) coûte plus que proj-a (1 M) → scopes bien distincts.
         assert!(b > a);
+    }
+
+    // ---------------- Attribution par agent RÉELLE (L30-P3) ----------------
+
+    #[test]
+    fn sum_usage_jsonl_somme_les_quatre_buckets() {
+        // Deux lignes assistant avec usage (message.usage) + une variante racine `usage`.
+        let content = concat!(
+            r#"{"type":"assistant","message":{"usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":10,"cache_read_input_tokens":5}}}"#,
+            "\n",
+            r#"{"type":"assistant","message":{"usage":{"input_tokens":200,"output_tokens":80}}}"#,
+            "\n",
+            r#"{"type":"user","message":{"content":"pas d'usage"}}"#,
+            "\n",
+            r#"{"usage":{"input_tokens":1,"output_tokens":1}}"#,
+        );
+        let (i, o, cw, cr) = sum_usage_jsonl(content);
+        assert_eq!((i, o, cw, cr), (301, 131, 10, 5));
+    }
+
+    /// Construit un accumulateur d'attribution depuis des lignes de transcript parent.
+    fn attrib_acc_from(lines: &[&str], project: Option<&str>) -> AttribAcc {
+        let mut acc = AttribAcc::default();
+        for l in lines {
+            fold_attrib_line(&mut acc, l, project);
+        }
+        acc
+    }
+
+    #[test]
+    fn attribution_via_output_file_donne_tokens_et_cout() {
+        let pr = pricing_test();
+        // Parent : une délégation Agent→gimli + son tool_result avec toolUseResult(outputFile,
+        // resolvedModel opus[1m]). L'outputFile est lu par un `reader` injecté (fixture).
+        let use_line = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/iakacockpit","message":{"content":[{"type":"tool_use","id":"tu1","name":"Agent","input":{"subagent_type":"gimli","description":"code"}}]}}"#;
+        let res_line = r#"{"type":"user","timestamp":"2026-06-30T10:05:00Z","cwd":"/w/iakacockpit","toolUseResult":{"resolvedModel":"claude-opus-4-8[1m]","outputFile":"/tmp/sub-gimli.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"tu1","content":"ok"}]}}"#;
+        let acc = attrib_acc_from(&[use_line, res_line], None);
+
+        // Reader fixture : 1M output sous opus (75 $/M) → coût 75.
+        let reader = |path: &str| -> Option<(u64, u64, u64, u64)> {
+            assert_eq!(path, "/tmp/sub-gimli.jsonl");
+            Some((0, 1_000_000, 0, 0))
+        };
+        let out = finalize_attrib(acc, 0, i64::MAX, &pr, reader);
+        assert_eq!(out.unavailable, 0);
+        assert_eq!(out.agents.len(), 1);
+        let a = &out.agents[0];
+        assert_eq!(a.agent, "gimli");
+        assert_eq!(a.tokens, 1_000_000);
+        assert!((a.cost - 75.0).abs() < 1e-6, "coût opus = {}", a.cost);
+        assert_eq!(a.delegations, 1);
+        assert_eq!(a.model, "claude-opus-4-8[1m]"); // resolvedModel brut conservé
+        assert!(!a.untariffed);
+    }
+
+    #[test]
+    fn attribution_output_file_manquant_incremente_unavailable_sans_fabriquer() {
+        let pr = pricing_test();
+        let use_line = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/p","message":{"content":[{"type":"tool_use","id":"tu2","name":"Task","input":{"subagent_type":"legolas","description":"gate"}}]}}"#;
+        let res_line = r#"{"type":"user","timestamp":"2026-06-30T10:05:00Z","cwd":"/w/p","toolUseResult":{"resolvedModel":"claude-sonnet-4-5","outputFile":"/tmp/disparu.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"tu2","content":"ok"}]}}"#;
+        let acc = attrib_acc_from(&[use_line, res_line], None);
+        // Reader = fichier disparu → None.
+        let out = finalize_attrib(acc, 0, i64::MAX, &pr, |_| None);
+        assert_eq!(out.unavailable, 1);
+        assert!(out.agents.is_empty(), "aucun token fabriqué");
+    }
+
+    #[test]
+    fn attribution_delegation_sans_result_est_unavailable() {
+        let pr = pricing_test();
+        // tool_use sans tool_result apparié → non attribuable.
+        let use_line = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/p","message":{"content":[{"type":"tool_use","id":"tu3","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#;
+        let acc = attrib_acc_from(&[use_line], None);
+        let out = finalize_attrib(acc, 0, i64::MAX, &pr, |_| Some((10, 10, 0, 0)));
+        assert_eq!(out.unavailable, 1);
+        assert!(out.agents.is_empty());
+    }
+
+    #[test]
+    fn attribution_borne_periode_et_scope_projet() {
+        let pr = pricing_test();
+        // Deux délégations, projets distincts, dates distinctes.
+        let use_a = r#"{"type":"assistant","timestamp":"2026-06-30T10:00:00Z","cwd":"/w/proj-a","message":{"content":[{"type":"tool_use","id":"a","name":"Agent","input":{"subagent_type":"gimli","description":"x"}}]}}"#;
+        let res_a = r#"{"type":"user","timestamp":"2026-06-30T10:01:00Z","cwd":"/w/proj-a","toolUseResult":{"resolvedModel":"claude-sonnet-4-5","outputFile":"/tmp/a.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"a","content":"ok"}]}}"#;
+        let use_b = r#"{"type":"assistant","timestamp":"2026-06-20T10:00:00Z","cwd":"/w/proj-b","message":{"content":[{"type":"tool_use","id":"b","name":"Agent","input":{"subagent_type":"legolas","description":"y"}}]}}"#;
+        let res_b = r#"{"type":"user","timestamp":"2026-06-20T10:01:00Z","cwd":"/w/proj-b","toolUseResult":{"resolvedModel":"claude-sonnet-4-5","outputFile":"/tmp/b.jsonl"},"message":{"content":[{"type":"tool_result","tool_use_id":"b","content":"ok"}]}}"#;
+        let reader = |_: &str| Some((0u64, 100u64, 0u64, 0u64));
+
+        // Scope proj-a (fold-level) : seule la délégation A est collectée.
+        let acc_a = attrib_acc_from(&[use_a, res_a, use_b, res_b], Some("proj-a"));
+        let out_a = finalize_attrib(acc_a, 0, i64::MAX, &pr, reader);
+        assert_eq!(out_a.agents.len(), 1);
+        assert_eq!(out_a.agents[0].agent, "gimli");
+
+        // ALL mais fenêtre period excluant B (avant le 25 juin) : seule A dans la période.
+        let acc_all = attrib_acc_from(&[use_a, res_a, use_b, res_b], None);
+        let from = iso_to_epoch_ms("2026-06-25T00:00:00Z").unwrap();
+        let out_win = finalize_attrib(acc_all, from, i64::MAX, &pr, reader);
+        assert_eq!(out_win.agents.len(), 1);
+        assert_eq!(out_win.agents[0].agent, "gimli");
+    }
+
+    #[test]
+    fn read_output_usage_fichier_reel_puis_absent() {
+        // Écrit un petit transcript sous-agent dans le temp dir, le lit, le supprime.
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("iaka-attrib-test-{}.jsonl", std::process::id()));
+        let ps = path.to_string_lossy().to_string();
+        std::fs::write(
+            &path,
+            concat!(
+                r#"{"type":"assistant","message":{"usage":{"input_tokens":300,"output_tokens":100}}}"#,
+                "\n",
+                r#"{"type":"assistant","message":{"usage":{"input_tokens":0,"output_tokens":50}}}"#,
+            ),
+        )
+        .unwrap();
+        assert_eq!(read_output_usage(&ps), Some((300, 150, 0, 0)));
+        std::fs::remove_file(&path).unwrap();
+        // Disparu → None (jamais de fabrication).
+        assert_eq!(read_output_usage(&ps), None);
+        // Chemin vide → None.
+        assert_eq!(read_output_usage(""), None);
     }
 
     #[test]

@@ -15,10 +15,12 @@
  */
 import { useMemo } from "react";
 import type { TreemapItem } from "../components/TreemapPanel";
+import { fmtDurationMs } from "../components/analytics/format";
 import type {
   ProjectActivity,
   AnalyticsCost,
   AgentDelegations,
+  AgentAttribution,
 } from "../api/backend";
 
 /** Périmètre spécial « tout le portefeuille » (somme cross-projet). */
@@ -173,8 +175,11 @@ export interface AnalyticsModel {
   agentTime: string | null;
   /** Placeholder/démo : nombre de délégations. */
   delegations: number | null;
-  /** Placeholder/démo : attribution par agent nommé (P3). */
+  /** RÉEL (L30-P3) là où l'attribution existe (tokens/coût via outputFile), sinon placeholder/
+   *  démo : attribution par agent nommé. */
   perAgent: AgentDatum[] | null;
+  /** RÉEL (L30-P3) : délégations DANS la période/scope non attribuables (outputFile expiré). */
+  attributionUnavailable: number;
   /** Placeholder/démo : $ / jour (sparkline V1). */
   costTrend: number[] | null;
   /** Placeholder/démo : top délégations chères (V1). */
@@ -201,6 +206,18 @@ export interface AnalyticsModel {
 
 const ALL_LABEL = "ALL · portefeuille";
 
+/** Palette déterministe pour les agents RÉELS (pas de couleur de team côté transcript). */
+const AGENT_PALETTE = [
+  "#3b82f6",
+  "#30a46c",
+  "#8e4ec6",
+  "#f5a623",
+  "#12a594",
+  "#e5484d",
+  "#e93d82",
+  "#64748b",
+];
+
 /** `YYYY-MM-DD` → ms (minuit local). Renvoie `NaN` si mal formé. */
 function dateToMs(date: string): number {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
@@ -219,6 +236,8 @@ function dateToMs(date: string): number {
  *                 Rust. `null`/absent → coût en placeholder/démo (garde « zéro fausse donnée »).
  * @param delegations délégations RÉELLES par agent (L30-P2, `useDelegationsByAgent`) — déjà
  *                 range-bornées côté Rust. `null`/absent → placeholder.
+ * @param attribution attribution par agent RÉELLE (L30-P3, `useAgentAttribution`) : tokens/coût
+ *                 par agent nommé via `outputFile`. `null`/absent/vide → perAgent placeholder/démo.
  */
 export function deriveAnalytics(
   economy: readonly TreemapItem[],
@@ -227,6 +246,7 @@ export function deriveAnalytics(
   range: TimeRange,
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
+  attribution?: AgentAttribution | null,
 ): AnalyticsModel {
   // Périmètre : projets triés tokens desc + ALL (somme) en tête.
   const projects = [...economy].sort((a, b) => b.tokens - a.tokens);
@@ -328,6 +348,34 @@ export function deriveAnalytics(
         }))
       : null;
 
+  // --- Attribution par agent RÉELLE (L30-P3) : tokens + coût $ par agent nommé via `outputFile`.
+  // Remplit `perAgent` (treemap V1 + classement V4) UNIQUEMENT depuis ce qui a été réellement
+  // sommé (zéro fausse donnée). Fusion best-effort avec les délégations (comptes/durées) par nom
+  // d'agent → colonnes Tours/Durée du classement quand elles existent. `unavailable` = tracé à
+  // part (mention honnête). Modèle inconnu (`untariffed`) → coût affiché `null` (« — »).
+  const attrib = attribution ?? null;
+  const delegByName = new Map((delg ?? []).map((d) => [d.agent, d]));
+  const attribTotal =
+    attrib != null ? attrib.agents.reduce((s, a) => s + a.tokens, 0) : 0;
+  const realPerAgent: AgentDatum[] | null =
+    attrib != null && attrib.agents.length > 0
+      ? attrib.agents.map((a, i) => {
+          const dd = delegByName.get(a.agent);
+          return {
+            name: a.agent,
+            role: "",
+            runner: a.model || "—",
+            color: AGENT_PALETTE[i % AGENT_PALETTE.length],
+            tokens: a.tokens,
+            cost: a.untariffed ? null : a.cost,
+            share: attribTotal > 0 ? a.tokens / attribTotal : 0,
+            turns: dd ? dd.count : null,
+            avgDuration: dd && dd.avg_ms > 0 ? fmtDurationMs(dd.avg_ms) : null,
+          };
+        })
+      : null;
+  const attributionUnavailable = attrib?.unavailable ?? 0;
+
   return {
     perimeter,
     scopeId: scope,
@@ -345,10 +393,12 @@ export function deriveAnalytics(
     // Délégations RÉELLES par agent (L30-P2) : KPI (somme) + par-agent (comptes/durées).
     delegations: realDelegations,
     perAgentDelegations: realPerAgentDeleg,
-    // Toujours placeholder/démo (pas de source réelle propre) : temps agent, tokens/$ par
-    // agent nommé, top délégations chères ($), callout de variation, heures/jour, compare.
+    // Attribution par agent RÉELLE (L30-P3) là où l'`outputFile` existe ; sinon placeholder/démo.
+    perAgent: realPerAgent,
+    attributionUnavailable,
+    // Toujours placeholder/démo (pas de source réelle propre) : temps agent, top délégations
+    // chères ($), callout de variation, heures/jour, compare.
     agentTime: null,
-    perAgent: null,
     topDelegations: null,
     variation: null,
     agentHours: null,
@@ -378,6 +428,8 @@ export function mergeDemo(real: AnalyticsModel, demo: AnalyticsModel): Analytics
     agentTime: real.agentTime ?? demo.agentTime,
     delegations: real.delegations ?? demo.delegations,
     perAgent: real.perAgent ?? demo.perAgent,
+    // `unavailable` = fait RÉEL (jamais démo) : nombre de délégations non attribuables observées.
+    attributionUnavailable: real.attributionUnavailable,
     costTrend: real.costTrend ?? demo.costTrend,
     topDelegations: real.topDelegations ?? demo.topDelegations,
     variation: real.variation ?? demo.variation,
@@ -404,9 +456,11 @@ export function useAnalytics(
   range: TimeRange,
   cost?: AnalyticsCost | null,
   delegations?: AgentDelegations[] | null,
+  attribution?: AgentAttribution | null,
 ): AnalyticsModel {
   return useMemo(
-    () => deriveAnalytics(economy, activity, scope, range, cost, delegations),
-    [economy, activity, scope, range, cost, delegations],
+    () =>
+      deriveAnalytics(economy, activity, scope, range, cost, delegations, attribution),
+    [economy, activity, scope, range, cost, delegations, attribution],
   );
 }

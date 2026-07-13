@@ -276,6 +276,25 @@ export interface AgentDelegations {
   avg_ms: number;
 }
 
+/** Tokens + coût RÉELS attribués à un agent nommé via son `outputFile` (miroir
+ *  `economy::AgentTokens`, L30-P3). Modèle = `resolvedModel` représentatif. */
+export interface AgentTokens {
+  agent: string;
+  tokens: number;
+  cost: number;
+  delegations: number;
+  model: string;
+  untariffed: boolean;
+}
+
+/** Attribution par agent RÉELLE sur une période (miroir `economy::AgentAttribution`).
+ *  `unavailable` = délégations dont l'`outputFile` a expiré (jamais de token fabriqué). */
+export interface AgentAttribution {
+  agents: AgentTokens[];
+  unavailable: number;
+  priced_at: string | null;
+}
+
 /**
  * Coût $ réel sur la période `[fromMs, toMs]` (bornes du sélecteur de plage Analytics), dérivé
  * des transcripts + table de prix par modèle côté Rust. `project` scope au projet du Périmètre
@@ -306,6 +325,25 @@ export function delegationsByAgent(
   project?: string,
 ): Promise<AgentDelegations[]> {
   return call<AgentDelegations[]>("delegations_by_agent", {
+    from: Math.round(fromMs),
+    to: Math.round(toMs),
+    project,
+  });
+}
+
+/**
+ * Attribution par agent RÉELLE (tokens + coût $ par agent nommé) sur la période `[fromMs, toMs]`,
+ * dérivée des transcripts sous-agents (`toolUseResult.outputFile` + `resolvedModel`) côté Rust.
+ * `project` scope au projet du Périmètre. Le front ne lit AUCUN outputFile (c'est le Rust).
+ * `unavailable` = délégations dont le transcript éphémère a expiré (jamais de token fabriqué).
+ * Lecture seule ; vide si aucun transcript / hors Tauri.
+ */
+export function agentAttribution(
+  fromMs: number,
+  toMs: number,
+  project?: string,
+): Promise<AgentAttribution> {
+  return call<AgentAttribution>("agent_attribution", {
     from: Math.round(fromMs),
     to: Math.round(toMs),
     project,
@@ -877,6 +915,7 @@ export const backend = {
   portfolioActivity,
   analyticsCost,
   delegationsByAgent,
+  agentAttribution,
   addProject,
   listExtraProjects,
   pickDirectory,

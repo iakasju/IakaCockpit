@@ -537,6 +537,7 @@ export const en: Resources = {
     modelCostSub: "observed $ cost per model over the range",
     untariffedNote: "Model(s) without pricing (cost not counted): {{models}}",
     perAgentNoSource: "Tokens and cost per named agent: no real source — delegated sub-agents run outside the parent transcript (per-agent attribution = coming).",
+    attributionUnavailable: "{{count}} delegation(s) not attributable — ephemeral transcript(s) expired.",
   },
 
   teams: {

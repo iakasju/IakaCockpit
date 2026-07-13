@@ -96,7 +96,8 @@ export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Ele
 
   return (
     <div className="ana-persp">
-      {/* Classement tokens/$ par agent — attribution par NOM = démo/P3 (placeholder en prod). */}
+      {/* Classement tokens/$ par agent — RÉEL (L30-P3) via `outputFile` là où dispo ; sinon
+          démo (dev) ou note honnête (prod sans attribution). */}
       <div className="vcard">
         <div className="vh">
           <span className="vt">{t("analytics.leaderboard")}</span>
@@ -154,6 +155,14 @@ export function PerspectiveAgents({ model }: { model: AnalyticsModel }): JSX.Ele
           /* Compaction : pas de gros skeleton — seulement la note honnête (POURQUOI tokens/$
              par agent n'ont pas de source). Réapparaîtra en table dès que le réel existe. */
           <p className="hypnote compact">{t("analytics.perAgentNoSource")}</p>
+        )}
+        {/* Honnêteté GRAVÉE (L30-P3) : délégations dont le transcript éphémère a expiré. */}
+        {model.attributionUnavailable > 0 && (
+          <p className="hypnote compact">
+            {t("analytics.attributionUnavailable", {
+              count: model.attributionUnavailable,
+            })}
+          </p>
         )}
       </div>
 

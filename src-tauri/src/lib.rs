@@ -76,6 +76,7 @@ pub fn run() {
             economy::portfolio_activity,
             economy::analytics_cost,
             economy::delegations_by_agent,
+            economy::agent_attribution,
             services::check_services,
             config::get_root,
             config::set_root,
