@@ -415,8 +415,16 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       signalé ; `analytics_cost` par période/modèle) + **délégations réelles par agent** (`delegations_by_agent`,
       comptes/durées via `tool_use Agent`↔`tool_result`). **Zéro fausse donnée** : tokens/$ **par agent nommé** =
       placeholder (sous-agents hors transcript parent, `isSidechain` toujours false → **spike différé**), + temps
-      agent / top délégations $ / callout variation / comparaison V3 = placeholder. Différés : spike per-agent
-      tokens/$, V3 bi-période réel, **compaction UI « zones vides »**.
+      agent / top délégations $ / callout variation / comparaison V3 = placeholder.
+      *(**Recette terrain + Analytics réel scellés `v0.27.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.27.0.md` ;
+      gates PASS — Rust 320 + front 670. 9 commits `684b1dd`→`c279ec4`.)* Ajouté : **compaction** des zones vides ;
+      **scope par projet** (coût+délégations suivent le Périmètre) ; **attribution par agent RÉELLE** (tokens+coût
+      via le lien `toolUseResult.outputFile` — le sous-agent tourne hors du transcript parent ; `unavailable` si
+      tmp éphémère expiré, jamais fabriqué) ; **précalcul KPIs** (`AggIndex` en cache, build background → clics
+      instantanés, coût calculé à la requête) ; **fix V2** (évolution scopée projet) ; **coordinateur en premier
+      rang** attribué **par projet** puis agrégé par nom (Aragorn ≠ Odin en scope ALL, plus de fusion). Différés :
+      **comparaison V3 bi-période réelle + hypothèse V3-B** (re-tarifage par agent désormais possible), index
+      **incrémental** (mtime), **arbre des délégations : liaisons non visibles (TODO recette)**.
 - [x] **L29** — **Swimlanes d'agents** (arbre de délégation HORIZONTAL, variante B) → `specs/instructions/L29-swimlanes-agents.md`
       *(**LIVRÉ, scellé `v0.24.0`** 2026-07-13 ; doc qualité `docs/qualite/v0.24.0.md` ; gate Legolas PASS —
       600 front, Rust intact).* Rendu **horizontal compact** des délégations = **variante B** du mock
