@@ -371,6 +371,9 @@ export const fr = {
     statusWorking: "travaille",
     statusIdle: "attend",
     addressTitle: "S'adresser à {{agent}} (@{{agent}})",
+    launchTitle: "Lancer {{agent}} comme runner réel (slot dédié)",
+    launchDisabledTitle:
+      "{{agent}} : runner défini mais non câblé (non exécutable) — lancement indisponible",
   },
 
   tasks: {

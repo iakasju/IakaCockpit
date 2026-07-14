@@ -76,6 +76,61 @@ describe("Roster — widget team (L8/D6)", () => {
     expect(onPick).toHaveBeenCalledWith("Legolas");
   });
 
+  it("L31-P1 : bouton « lancer » appelle onLaunch(agent), distinct du @agent (onPick)", () => {
+    const onPick = vi.fn();
+    const onLaunch = vi.fn();
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        onPick={onPick}
+        onLaunch={onLaunch}
+      />,
+    );
+    // Un bouton « lancer » par agent (aria-label i18n).
+    const launch = screen.getByLabelText(
+      "Lancer Gimli comme runner réel (slot dédié)",
+    );
+    fireEvent.click(launch);
+    expect(onLaunch).toHaveBeenCalledWith("Gimli");
+    // Le @agent (onPick) reste indépendant : cliquer l'item n'appelle pas onLaunch.
+    fireEvent.click(screen.getByTitle("S'adresser à Legolas (@Legolas)"));
+    expect(onPick).toHaveBeenCalledWith("Legolas");
+    expect(onLaunch).toHaveBeenCalledTimes(1);
+  });
+
+  it("L31-P1 : sans onLaunch → aucun bouton « lancer » (rétro-compat L8)", () => {
+    render(<Roster currentAgent="Aragorn" pending={false} onPick={() => {}} />);
+    expect(
+      screen.queryByLabelText("Lancer Gimli comme runner réel (slot dédié)"),
+    ).toBeNull();
+  });
+
+  it("L31-P1 : bouton désactivé pour un agent non lançable (runner non câblé)", () => {
+    const onLaunch = vi.fn();
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        onPick={() => {}}
+        onLaunch={onLaunch}
+        launchableAgents={new Set(["gimli"])}
+      />,
+    );
+    // Gimli lançable : bouton actif.
+    const gimli = screen.getByLabelText(
+      "Lancer Gimli comme runner réel (slot dédié)",
+    ) as HTMLButtonElement;
+    expect(gimli.disabled).toBe(false);
+    // Legolas hors ensemble : bouton désactivé (« défini, non câblé »).
+    const legolas = screen.getByLabelText(
+      "Legolas : runner défini mais non câblé (non exécutable) — lancement indisponible",
+    ) as HTMLButtonElement;
+    expect(legolas.disabled).toBe(true);
+    fireEvent.click(legolas);
+    expect(onLaunch).not.toHaveBeenCalled();
+  });
+
   it("L9-A5 : rend une vignette par agent quand resolveAvatar renvoie une URL, pastille conservée", () => {
     const resolveAvatar = (agent: string) =>
       `/assets/${agent.toLowerCase()}.png`;

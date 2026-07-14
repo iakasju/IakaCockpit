@@ -118,6 +118,23 @@ export interface WorkingViewProps {
    * (garde L10 : le `PtyTerminal` de chaque projet survit au switch d'onglet).
    */
   onSelectConversation: (projectId: string) => void;
+  /**
+   * L31-P1 — ferme un ONGLET : App dispatche selon la nature de la conversation
+   * (slot d'agent → ferme SON pty+conversation ; coordinateur = projet → retrait de la
+   * Table L23). Absent → repli sur `onRemoveFromWork` (rétro-compat mono-slot).
+   */
+  onCloseTab?: (projectId: string) => void;
+  /**
+   * L31-P1 — lance un agent de la team ACTIVE comme SON runner réel (slot propre au
+   * projet), depuis le roster. App résout le vrai projet + le runner de l'agent. Absent →
+   * pas de bouton « lancer » dans le roster (rétro-compat).
+   */
+  onLaunchAgent?: (agent: string) => void;
+  /**
+   * L31-P1 — agents lançables (runner exécutable), noms MINUSCULES. Passé au roster pour
+   * désactiver « lancer » sur un runner défini-mais-non-câblé. Absent → tous lançables.
+   */
+  launchableAgents?: ReadonlySet<string>;
   onSetMode: (projectId: string, mode: ConvMode) => void;
   onSetAgent: (projectId: string, agent: string) => void;
   /** Envoie un message EN TANT QUE `agent` dans la conversation `projectId`. */
@@ -189,6 +206,9 @@ export function WorkingView({
   prepareEntries,
   onDismissPrepare,
   onSelectConversation,
+  onCloseTab,
+  onLaunchAgent,
+  launchableAgents,
   onSetMode,
   onSetAgent,
   onSend,
@@ -413,7 +433,7 @@ export function WorkingView({
           conversations={conversations}
           activeProjectId={active?.projectId ?? null}
           onSelect={onSelectConversation}
-          onClose={onRemoveFromWork}
+          onClose={onCloseTab ?? onRemoveFromWork}
           onAddProject={onAddProject}
           focus={focus}
           onToggleFocus={onToggleFocus ?? (() => {})}
@@ -733,6 +753,8 @@ export function WorkingView({
             pending={active.pending}
             workingAgents={workingAgents}
             onPick={pickAgent}
+            onLaunch={onLaunchAgent}
+            launchableAgents={launchableAgents}
             resolveAvatar={resolveAvatar}
           />
           {/*

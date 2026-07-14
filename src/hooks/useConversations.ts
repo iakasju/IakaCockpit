@@ -18,8 +18,36 @@
  * (arbitrage #5), AUCUNE orchestration côté cockpit. Historique mémoire (D3).
  */
 import { useCallback, useRef, useState } from "react";
+import type { AgentRunnerKind } from "./useTeams";
 
 export type ConvMode = "chat" | "shell";
+
+/**
+ * Métadonnées d'un SLOT d'agent (L31-P1). Un slot d'agent = un agent de la team lancé
+ * comme SON PROPRE runner réel (codex/claude-code), en plus du coordinateur. Le slot
+ * vit dans `useConversations` comme une conversation à part entière, avec un `projectId`
+ * **synthétique** (`slotIdFor`) distinct du vrai projet ; `realProjectId` conserve le
+ * lien vers le projet réel (team, avatars, plan). Absent d'une conversation = slot
+ * COORDINATEUR (comportement historique : `projectId` = vrai id projet).
+ */
+export interface SlotInfo {
+  /** Vrai id de projet (pour résoudre team/avatars/plan). */
+  realProjectId: string;
+  /** Nom de l'agent qui possède ce slot (ex. "Gimli"). */
+  agent: string;
+  /** Runner conceptuel de l'agent (exécutable : codex/claude-code). */
+  runner: AgentRunnerKind;
+  /** Modèle de l'agent (vide = défaut du runner). */
+  model: string;
+}
+
+/**
+ * Id de slot d'agent DÉTERMINISTE (clé d'unicité + dédoublonnage idempotent). Distinct
+ * de tout vrai id projet grâce au séparateur `::agent::`. Insensible à la casse du nom.
+ */
+export function slotIdFor(realProjectId: string, agent: string): string {
+  return `${realProjectId}::agent::${agent.toLowerCase()}`;
+}
 
 /**
  * Source d'une conversation (L25), DISTINCTE du toggle d'affichage `mode` (chat|shell) :
@@ -95,6 +123,13 @@ export interface Conversation {
   attachedSessionId: string | null;
   /** Chemin du transcript externe tailé en lecture seule — présent si `attached`, `null` sinon. */
   attachedTranscriptPath: string | null;
+  /**
+   * L31-P1 — métadonnées de SLOT d'agent. Absent (défaut) = slot COORDINATEUR
+   * (comportement historique : `projectId` = vrai id projet). Présent = slot d'un
+   * agent lancé comme SON runner réel : `projectId` est alors un id de slot synthétique
+   * (`slotIdFor`) et `slot.realProjectId` porte le vrai projet (team/avatars/plan).
+   */
+  slot?: SlotInfo;
   /** Historique chat multi-tours (mémoire MVP, D3). */
   history: ChatTurn[];
   /** Un tour de chat est en vol (UI : saisie désactivée + statut roster). */
@@ -153,6 +188,21 @@ export interface UseConversations {
     agent?: string,
     initialHistory?: ChatTurn[],
     attach?: AttachInfo,
+  ) => string;
+  /**
+   * Ouvre (ou ré-active) un SLOT D'AGENT (L31-P1) : une conversation `owned` propre à un
+   * agent lancé comme SON runner réel, EN PLUS du coordinateur. Clé synthétique
+   * (`slotIdFor(realProjectId, agent)`) → **idempotent** (ré-active sans double spawn si
+   * le slot existe déjà). `runner`/`model` = ceux de l'agent (déjà résolus par l'appelant
+   * depuis la team). Le PTY est spawné par `WorkingView` (garde L10 : monté une fois).
+   * Renvoie le `ptySessionId` du slot.
+   */
+  openAgentSlot: (
+    realProjectId: string,
+    cwd: string,
+    agent: string,
+    runner: AgentRunnerKind,
+    model: string,
   ) => string;
   /** Sélectionne une conversation existante comme active. */
   setActive: (projectId: string) => void;
@@ -261,6 +311,48 @@ export function useConversations(): UseConversations {
     [],
   );
 
+  const openAgentSlot = useCallback(
+    (
+      realProjectId: string,
+      cwd: string,
+      agent: string,
+      runner: AgentRunnerKind,
+      model: string,
+    ): string => {
+      const slotId = slotIdFor(realProjectId, agent);
+      // Idempotent : un slot (realProjectId, agent) déjà ouvert est ré-activé, JAMAIS
+      // recréé → pas de double spawn (garde L10 côté rendu + garde de spawn usePty).
+      const existing = convRef.current.find((c) => c.projectId === slotId);
+      if (existing) {
+        setActiveProjectId(existing.projectId);
+        return existing.ptySessionId;
+      }
+      const ptySessionId = nextSessionId(slotId);
+      const conv: Conversation = {
+        projectId: slotId,
+        title: agent, // libellé d'onglet = nom de l'agent (slot)
+        cwd,
+        mode: "chat", // défaut = chat (calque coordinateur)
+        agent,
+        ptySessionId,
+        // Un slot d'agent est TOUJOURS `owned` (le cockpit lance son runner).
+        source: "owned",
+        attachedSessionId: null,
+        attachedTranscriptPath: null,
+        slot: { realProjectId, agent, runner, model },
+        history: [],
+        pending: false,
+        error: null,
+      };
+      setConversations((prev) =>
+        prev.some((c) => c.projectId === slotId) ? prev : [...prev, conv],
+      );
+      setActiveProjectId(slotId);
+      return ptySessionId;
+    },
+    [],
+  );
+
   const setActive = useCallback((projectId: string): void => {
     setActiveProjectId(projectId);
   }, []);
@@ -346,6 +438,7 @@ export function useConversations(): UseConversations {
     activeProjectId,
     active,
     openConversation,
+    openAgentSlot,
     setActive,
     setMode,
     setAgent,

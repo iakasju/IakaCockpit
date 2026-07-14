@@ -2331,6 +2331,47 @@ button {
   flex: none;
   order: 3;
 }
+/* L31-P1 — chaque ligne roster = item cliquable (@agent) + bouton « lancer » (slot
+   runner réel), deux boutons frères alignés. */
+.rosterlist > li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.rosterlist > li > .rosteritem {
+  flex: 1;
+  min-width: 0;
+}
+.rlaunch {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: 0.12s;
+}
+.rosterlist > li:hover .rlaunch {
+  opacity: 1;
+}
+.rlaunch:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 18%, transparent);
+  color: var(--green);
+}
+.rlaunch:disabled {
+  cursor: not-allowed;
+  color: var(--text-3);
+}
+.rosterlist > li:hover .rlaunch:disabled {
+  opacity: 0.35;
+}
 
 /* ===== Panneau « Tâches en cours » (Working, colonne droite, sous Roster) ===== */
 /* Plan vivant (L18 #3) — checklist du dernier snapshot de plan (main courante). */

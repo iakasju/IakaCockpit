@@ -33,6 +33,17 @@ export interface RosterProps {
   /** Clic sur un agent → adresser directement (`@agent:`). */
   onPick: (agent: string) => void;
   /**
+   * L31-P1 — lancer un agent comme SON runner réel (slot propre au projet), DISTINCT du
+   * `@agent` (persona du chat). Absent → aucun bouton « lancer » (rétro-compat L8/tests).
+   */
+  onLaunch?: (agent: string) => void;
+  /**
+   * L31-P1 — agents dont le runner est EXÉCUTABLE (codex/claude-code), noms en
+   * MINUSCULES. Un agent hors de cet ensemble a un runner **défini mais non câblé** →
+   * bouton « lancer » désactivé (honnête). Absent → tous lançables (secours/tests).
+   */
+  launchableAgents?: ReadonlySet<string>;
+  /**
    * Résolveur de vignette par nom d'agent (L9). `null`/absent → pastille seule
    * (rendu L8). JAMAIS d'image cassée : `onError` retombe aussi sur la pastille.
    */
@@ -59,6 +70,8 @@ export function Roster({
   pending,
   workingAgents,
   onPick,
+  onLaunch,
+  launchableAgents,
   resolveAvatar,
 }: RosterProps): JSX.Element {
   const { t } = useTranslation();
@@ -80,8 +93,14 @@ export function Roster({
             ? t(`roles.${m.royaume.toLowerCase()}`)
             : m.royaume;
           const avatarUrl = resolveAvatar?.(m.agent) ?? null;
+          // L31-P1 — un agent est lançable si son runner est exécutable (ensemble fourni
+          // par App) ; à défaut d'ensemble, on considère tout lançable (secours/tests).
+          const launchable =
+            !launchableAgents || launchableAgents.has(m.agent.toLowerCase());
           return (
             <li key={m.agent}>
+              {/* L31-P1 — l'item et le bouton « lancer » sont deux boutons FRÈRES
+                  (jamais imbriqués : button-in-button invalide). */}
               <button
                 type="button"
                 className={`rosteritem${isCurrent ? " current" : ""}`}
@@ -102,6 +121,26 @@ export function Roster({
                 </span>
                 <span className="rstate">{status}</span>
               </button>
+              {onLaunch && (
+                <button
+                  type="button"
+                  className="rlaunch"
+                  disabled={!launchable}
+                  aria-label={
+                    launchable
+                      ? t("roster.launchTitle", { agent: m.agent })
+                      : t("roster.launchDisabledTitle", { agent: m.agent })
+                  }
+                  title={
+                    launchable
+                      ? t("roster.launchTitle", { agent: m.agent })
+                      : t("roster.launchDisabledTitle", { agent: m.agent })
+                  }
+                  onClick={() => onLaunch(m.agent)}
+                >
+                  ▶
+                </button>
+              )}
             </li>
           );
         })}

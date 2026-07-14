@@ -371,6 +371,9 @@ export const en: Resources = {
     statusWorking: "working",
     statusIdle: "idle",
     addressTitle: "Address {{agent}} (@{{agent}})",
+    launchTitle: "Launch {{agent}} as a real runner (dedicated slot)",
+    launchDisabledTitle:
+      "{{agent}}: runner defined but not wired (not executable) — launch unavailable",
   },
 
   tasks: {

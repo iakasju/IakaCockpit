@@ -139,6 +139,124 @@ describe("WorkingView — runner du coordinateur (L11/P3)", () => {
   });
 });
 
+describe("WorkingView — slots multi-runners (L31-P1)", () => {
+  const COORD = conv({
+    projectId: "p1",
+    title: "p1",
+    agent: "Aragorn",
+    ptySessionId: "s-coord",
+    mode: "shell",
+  });
+  const SLOT = conv({
+    projectId: "p1::agent::gimli",
+    title: "Gimli",
+    agent: "Gimli",
+    ptySessionId: "s-gimli",
+    mode: "shell",
+    slot: {
+      realProjectId: "p1",
+      agent: "Gimli",
+      runner: "codex",
+      model: "",
+    },
+  });
+  const resolveRunner = (projectId: string): ResolvedRunner =>
+    projectId === "p1::agent::gimli"
+      ? { kind: "codex", model: "", coordinator: "Gimli" }
+      : { kind: "claude-code", model: "", coordinator: "Aragorn" };
+
+  function renderMulti(
+    active: Conversation,
+    extra: Partial<Parameters<typeof WorkingView>[0]> = {},
+  ) {
+    return rtlRender(
+      <WorkingView
+        worksetProjects={[]}
+        conversations={[COORD, SLOT]}
+        active={active}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
+        onSelectConversation={() => {}}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={() => {}}
+        onStartRunner={() => {}}
+        onRequestNextStep={() => {}}
+        resolveRunner={resolveRunner}
+        {...extra}
+      />,
+    );
+  }
+
+  it("garde L10 : coordinateur + slot d'agent → LES DEUX PtyTerminal montés (jamais démonté)", () => {
+    renderMulti(COORD);
+    // Deux terminaux montés (l'un visible, l'autre caché en CSS) — garde L10.
+    const ptys = screen.getAllByTestId("pty");
+    expect(ptys).toHaveLength(2);
+    const kinds = ptys.map((p) => p.getAttribute("data-runner")).sort();
+    expect(kinds).toEqual(["claude-code", "codex"]);
+  });
+
+  it("garde L10 : basculer l'active vers le slot ne démonte AUCUN PtyTerminal", () => {
+    const { rerender } = renderMulti(COORD);
+    expect(screen.getAllByTestId("pty")).toHaveLength(2);
+    // Bascule l'active vers le slot d'agent (switch d'onglet).
+    rerender(
+      <WorkingView
+        worksetProjects={[]}
+        conversations={[COORD, SLOT]}
+        active={SLOT}
+        pty={PTY_STUB}
+        nextStepResult={null}
+        nextStepLoading={false}
+        nextStepError={null}
+        onOpenProject={() => {}}
+        onAddProject={() => {}}
+        onRemoveFromWork={() => {}}
+        onSelectConversation={() => {}}
+        onSetMode={() => {}}
+        onSetAgent={() => {}}
+        onSend={() => {}}
+        onStartRunner={() => {}}
+        onRequestNextStep={() => {}}
+        resolveRunner={resolveRunner}
+      />,
+    );
+    // Toujours 2 terminaux montés (aucun démontage au switch).
+    expect(screen.getAllByTestId("pty")).toHaveLength(2);
+  });
+
+  it("onCloseTab : fermer l'onglet du slot appelle onCloseTab avec le slotId (pas onRemoveFromWork)", () => {
+    const onCloseTab = vi.fn();
+    const onRemoveFromWork = vi.fn();
+    renderMulti(COORD, { onCloseTab, onRemoveFromWork });
+    fireEvent.click(screen.getByLabelText("Fermer l'onglet Gimli"));
+    expect(onCloseTab).toHaveBeenCalledWith("p1::agent::gimli");
+    expect(onRemoveFromWork).not.toHaveBeenCalled();
+  });
+
+  it("roster : onLaunchAgent branché → clic « lancer » remonte l'agent choisi", () => {
+    const onLaunchAgent = vi.fn();
+    renderMulti(COORD, {
+      onLaunchAgent,
+      rosterMembers: [
+        { royaume: "coordination", agent: "Aragorn", roleIndex: 1 },
+        { royaume: "fabrication", agent: "Gimli", roleIndex: 3 },
+      ],
+      launchableAgents: new Set(["aragorn", "gimli"]),
+    });
+    fireEvent.click(
+      screen.getByLabelText("Lancer Gimli comme runner réel (slot dédié)"),
+    );
+    expect(onLaunchAgent).toHaveBeenCalledWith("Gimli");
+  });
+});
+
 describe("WorkingView — @agent borné à la team (L11/C2)", () => {
   const ROSTER: DemoTeamMember[] = [
     { royaume: "ACCUEIL", agent: "Aragorn", roleIndex: 1 },

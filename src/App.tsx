@@ -12,7 +12,7 @@ import i18n from "./i18n";
 import { usePortfolio } from "./hooks/usePortfolio";
 import { useGridState } from "./hooks/useGridState";
 import { useConversations } from "./hooks/useConversations";
-import { useTeams } from "./hooks/useTeams";
+import { useTeams, isExecutableRunner } from "./hooks/useTeams";
 import { useRunnerViews } from "./hooks/useRunnerViews";
 import { useAgentTasks } from "./hooks/useAgentTasks";
 import { useEconomy } from "./hooks/useEconomy";
@@ -236,11 +236,31 @@ export default function App(): JSX.Element {
     });
   }, []);
 
+  // Vrai id de projet de la conversation active (L31-P1) : un SLOT d'agent a un
+  // `projectId` synthétique → on lit `slot.realProjectId` pour que team/avatars/roster
+  // restent ceux du VRAI projet. Coordinateur : `slot` absent → `projectId` = vrai projet.
+  const activeRealProjectId =
+    conversations.active?.slot?.realProjectId ??
+    conversations.active?.projectId ??
+    "";
+
   // Team du projet ACTIF (L11) : pilote les vignettes ET le roster. Hors conversation
   // active → team par défaut (`teamForProject("")` retombe sur le défaut).
   const activeTeam = useMemo(
-    () => teams.teamForProject(conversations.active?.projectId ?? ""),
-    [teams, conversations.active],
+    () => teams.teamForProject(activeRealProjectId),
+    [teams, activeRealProjectId],
+  );
+
+  // L31-P1 — agents lançables (runner exécutable) de la team active, noms MINUSCULES.
+  // Alimente le roster (bouton « lancer » désactivé pour un runner défini-non-câblé).
+  const launchableAgents = useMemo(
+    () =>
+      new Set(
+        activeTeam.agents
+          .filter((a) => isExecutableRunner(a.runner))
+          .map((a) => a.name.toLowerCase()),
+      ),
+    [activeTeam],
   );
 
   // Résolveur d'avatar (L9, reframé L11) : charte = thème app, casting + roster = team
@@ -312,10 +332,39 @@ export default function App(): JSX.Element {
         ? DEMO_TIMELINE
         : derivePlanTimeline([], now);
 
+  // Réf miroir des conversations pour `resolveRunner` : lit le slot courant sans mettre
+  // tout le tableau en dépendance (identité stable → pas de churn de rendu). Le slot est
+  // figé à la création → aucune lecture périmée qui compte.
+  const convListRef = useRef(conversations.conversations);
+  convListRef.current = conversations.conversations;
+
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
+  // L31-P1 — pour un SLOT D'AGENT (conversation avec `slot`), le runner/modèle = ceux de
+  // l'agent lui-même, et l'enforcement du Cadre est dérivé pour CET agent (pas le coord).
   const resolveRunner = useCallback(
-    (projectId: string): ResolvedRunner => {
+    (slotId: string): ResolvedRunner => {
+      const slot = convListRef.current.find(
+        (c) => c.projectId === slotId,
+      )?.slot;
+      if (slot) {
+        const team = teams.teamForProject(slot.realProjectId);
+        let allowedTools: string | undefined;
+        let systemPromptExtra: string | undefined;
+        if (team && frame.frame.teamId === team.id) {
+          const enf = deriveEnforcement(frame.frame, slot.agent);
+          allowedTools = enf.allowedTools ?? undefined;
+          systemPromptExtra = enf.systemPromptExtra || undefined;
+        }
+        return {
+          kind: slot.runner,
+          model: slot.model,
+          coordinator: slot.agent,
+          allowedTools,
+          systemPromptExtra,
+        };
+      }
+      const projectId = slotId;
       const team = teams.teamForProject(projectId);
       const coord = teams.coordinatorOf(team);
       // L22-P3 — enforcement du Cadre. On dérive allowlist + system-prompt du coordinateur
@@ -478,6 +527,33 @@ export default function App(): JSX.Element {
     conversations.convertToOwned(projectId);
   };
 
+  // L31-P1 — lancer un agent de la team ACTIVE comme SON runner réel (slot propre au
+  // projet), depuis le roster. Résout le VRAI projet de la conversation active (un slot
+  // d'agent hérite du projet réel via `slot.realProjectId`) puis :
+  //   - agent = coordinateur → il tourne DÉJÀ comme slot principal → on ré-active sa
+  //     conversation (pas de slot redondant) ;
+  //   - runner non exécutable → no-op (le bouton roster est déjà désactivé — double garde) ;
+  //   - sinon → ouvre un slot d'agent `owned` (idempotent : ré-active si déjà ouvert). Le
+  //     PTY est spawné par `WorkingView` (garde L10 : monté une fois, jamais démonté).
+  const launchAgentSlot = (agent: string): void => {
+    const active = conversations.active;
+    if (!active) return;
+    const realProjectId = active.slot?.realProjectId ?? active.projectId;
+    const team = teams.teamForProject(realProjectId);
+    const coord = teams.coordinatorOf(team);
+    const ag = teams.agentInTeam(team, agent);
+    if (!ag) return;
+    if (coord && ag.id === coord.id) {
+      // Le coordinateur = slot principal (la conversation du projet) : la ré-activer.
+      conversations.setActive(realProjectId);
+      return;
+    }
+    if (!isExecutableRunner(ag.runner)) return; // garde (bouton désactivé côté roster)
+    const project = worksetProjects.find((p) => p.id === realProjectId);
+    const cwd = project?.path ?? active.cwd;
+    conversations.openAgentSlot(realProjectId, cwd, ag.name, ag.runner, ag.model);
+  };
+
   // Bouton + de Working : import d'un dossier existant → portfolio + set de Work.
   const addProject = async (): Promise<void> => {
     const project = await portfolio.importProject();
@@ -510,6 +586,23 @@ export default function App(): JSX.Element {
       stopTailer: backend.transcriptTailStop,
       closeConversation: conversations.closeConversation,
     });
+  };
+
+  // L31-P1 — fermeture d'un ONGLET (× de ProjectTabs). Dispatche selon la nature :
+  //   - SLOT D'AGENT (conversation avec `slot`) → ferme SON pty (fermeture explicite,
+  //     sanctionnée hors garde L10) puis retire SA conversation ; ne touche NI au workset
+  //     NI au job de reprise (ce n'est pas un projet) ;
+  //   - COORDINATEUR (= le projet) → retrait de la Table L23 (comportement historique).
+  const closeTab = (projectId: string): void => {
+    const conv = conversations.conversations.find(
+      (c) => c.projectId === projectId,
+    );
+    if (conv?.slot) {
+      if (isExecutableRunner(conv.slot.runner)) void pty.close(conv.ptySessionId);
+      conversations.closeConversation(projectId);
+      return;
+    }
+    removeFromWorkAndPrepare(projectId);
   };
 
   return (
@@ -629,6 +722,9 @@ export default function App(): JSX.Element {
             prepareEntries={prepareResume.entries}
             onDismissPrepare={prepareResume.dismiss}
             onSelectConversation={conversations.setActive}
+            onCloseTab={closeTab}
+            onLaunchAgent={launchAgentSlot}
+            launchableAgents={launchableAgents}
             onSetMode={conversations.setMode}
             onSetAgent={conversations.setAgent}
             onSend={handleSend}

@@ -65,7 +65,14 @@ orchestration hétérogène automatique qu'aucun CLI ne supporte nativement.
   qui tourne / attend, en réel, plus le statut local MVP).
 - **P3 (horizon, NON promis)** — re-routage automatique des délégations (Option B).
 
-## 6. Arbitrages (à trancher par Stéphane)
+## 6. Arbitrages — TRANCHÉS par Stéphane (2026-07-14) : **« C + reco partout »**
+> AR-1 = **C hybride** (délégation native claude + slots multi-runners à la demande ; B = horizon).
+> AR-2 = **Ollama/LiteLLM en BANNIÈRE** pour l'MVP (runner « API » = suite). AR-3 = **slots
+> indépendants** (pas de re-routage). AR-4 = **lancement depuis le ROSTER** → slot + **multi-onglets
+> par projet** (calque L24). AR-5 = **statut vivant P2 dérivé du tailer** par slot. → On implémente
+> **P1 (slots multi-runners réels codex/claude)** puis P2.
+
+## 6bis. Arbitrages (formulation d'origine)
 - **AR-1 — Cible.** Option **C hybride** (reco) — délégation native claude + slots multi-runners à la
   demande ? OU vises-tu réellement **B** (re-routage auto hétérogène, horizon, gros et fragile) ?
 - **AR-2 — Ollama / LiteLLM.** Ces backends n'ont **pas de TUI native** (donc pas le modèle

@@ -5,6 +5,7 @@ import {
   DEFAULT_RESPONSIBLE,
   mentionPrefix,
   parseMention,
+  slotIdFor,
   type ChatTurn,
 } from "../hooks/useConversations";
 
@@ -269,6 +270,94 @@ describe("useConversations — source attachée / owned (L25)", () => {
     act(() => result.current.convertToOwned("p1"));
     // Même référence d'objet (patch renvoie `c` inchangé → pas de nouvel objet).
     expect(result.current.active).toBe(before);
+  });
+});
+
+describe("useConversations — slots multi-runners d'agent (L31-P1)", () => {
+  it("slotIdFor : id déterministe et distinct d'un vrai id projet (séparateur ::agent::)", () => {
+    expect(slotIdFor("iaka-demo", "Gimli")).toBe("iaka-demo::agent::gimli");
+    // Insensible à la casse du nom (dédoublonnage stable).
+    expect(slotIdFor("p1", "Legolas")).toBe(slotIdFor("p1", "legolas"));
+  });
+
+  it("openAgentSlot (runner exécutable) crée un slot owned DISTINCT + porte les métadonnées", () => {
+    const { result } = renderHook(() => useConversations());
+    // Le coordinateur (conversation historique du projet).
+    act(() => result.current.openConversation("p1", "p1", "/root/p1", "Aragorn"));
+    let sid = "";
+    act(() => {
+      sid = result.current.openAgentSlot(
+        "p1",
+        "/root/p1",
+        "Gimli",
+        "codex",
+        "gpt-5",
+      );
+    });
+    // Deux conversations : coordinateur + slot d'agent (multi-slots coexistent).
+    expect(result.current.conversations).toHaveLength(2);
+    const slotId = slotIdFor("p1", "Gimli");
+    const slot = result.current.conversations.find(
+      (c) => c.projectId === slotId,
+    )!;
+    expect(slot.source).toBe("owned");
+    expect(slot.agent).toBe("Gimli");
+    expect(slot.title).toBe("Gimli");
+    expect(slot.slot).toEqual({
+      realProjectId: "p1",
+      agent: "Gimli",
+      runner: "codex",
+      model: "gpt-5",
+    });
+    expect(slot.ptySessionId).toBe(sid);
+    // Le coordinateur reste SANS métadonnées de slot (rétro-compat).
+    const coord = result.current.conversations.find((c) => c.projectId === "p1")!;
+    expect(coord.slot).toBeUndefined();
+    // Le slot devient l'active.
+    expect(result.current.active?.projectId).toBe(slotId);
+  });
+
+  it("openAgentSlot est IDEMPOTENT : ré-active le même slot, jamais de doublon/2ᵉ spawn", () => {
+    const { result } = renderHook(() => useConversations());
+    let s1 = "";
+    act(() => {
+      s1 = result.current.openAgentSlot("p1", "/root/p1", "Gimli", "codex", "");
+    });
+    // Ré-appel → même ptySessionId, pas de nouvelle conversation.
+    let s2 = "";
+    act(() => {
+      s2 = result.current.openAgentSlot("p1", "/root/p1", "Gimli", "codex", "");
+    });
+    expect(result.current.conversations).toHaveLength(1);
+    expect(s2).toBe(s1);
+  });
+
+  it("plusieurs slots d'agents coexistent pour un même projet (ids distincts)", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1", "Aragorn"));
+    act(() =>
+      result.current.openAgentSlot("p1", "/root/p1", "Gimli", "codex", ""),
+    );
+    act(() =>
+      result.current.openAgentSlot("p1", "/root/p1", "Legolas", "claude-code", ""),
+    );
+    expect(result.current.conversations).toHaveLength(3);
+    const ids = result.current.conversations.map((c) => c.projectId);
+    expect(new Set(ids).size).toBe(3);
+    expect(ids).toContain(slotIdFor("p1", "Gimli"));
+    expect(ids).toContain(slotIdFor("p1", "Legolas"));
+  });
+
+  it("closeConversation d'un slot d'agent ne touche pas la conversation coordinateur", () => {
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.openConversation("p1", "p1", "/root/p1", "Aragorn"));
+    act(() =>
+      result.current.openAgentSlot("p1", "/root/p1", "Gimli", "codex", ""),
+    );
+    act(() => result.current.closeConversation(slotIdFor("p1", "Gimli")));
+    // Le coordinateur (projet) survit.
+    expect(result.current.conversations).toHaveLength(1);
+    expect(result.current.conversations[0].projectId).toBe("p1");
   });
 });
 
