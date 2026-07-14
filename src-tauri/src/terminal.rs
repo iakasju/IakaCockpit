@@ -71,11 +71,22 @@ pub struct TermState(Mutex<HashMap<String, Session>>);
 ///
 /// Refuse :
 /// - un chemin relatif (le front fournit toujours un absolu : un projet du chapeau) ;
+/// - tout chemin contenant un composant `..` (`ParentDir`) : sans normalisation,
+///   `starts_with` matche littéralement `<root>/../../etc` alors que l'OS le résout
+///   HORS chapeau — un `cwd` légitime sous le chapeau n'a jamais besoin de `..` ;
 /// - tout chemin qui n'est pas un descendant (ou égal) de `root`.
 fn validate_cwd(root: &Path, cwd: &str) -> Result<PathBuf, String> {
     let candidate = Path::new(cwd);
     if !candidate.is_absolute() {
         return Err(format!("cwd doit être un chemin absolu : {cwd}"));
+    }
+    if candidate
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(format!(
+            "cwd contient un composant `..` (évasion possible) : {cwd}"
+        ));
     }
     if !candidate.starts_with(root) {
         return Err(format!(
@@ -816,6 +827,23 @@ mod tests {
         };
         let err = validate_cwd(&root(), escape).unwrap_err();
         assert!(err.contains("hors du chapeau"));
+    }
+
+    #[test]
+    fn cwd_avec_parent_dir_est_rejete() {
+        // `<root>/../../etc/passwd` matcherait `starts_with(root)` littéralement
+        // mais s'évade une fois résolu par l'OS : les composants `..` sont refusés.
+        let escape = root().join("..").join("..").join("etc").join("passwd");
+        let err = validate_cwd(&root(), &escape.to_string_lossy()).unwrap_err();
+        assert!(err.contains("`..`"));
+
+        let deep = root()
+            .join("sub")
+            .join("..")
+            .join("..")
+            .join("..")
+            .join("etc");
+        assert!(validate_cwd(&root(), &deep.to_string_lossy()).is_err());
     }
 
     #[test]
