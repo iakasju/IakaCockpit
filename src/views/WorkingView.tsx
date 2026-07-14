@@ -22,6 +22,7 @@ import type {
 } from "../hooks/useConversations";
 import { mentionPrefix, parseMention } from "../hooks/useConversations";
 import { deriveWorkingAgents } from "../hooks/runnerView";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { UsePty } from "../hooks/usePty";
 import { PtyTerminal } from "../components/PtyTerminal";
 import { ProjectTabs } from "../components/ProjectTabs";
@@ -221,8 +222,12 @@ export function WorkingView({
   // `showGantt` renommé `showTree` (même sémantique : bandeau central repliable).
   const [showTree, setShowTree] = useState(true);
   // Rendu du bandeau délégations (L29) : arbre vertical (L28) ↔ couloirs horizontaux
-  // (variante B). Défaut = « Couloirs » (variante B demandée). État local MVP.
-  const [delegView, setDelegView] = useState<"tree" | "swim">("swim");
+  // (variante B). Défaut = « Couloirs » (variante B demandée). PERSISTÉ (préférence UI
+  // front-pure, localStorage) → survit au rechargement ; premier lancement inchangé.
+  const [delegView, setDelegView] = usePersistentState<"tree" | "swim">(
+    "ui.working.delegView",
+    "swim",
+  );
   // GANTT DÉBRANCHÉ-GARDÉ (L28) : l'arbre des délégations le remplace en Travail. Le
   // Gantt reste dans le code (import `GanttPanel` + prop `timeline` conservés, cf. rendu
   // plus bas gardé sous ce flag) et redevient réactivable en passant ce flag à `true`.

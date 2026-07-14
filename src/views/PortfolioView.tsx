@@ -11,9 +11,9 @@
  *  - Scoping (tranche C) : anneau % ET treemap partagent le MÊME dénominateur = Σ tokens des
  *    projets de la TABLE uniquement.
  */
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Project, ProjectActivity } from "../api/backend";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { ProjectCard, type AvatarMember } from "../components/ProjectCard";
 import { ShelfRow } from "../components/ShelfRow";
 import { ActivityTimeline } from "../components/ActivityTimeline";
@@ -67,8 +67,12 @@ export function PortfolioView({
   const { t } = useTranslation();
 
   // L16-F1 — mode d'affichage de l'ATELIER SEUL (la table reste toujours en tuiles).
-  // Défaut = « Liste » (aucune régression visuelle) ; état local UI, sans persistance (MVP).
-  const [shelfView, setShelfView] = useState<"list" | "tiles">("list");
+  // Défaut = « Liste » (aucune régression visuelle). PERSISTÉ (préférence UI front-pure,
+  // localStorage) → le choix survit au rechargement ; premier lancement inchangé.
+  const [shelfView, setShelfView] = usePersistentState<"list" | "tiles">(
+    "ui.portfolio.shelfView",
+    "list",
+  );
 
   // KPIs RÉELS (dérivés des props, purs) — le coût/tokens reste un placeholder.
   const cleanCount = projects.filter((p) => p.is_git && !p.dirty).length;
