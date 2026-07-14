@@ -414,6 +414,7 @@ export function WorkingView({
           activeProjectId={active?.projectId ?? null}
           onSelect={onSelectConversation}
           onClose={onRemoveFromWork}
+          onAddProject={onAddProject}
           focus={focus}
           onToggleFocus={onToggleFocus ?? (() => {})}
         />

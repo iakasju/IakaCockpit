@@ -33,6 +33,12 @@ export interface ProjectTabsProps {
   onSelect: (projectId: string) => void;
   /** Ferme l'onglet = retire le projet de la Table (ferme PTY + conversation). */
   onClose: (projectId: string) => void;
+  /**
+   * Polish P4 — bouton « + » : ouvre un projet (réutilise le flux d'ajout de la worklist,
+   * `WorkingView.onAddProject` → import d'un dossier + pose sur la Table). Posé à DROITE des
+   * onglets, AVANT le switch plein écran (jamais dans la zone scrollable). Optionnel.
+   */
+  onAddProject?: () => void;
   /** L26 — la Table est-elle en mode focus (colonnes gauche masquées) ? */
   focus: boolean;
   /**
@@ -47,6 +53,7 @@ export function ProjectTabs({
   activeProjectId,
   onSelect,
   onClose,
+  onAddProject,
   focus,
   onToggleFocus,
 }: ProjectTabsProps): JSX.Element {
@@ -84,6 +91,20 @@ export function ProjectTabs({
           );
         })}
       </div>
+      {/* Polish P4 — bouton « + » : ouvre un projet (même flux que le « + » de la worklist).
+          FRÈRE de `.projtabs-list` (hors zone scrollable), posé juste AVANT le switch → il ne
+          casse ni le layout 2-lignes ni le collage à droite du `.fsswitch`. */}
+      {onAddProject && (
+        <button
+          type="button"
+          className="pt-add"
+          aria-label={t("working.tabAddAria")}
+          title={t("working.tabAddAria")}
+          onClick={onAddProject}
+        >
+          +
+        </button>
+      )}
       {/* L26 (recette v5) — SWITCH coulissant « plein écran », FRÈRE de `.projtabs-list`
           (hors zone scrollable) → il se pose collé au BORD DROIT de la barre (padding-right
           0 de `.projtabs`). Pastille à gauche = off, à droite = on ; piste colorée en `on`.

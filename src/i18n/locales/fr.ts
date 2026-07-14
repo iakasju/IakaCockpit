@@ -352,6 +352,7 @@ export const fr = {
     openAria: "Ouvrir le projet {{project}}",
     tabsAria: "Onglets des projets ouverts",
     tabCloseAria: "Fermer l'onglet {{project}}",
+    tabAddAria: "Ouvrir un projet sur la table",
     focusToggleEnterAria: "Plein écran (mode focus)",
     focusToggleExitAria: "Quitter le plein écran",
     removeAria: "Retirer {{project}} de la table",

@@ -139,6 +139,59 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
   });
 });
 
+describe("ProjectTabs — bouton « + » ouvrir un projet (polish P4)", () => {
+  it("rend le bouton « + » (aria-label) quand onAddProject est fourni", () => {
+    const { container } = render(
+      <ProjectTabs
+        conversations={[conv({ projectId: "alpha", title: "alpha" })]}
+        activeProjectId="alpha"
+        onSelect={() => {}}
+        onClose={() => {}}
+        onAddProject={() => {}}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    const add = screen.getByRole("button", {
+      name: /Ouvrir un projet sur la table/,
+    });
+    expect(add).toBeTruthy();
+    // Posé AVANT le switch plein écran, hors de la zone scrollable des onglets.
+    expect(container.querySelector(".pt-add")).not.toBeNull();
+    expect(container.querySelector(".projtabs-list")?.contains(add)).toBe(false);
+  });
+
+  it("clic sur « + » → onAddProject()", () => {
+    const onAddProject = vi.fn();
+    render(
+      <ProjectTabs
+        conversations={[]}
+        activeProjectId={null}
+        onSelect={() => {}}
+        onClose={() => {}}
+        onAddProject={onAddProject}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Ouvrir un projet sur la table/ }),
+    );
+    expect(onAddProject).toHaveBeenCalledTimes(1);
+  });
+
+  it("sans onAddProject : pas de bouton « + » rendu", () => {
+    const { container } = render(
+      <ProjectTabs
+        conversations={[]}
+        activeProjectId={null}
+        onSelect={() => {}}
+        onClose={() => {}}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    expect(container.querySelector(".pt-add")).toBeNull();
+  });
+});
+
 describe("ProjectTabs — switch plein écran de mode focus (L26 révision v2)", () => {
   function renderToggle(over: Partial<Parameters<typeof ProjectTabs>[0]> = {}) {
     return render(

@@ -352,6 +352,7 @@ export const en: Resources = {
     openAria: "Open project {{project}}",
     tabsAria: "Open project tabs",
     tabCloseAria: "Close {{project}} tab",
+    tabAddAria: "Open a project on the table",
     focusToggleEnterAria: "Fullscreen (focus mode)",
     focusToggleExitAria: "Exit fullscreen",
     removeAria: "Remove {{project}} from the table",

@@ -1738,6 +1738,26 @@ button {
   color: var(--text);
 }
 
+/* Polish P4 — bouton « + » (ouvrir un projet), FRÈRE de `.projtabs-list`, juste avant le
+   switch plein écran. Aligné comme `.fsswitch` (bas de barre), discret, hover accentué. */
+.pt-add {
+  align-self: center;
+  flex: 0 0 auto;
+  margin: 0 0 8px 6px;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.pt-add:hover {
+  color: var(--text);
+  background: var(--surface-2, transparent);
+}
+
 /* L26 (révision recette v3) — SWITCH coulissant « plein écran » poussé à DROITE de la
    barre d'onglets (`margin-left:auto`). Piste + pastille qui glisse : off = pastille à
    gauche / piste neutre ; on = pastille à droite / piste accent. Le glyphe `⤢` vit DANS
