@@ -225,6 +225,8 @@ describe("backend.ts (commandes métier L1)", () => {
       cwd: "/home/u/work/proj",
       cols: 100,
       rows: 30,
+      allowedTools: undefined,
+      systemPromptExtra: undefined,
     });
     expect(sess.session_id).toBe("11111111-2222-3333-4444-555555555555");
     expect(sess.transcript_path).toContain(".claude/projects/");
@@ -240,6 +242,32 @@ describe("backend.ts (commandes métier L1)", () => {
       cwd: "/home/u/work/p",
       cols: undefined,
       rows: undefined,
+      allowedTools: undefined,
+      systemPromptExtra: undefined,
+    });
+  });
+
+  it("ptyRunnerOpen transmet l'allowlist + le system-prompt du Cadre (L22-P3)", async () => {
+    invokeMock.mockResolvedValue({ session_id: "x", transcript_path: "" });
+    await ptyRunnerOpen(
+      "t3",
+      "claude-code",
+      "m",
+      "/home/u/work/p",
+      80,
+      24,
+      "Read,Edit,Bash",
+      "Obligation Cadre : commits atomiques.",
+    );
+    expect(invokeMock).toHaveBeenCalledWith("pty_runner_open", {
+      id: "t3",
+      kind: "claude-code",
+      model: "m",
+      cwd: "/home/u/work/p",
+      cols: 80,
+      rows: 24,
+      allowedTools: "Read,Edit,Bash",
+      systemPromptExtra: "Obligation Cadre : commits atomiques.",
     });
   });
 

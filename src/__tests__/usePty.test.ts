@@ -81,6 +81,8 @@ describe("usePty", () => {
       "/root/p1",
       80,
       24,
+      undefined,
+      undefined,
     );
     // session_id + transcript mémorisés dans la session (clef pour le tailer L10b).
     expect(result.current.sessions.s1.ready).toBe(true);
@@ -113,6 +115,34 @@ describe("usePty", () => {
     });
     act(() => outputCb.s1("\x1b[2K box claude"));
     expect(onData).toHaveBeenCalledWith("\x1b[2K box claude");
+  });
+
+  it("openRunner transmet l'allowlist + le system-prompt du Cadre à la façade (L22-P3)", async () => {
+    const { api } = mockPtyApi();
+    const { result } = renderHook(() => usePty(api));
+    await act(async () => {
+      await result.current.openRunner(
+        "s1",
+        "claude-code",
+        "m",
+        "/root/p1",
+        80,
+        24,
+        undefined,
+        "Read,Edit,Bash",
+        "Obligation Cadre.",
+      );
+    });
+    expect(api.ptyRunnerOpen).toHaveBeenCalledWith(
+      "s1",
+      "claude-code",
+      "m",
+      "/root/p1",
+      80,
+      24,
+      "Read,Edit,Bash",
+      "Obligation Cadre.",
+    );
   });
 
   it("write/resize délèguent aux commandes", async () => {

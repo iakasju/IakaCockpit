@@ -49,6 +49,7 @@ import { TeamsView } from "./views/TeamsView";
 import { CadreView } from "./views/CadreView";
 import { SettingsView } from "./views/SettingsView";
 import { useFrame } from "./hooks/useFrame";
+import { deriveEnforcement } from "./frame/enforcement";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { AvatarMember } from "./components/ProjectCard";
@@ -317,13 +318,28 @@ export default function App(): JSX.Element {
     (projectId: string): ResolvedRunner => {
       const team = teams.teamForProject(projectId);
       const coord = teams.coordinatorOf(team);
+      // L22-P3 — enforcement du Cadre. On dérive allowlist + system-prompt du coordinateur
+      // UNIQUEMENT quand le Cadre chargé (`frame.frame`) est bien celui de la team du projet
+      // (le hook `useFrame` porte UN cadre à la fois, aligné sur la team par défaut / la
+      // portée du sélecteur Cadre). Sinon → repli global (undefined = zéro régression). Le
+      // Cadre se charge en asynchrone : si le runner a déjà spawné avant, le repli global
+      // tient (spawn idempotent, cf. PtyTerminal) — limitation documentée (différé).
+      let allowedTools: string | undefined;
+      let systemPromptExtra: string | undefined;
+      if (team && coord?.name && frame.frame.teamId === team.id) {
+        const enf = deriveEnforcement(frame.frame, coord.name);
+        allowedTools = enf.allowedTools ?? undefined;
+        systemPromptExtra = enf.systemPromptExtra || undefined;
+      }
       return {
         kind: coord?.runner ?? "claude-code",
         model: coord?.model ?? "",
         coordinator: coord?.name ?? "—",
+        allowedTools,
+        systemPromptExtra,
       };
     },
-    [teams],
+    [teams, frame.frame],
   );
 
   // Ouvre la conversation d'un projet en routant vers le COORDINATEUR de sa team.

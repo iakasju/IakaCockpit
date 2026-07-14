@@ -161,6 +161,33 @@ export function resolveAgentRules(frame: Frame, agentId: string): Rule[] {
   return out;
 }
 
+/**
+ * Résout TOUS les skills effectivement appliqués à un agent : skills du template +
+ * skills en plus. Dédupliqué par id, ordre stable (template d'abord, puis extras).
+ * Retourne `[]` si agent introuvable. PUR — sert P3 (paragraphes de skills injectés
+ * dans le system-prompt du coordinateur) et l'aperçu UI.
+ */
+export function resolveAgentSkills(frame: Frame, agentId: string): Skill[] {
+  const agent = frame.agents.find((a) => a.id === agentId);
+  if (!agent) return [];
+  const template = frame.templates.find((t) => t.id === agent.templateId);
+
+  const skillById = new Map(frame.skills.map((s) => [s.id, s]));
+  const ids: string[] = [];
+  if (template) ids.push(...template.skillIds);
+  ids.push(...agent.extraSkillIds);
+
+  const seen = new Set<string>();
+  const out: Skill[] = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const sk = skillById.get(id);
+    if (sk) out.push(sk);
+  }
+  return out;
+}
+
 // --- Parse défensif (chargement de `frame.json`, AR-1) ---
 
 function str(v: unknown, def = ""): string {

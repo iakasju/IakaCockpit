@@ -76,6 +76,10 @@ export interface UsePty {
     cols: number,
     rows: number,
     opts?: OpenOptions,
+    /** L22-P3 : allowlist dérivée du Cadre (PRIME sur le réglage global côté Rust). */
+    allowedTools?: string,
+    /** L22-P3 : system-prompt dérivé du Cadre (ajouté après l'obligation L19 côté Rust). */
+    systemPromptExtra?: string,
   ) => Promise<RunnerSession>;
   write: (id: string, data: string) => Promise<void>;
   resize: (id: string, cols: number, rows: number) => Promise<void>;
@@ -183,6 +187,8 @@ export function usePty(api: Backend = backend): UsePty {
       cols: number,
       rows: number,
       opts?: OpenOptions,
+      allowedTools?: string,
+      systemPromptExtra?: string,
     ): Promise<RunnerSession> => {
       // Garde d'IDEMPOTENCE posé SYNCHRONEMENT : une seconde invocation quasi-synchrone
       // (StrictMode double-mount / remontage de vue) réutilise CE spawn au lieu de
@@ -200,6 +206,8 @@ export function usePty(api: Backend = backend): UsePty {
             cwd,
             cols,
             rows,
+            allowedTools,
+            systemPromptExtra,
           );
           setSession(id, {
             ready: true,

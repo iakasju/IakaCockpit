@@ -69,6 +69,16 @@ export interface ResolvedRunner {
   model: string;
   /** Nom du coordinateur (affiché en convhead). */
   coordinator: string;
+  /**
+   * L22-P3 : allowlist `--allowedTools` DÉRIVÉE du Cadre de la team (PRIME sur le réglage
+   * global). Absente/vide → repli global côté Rust (zéro régression).
+   */
+  allowedTools?: string;
+  /**
+   * L22-P3 : system-prompt DÉRIVÉ du Cadre (obligations + skills + brief du coordinateur),
+   * ajouté après l'obligation L19 côté Rust. Absent → seule L19 s'applique.
+   */
+  systemPromptExtra?: string;
 }
 
 export interface WorkingViewProps {
@@ -637,6 +647,8 @@ export function WorkingView({
                       pty={pty}
                       runnerKind={ptyRunnerKindFor(runner.kind)}
                       model={runner.model || undefined}
+                      allowedTools={runner.allowedTools}
+                      systemPromptExtra={runner.systemPromptExtra}
                     />
                   </div>
                 );

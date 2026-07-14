@@ -794,8 +794,11 @@ export interface RunnerSession {
 /**
  * Ouvre un chef-runner dans un PTY (`claude` en TUI native par défaut ; `cwd` validé
  * sous le chapeau côté Rust). `model` optionnel → défaut Rust (réglage global = P3).
- * Émet `pty://output|closed/{id}` (réutilise `onPtyOutput`/`onPtyClosed`). Renvoie le
- * `RunnerSession` (session_id + chemin de transcript prévu).
+ * `allowedTools` + `systemPromptExtra` (L22-P3) sont DÉRIVÉS du Cadre de la team du projet
+ * (façade `frameLoad` → `deriveEnforcement`) : l'allowlist PRIME sur le réglage global,
+ * le system-prompt est ajouté APRÈS l'obligation coordinateur L19 côté Rust. Absents/vides
+ * → repli global (zéro régression). Émet `pty://output|closed/{id}` (réutilise
+ * `onPtyOutput`/`onPtyClosed`). Renvoie le `RunnerSession` (session_id + transcript prévu).
  */
 export function ptyRunnerOpen(
   id: string,
@@ -804,7 +807,11 @@ export function ptyRunnerOpen(
   cwd?: string,
   cols?: number,
   rows?: number,
+  allowedTools?: string,
+  systemPromptExtra?: string,
 ): Promise<RunnerSession> {
+  // camelCase attendu par Tauri v2 pour les params en deux mots `allowed_tools` /
+  // `system_prompt_extra` (cf. `transcriptTailStart`) → `allowedTools`/`systemPromptExtra`.
   return call<RunnerSession>("pty_runner_open", {
     id,
     kind,
@@ -812,6 +819,8 @@ export function ptyRunnerOpen(
     cwd,
     cols,
     rows,
+    allowedTools,
+    systemPromptExtra,
   });
 }
 

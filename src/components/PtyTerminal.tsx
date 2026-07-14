@@ -40,6 +40,16 @@ export interface PtyTerminalProps {
   runnerKind?: ChefRunnerKind;
   /** Modèle du chef-runner (optionnel → défaut côté Rust ; réglage global = P3). */
   model?: string;
+  /**
+   * L22-P3 : allowlist `--allowedTools` DÉRIVÉE du Cadre de la team (PRIME sur le réglage
+   * global côté Rust). Absente → repli global (zéro régression).
+   */
+  allowedTools?: string;
+  /**
+   * L22-P3 : texte de system-prompt DÉRIVÉ du Cadre (obligations + skills + brief),
+   * ajouté APRÈS l'obligation coordinateur L19 côté Rust. Absent → seule L19 s'applique.
+   */
+  systemPromptExtra?: string;
 }
 
 export function PtyTerminal({
@@ -48,6 +58,8 @@ export function PtyTerminal({
   pty,
   runnerKind,
   model,
+  allowedTools,
+  systemPromptExtra,
 }: PtyTerminalProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
@@ -110,6 +122,8 @@ export function PtyTerminal({
         term.cols,
         term.rows,
         opts,
+        allowedTools,
+        systemPromptExtra,
       );
     } else {
       void ptyRef.current.open(sessionId, cwd, term.cols, term.rows, opts);
@@ -128,8 +142,11 @@ export function PtyTerminal({
       // effective passe par `usePty.close` (cycle de vie de la conversation / app).
     };
     // sessionId/cwd/runnerKind/model identifient la session : effet une fois par onglet
-    // (ptyRef est une réf stable, donc hors dépendances).
-  }, [sessionId, cwd, runnerKind, model]);
+    // (ptyRef est une réf stable, donc hors dépendances). allowedTools/systemPromptExtra
+    // (L22-P3) sont en deps mais le spawn est IDEMPOTENT (usePty.spawnRef) : si le Cadre
+    // se charge APRÈS le 1er spawn, l'effet rejoue mais NE respawne pas (rebind seul) —
+    // l'enforcement s'applique au spawn INITIAL, le repli global tient sinon (documenté).
+  }, [sessionId, cwd, runnerKind, model, allowedTools, systemPromptExtra]);
 
   return <div className="termmount" ref={mountRef} />;
 }
