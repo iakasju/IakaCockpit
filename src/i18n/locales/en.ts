@@ -631,6 +631,35 @@ export const en: Resources = {
     },
   },
 
+  handoff: {
+    badgeLocalTitle:
+      "This team was edited locally and diverges from the version delivered by the forge.",
+    badgeLocal: "edited locally",
+    badgeForgeTitle:
+      "Received from the forge — version {{version}}, imported on {{importedAt}}.",
+    badgeForge: "forge · {{hash}}",
+    imported: "“{{teamId}}” received (forge {{version}}).",
+    unchanged: "“{{teamId}}” unchanged (already up to date or local choice kept).",
+    invalid: "Delivery “{{teamId}}” unreadable: {{reason}}",
+    deferred: "Decision deferred.",
+    ariaLabel: "Handoff reception",
+    title: "Receive a team delivered by the forge",
+    intro:
+      "Import a team dropped in the handoff channel. Reception is non-destructive: a local edit is flagged, and a new delivery never replaces your changes without your consent.",
+    refresh: "Refresh",
+    empty: "No delivery in the channel.",
+    reimport: "Re-import",
+    import: "Import",
+    conflictAriaLabel: "Reception conflict",
+    conflictTitle: "Conflict on “{{teamId}}”.",
+    conflictBodyPre: " You edited this team locally (fingerprint ",
+    conflictBodyMid: ") and the forge proposes a new delivery (fingerprint ",
+    conflictBodyPost: "). What now?",
+    keepLocal: "Keep my local version",
+    takeForge: "Take the forge version (overwrites my changes)",
+    defer: "Defer",
+  },
+
   teamPicker: {
     dialogAria: "Link {{project}} to a team",
     title: "Link <0>{{project}}</0> to a team",

@@ -632,6 +632,35 @@ export const fr = {
     },
   },
 
+  handoff: {
+    badgeLocalTitle:
+      "Cette team a été éditée localement et diverge de la version livrée par la forge.",
+    badgeLocal: "modifié localement",
+    badgeForgeTitle:
+      "Réceptionné de la forge — version {{version}}, importé le {{importedAt}}.",
+    badgeForge: "forge · {{hash}}",
+    imported: "« {{teamId}} » réceptionnée (forge {{version}}).",
+    unchanged: "« {{teamId}} » inchangée (déjà à jour ou choix local conservé).",
+    invalid: "Livraison « {{teamId}} » illisible : {{reason}}",
+    deferred: "Décision différée.",
+    ariaLabel: "Réception de handoff",
+    title: "Réceptionner une team livrée par la forge",
+    intro:
+      "Importe une team déposée dans le canal de handoff. La réception est non destructive : une édition locale est signalée, et une nouvelle livraison ne remplace jamais vos modifications sans votre accord.",
+    refresh: "Rafraîchir",
+    empty: "Aucune livraison dans le canal.",
+    reimport: "Ré-importer",
+    import: "Importer",
+    conflictAriaLabel: "Conflit de réception",
+    conflictTitle: "Conflit sur « {{teamId}} ».",
+    conflictBodyPre: " Vous avez modifié cette team localement (empreinte ",
+    conflictBodyMid: ") et la forge propose une nouvelle livraison (empreinte ",
+    conflictBodyPost: "). Que faire ?",
+    keepLocal: "Garder ma version locale",
+    takeForge: "Prendre la version forge (écrase mes modifs)",
+    defer: "Différer",
+  },
+
   teamPicker: {
     dialogAria: "Relier {{project}} à une team",
     title: "Relier <0>{{project}}</0> à une team",
