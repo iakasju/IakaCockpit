@@ -312,10 +312,23 @@ Mets le plan à jour (statuts in_progress/completed) au fil de l'avancement.";
 
 /// Arguments du chef-runner `claude-code` (TUI native — PAS de `--print`, prouvé spike
 /// L10b). `--session-id` rend le transcript DÉTERMINISTE ; `--allowedTools` = allowlist
-/// (réglage global L10b/P3, défaut `CHEF_ALLOWED_TOOLS`), **jamais**
-/// `--dangerously-skip-permissions` ; `--append-system-prompt` porte l'obligation de rôle
-/// du coordinateur (L19). Schéma figé Rust.
-fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> {
+/// (réglage global L10b/P3, ou **dérivée du Cadre de la team** L22-P3, défaut
+/// `CHEF_ALLOWED_TOOLS`), **jamais** `--dangerously-skip-permissions` ;
+/// `--append-system-prompt` porte l'obligation de rôle du coordinateur (L19) **PUIS**,
+/// L22-P3, le `system_prompt_extra` dérivé du Cadre (obligations + paragraphes de skills
+/// et brief de l'agent coordinateur). L'extra est ajouté APRÈS L19 (jamais à sa place) ;
+/// une valeur `None`/vide laisse seulement l'obligation L19 (historique). Schéma figé Rust.
+fn chef_args(
+    session_id: &str,
+    model: &str,
+    allowed_tools: &str,
+    system_prompt_extra: Option<&str>,
+) -> Vec<String> {
+    let mut system_prompt = COORDINATOR_OBLIGATION.to_string();
+    if let Some(extra) = system_prompt_extra.map(str::trim).filter(|s| !s.is_empty()) {
+        system_prompt.push_str("\n\n");
+        system_prompt.push_str(extra);
+    }
     vec![
         "--session-id".to_string(),
         session_id.to_string(),
@@ -324,7 +337,7 @@ fn chef_args(session_id: &str, model: &str, allowed_tools: &str) -> Vec<String> 
         "--allowedTools".to_string(),
         allowed_tools.to_string(),
         "--append-system-prompt".to_string(),
-        COORDINATOR_OBLIGATION.to_string(),
+        system_prompt,
     ]
 }
 
@@ -366,15 +379,19 @@ fn codex_args(model: &str) -> Vec<String> {
 
 /// Construit la `RunnerSpec` d'un `kind`. `claude-code` → `claude` en TUI native avec
 /// `session_id` pré-généré, **modèle / allowlist / trust résolus depuis les réglages
-/// globaux** (L10b/P3) avec **fallback sur les constantes** si absents. `codex` → `codex`
-/// en TUI native (binaire bundle/PATH, `-m` si modèle, env conservé, trust natif). `shell`
-/// → repli legacy `default_shell()` (login `-l` D10, sans session/scrub). Tout autre kind rejeté.
+/// globaux** (L10b/P3) avec **fallback sur les constantes** si absents, **+
+/// `system_prompt_extra` dérivé du Cadre de la team** (L22-P3) ajouté au system-prompt
+/// après l'obligation L19. `codex` → `codex` en TUI native (binaire bundle/PATH, `-m` si
+/// modèle, env conservé, trust natif ; `system_prompt_extra` ignoré — pas de
+/// `--append-system-prompt` dans ses args). `shell` → repli legacy `default_shell()`
+/// (login `-l` D10, sans session/scrub). Tout autre kind rejeté.
 fn resolve_runner_spec(
     kind: &str,
     model: Option<String>,
     allowed_tools: Option<String>,
     trust_mode: Option<&str>,
     session_id: &str,
+    system_prompt_extra: Option<String>,
 ) -> Result<RunnerSpec, String> {
     match kind {
         "claude-code" => {
@@ -388,7 +405,7 @@ fn resolve_runner_spec(
             Ok(RunnerSpec {
                 kind: kind.to_string(),
                 program: claude_program(),
-                args: chef_args(session_id, &model, &tools),
+                args: chef_args(session_id, &model, &tools, system_prompt_extra.as_deref()),
                 session_id: Some(session_id.to_string()),
                 scrub_env: true,
                 trust_mode: TrustMode::from_config(trust_mode),
@@ -651,6 +668,10 @@ pub fn pty_runner_open(
     cwd: Option<String>,
     cols: Option<u16>,
     rows: Option<u16>,
+    // L22-P3 : allowlist + system-prompt DÉRIVÉS du Cadre de la team du projet (front).
+    // `None` = pas de Cadre applicable → repli sur le réglage global / la constante.
+    allowed_tools: Option<String>,
+    system_prompt_extra: Option<String>,
 ) -> Result<RunnerSession, String> {
     // session_id pré-généré côté Rust AVANT le spawn (clef PTY <-> transcript/événements).
     let session_id = Uuid::new_v4().to_string();
@@ -674,12 +695,19 @@ pub fn pty_runner_open(
     } else {
         model.or(chef.model)
     };
+    // L22-P3 : l'allowlist DÉRIVÉE DU CADRE (param front) PRIME sur le réglage global,
+    // qui prime lui-même sur la constante (fallback dans `resolve_runner_spec`). `None`
+    // des deux → constante = comportement historique (zéro régression).
+    let effective_tools = allowed_tools
+        .filter(|t| !t.trim().is_empty())
+        .or(chef.allowed_tools);
     let spec = resolve_runner_spec(
         &kind,
         effective_model,
-        chef.allowed_tools,
+        effective_tools,
         chef.trust_mode.as_deref(),
         &session_id,
+        system_prompt_extra,
     )?;
 
     let pair = open_pty(cols, rows)?;
@@ -822,7 +850,7 @@ mod tests {
 
     #[test]
     fn chef_args_porte_session_modele_et_allowlist() {
-        let args = chef_args(SID, "claude-haiku-4-5", CHEF_ALLOWED_TOOLS);
+        let args = chef_args(SID, "claude-haiku-4-5", CHEF_ALLOWED_TOOLS, None);
         // session-id pré-généré + modèle + allowlist cadrée, appariés (flag, valeur).
         for (flag, value) in [
             ("--session-id", SID),
@@ -837,7 +865,7 @@ mod tests {
     #[test]
     fn chef_args_porte_l_obligation_coordinateur() {
         // L19 : le coordinateur reçoit l'obligation de planifier + estimer (option A).
-        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS);
+        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS, None);
         let i = args
             .iter()
             .position(|a| a == "--append-system-prompt")
@@ -850,7 +878,7 @@ mod tests {
     #[test]
     fn chef_args_honore_une_allowlist_personnalisee() {
         // L10b/P3 : l'allowlist est un réglage global (plus une constante en dur).
-        let args = chef_args(SID, "m", "Read,Glob,Edit,Write");
+        let args = chef_args(SID, "m", "Read,Glob,Edit,Write", None);
         let i = args
             .iter()
             .position(|a| a == "--allowedTools")
@@ -864,9 +892,46 @@ mod tests {
     #[test]
     fn chef_args_ne_contient_jamais_bypass_ni_print() {
         // Garde anti-dérive (arbitrage #2) : ni bypass total, ni mode --print (TUI native).
-        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS);
+        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS, None);
         assert!(!args.iter().any(|a| a == "--dangerously-skip-permissions"));
         assert!(!args.iter().any(|a| a == "--print"));
+    }
+
+    #[test]
+    fn chef_args_concatene_le_system_prompt_extra_du_cadre_apres_l19() {
+        // L22-P3 : le Cadre injecte ses obligations/skills/brief APRÈS l'obligation L19,
+        // jamais à sa place (le prompt contient les DEUX, dans l'ordre).
+        let extra = "Obligation Cadre : commits atomiques.\n\nGit sûr : jamais push --force.";
+        let args = chef_args(SID, "m", CHEF_ALLOWED_TOOLS, Some(extra));
+        let i = args
+            .iter()
+            .position(|a| a == "--append-system-prompt")
+            .expect("flag présent");
+        let prompt = args.get(i + 1).map(String::as_str).unwrap_or("");
+        // L19 conservée…
+        assert!(prompt.contains("TodoWrite"));
+        // …ET l'extra du Cadre ajouté après.
+        assert!(prompt.contains("commits atomiques"));
+        assert!(prompt.contains("jamais push --force"));
+        let l19 = prompt.find("TodoWrite").unwrap();
+        let cadre = prompt.find("commits atomiques").unwrap();
+        assert!(l19 < cadre, "l'obligation L19 précède l'extra du Cadre");
+    }
+
+    #[test]
+    fn chef_args_extra_none_ou_vide_ne_change_pas_le_prompt() {
+        // Repli : `None` ou une chaîne blanche → strictement l'obligation L19 (historique).
+        let base = chef_args(SID, "m", CHEF_ALLOWED_TOOLS, None);
+        let blank = chef_args(SID, "m", CHEF_ALLOWED_TOOLS, Some("   "));
+        assert_eq!(base, blank);
+        let i = base
+            .iter()
+            .position(|a| a == "--append-system-prompt")
+            .unwrap();
+        assert_eq!(
+            base.get(i + 1).map(String::as_str),
+            Some(COORDINATOR_OBLIGATION)
+        );
     }
 
     #[test]
@@ -877,7 +942,7 @@ mod tests {
 
     #[test]
     fn resolve_spec_claude_code_par_defaut() {
-        let spec = resolve_runner_spec("claude-code", None, None, None, SID).unwrap();
+        let spec = resolve_runner_spec("claude-code", None, None, None, SID, None).unwrap();
         assert_eq!(spec.kind, "claude-code");
         assert_eq!(spec.program, claude_program());
         assert_eq!(spec.session_id.as_deref(), Some(SID));
@@ -897,6 +962,7 @@ mod tests {
             None,
             None,
             SID,
+            None,
         )
         .unwrap();
         assert!(spec.args.iter().any(|a| a == "claude-sonnet-4-5"));
@@ -905,7 +971,8 @@ mod tests {
 
     #[test]
     fn resolve_spec_modele_vide_retombe_sur_le_defaut() {
-        let spec = resolve_runner_spec("claude-code", Some("  ".into()), None, None, SID).unwrap();
+        let spec =
+            resolve_runner_spec("claude-code", Some("  ".into()), None, None, SID, None).unwrap();
         assert!(spec.args.iter().any(|a| a == DEFAULT_CHEF_MODEL));
     }
 
@@ -918,6 +985,7 @@ mod tests {
             Some("Read,Glob".into()),
             Some("accept"),
             SID,
+            None,
         )
         .unwrap();
         assert!(spec.args.iter().any(|a| a == "Read,Glob"));
@@ -927,14 +995,55 @@ mod tests {
 
     #[test]
     fn resolve_spec_allowlist_vide_retombe_sur_le_defaut() {
-        let spec = resolve_runner_spec("claude-code", None, Some("   ".into()), None, SID).unwrap();
+        let spec =
+            resolve_runner_spec("claude-code", None, Some("   ".into()), None, SID, None).unwrap();
         assert!(spec.args.iter().any(|a| a == CHEF_ALLOWED_TOOLS));
+    }
+
+    #[test]
+    fn resolve_spec_claude_code_injecte_le_system_prompt_du_cadre() {
+        // L22-P3 : le `system_prompt_extra` dérivé du Cadre atterrit dans le prompt du chef,
+        // en plus de l'obligation L19.
+        let spec = resolve_runner_spec(
+            "claude-code",
+            None,
+            None,
+            None,
+            SID,
+            Some("Brief coordinateur : cadrer avant d'exécuter.".into()),
+        )
+        .unwrap();
+        let i = spec
+            .args
+            .iter()
+            .position(|a| a == "--append-system-prompt")
+            .expect("flag présent");
+        let prompt = spec.args.get(i + 1).map(String::as_str).unwrap_or("");
+        assert!(prompt.contains("TodoWrite")); // L19 conservée
+        assert!(prompt.contains("cadrer avant d'exécuter")); // extra du Cadre
+    }
+
+    #[test]
+    fn resolve_spec_codex_ignore_le_system_prompt_du_cadre() {
+        // Codex n'a pas de `--append-system-prompt` dans ses args : l'extra est ignoré,
+        // sans crash ni fuite du texte dans la ligne de commande.
+        let spec = resolve_runner_spec(
+            "codex",
+            Some("gpt-5-codex".into()),
+            None,
+            None,
+            SID,
+            Some("ignoré côté codex".into()),
+        )
+        .unwrap();
+        assert!(!spec.args.iter().any(|a| a == "--append-system-prompt"));
+        assert!(!spec.args.iter().any(|a| a.contains("ignoré")));
     }
 
     #[test]
     fn resolve_spec_shell_est_le_repli_legacy_sans_session() {
         // Le repli shell = default_shell() (login -l D10), sans session-id ni scrub.
-        let spec = resolve_runner_spec("shell", None, None, None, SID).unwrap();
+        let spec = resolve_runner_spec("shell", None, None, None, SID, None).unwrap();
         assert_eq!(spec.kind, "shell");
         assert_eq!(spec.program, default_shell().program);
         assert_eq!(spec.args, default_shell().args);
@@ -945,7 +1054,7 @@ mod tests {
 
     #[test]
     fn resolve_spec_rejette_un_kind_inconnu() {
-        assert!(resolve_runner_spec("bidon", None, None, None, SID).is_err());
+        assert!(resolve_runner_spec("bidon", None, None, None, SID, None).is_err());
     }
 
     // ===================================================================
@@ -999,8 +1108,8 @@ mod tests {
 
     #[test]
     fn resolve_spec_codex_est_une_tui_native_sans_scrub_ni_trust_force() {
-        let spec =
-            resolve_runner_spec("codex", Some("gpt-5-codex".into()), None, None, SID).unwrap();
+        let spec = resolve_runner_spec("codex", Some("gpt-5-codex".into()), None, None, SID, None)
+            .unwrap();
         assert_eq!(spec.kind, "codex");
         assert_eq!(spec.program, codex_program());
         // Id d'événements présent (clef du tailer) MAIS pas passé en --session-id à codex.
@@ -1015,7 +1124,7 @@ mod tests {
 
     #[test]
     fn resolve_spec_codex_sans_modele_n_a_pas_de_dash_m() {
-        let spec = resolve_runner_spec("codex", None, None, None, SID).unwrap();
+        let spec = resolve_runner_spec("codex", None, None, None, SID, None).unwrap();
         assert!(!spec.args.iter().any(|a| a == "-m"));
         assert_eq!(spec.view_source, ViewSource::CodexRollout);
     }
@@ -1023,7 +1132,7 @@ mod tests {
     #[test]
     fn claude_reste_la_source_transcript_deterministe() {
         // Non-régression : la branche claude-code garde bien sa view_source transcript.
-        let spec = resolve_runner_spec("claude-code", None, None, None, SID).unwrap();
+        let spec = resolve_runner_spec("claude-code", None, None, None, SID, None).unwrap();
         assert_eq!(spec.view_source, ViewSource::ClaudeTranscript);
         assert!(spec.scrub_env);
     }
