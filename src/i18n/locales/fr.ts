@@ -811,6 +811,7 @@ export const fr = {
     n8nMsgAria: "Message de test",
     n8nTestSending: "Envoi…",
     n8nTestSend: "Tester l'envoi",
+    n8nTestSendAria: "Tester l'envoi d'un message sur le canal adresse via n8n",
     n8nResultMock:
       "Mock : payload construit, aucun POST réel (URL webhook vide ou flag dev).",
     n8nResultOk:

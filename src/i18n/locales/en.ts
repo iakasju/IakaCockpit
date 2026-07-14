@@ -810,6 +810,7 @@ export const en: Resources = {
     n8nMsgAria: "Test message",
     n8nTestSending: "Sending…",
     n8nTestSend: "Test the send",
+    n8nTestSendAria: "Test sending a message on the address channel via n8n",
     n8nResultMock:
       "Mock: payload built, no real POST (empty webhook URL or dev flag).",
     n8nResultOk: "Handled by n8n (provider {{provider}}, HTTP {{status}}).",

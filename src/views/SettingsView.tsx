@@ -801,6 +801,8 @@ export function SettingsView({
                   type="button"
                   className="btn accent sm"
                   disabled={n8nTesting}
+                  aria-label={t("settings.n8nTestSendAria")}
+                  title={t("settings.n8nTestSendAria")}
                   onClick={() => void runNotifyTest()}
                 >
                   {n8nTesting

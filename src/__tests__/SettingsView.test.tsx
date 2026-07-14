@@ -90,7 +90,7 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     fireEvent.change(screen.getByLabelText("Message de test"), {
       target: { value: "ping depuis le cockpit" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Tester l'envoi" }));
+    fireEvent.click(screen.getByRole("button", { name: /Tester l'envoi/ }));
 
     await waitFor(() => expect(onNotify).toHaveBeenCalledTimes(1));
     const [message, support, cible, meta] = onNotify.mock.calls[0];
@@ -113,7 +113,7 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     fireEvent.change(screen.getByLabelText("Message de test"), {
       target: { value: "test" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Tester l'envoi" }));
+    fireEvent.click(screen.getByRole("button", { name: /Tester l'envoi/ }));
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain("injoignable"),
     );
@@ -131,7 +131,7 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     fireEvent.change(screen.getByLabelText("Message de test"), {
       target: { value: "m" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Tester l'envoi" }));
+    fireEvent.click(screen.getByRole("button", { name: /Tester l'envoi/ }));
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain("Mock"),
     );
@@ -141,6 +141,15 @@ describe("SettingsView — canal adresse externe (L6)", () => {
     renderView({});
     const slack = screen.getByRole("button", { name: "Slack" });
     expect(slack.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  // Polish P2 — a11y : le bouton « Tester l'envoi » porte un aria-label explicite.
+  it("le bouton « Tester l'envoi » porte un aria-label explicite (a11y)", () => {
+    renderView({});
+    const btn = screen.getByRole("button", { name: /Tester l'envoi/ });
+    expect(btn.getAttribute("aria-label")).toBe(
+      "Tester l'envoi d'un message sur le canal adresse via n8n",
+    );
   });
 });
 
