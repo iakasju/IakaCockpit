@@ -1,6 +1,48 @@
-# État des lieux — 2026-07-12
+# État des lieux — 2026-07-15
 
 ## En une phrase
+**`v0.31.1` scellée + poussée** (origin/main `4906935`, arbre propre, 0 commit d'avance). Deux gros
+axes terminés depuis la reprise du 12/07 : **(1) page Analytics L30 feature-complète** (v0.26.0→v0.29.0)
+et **(2) programme « fais tout sauf horizon + audit »** (v0.30.0→v0.31.1). Front ~749 tests + Rust ~337
+verts, `fmt`/`clippy`/`lint` clean, **tous gates Legolas PASS**. Chaîne **v0.26.0 → v0.31.1** poussée.
+
+## Reprise — où on en est / ce qui reste / prochaine étape
+
+### Ce qui vient d'être fait
+- **Analytics (L30)** — v0.26.0 enveloppe + 4 perspectives ; v0.27.0 coût $ réel · scope projet ·
+  **attribution par agent** (via `toolUseResult.outputFile` — les sous-agents tournent hors du
+  transcript parent, `isSidechain` toujours false) · **précalcul index** · coordinateur par projet
+  (Aragorn≠Odin) ; v0.27.1 liaisons arbre ; v0.27.2 index 2 phases (périmètre instantané) ; v0.27.3
+  **projet = répertoire directement sous `/work`** (+ `.folder`) · en-tête Table 2 lignes ; v0.28.0
+  **V3 Comparaison réelle** (A avant/après + B hypothèse « à volume constant ») → 4 perspectives
+  réelles ; v0.29.0 index incrémental · arbre multi-niveaux · hypothèse V3-B par agent.
+- **Audit complet du code** (Legolas) : 🔴 0 · 🟠 1 · 🟡 6 ; socle sain (façade D7, CSP, secrets,
+  pathguard, zéro-fausse-donnée, i18n).
+- **L22-P3** enforcement runner du Cadre (v0.30.0) — `--allowedTools` + `--append-system-prompt`
+  dérivés du `frame.json` de la team, repli global sans régression.
+- **Correctifs audit** (v0.30.1) — **faille `..` de `validate_cwd` FERMÉE** + i18n handoff + retrait
+  dompurify + locks PTY poison-tolérants.
+- **Polish** (v0.30.2) — persistance des toggles · a11y treemap/webhook · bouton « + » onglets.
+- **L6 Lot 2 (canal entrant) ABANDONNÉ** — décision : **iakabox indisponible même à long terme**, le
+  Cockpit ne doit pas en dépendre (local-first).
+- **Orchestration (L31)** — cadrage (Option C tranchée par Stéphane) → **L31-P1** slots multi-runners
+  réels (lancer un agent comme SON runner codex/claude depuis le roster, multi-onglets, garde L10)
+  + **L31-P2** statut « vivant » par slot (fraîcheur du tailer, limite honnête) + cascade-close des
+  slots orphelins.
+
+### Ce qui reste
+- **Recettes terrain** (ton ressort, non simulées) : slots multi-runners réels + statut vivant
+  (`tauri dev`), V3 hypothèse, coût/délégations par plage/projet, en-tête 2 lignes, liaisons arbre.
+- **Purge git ~118 Mo** (historique PNG) : réécriture d'historique + `push --force` → **en attente du
+  feu vert explicite de Stéphane** (hors denylist IA).
+- **Horizon, non planifié** : cible web (daemon local réexposant les commandes) · daemon iaka.
+- **Différés orchestration (horizon)** : re-routage hétérogène (Option B) · runners « API »
+  Ollama/LiteLLM · vrai signal de process « vivant ».
+
+### Prochaine étape au choix
+Recette guidée (`tauri dev`) · purge git (avec feu vert) · un chantier d'horizon · ou nouveaux besoins.
+
+## (archive) En une phrase v0.25.0 — 2026-07-12
 **`v0.25.0` scellée** : **révision recette des Swimlanes** (L29) — **R1** labels d'agents **fixes**
 (colonne gelée au scroll horizontal), **R2** repères d'heure **toujours lisibles** (gridlines + `HH:MM`,
 densité adaptée), **R3** **zoom +/−** sur l'axe temps (bornes `[0.25…4]`). Gate PASS, 605 front, Rust
