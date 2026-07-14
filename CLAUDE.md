@@ -477,9 +477,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (dictée `useVoiceDictation` branchée). Recette réelle : llama3.1 rédige, persisté. **P2b LIVRÉ** :
       **export `agent.md`** (front génère le markdown, `frame_export` écrit sous `.iakacockpit/frames/<team>/`)
       — la sortie consommée par iakaframe. Recette : 4 agent.md écrits, contenu propre.
-      **Différés tracés** : **L22-P3** enforcement runner (`--allowedTools`/`--append-system-prompt` + garde
-      délégations L5) ; **P2b** catégories **hooks/limites** en listbox ; arbitrages AR-2/4/5/6. `frame.json`
-      reste la source ; le `.md` est un export. 461 front + 247 Rust verts.
+      **Différés tracés** : ~~L22-P3~~ **LIVRÉ `v0.30.0`** (enforcement runner : `--allowedTools` +
+      `--append-system-prompt` **dérivés du Cadre** de la team → runner du coordinateur, repli global sans
+      régression ; `8db6bf8`/`a632c29`, doc `docs/qualite/v0.30.0.md` ; l'enforcement DUR de la chaîne =
+      hook L5 hors dépôt, la chaîne autorisée est exposée en texte dans le system-prompt) ; **P2b** catégories
+      **hooks/limites** en listbox ; arbitrages AR-2/4/5/6. `frame.json` reste la source ; le `.md` est un export.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
