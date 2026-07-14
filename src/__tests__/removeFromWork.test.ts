@@ -153,4 +153,104 @@ describe("removeFromWork — orchestration du retrait de la Table (L23)", () => 
     expect(d.closePty).not.toHaveBeenCalled();
     expect(d.closeConversation).toHaveBeenCalledWith("alpha");
   });
+
+  // --- L31-P2 : fermeture en CASCADE des slots d'agents du MÊME projet ---
+
+  it("ferme en cascade les slots d'agents du projet (pty×2 + conversations) + coordinateur", () => {
+    const d = deps();
+    removeFromWork({
+      projectId: "alpha",
+      project: project(),
+      conversation: owned("conv-alpha-1"),
+      agentSlots: [
+        {
+          projectId: "alpha::agent::gimli",
+          ptySessionId: "conv-slot-gimli",
+          executable: true,
+        },
+        {
+          projectId: "alpha::agent::legolas",
+          ptySessionId: "conv-slot-legolas",
+          executable: true,
+        },
+      ],
+      ...d,
+    });
+    // Les 2 slots + le coordinateur → 3 pty.close et 3 closeConversation.
+    expect(d.closePty).toHaveBeenCalledTimes(3);
+    expect(d.closePty).toHaveBeenCalledWith("conv-slot-gimli");
+    expect(d.closePty).toHaveBeenCalledWith("conv-slot-legolas");
+    expect(d.closePty).toHaveBeenCalledWith("conv-alpha-1");
+    expect(d.closeConversation).toHaveBeenCalledTimes(3);
+    expect(d.closeConversation).toHaveBeenCalledWith("alpha::agent::gimli");
+    expect(d.closeConversation).toHaveBeenCalledWith("alpha::agent::legolas");
+    expect(d.closeConversation).toHaveBeenCalledWith("alpha");
+  });
+
+  it("cascade : chaque slot ferme SON pty AVANT sa conversation (garde L10)", () => {
+    const order: string[] = [];
+    removeFromWork({
+      projectId: "alpha",
+      project: project(),
+      conversation: owned("conv-alpha-1"),
+      agentSlots: [
+        {
+          projectId: "alpha::agent::gimli",
+          ptySessionId: "conv-slot-gimli",
+          executable: true,
+        },
+      ],
+      toggleWork: vi.fn(),
+      prepareResume: vi.fn(),
+      closePty: vi.fn((id: string) => {
+        order.push(`close:${id}`);
+      }),
+      stopTailer: vi.fn(),
+      closeConversation: vi.fn((id: string) => {
+        order.push(`conv:${id}`);
+      }),
+    });
+    // Le slot : pty PUIS conversation, avant le coordinateur.
+    expect(order).toEqual([
+      "close:conv-slot-gimli",
+      "conv:alpha::agent::gimli",
+      "close:conv-alpha-1",
+      "conv:alpha",
+    ]);
+  });
+
+  it("cascade : un slot au runner NON exécutable ne ferme pas de pty mais retire la conversation", () => {
+    const d = deps();
+    removeFromWork({
+      projectId: "alpha",
+      project: project(),
+      conversation: owned("conv-alpha-1"),
+      agentSlots: [
+        {
+          projectId: "alpha::agent::loki",
+          ptySessionId: "conv-slot-loki",
+          executable: false,
+        },
+      ],
+      ...d,
+    });
+    // Slot non exécutable : pas de close du pty du slot, mais conversation retirée.
+    expect(d.closePty).not.toHaveBeenCalledWith("conv-slot-loki");
+    expect(d.closeConversation).toHaveBeenCalledWith("alpha::agent::loki");
+    // Le coordinateur, lui, ferme bien son pty.
+    expect(d.closePty).toHaveBeenCalledWith("conv-alpha-1");
+  });
+
+  it("sans agentSlots : comportement mono-slot inchangé (non-régression)", () => {
+    const d = deps();
+    removeFromWork({
+      projectId: "alpha",
+      project: project(),
+      conversation: owned("conv-alpha-1"),
+      ...d,
+    });
+    expect(d.closePty).toHaveBeenCalledTimes(1);
+    expect(d.closeConversation).toHaveBeenCalledTimes(1);
+    expect(d.closeConversation).toHaveBeenCalledWith("alpha");
+  });
 });

@@ -47,6 +47,24 @@ export interface RemoveFromWorkParams {
   stopTailer: (sessionId: string) => void | Promise<void>;
   /** Retire la conversation du modèle (état pur). */
   closeConversation: (projectId: string) => void;
+  /**
+   * L31-P2 — SLOTS D'AGENTS du MÊME projet à fermer en CASCADE (fix slots orphelins). Un
+   * slot d'agent (L31-P1) est une conversation `owned` séparée avec son propre PTY : au
+   * retrait du projet (coordinateur), ces slots restaient VIVANTS (PTY orphelin, onglet
+   * orphelin). On les ferme donc ici, chacun comme le coordinateur : `closePty` (si son
+   * runner est exécutable) PUIS `closeConversation` (garde L10 : le PtyTerminal se démonte
+   * APRÈS la fermeture explicite de SON PTY). Capturés par l'appelant AVANT le retrait ;
+   * ne concernent QUE les slots du projet retiré (jamais un autre projet). Absent/vide →
+   * comportement historique (mono-slot, aucune cascade).
+   */
+  agentSlots?: readonly {
+    /** `projectId` synthétique du slot (clé `closeConversation`). */
+    projectId: string;
+    /** `ptySessionId` du slot (clé `closePty`). */
+    ptySessionId: string;
+    /** Runner exécutable (codex/claude-code) → PTY réel à fermer ; sinon pas de `closePty`. */
+    executable: boolean;
+  }[];
 }
 
 export function removeFromWork(p: RemoveFromWorkParams): void {
@@ -56,7 +74,15 @@ export function removeFromWork(p: RemoveFromWorkParams): void {
   if (p.project) {
     p.prepareResume(p.project.id, p.project.id, p.project.path);
   }
-  // 3) Fermer la fenêtre selon la source, PUIS retirer la conversation (ordre important).
+  // 3) Fermer les SLOTS D'AGENTS du projet EN CASCADE (L31-P2, fix orphelins) : chacun
+  // comme le coordinateur (closePty explicite si exécutable → PUIS closeConversation, garde
+  // L10). On les ferme AVANT le coordinateur — l'ordre entre slots est sans effet (chacun
+  // est indépendant), seule compte la paire close-pty-puis-close-conv par slot.
+  for (const s of p.agentSlots ?? []) {
+    if (s.executable) void p.closePty(s.ptySessionId);
+    p.closeConversation(s.projectId);
+  }
+  // 3bis) Fermer la fenêtre du COORDINATEUR selon la source, PUIS retirer sa conversation.
   if (p.conversation) {
     if (p.conversation.source === "attached") {
       // Session externe : on n'arrête QUE le tailer (le process externe vit sa vie).

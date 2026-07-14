@@ -618,6 +618,16 @@ export default function App(): JSX.Element {
     const conv = conversations.conversations.find(
       (c) => c.projectId === projectId,
     );
+    // L31-P2 — capturer les SLOTS D'AGENTS du MÊME projet (slot.realProjectId === projectId)
+    // pour les fermer EN CASCADE (PTY + conversation) : sinon ils restent orphelins (PTY
+    // vivant, onglet orphelin) au retrait du coordinateur. Ne concerne QUE ce projet.
+    const agentSlots = conversations.conversations
+      .filter((c) => c.slot?.realProjectId === projectId)
+      .map((c) => ({
+        projectId: c.projectId,
+        ptySessionId: c.ptySessionId,
+        executable: isExecutableRunner(c.slot!.runner),
+      }));
     // Orchestration pure (retrait + reprise + fermeture PTY/conversation, cf.
     // removeFromWork). Fermer le PTY EXPLICITEMENT puis retirer la conversation :
     // le PtyTerminal se démonte APRÈS la fermeture (plus de PTY orphelin). Garde
@@ -633,6 +643,8 @@ export default function App(): JSX.Element {
       // L25 — session attachée : arrêt du tailer externe (jamais de pty.close).
       stopTailer: backend.transcriptTailStop,
       closeConversation: conversations.closeConversation,
+      // L31-P2 — fermeture en cascade des slots d'agents du projet retiré.
+      agentSlots,
     });
   };
 
