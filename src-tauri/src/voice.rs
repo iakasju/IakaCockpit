@@ -144,7 +144,11 @@ fn record_window() -> Result<Vec<f32>, String> {
             let buf = buf.clone();
             device.build_input_stream(
                 &config.into(),
-                move |data: &[f32], _| buf.lock().unwrap().extend_from_slice(data),
+                move |data: &[f32], _| {
+                    buf.lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .extend_from_slice(data)
+                },
                 err_fn,
                 None,
             )
@@ -154,7 +158,7 @@ fn record_window() -> Result<Vec<f32>, String> {
             device.build_input_stream(
                 &config.into(),
                 move |data: &[i16], _| {
-                    let mut b = buf.lock().unwrap();
+                    let mut b = buf.lock().unwrap_or_else(|p| p.into_inner());
                     b.extend(data.iter().map(|&s| s as f32 / i16::MAX as f32));
                 },
                 err_fn,
@@ -166,7 +170,7 @@ fn record_window() -> Result<Vec<f32>, String> {
             device.build_input_stream(
                 &config.into(),
                 move |data: &[u16], _| {
-                    let mut b = buf.lock().unwrap();
+                    let mut b = buf.lock().unwrap_or_else(|p| p.into_inner());
                     b.extend(
                         data.iter()
                             .map(|&s| (s as f32 / u16::MAX as f32) * 2.0 - 1.0),

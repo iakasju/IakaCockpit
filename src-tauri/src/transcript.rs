@@ -510,7 +510,7 @@ pub fn transcript_tail_start(
     if transcript_path.trim().is_empty() {
         return Ok(()); // pas de transcript (kind shell) : rien à tailer.
     }
-    let mut map = state.0.lock().unwrap();
+    let mut map = state.0.lock().unwrap_or_else(|p| p.into_inner());
     if map.contains_key(&session_id) {
         return Ok(()); // déjà actif : idempotent.
     }
@@ -531,7 +531,12 @@ pub fn transcript_tail_stop(
     state: State<TranscriptState>,
     session_id: String,
 ) -> Result<(), String> {
-    if let Some(stop) = state.0.lock().unwrap().remove(&session_id) {
+    if let Some(stop) = state
+        .0
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .remove(&session_id)
+    {
         stop.store(true, Ordering::Relaxed);
     }
     Ok(())

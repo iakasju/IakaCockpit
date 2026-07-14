@@ -144,7 +144,7 @@ fn spawn_into_state(
         let _ = app2.emit(&format!("pty://closed/{id2}"), ());
     });
 
-    state.0.lock().unwrap().insert(
+    state.0.lock().unwrap_or_else(|p| p.into_inner()).insert(
         id,
         Session {
             master: pair.master,
@@ -181,7 +181,7 @@ pub fn pty_open(
 
 #[tauri::command]
 pub fn pty_write(state: State<TermState>, id: String, data: String) -> Result<(), String> {
-    let mut map = state.0.lock().unwrap();
+    let mut map = state.0.lock().unwrap_or_else(|p| p.into_inner());
     let s = map.get_mut(&id).ok_or("session inconnue")?;
     s.writer
         .write_all(data.as_bytes())
@@ -192,7 +192,7 @@ pub fn pty_write(state: State<TermState>, id: String, data: String) -> Result<()
 
 #[tauri::command]
 pub fn pty_resize(state: State<TermState>, id: String, cols: u16, rows: u16) -> Result<(), String> {
-    let map = state.0.lock().unwrap();
+    let map = state.0.lock().unwrap_or_else(|p| p.into_inner());
     let s = map.get(&id).ok_or("session inconnue")?;
     s.master
         .resize(PtySize {
@@ -207,7 +207,12 @@ pub fn pty_resize(state: State<TermState>, id: String, cols: u16, rows: u16) -> 
 
 #[tauri::command]
 pub fn pty_close(state: State<TermState>, id: String) -> Result<(), String> {
-    if let Some(mut s) = state.0.lock().unwrap().remove(&id) {
+    if let Some(mut s) = state
+        .0
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .remove(&id)
+    {
         let _ = s.child.kill();
     }
     Ok(())

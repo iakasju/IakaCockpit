@@ -422,7 +422,7 @@ pub fn codex_tail_start(
     if cwd.trim().is_empty() {
         return Ok(()); // pas de cwd : aucune découverte possible (no-op).
     }
-    let mut map = state.0.lock().unwrap();
+    let mut map = state.0.lock().unwrap_or_else(|p| p.into_inner());
     if map.contains_key(&session_id) {
         return Ok(()); // déjà actif : idempotent.
     }
