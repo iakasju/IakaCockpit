@@ -79,8 +79,31 @@ export function TreemapPanel({
                       ? `${it.project} · ${fmtK(it.tokens)} · ${t("portfolio.treemapOpenHint")}`
                       : `${it.project} · ${fmtK(it.tokens)}`
                   }
+                  // L16-F2 + a11y clavier (polish P3) : quand la cellule est activable,
+                  // elle devient un contrôle focusable/déclenchable au clavier (Enter/Espace
+                  // = même geste que le double-clic). Le comportement souris est inchangé.
+                  role={onOpenInWork ? "button" : undefined}
+                  tabIndex={onOpenInWork ? 0 : undefined}
+                  aria-label={
+                    onOpenInWork
+                      ? t("portfolio.treemapCellAria", {
+                          project: it.project,
+                          value: fmtK(it.tokens),
+                        })
+                      : undefined
+                  }
                   onDoubleClick={
                     onOpenInWork ? () => onOpenInWork(it.project) : undefined
+                  }
+                  onKeyDown={
+                    onOpenInWork
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onOpenInWork(it.project);
+                          }
+                        }
+                      : undefined
                   }
                 >
                   <span className="tnm">{it.project}</span>

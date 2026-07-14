@@ -270,6 +270,7 @@ export const fr = {
     economyPlaceholder: "Aucun coût mesuré pour l'instant.",
     treemapLegendNote: "surface ∝ tokens · segments = part par agent",
     treemapOpenHint: "double-clic → ouvrir dans Travail",
+    treemapCellAria: "{{project}} · {{value}} tokens — ouvrir dans Travail",
     shelfViewAria: "Affichage de l'atelier",
     shelfViewList: "Liste",
     shelfViewTiles: "Tuiles",

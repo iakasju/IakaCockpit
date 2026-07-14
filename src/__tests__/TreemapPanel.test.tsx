@@ -55,6 +55,68 @@ describe("TreemapPanel (L18 #5b)", () => {
     expect(onOpenInWork).toHaveBeenCalledWith("autre");
   });
 
+  // Polish P3 — a11y clavier : cellule activable = role/tabIndex/aria-label + Enter/Espace.
+  it("cellule activable : role=button, focusable, aria-label = projet + valeur", () => {
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+        ]}
+        onOpenInWork={() => {}}
+      />,
+    );
+    const cell = container.querySelector(".tcell")!;
+    expect(cell.getAttribute("role")).toBe("button");
+    expect(cell.getAttribute("tabindex")).toBe("0");
+    // aria-label contient le nom du projet ET la valeur formatée.
+    const label = cell.getAttribute("aria-label") ?? "";
+    expect(label).toContain("iaka-demo");
+    expect(label).toContain("100k");
+  });
+
+  it("Enter sur une cellule déclenche onOpenInWork (même geste que le double-clic)", () => {
+    const onOpenInWork = vi.fn();
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+          { project: "autre", tokens: 50_000, segments: [{ label: "b", tokens: 50_000 }] },
+        ]}
+        onOpenInWork={onOpenInWork}
+      />,
+    );
+    const cells = container.querySelectorAll(".tcell");
+    fireEvent.keyDown(cells[1], { key: "Enter" });
+    expect(onOpenInWork).toHaveBeenCalledWith("autre");
+  });
+
+  it("Espace sur une cellule déclenche aussi onOpenInWork", () => {
+    const onOpenInWork = vi.fn();
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+        ]}
+        onOpenInWork={onOpenInWork}
+      />,
+    );
+    fireEvent.keyDown(container.querySelector(".tcell")!, { key: " " });
+    expect(onOpenInWork).toHaveBeenCalledWith("iaka-demo");
+  });
+
+  it("sans onOpenInWork : la cellule n'est pas un contrôle (ni role ni tabIndex)", () => {
+    const { container } = render(
+      <TreemapPanel
+        items={[
+          { project: "iaka-demo", tokens: 100_000, segments: [{ label: "a", tokens: 100_000 }] },
+        ]}
+      />,
+    );
+    const cell = container.querySelector(".tcell")!;
+    expect(cell.getAttribute("role")).toBeNull();
+    expect(cell.getAttribute("tabindex")).toBeNull();
+  });
+
   it("sans onOpenInWork : le double-clic est inerte (pas de handler câblé)", () => {
     const { container } = render(
       <TreemapPanel

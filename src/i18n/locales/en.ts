@@ -271,6 +271,7 @@ export const en: Resources = {
     economyPlaceholder: "No cost measured yet.",
     treemapLegendNote: "area ∝ tokens · segments = share per agent",
     treemapOpenHint: "double-click → open in Work",
+    treemapCellAria: "{{project}} · {{value}} tokens — open in Work",
     shelfViewAria: "Studio display",
     shelfViewList: "List",
     shelfViewTiles: "Tiles",
