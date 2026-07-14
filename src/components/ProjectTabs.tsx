@@ -31,6 +31,12 @@ export interface ProjectTabsProps {
   activeProjectId: string | null;
   /** Sélectionne la conversation d'un projet (bascule l'`active`). */
   onSelect: (projectId: string) => void;
+  /**
+   * L31-P2 — statut vivant (`running`/`idle`) par `projectId` de slot, dérivé de la récence
+   * du tailer. Rend un petit point discret dans l'onglet. Absent (défaut) → aucun point
+   * (rétro-compat). Un `projectId` sans entrée = pas de point (zéro fausse donnée).
+   */
+  liveStatus?: Readonly<Record<string, "running" | "idle">>;
   /** Ferme l'onglet = retire le projet de la Table (ferme PTY + conversation). */
   onClose: (projectId: string) => void;
   /**
@@ -56,6 +62,7 @@ export function ProjectTabs({
   onAddProject,
   focus,
   onToggleFocus,
+  liveStatus,
 }: ProjectTabsProps): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -67,6 +74,8 @@ export function ProjectTabs({
       <div className="projtabs-list">
         {conversations.map((c) => {
           const on = c.projectId === activeProjectId;
+          // L31-P2 — point de statut vivant du slot (discret). Absent → pas de point.
+          const live = liveStatus?.[c.projectId];
           return (
             <div key={c.projectId} className={`projtab${on ? " active" : ""}`}>
               <button
@@ -76,6 +85,9 @@ export function ProjectTabs({
                 className="pt-open"
                 onClick={() => onSelect(c.projectId)}
               >
+                {live && (
+                  <span className={`pt-status ${live}`} aria-hidden />
+                )}
                 {c.title}
               </button>
               <button

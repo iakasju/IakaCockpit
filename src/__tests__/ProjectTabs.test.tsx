@@ -139,6 +139,53 @@ describe("ProjectTabs — barre d'onglets par projet (L24 F2)", () => {
   });
 });
 
+describe("ProjectTabs — point de statut vivant par slot (L31-P2)", () => {
+  it("rend un point running/idle selon liveStatus, keyé par projectId", () => {
+    const { container } = render(
+      <ProjectTabs
+        conversations={[
+          conv({ projectId: "alpha", title: "alpha" }),
+          conv({ projectId: "beta", title: "beta" }),
+        ]}
+        activeProjectId="alpha"
+        onSelect={() => {}}
+        onClose={() => {}}
+        liveStatus={{ alpha: "running", beta: "idle" }}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    expect(container.querySelector(".projtab .pt-status.running")).not.toBeNull();
+    expect(container.querySelector(".projtab .pt-status.idle")).not.toBeNull();
+  });
+
+  it("sans liveStatus → aucun point (rétro-compat)", () => {
+    const { container } = render(
+      <ProjectTabs
+        conversations={[conv({ projectId: "alpha", title: "alpha" })]}
+        activeProjectId="alpha"
+        onSelect={() => {}}
+        onClose={() => {}}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    expect(container.querySelector(".pt-status")).toBeNull();
+  });
+
+  it("projectId absent de liveStatus → pas de point pour cet onglet", () => {
+    const { container } = render(
+      <ProjectTabs
+        conversations={[conv({ projectId: "alpha", title: "alpha" })]}
+        activeProjectId="alpha"
+        onSelect={() => {}}
+        onClose={() => {}}
+        liveStatus={{}}
+        {...FOCUS_DEFAULTS}
+      />,
+    );
+    expect(container.querySelector(".pt-status")).toBeNull();
+  });
+});
+
 describe("ProjectTabs — bouton « + » ouvrir un projet (polish P4)", () => {
   it("rend le bouton « + » (aria-label) quand onAddProject est fourni", () => {
     const { container } = render(

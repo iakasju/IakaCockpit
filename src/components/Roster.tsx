@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { DEMO_TEAM, type DemoTeamMember } from "../mock/demoTeam";
 import type { AvatarResolver } from "../theme/teamAvatar";
 import { isCanonicalRole } from "../theme/roles";
+import type { LiveStatus } from "../hooks/useLiveStatus";
 
 export interface RosterProps {
   /** Agents affichés (défaut = DEMO_TEAM, AR-3). */
@@ -30,6 +31,14 @@ export interface RosterProps {
    * repli L8 (seul l'agent courant travaille si `pending`).
    */
   workingAgents?: ReadonlySet<string>;
+  /**
+   * L31-P2 — statut VIVANT RÉEL par agent (dérivé de la récence du dernier event du tailer
+   * de SON slot), keyé par nom d'agent en MINUSCULES : `running` (● en cours) / `idle`
+   * (○ au repos) / `none` (— non lancé, aucun slot). **Prime** sur `workingAgents`/`pending`
+   * quand une entrée existe pour l'agent (statut réel > statut local L8). Absent → repli L8
+   * (rétro-compat tests / secours).
+   */
+  liveStatus?: Readonly<Record<string, LiveStatus>>;
   /** Clic sur un agent → adresser directement (`@agent:`). */
   onPick: (agent: string) => void;
   /**
@@ -69,6 +78,7 @@ export function Roster({
   currentAgent,
   pending,
   workingAgents,
+  liveStatus,
   onPick,
   onLaunch,
   launchableAgents,
@@ -81,13 +91,25 @@ export function Roster({
       <ul className="rosterlist">
         {members.map((m) => {
           const isCurrent = m.agent.toLowerCase() === currentAgent.toLowerCase();
-          // Statut vivant du transcript (L10b/P3) ; repli L8 = courant + pending.
-          const working = workingAgents
-            ? workingAgents.has(m.agent.toLowerCase())
-            : isCurrent && pending;
-          const status = working
-            ? t("roster.statusWorking")
-            : t("roster.statusIdle");
+          // L31-P2 — statut VIVANT RÉEL par slot (récence du tailer) quand fourni : il
+          // PRIME sur le repli L8. Trois états : `none` (non lancé, aucun slot) / `running`
+          // (● en cours) / `idle` (○ au repos). Absent → repli L8 (courant + pending).
+          const live = liveStatus?.[m.agent.toLowerCase()];
+          const working =
+            live !== undefined
+              ? live === "running"
+              : workingAgents
+                ? workingAgents.has(m.agent.toLowerCase())
+                : isCurrent && pending;
+          // Classe du point : `none` (gris creux, non lancé) / `working` (vert) / `idle`.
+          const dotClass =
+            live === "none" ? "none" : working ? "working" : "idle";
+          const status =
+            live === "none"
+              ? t("roster.statusNotLaunched")
+              : working
+                ? t("roster.statusWorking")
+                : t("roster.statusIdle");
           // Rôle traduit s'il est canonique (`roles.*`) ; sinon valeur brute (teams L15).
           const roleText = isCanonicalRole(m.royaume)
             ? t(`roles.${m.royaume.toLowerCase()}`)
@@ -108,10 +130,7 @@ export function Roster({
                 title={t("roster.addressTitle", { agent: m.agent })}
                 onClick={() => onPick(m.agent)}
               >
-                <span
-                  className={`rstatus ${working ? "working" : "idle"}`}
-                  aria-hidden
-                />
+                <span className={`rstatus ${dotClass}`} aria-hidden />
                 {avatarUrl && <Avatar url={avatarUrl} alt={m.agent} />}
                 {/* Direction A : NOM en clair + RÔLE en label discret (petites
                     capitales), au lieu de la pastille [ROYAUME][Agent]. */}

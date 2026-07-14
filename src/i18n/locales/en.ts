@@ -370,6 +370,7 @@ export const en: Resources = {
     head: "Team",
     statusWorking: "working",
     statusIdle: "idle",
+    statusNotLaunched: "not launched",
     addressTitle: "Address {{agent}} (@{{agent}})",
     launchTitle: "Launch {{agent}} as a real runner (dedicated slot)",
     launchDisabledTitle:

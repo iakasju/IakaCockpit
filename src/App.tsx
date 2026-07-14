@@ -20,6 +20,11 @@ import { useEffects, sortedEffects } from "./hooks/useEffects";
 import { usePlan } from "./hooks/usePlan";
 import { derivePlanTimeline } from "./hooks/derivePlanTimeline";
 import { useNow } from "./hooks/useNow";
+import {
+  useLiveStatus,
+  deriveRosterLiveStatus,
+  deriveLiveStatus,
+} from "./hooks/useLiveStatus";
 import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
 import { usePortfolioActivity } from "./hooks/usePortfolioActivity";
 import { useWorkset } from "./hooks/useWorkset";
@@ -135,13 +140,19 @@ export default function App(): JSX.Element {
   // Observateur ADDITIF combiné des events bruts : panneau Tâches (délégations) + HUD
   // économie (tokens) + effets fichiers. Stable (les `ingest` le sont) → pas de
   // re-souscription tailer.
+  // L31-P2 — statut « vivant » RÉEL par slot : marque la récence du dernier event du
+  // tailer de chaque `projectId` (coordinateur OU slot d'agent) → running/idle dérivé.
+  const live = useLiveStatus();
+
   const ingestRunnerEvent = useCallback(
     (projectId: string, ev: RunnerEvent): void => {
       agentTasks.ingest(projectId, ev);
       economy.ingest(projectId, ev);
       effects.ingest(projectId, ev);
+      // L31-P2 : tout event du tailer « ravive » son slot (fraîcheur du flux).
+      live.mark(projectId);
     },
-    [agentTasks, economy, effects],
+    [agentTasks, economy, effects, live],
   );
 
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
@@ -331,6 +342,43 @@ export default function App(): JSX.Element {
       : demoActive
         ? DEMO_TIMELINE
         : derivePlanTimeline([], now);
+
+  // L31-P2 — statut vivant RÉEL du roster (par agent de la team active) : `running`/`idle`
+  // si un slot de l'agent existe et son tailer est frais/silencieux, `none` sinon (non
+  // lancé). Le coordinateur = son slot principal (la conversation du projet). Recalculé au
+  // tick `now` (useNow) → le statut « respire » sans backend. Zéro fausse donnée.
+  const activeCoordinatorName = useMemo(
+    () => teams.coordinatorOf(activeTeam)?.name,
+    [teams, activeTeam],
+  );
+  const rosterLiveStatus = useMemo(
+    () =>
+      deriveRosterLiveStatus(
+        rosterMembers,
+        activeRealProjectId,
+        activeCoordinatorName,
+        liveProjectIds,
+        live.lastEventAt,
+        now,
+      ),
+    [
+      rosterMembers,
+      activeRealProjectId,
+      activeCoordinatorName,
+      liveProjectIds,
+      live.lastEventAt,
+      now,
+    ],
+  );
+
+  // L31-P2 — statut vivant par ONGLET (slot ouvert) : running/idle pour le point discret.
+  const tabLiveStatus = useMemo(() => {
+    const out: Record<string, "running" | "idle"> = {};
+    for (const c of conversations.conversations) {
+      out[c.projectId] = deriveLiveStatus(live.lastEventAt[c.projectId], now);
+    }
+    return out;
+  }, [conversations.conversations, live.lastEventAt, now]);
 
   // Réf miroir des conversations pour `resolveRunner` : lit le slot courant sans mettre
   // tout le tableau en dépendance (identité stable → pas de churn de rendu). Le slot est
@@ -749,6 +797,8 @@ export default function App(): JSX.Element {
             }
             focus={workFocus}
             onToggleFocus={toggleWorkFocus}
+            rosterLiveStatus={rosterLiveStatus}
+            tabLiveStatus={tabLiveStatus}
           />
         )}
         {/* Journal débranché-gardé (L30-P1) : la route reste, seul le bouton rail a changé. */}

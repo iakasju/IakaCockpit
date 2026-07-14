@@ -131,6 +131,65 @@ describe("Roster — widget team (L8/D6)", () => {
     expect(onLaunch).not.toHaveBeenCalled();
   });
 
+  it("L31-P2 : liveStatus « running » → l'agent « travaille » même hors courant/pending", () => {
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        liveStatus={{ gimli: "running" }}
+        onPick={() => {}}
+      />,
+    );
+    const gimli = screen.getByTitle("S'adresser à Gimli (@Gimli)");
+    expect(gimli.textContent).toContain("travaille");
+  });
+
+  it("L31-P2 : liveStatus « none » → « non lancé » (aucun slot)", () => {
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending
+        liveStatus={{ aragorn: "none", gimli: "none" }}
+        onPick={() => {}}
+      />,
+    );
+    // Aucun « travaille » (le statut réel none prime sur le repli pending/courant).
+    expect(screen.queryByText("travaille")).toBeNull();
+    const aragorn = screen.getByTitle("S'adresser à Aragorn (@Aragorn)");
+    expect(aragorn.textContent).toContain("non lancé");
+  });
+
+  it("L31-P2 : liveStatus prime sur workingAgents pour les agents couverts", () => {
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        workingAgents={new Set(["legolas"])}
+        liveStatus={{ legolas: "idle" }}
+        onPick={() => {}}
+      />,
+    );
+    // liveStatus.legolas=idle prime sur workingAgents → Legolas n'est PAS « travaille ».
+    const legolas = screen.getByTitle("S'adresser à Legolas (@Legolas)");
+    expect(legolas.textContent).toContain("attend");
+    expect(screen.queryByText("travaille")).toBeNull();
+  });
+
+  it("L31-P2 : agent absent de liveStatus → repli L8 (workingAgents/pending)", () => {
+    render(
+      <Roster
+        currentAgent="Aragorn"
+        pending={false}
+        workingAgents={new Set(["gimli"])}
+        liveStatus={{ aragorn: "idle" }}
+        onPick={() => {}}
+      />,
+    );
+    // Gimli absent de liveStatus → repli workingAgents → « travaille ».
+    const gimli = screen.getByTitle("S'adresser à Gimli (@Gimli)");
+    expect(gimli.textContent).toContain("travaille");
+  });
+
   it("L9-A5 : rend une vignette par agent quand resolveAvatar renvoie une URL, pastille conservée", () => {
     const resolveAvatar = (agent: string) =>
       `/assets/${agent.toLowerCase()}.png`;

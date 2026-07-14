@@ -1724,6 +1724,24 @@ button {
 .projtab.active .pt-open {
   color: var(--text);
 }
+/* L31-P2 — point de statut vivant du slot dans l'onglet (discret, avant le titre). */
+.pt-status {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex: none;
+}
+.pt-status.running {
+  background: var(--green);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 22%, transparent);
+}
+.pt-status.idle {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--text-3);
+}
 .projtab .pt-close {
   border: none;
   background: transparent;
@@ -2284,7 +2302,13 @@ button {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent);
 }
 .rstatus.idle {
-  background: var(--text-3);
+  /* Au repos : anneau creux (○) — slot vivant mais silencieux. */
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--text-3);
+}
+/* L31-P2 — non lancé (aucun slot pour l'agent) : point gris atténué (—). */
+.rstatus.none {
+  background: color-mix(in srgb, var(--text-3) 40%, transparent);
 }
 .ravatar {
   width: 38px;

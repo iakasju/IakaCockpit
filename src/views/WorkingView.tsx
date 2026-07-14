@@ -190,6 +190,17 @@ export interface WorkingViewProps {
    * orchestré par App. Transmis à `ProjectTabs`.
    */
   onToggleFocus?: () => void;
+  /**
+   * L31-P2 — statut vivant RÉEL par agent du roster (dérivé de la récence du tailer de son
+   * slot), keyé nom MINUSCULE : `running`/`idle`/`none`. Passé au Roster (prime sur le repli
+   * L8). Absent → repli L8 (`workingAgents`/`pending`).
+   */
+  rosterLiveStatus?: Readonly<Record<string, "running" | "idle" | "none">>;
+  /**
+   * L31-P2 — statut vivant (`running`/`idle`) par `projectId` de slot ouvert, pour le point
+   * discret des onglets. Absent → aucun point.
+   */
+  tabLiveStatus?: Readonly<Record<string, "running" | "idle">>;
 }
 
 export function WorkingView({
@@ -227,6 +238,8 @@ export function WorkingView({
   onToggleHidePensee,
   focus = false,
   onToggleFocus,
+  rosterLiveStatus,
+  tabLiveStatus,
 }: WorkingViewProps): JSX.Element {
   const { t } = useTranslation();
   // Props liées à l'affichage du statut de reprise : DÉBRANCHÉ (2026-07-12) mais conservé.
@@ -437,6 +450,7 @@ export function WorkingView({
           onAddProject={onAddProject}
           focus={focus}
           onToggleFocus={onToggleFocus ?? (() => {})}
+          liveStatus={tabLiveStatus}
         />
         {active ? (
           <>
@@ -752,6 +766,7 @@ export function WorkingView({
             currentAgent={active.agent}
             pending={active.pending}
             workingAgents={workingAgents}
+            liveStatus={rosterLiveStatus}
             onPick={pickAgent}
             onLaunch={onLaunchAgent}
             launchableAgents={launchableAgents}

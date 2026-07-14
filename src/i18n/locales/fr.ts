@@ -370,6 +370,7 @@ export const fr = {
     head: "Team",
     statusWorking: "travaille",
     statusIdle: "attend",
+    statusNotLaunched: "non lancé",
     addressTitle: "S'adresser à {{agent}} (@{{agent}})",
     launchTitle: "Lancer {{agent}} comme runner réel (slot dédié)",
     launchDisabledTitle:
