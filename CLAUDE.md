@@ -482,6 +482,24 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       régression ; `8db6bf8`/`a632c29`, doc `docs/qualite/v0.30.0.md` ; l'enforcement DUR de la chaîne =
       hook L5 hors dépôt, la chaîne autorisée est exposée en texte dans le system-prompt) ; **P2b** catégories
       **hooks/limites** en listbox ; arbitrages AR-2/4/5/6. `frame.json` reste la source ; le `.md` est un export.
+- [ ] **L32** — **Montée LiteLLM → `1.94.0` épinglée (tag + digest), fin du tag flottant `main-latest`**
+      → `specs/instructions/L32-montee-litellm-v194.md`
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-07-29), branche
+      `feat/L32-litellm-v194`. **Stack Cockpit FAITE** : `docker/docker-compose.yml:33-34` service `litellm`
+      → `ghcr.io/berriai/litellm:1.94.0@sha256:65d84a22…3fabe` + commentaire d'ancrage de rollback
+      (`1.82.6 = @sha256:7c311546…0186`, digest **vérifié encore récupérable** au registre AVANT toute
+      modification — filet en place). `docker/litellm-config.yaml` **inchangé** (schéma valide sous 1.94 :
+      démarrage sans erreur/warning de schéma). Recette hôte OK : `Version: 1.94.0` dans le conteneur,
+      `GET /v1/models` → `llama3.2:1b`, `POST /v1/chat/completions` (temperature/max_tokens) → 200 + contenu,
+      appel sans clé → 401. Port `127.0.0.1:4020` et nom `iakacockpit-dev-litellm` **inchangés** ; 3 autres
+      services **non touchés** (épinglage renvoyé en **L33**, AR-3). **Fait mesuré non prévu au cadrage** :
+      l'image `main-latest` locale de ce poste n'était **pas** 1.82.6 mais **1.91.0** (build 2026-06-23,
+      arm64) — la dérive du tag flottant est **prouvée sur pièce**, deux machines = deux versions.
+      **NON FAIT (bloqué)** : Phase D VM `192.168.2.12` (épingler + rallumer, AR-1 branche A) — **LAN iakabox
+      injoignable** depuis ce poste (réseau `192.168.1.0/24`, `.11`/`.12`/`.20` unreachable) ; conteneur `.12`
+      **laissé intact** (`Exited (0)`), rien de modifié à distance. **NON MESURÉ** : recette GUI
+      `npm run tauri dev` (critère Stéphane). Dettes **nommées non traitées** (DETTE-1 `master_key` en clair,
+      DETTE-2 exposition LAN du `.12`) → lot ultérieur.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
