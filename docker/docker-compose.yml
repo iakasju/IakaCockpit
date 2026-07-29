@@ -30,7 +30,8 @@ services:
     restart: unless-stopped
 
   litellm:
-    image: ghcr.io/berriai/litellm:main-latest
+    # rollback : 1.82.6 = ghcr.io/berriai/litellm@sha256:7c311546c25e7bb6e8cafede9fcd3d0d622ac636b5c9418befaa32e85dfb0186
+    image: ghcr.io/berriai/litellm:1.94.0@sha256:65d84a2282137b4dc73bbe184650a7c807177c533e4223b3bfbc87963fe3fabe
     container_name: iakacockpit-dev-litellm
     depends_on: [ollama]
     networks: [iakacockpit-dev-net]
