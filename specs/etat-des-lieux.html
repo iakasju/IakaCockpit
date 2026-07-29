@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Etat des lieux - IakaCockpit</title>
+<title>Etat des lieux - iakacockpit</title>
 <style>
 :root{--gold:#c8a44e;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -23,30 +23,31 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 .r-manual{background:rgba(150,150,150,.15);color:#aaa;}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
-<h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-06-26 14:01 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
+<h1>Etat des lieux - <span class="accent">iakacockpit</span></h1>
+<div class="sub">Genere le 2026-07-29 17:40 - motif : manual - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>-</div>
-  <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>c400476 docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog</code></div>
+  <div class="k">Version</div><div>v0.31.1</div>
+  <div class="k">Branche</div><div>feat/L32-litellm-v194</div>
+  <div class="k">Dernier commit</div><div><code>e1a7c1f docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</code></div>
   <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
-  <div class="k">Fichiers</div><div>19459 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</div>
+  <div class="k">Fichiers</div><div>9635 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>c400476</code></td><td>2026-06-26</td><td>docs(L10): instruction re-architecture conversation/session (terminal-source + chat-vue) + backlog</td></tr>
-<tr><td><code>48d722d</code></td><td>2026-06-26</td><td>docs(vision): grave le modele produit corrige — terminal-source / chat-vue, chef-runner, agents runner+modele (PROJET.md)</td></tr>
-<tr><td><code>d56af0f</code></td><td>2026-06-26</td><td>test(L9): non-regression de la trace — changer d'agent ne change pas les avatars passes</td></tr>
-<tr><td><code>898c4f6</code></td><td>2026-06-26</td><td>fix(L9): historique demo — emetteur par tour (Aragorn/Gandalf)</td></tr>
-<tr><td><code>094ead9</code></td><td>2026-06-26</td><td>fix(L9): Chat resout l'avatar de chaque bulle depuis turn.agent</td></tr>
-<tr><td><code>60c42db</code></td><td>2026-06-26</td><td>fix(L9): avatar par-tour — emetteur fige sur ChatTurn (preserve la trace)</td></tr>
-<tr><td><code>879edb9</code></td><td>2026-06-26</td><td>docs(L9): checkpoint gate Legolas PASS — backlog + etat des lieux (candidate v0.8.0-rc)</td></tr>
-<tr><td><code>43f58ff</code></td><td>2026-06-26</td><td>docs(L9): instruction demo enrichie (vignettes themees par team, workset, conversation prechargee)</td></tr>
-<tr><td><code>4e2cf74</code></td><td>2026-06-26</td><td>test(L9): import du script CouchDB via ?raw (sans dependance @types/node)</td></tr>
-<tr><td><code>703a8fb</code></td><td>2026-06-26</td><td>test(L9): coherence chat&lt;-&gt;main courante (C4) + doc sync-vignettes (CLAUDE.md)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>e1a7c1f</code></td><td>2026-07-29</td><td>docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</td></tr>
+<tr><td><code>5ddd485</code></td><td>2026-07-29</td><td>chore(docker): epingle litellm sur 1.94.0 (tag + digest), fin du tag flottant main-latest</td></tr>
+<tr><td><code>f4063dd</code></td><td>2026-07-29</td><td>docs(instructions): ajoute L32 - montee LiteLLM 1.82.6 -&gt; 1.94.0 epinglee</td></tr>
+<tr><td><code>a247ffe</code></td><td>2026-07-15</td><td>docs(reprise): état des lieux v0.31.1 (Analytics complet + programme fais-tout ; reprise)</td></tr>
+<tr><td><code>4906935</code></td><td>2026-07-14</td><td>docs(orchestration): sceau v0.31.1 (L31-P2 statut vivant par slot + cascade-close)</td></tr>
+<tr><td><code>053dce2</code></td><td>2026-07-14</td><td>fix(orchestration): fermeture en cascade des slots au retrait du projet</td></tr>
+<tr><td><code>ee8f71b</code></td><td>2026-07-14</td><td>feat(orchestration): statut vivant par slot (L31-P2)</td></tr>
+<tr><td><code>ca177bd</code></td><td>2026-07-14</td><td>docs(orchestration): sceau v0.31.0 (L31-P1 slots multi-runners réels)</td></tr>
+<tr><td><code>82e003f</code></td><td>2026-07-14</td><td>feat(orchestration): slots multi-runners reels par projet (L31-P1)</td></tr>
+<tr><td><code>2ac8ecd</code></td><td>2026-07-14</td><td>docs(cadrage): L31 orchestration multi-agent / runners réels par agent (cadrage, arbitrages)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-07-29 17:40</td><td><span class='r r-manual'>manual</span></td><td>v0.31.1</td><td>feat/L32-litellm-v194</td><td>L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)</td></tr>
 <tr><td>2026-06-26 14:01</td><td><span class='r r-pause'>pause</span></td><td>-</td><td>main</td><td>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</td></tr>
 <tr><td>2026-06-26 10:38</td><td><span class='r r-version'>version</span></td><td>v0.8.0-rc</td><td>main</td><td>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</td></tr>
 <tr><td>2026-06-26 09:32</td><td><span class='r r-version'>version</span></td><td>v0.7.0-rc</td><td>main</td><td>L8 conversation projet — gate Legolas PASS. 1 conv/projet, toggle Chat&lt;-&gt;Shell (PTY survit), chat persona-aware via Ollama, roster 5 agents @agent, terminal login shell reel (D10), seed L7 reconcilie (1 conversation).</td></tr>
