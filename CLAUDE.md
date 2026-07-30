@@ -495,11 +495,48 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       services **non touchés** (épinglage renvoyé en **L33**, AR-3). **Fait mesuré non prévu au cadrage** :
       l'image `main-latest` locale de ce poste n'était **pas** 1.82.6 mais **1.91.0** (build 2026-06-23,
       arm64) — la dérive du tag flottant est **prouvée sur pièce**, deux machines = deux versions.
-      **NON FAIT (bloqué)** : Phase D VM `192.168.2.12` (épingler + rallumer, AR-1 branche A) — **LAN iakabox
-      injoignable** depuis ce poste (réseau `192.168.1.0/24`, `.11`/`.12`/`.20` unreachable) ; conteneur `.12`
-      **laissé intact** (`Exited (0)`), rien de modifié à distance. **NON MESURÉ** : recette GUI
-      `npm run tauri dev` (critère Stéphane). Dettes **nommées non traitées** (DETTE-1 `master_key` en clair,
-      DETTE-2 exposition LAN du `.12`) → lot ultérieur.)*
+      **Phase D (VM `192.168.2.12`) — reprise du 2026-07-30, LAN de nouveau joignable** (double rebond
+      `root@.20`→`root@.12`). **Étape 13 (inventaire) FAITE**, **étape 14c (surface exposée) FAITE**,
+      **étapes 14a/14b ARRÊTÉES AVANT TOUTE ACTION** sur un point de décision qui dépasse le mandat
+      d'exécution — **rien n'a été modifié sur `.12`** (conteneur toujours `Exited (0)` sur `main-latest`,
+      aucun fichier touché, aucune image pullée).
+      **Inventaire réel de `.12` (mesuré, contredit une hypothèse du cadrage)** : le conteneur `litellm`
+      n'est **pas** un `docker run` isolé mais le **service `litellm` d'une stack compose de 11 services**
+      (`/root/docker-stack-ai/docker-compose.yml`, projet `docker-stack-ai`) ; image `main-latest` digest
+      `sha256:7c311546…0186` (= 1.82.6, build 2026-03-22) ; `restart: unless-stopped` ; commande
+      `--config /etc/litellm/config.yaml` ; config montée en `ro` depuis
+      `/root/docker-stack-ai/config/litellm-config.yaml` ; réseau `vm3_net` ; **aucun volume de données**.
+      Sa `model_list` **n'a rien à voir** avec celle du Cockpit : 8 entrées `ollama/` (alias `gpt-4`,
+      `gpt-4-turbo`, `gpt-3.5-turbo`, `mistral:7b-instruct-q4_K_M`, `qwen2.5-coder:7b` + 3 embeddings
+      `nomic-embed-text`), plus `router_settings` (`least-busy`, `num_retries`) absents côté Cockpit.
+      Ce proxy se déclare lui-même « **point unique d'entrée LLM pour tout le homelab** » et **deux
+      consommateurs tournent depuis 23 h** en pointant sur `http://litellm:4000/v1` : `open-webui` (8099)
+      et `obot` (3009, `depends_on: litellm`) — le rallumer **change leur comportement** (aujourd'hui ils
+      échouent sur LiteLLM ; `open-webui` survit via `ENABLE_OLLAMA_API`).
+      **⚠️ POINT DE BLOCAGE — ce LiteLLM a une BASE POSTGRES, contrairement au postulat du cadrage.**
+      `DATABASE_URL` + `general_settings.database_url` → `postgresql://…@10.10.10.2:5432/litellm`, sur une
+      **machine tierce** joignable (TCP ouvert via `eth1`/`10.10.10.3`). Conséquences : (1) l'innocuité des
+      ruptures 1.90/1.93/1.94 était démontrée par « le proxy tourne **sans base** » — **ce raisonnement ne
+      s'applique pas ici** (partitionnement Postgres des SpendLogs en 1.90, `oauth2_flow` lu en base en 1.93,
+      budgets sur clés d'équipe en 1.94) ; (2) rallumer en 1.94.0 déclenche **12 minors de migrations Prisma**
+      au boot, donc une **mutation de schéma irréversible** d'une base hors périmètre ; (3) **le filet de
+      rollback de L32 ne couvre PAS la base** — revenir au digest 1.82.6 sur un schéma migré en 1.94 n'est
+      pas un retour arrière garanti, ce qui contredit frontalement D4/R1 (« ne jamais monter sans filet »).
+      Fabriquer le filet manquant (`pg_dump`) exigerait de pull une image Postgres sur `.12` (aucun client
+      `psql`/`pg_dump`, aucune image Postgres locale) et de dumper une base hébergée sur une **autre machine**
+      — hors mandat. **Décision attendue de Stéphane** : accepter la migration de la base du homelab (avec
+      dump préalable) ou rallumer autrement. Rallumer sans base = **modifier la config**, interdit par R6-bis.
+      **Étape 14c — surface exposée, ÉCRITE (livrable, aucun changement)** : publication Docker
+      `ports: ["4001:4000"]` **sans `HostIp`** ⇒ bind `0.0.0.0:4001` **et** `[::]:4001` = **tout le LAN**
+      (et non `127.0.0.1`) ; `ufw` **actif** avec une règle **explicite** `4001/tcp ALLOW Anywhere` (v4 **et**
+      v6) — c'est une ouverture **voulue**, pas un oubli. Aujourd'hui **rien n'écoute** sur 4001 (conteneur
+      arrêté, port fermé depuis le poste) ; au rallumage, le proxy devient joignable par tout le LAN, protégé
+      par le seul `LITELLM_MASTER_KEY` (`sk-iakabox-7074…c782`) écrit **en clair dans le compose ET dans la
+      config montée** de `.12` — clé **admin** qui, avec la base, pilote clés/teams/budgets. À titre de
+      comparaison, `11434` (Ollama) est déjà **ouvert et joignable** depuis le poste, sans authentification.
+      **DETTE-1 et DETTE-2 sont donc plus lourdes sur `.12` que ce que L32 anticipait** ; conformément à R6
+      elles sont **constatées ici, non traitées** → **L35**.
+      **NON MESURÉ** : recette GUI `npm run tauri dev` (critère Stéphane).)*
 - [ ] **L33** — **Stabilisation du flake `tail_file_*` (harnais de test calé sur l'horloge murale)**
       → `specs/instructions/L33-flake-tests-tail-file.md`
       *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-07-30), branche
