@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">iakacockpit</span></h1>
-<div class="sub">Genere le 2026-07-29 17:40 - motif : manual - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-07-30 11:54 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
   <div class="k">Version</div><div>v0.31.1</div>
-  <div class="k">Branche</div><div>feat/L32-litellm-v194</div>
-  <div class="k">Dernier commit</div><div><code>e1a7c1f docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</code></div>
-  <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
-  <div class="k">Fichiers</div><div>9635 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)</div>
+  <div class="k">Branche</div><div>feat/L33-flake-tail-file</div>
+  <div class="k">Dernier commit</div><div><code>05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites</code></div>
+  <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
+  <div class="k">Fichiers</div><div>13786 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>e1a7c1f</code></td><td>2026-07-29</td><td>docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>05dc3d0</code></td><td>2026-07-30</td><td>test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites</td></tr>
+<tr><td><code>c0400e0</code></td><td>2026-07-30</td><td>docs(cadrage): L33 stabilisation du flake tail_file_* + rectifications L32</td></tr>
+<tr><td><code>604882f</code></td><td>2026-07-29</td><td>docs(etat-des-lieux): regenere apres epinglage litellm 1.94.0 (L32)</td></tr>
+<tr><td><code>e1a7c1f</code></td><td>2026-07-29</td><td>docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</td></tr>
 <tr><td><code>5ddd485</code></td><td>2026-07-29</td><td>chore(docker): epingle litellm sur 1.94.0 (tag + digest), fin du tag flottant main-latest</td></tr>
 <tr><td><code>f4063dd</code></td><td>2026-07-29</td><td>docs(instructions): ajoute L32 - montee LiteLLM 1.82.6 -&gt; 1.94.0 epinglee</td></tr>
 <tr><td><code>a247ffe</code></td><td>2026-07-15</td><td>docs(reprise): état des lieux v0.31.1 (Analytics complet + programme fais-tout ; reprise)</td></tr>
 <tr><td><code>4906935</code></td><td>2026-07-14</td><td>docs(orchestration): sceau v0.31.1 (L31-P2 statut vivant par slot + cascade-close)</td></tr>
 <tr><td><code>053dce2</code></td><td>2026-07-14</td><td>fix(orchestration): fermeture en cascade des slots au retrait du projet</td></tr>
 <tr><td><code>ee8f71b</code></td><td>2026-07-14</td><td>feat(orchestration): statut vivant par slot (L31-P2)</td></tr>
-<tr><td><code>ca177bd</code></td><td>2026-07-14</td><td>docs(orchestration): sceau v0.31.0 (L31-P1 slots multi-runners réels)</td></tr>
-<tr><td><code>82e003f</code></td><td>2026-07-14</td><td>feat(orchestration): slots multi-runners reels par projet (L31-P1)</td></tr>
-<tr><td><code>2ac8ecd</code></td><td>2026-07-14</td><td>docs(cadrage): L31 orchestration multi-agent / runners réels par agent (cadrage, arbitrages)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-07-30 11:54</td><td><span class='r r-pause'>pause</span></td><td>v0.31.1</td><td>feat/L33-flake-tail-file</td><td>L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas</td></tr>
 <tr><td>2026-07-29 17:40</td><td><span class='r r-manual'>manual</span></td><td>v0.31.1</td><td>feat/L32-litellm-v194</td><td>L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)</td></tr>
 <tr><td>2026-06-26 14:01</td><td><span class='r r-pause'>pause</span></td><td>-</td><td>main</td><td>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</td></tr>
 <tr><td>2026-06-26 10:38</td><td><span class='r r-version'>version</span></td><td>v0.8.0-rc</td><td>main</td><td>L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte).</td></tr>

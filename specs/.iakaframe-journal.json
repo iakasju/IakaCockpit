@@ -88,5 +88,15 @@
     "dirty": false,
     "files": 9635,
     "note": "L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)"
+  },
+  {
+    "date": "2026-07-30 11:54",
+    "reason": "pause",
+    "version": "v0.31.1",
+    "branch": "feat/L33-flake-tail-file",
+    "commit": "05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites",
+    "dirty": true,
+    "files": 13786,
+    "note": "L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas"
   }
 ]

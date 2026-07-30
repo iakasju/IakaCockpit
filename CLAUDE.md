@@ -500,6 +500,31 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **laissé intact** (`Exited (0)`), rien de modifié à distance. **NON MESURÉ** : recette GUI
       `npm run tauri dev` (critère Stéphane). Dettes **nommées non traitées** (DETTE-1 `master_key` en clair,
       DETTE-2 exposition LAN du `.12`) → lot ultérieur.)*
+- [ ] **L33** — **Stabilisation du flake `tail_file_*` (harnais de test calé sur l'horloge murale)**
+      → `specs/instructions/L33-flake-tests-tail-file.md`
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-07-30), branche
+      `feat/L33-flake-tail-file` (issue de `feat/L32-litellm-v194` : les deux se re-gatent ensemble).
+      **Aucune ligne de production touchée** — le diff est confiné au module `#[cfg(test)] mod tests` de
+      `src-tauri/src/transcript.rs` (un seul fichier, hunks tous ≥ ligne 879, `#[cfg(test)]` = ligne 545).
+      Livré : helper `wait_until(deadline, pred)` en `std` (`WAIT_DEADLINE` 10 s, `POLL_STEP` 10 ms,
+      `LINE_GRACE` 2 s non fatale, **aucune nouvelle dépendance**) ; la **condition d'arrêt du tailer est
+      désormais celle de l'assertion** (`done` fourni par chaque test) ; l'append *i+1* n'est écrit qu'après
+      **observation** de la ligne *i* (le test « appends après un premier EOF » exerce enfin réellement la
+      mécanique held fd — gain de **validité**, pas seulement de stabilité) ; test négatif refondu
+      (`run_tail_abandon` : attente de la terminaison **spontanée** du thread via `JoinHandle::is_finished`,
+      bornée, panique explicite, PUIS création du fichier → la course disparaît). **Cause racine mesurée,
+      non prévue au cadrage** : le transcript de test vivait directement sous `$TMPDIR`, donc le filet
+      `resolve_transcript` balayait le **répertoire temporaire du système** à chaque pas d'attente —
+      **57 819 entrées, 5,3 à 6,5 s de scan mesurées par tour** sur ce poste (la production balaye
+      `~/.claude/projects/`, quelques dizaines d'entrées). Le harnais reproduit maintenant l'arborescence
+      réelle `<arène>/projects/<escaped>/<sid>.jsonl` dans une arène dédiée et jetable. **Contrefactuel
+      fait** (M1/M2/M3 appliquées une à une, rouge capturé, révocation prouvée par `git diff` vide).
+      **Campagnes** : C1 20/20 vertes (1,61–2,63 s), C2 10/10 séquentielles vertes (4,09–5,62 s), C3 50/50
+      vertes sur le test incriminé seul (1,40–2,45 s), C4 20/20 vertes **sous charge** (2,03–3,87 s),
+      C5 `quality.sh` **exit 0 deux fois** (749 front + 337 Rust, **0 ignored**). **Défaut relevé dans
+      l'instruction** : la commande C3 qui y est écrite (`cargo test <nom> -- --exact`) sélectionne **0 test**
+      et verdit à vide — campagne rejouée avec le nom qualifié `transcript::tests::<nom>`. **Non fait** :
+      pas de push (LAN iakabox toujours injoignable).)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web

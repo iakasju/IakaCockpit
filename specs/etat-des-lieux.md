@@ -1,6 +1,6 @@
 # Etat des lieux - iakacockpit
 
-> Genere par iakaframe (CLI) le 2026-07-29 17:40 (motif: manual).
+> Genere par iakaframe (CLI) le 2026-07-30 11:54 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -8,16 +8,19 @@
 | Champ | Valeur |
 |---|---|
 | Version | v0.31.1 |
-| Branche | feat/L32-litellm-v194 |
-| Dernier commit | e1a7c1f docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN) |
-| Arbre | propre |
-| Fichiers (hors .git/node_modules) | 9635 |
-| Note | L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable) |
+| Branche | feat/L33-flake-tail-file |
+| Dernier commit | 05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites |
+| Arbre | MODIFICATIONS NON COMMITEES |
+| Fichiers (hors .git/node_modules) | 13786 |
+| Note | L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `05dc3d0` | 2026-07-30 | test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites |
+| `c0400e0` | 2026-07-30 | docs(cadrage): L33 stabilisation du flake tail_file_* + rectifications L32 |
+| `604882f` | 2026-07-29 | docs(etat-des-lieux): regenere apres epinglage litellm 1.94.0 (L32) |
 | `e1a7c1f` | 2026-07-29 | docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN) |
 | `5ddd485` | 2026-07-29 | chore(docker): epingle litellm sur 1.94.0 (tag + digest), fin du tag flottant main-latest |
 | `f4063dd` | 2026-07-29 | docs(instructions): ajoute L32 - montee LiteLLM 1.82.6 -> 1.94.0 epinglee |
@@ -25,9 +28,6 @@
 | `4906935` | 2026-07-14 | docs(orchestration): sceau v0.31.1 (L31-P2 statut vivant par slot + cascade-close) |
 | `053dce2` | 2026-07-14 | fix(orchestration): fermeture en cascade des slots au retrait du projet |
 | `ee8f71b` | 2026-07-14 | feat(orchestration): statut vivant par slot (L31-P2) |
-| `ca177bd` | 2026-07-14 | docs(orchestration): sceau v0.31.0 (L31-P1 slots multi-runners réels) |
-| `82e003f` | 2026-07-14 | feat(orchestration): slots multi-runners reels par projet (L31-P1) |
-| `2ac8ecd` | 2026-07-14 | docs(cadrage): L31 orchestration multi-agent / runners réels par agent (cadrage, arbitrages) |
 
 ## Reprise du travail (a completer par Cowork)
 
@@ -40,6 +40,7 @@
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-07-30 11:54 | pause | v0.31.1 | feat/L33-flake-tail-file | L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas |
 | 2026-07-29 17:40 | manual | v0.31.1 | feat/L32-litellm-v194 | L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable) |
 | 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |
 | 2026-06-26 10:38 | version | v0.8.0-rc | main | L9 demo enrichie — gate Legolas PASS. iaka-demo dans Working, conversation prechargee (chat + main courante coherents: delegation/rapport/verbatim), vignettes themees par team (charte x team, 3 teams, fallback pastille, CSP intacte). |
