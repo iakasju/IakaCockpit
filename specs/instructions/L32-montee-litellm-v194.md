@@ -252,7 +252,10 @@ vivant, et ce qu'il devient est désormais une décision écrite.
   la recette consiste justement à prouver qu'ils n'ont **pas** bougé.
 - **Sortie du secret `master_key` du dépôt** et **modification de l'exposition réseau du `.12`** :
   deux dettes **ouvertes par la branche A**, **nommées** au § *Ce que la branche A ouvre*, **non
-  traitées ici**. L32 les **constate** ; il ne les résout pas. → **suite attendue (L33 ou lot dédié)**.
+  traitées ici**. L32 les **constate** ; il ne les résout pas. → **suite attendue : L35** (cf. note de
+  renumérotation ci-dessous).
+- **Le défaut « clé invalide → `400 No connected db.` »** : **pré-existant**, **nommé** au § *Défaut
+  ouvert*, **non résolu ici**.
 
 ---
 
@@ -293,10 +296,29 @@ vivant, et ce qu'il devient est désormais une décision écrite.
 5. **Recréer le service** : `docker compose pull litellm && docker compose up -d litellm`.
    **Preuve** : `docker compose ps` → `iakacockpit-dev-litellm` **Up**.
 
-6. **Vérifier la version RÉELLE dans le conteneur** :
-   `docker exec iakacockpit-dev-litellm pip show litellm` → **`Version: 1.94.0`**.
-   *(Vérification secondaire, non substituable : `curl -s http://127.0.0.1:4020/health/readiness`
-   expose `litellm_version`.)* **La preuve fait foi, pas le tag écrit dans le compose.**
+6. **Vérifier la version RÉELLE dans le conteneur** — ⚠️ **PAS avec `pip`** :
+   ```bash
+   docker exec iakacockpit-dev-litellm sh -c \
+     'grep -E "^(Name|Version):" /app/.venv/lib/python3.13/site-packages/litellm-*.dist-info/METADATA'
+   ```
+   → **`Name: litellm`** + **`Version: 1.94.0`**. C'est la preuve la plus dure disponible : la lecture
+   **brute** du `METADATA` du `dist-info`, indépendante de tout outillage.
+   *(Preuve de second rang, si le chemin du `site-packages` devait bouger :
+   `docker exec iakacockpit-dev-litellm python -c "import importlib.metadata as m; print(m.version('litellm'))"`.)*
+
+   > **Rectification du 2026-07-29 (constat 🏹 Legolas).** La prescription initiale
+   > `docker exec … pip show litellm` était **matériellement inexécutable** : depuis
+   > l'amaigrissement de l'image en **v1.91.0** (« seuls les artefacts de runtime sont copiés »),
+   > **`pip` n'est plus embarqué** — `import pip` → `ModuleNotFoundError`. Une preuve qu'on ne peut
+   > pas exécuter n'est pas une preuve. *(Même cause que D5 : ne rien présumer du contenu de
+   > l'image.)*
+   >
+   > La **vérification secondaire** initialement prescrite est **caduque elle aussi** :
+   > `/health/readiness` **n'expose plus `litellm_version`** en 1.94.0. Payload réellement mesuré :
+   > `{"status":"healthy","db":"Not connected"}`. Cet appel reste utile comme **signe de vie**, il ne
+   > vaut **plus** comme preuve de version.
+
+   **La preuve fait foi, pas le tag écrit dans le compose.**
 
 7. **Vérifier que la config est acceptée** :
    `docker compose logs litellm --tail=200` → **aucune erreur ni warning de schéma** sur
@@ -323,9 +345,14 @@ vivant, et ce qu'il devient est désormais une décision écrite.
     *(Prouve `ollama_chat/` + `api_base` interne + `drop_params` — les paramètres non supportés par
     Ollama doivent être **silencieusement droppés**, pas provoquer une 400.)*
 
-11. **Vérifier l'authentification** : le **même appel sans** en-tête `Authorization` (ou avec une
-    mauvaise clé) doit être **refusé** (401/403). *(Prouve que `master_key` protège toujours —
-    non-régression de sécurité.)*
+11. **Vérifier l'authentification** — deux cas **distincts**, à ne pas confondre :
+    - **(a)** le **même appel sans** en-tête `Authorization` doit être **refusé** → **401**.
+      *(Prouve que `master_key` protège toujours — non-régression de sécurité.)*
+    - **(b)** le même appel avec une **clé invalide** : **constater le code réellement renvoyé et
+      l'écrire**. ⚠️ **Mesuré au gate du 2026-07-29 : `HTTP 400 No connected db.`**, et **non** 401/403.
+      Comportement **pré-existant** (re-mesuré par 🏹 Legolas sur un témoin **1.91.0** reconstruit) :
+      **ce n'est donc pas une régression de la montée** et **ce n'est pas à corriger ici** — c'est un
+      **défaut ouvert**, nommé au § *Défaut ouvert — clé invalide*.
 
 12. **Recette dans l'app réelle** (`npm run tauri dev`) : Réglages → endpoint
     `http://127.0.0.1:4020/v1`, modèle `llama3.2:1b`, clé `sk-iaka-test` → la fonction « prochaine
@@ -343,9 +370,11 @@ vivant, et ce qu'il devient est désormais une décision écrite.
     - **(a)** épingler l'image sur **le même digest 1.94.0** que la stack Cockpit (relevé à
       l'étape 2), recréer le conteneur, **sans changer la config montée ni les ports** — le lot est
       une **montée de version**, pas une reconfiguration.
-    - **(b)** **prouver la version** : `docker exec litellm pip show litellm` → `Version: 1.94.0`,
-      puis recette locale minimale : `GET /v1/models` sur le port réellement publié → le catalogue
-      répond.
+    - **(b)** **prouver la version** — **même preuve qu'à l'étape 6** (`pip` **absent** de l'image
+      depuis la v1.91.0) :
+      `docker exec litellm sh -c 'grep -E "^(Name|Version):" /app/.venv/lib/python3.13/site-packages/litellm-*.dist-info/METADATA'`
+      → `Version: 1.94.0` ; puis recette locale minimale : `GET /v1/models` sur le port réellement
+      publié → le catalogue répond.
     - **(c)** **constater et écrire l'exposition** : **quelle surface est publiée, sur quel port, et
       joignable depuis où** (`0.0.0.0:<port>` = tout le LAN, `127.0.0.1:<port>` = la VM seule). Ce
       constat est un **fait du LAN** à consigner au compte rendu, **même si la réponse est « on garde
@@ -422,7 +451,10 @@ dérive** (cf. D4).
    *(Si le filet a été fabriqué par `docker save` : `docker load < <tar>` d'abord, puis référencer
    l'image locale.)*
 2. `docker compose up -d litellm` (recrée le conteneur sur l'ancienne image).
-3. **Vérifier** : `docker exec iakacockpit-dev-litellm pip show litellm` → **`Version: 1.82.6`**.
+3. **Vérifier** (même preuve qu'à l'étape 6 — **pas `pip`**) :
+   `docker exec iakacockpit-dev-litellm sh -c 'grep -E "^(Name|Version):" /app/.venv/lib/python3.*/site-packages/litellm-*.dist-info/METADATA'`
+   → **`Version: 1.82.6`**. *(Version de repli : le `python3.x` du `site-packages` peut différer d'une
+   image à l'autre — d'où le glob.)*
 4. **Re-recetter** avec les **mêmes** étapes 9-12 : le rollback n'est acquis que si le chemin
    Cockpit → LiteLLM → Ollama répond **comme avant**.
 5. Côté git : **`git revert`** du commit d'épinglage. **Jamais `reset --hard`, jamais
@@ -435,12 +467,24 @@ dérive** (cf. D4).
 ## Critères d'acceptation (testables)
 
 **Version et épinglage**
-- [ ] `docker exec iakacockpit-dev-litellm pip show litellm` affiche **`Version: 1.94.0`**.
+- [ ] La lecture **brute du `METADATA`** dans le conteneur affiche **`Name: litellm` / `Version: 1.94.0`** :
+      `docker exec iakacockpit-dev-litellm sh -c 'grep -E "^(Name|Version):" /app/.venv/lib/python3.13/site-packages/litellm-*.dist-info/METADATA'`.
+      *(**Pas `pip show`** : `pip` n'est plus dans l'image depuis la v1.91.0 — cf. rectification de
+      l'étape 6. Preuve de second rang : `python -c "import importlib.metadata as m; print(m.version('litellm'))"`.)*
 - [ ] `docker/docker-compose.yml` référence l'image sous la forme **`…:1.94.0@sha256:<digest>`**
       (tag **et** digest présents).
-- [ ] **Aucune occurrence de `main-latest`** (ni d'aucun tag flottant LiteLLM) dans le dépôt :
-      `grep -rn "berriai/litellm" .` ne renvoie **que** la ligne épinglée et, le cas échéant, le
-      commentaire de rollback.
+- [ ] **Aucun tag flottant LiteLLM ne subsiste dans le code de la stack** :
+      ```bash
+      grep -rnE "berriai/litellm:(main-latest|latest|main-stable)" . --exclude='*.md' --exclude='*.html'
+      ```
+      → **exit 1** (aucune correspondance).
+      > **Rectification du 2026-07-29 (constat 🏹 Legolas).** Le critère initial — *« `grep -rn
+      > "berriai/litellm" .` ne renvoie que la ligne épinglée »* — était **inatteignable par
+      > construction** : **cette instruction elle-même**, committée sur la branche, cite `main-latest`
+      > une dizaine de fois pour **documenter l'état d'avant**. Un critère qu'aucune exécution correcte
+      > ne peut satisfaire n'est pas un critère : il fabrique un faux échec au gate. La forme
+      > ci-dessus vise les **tags flottants** dans le **code** (documentation et rapports exclus) —
+      > c'est la forme **vérifiée et validée** au gate.
 - [ ] Le **digest de rollback 1.82.6** est présent en commentaire dans le compose.
 
 **Fonctionnel (le chemin doit répondre à l'identique)**
@@ -451,8 +495,12 @@ dérive** (cf. D4).
 - [ ] `POST /v1/chat/completions` avec `temperature`/`max_tokens`/`stream:false` → **200**,
       `object: "chat.completion"`, `choices[0].message.content` **non vide** *(prouve `ollama_chat/`
       + `drop_params`)*.
-- [ ] Le **même appel sans clé** (ou avec une clé fausse) est **refusé** (401/403) *(prouve
-      `master_key`)*.
+- [ ] Le **même appel sans clé** est **refusé** → **401** *(prouve `master_key`)*.
+- [ ] Le même appel avec une **clé invalide** : le code renvoyé est **constaté et écrit** au compte
+      rendu. **Attendu mesuré : `400 No connected db.`** — **anomalie pré-existante, hors périmètre
+      de correction** (cf. § *Défaut ouvert — clé invalide*). **Ce critère porte sur le constat, pas
+      sur le code** : exiger 401/403 ici ferait échouer le gate sur un défaut que le lot n'a ni créé
+      ni charge de résoudre.
 - [ ] **Dans l'app réelle** (`npm run tauri dev`) : endpoint `http://127.0.0.1:4020/v1` + modèle
       `llama3.2:1b` + clé `sk-iaka-test` → la fonction « prochaine étape » (L3) **répond**.
 - [ ] Le **port hôte reste `127.0.0.1:4020`** et le **nom de conteneur reste
@@ -464,11 +512,20 @@ dérive** (cf. D4).
 - [ ] **Aucun fichier de `src/` ni de `src-tauri/`** n'est modifié (`git diff --stat` le prouve).
 - [ ] `bash scripts/quality.sh` reste **vert** *(le lot ne touche pas au code : toute variation est
       un signal d'alerte, pas un effet attendu)*.
+      > **Rectification du 2026-07-29 (constat 🏹 Legolas).** Ce critère est **momentanément
+      > inatteignable pour une raison étrangère à L32** : un **flake pré-existant** de 4 tests
+      > `tail_file_*` (`src-tauri/src/transcript.rs`) fait sortir `quality.sh` en **101** ~7 fois sur 8
+      > (dernier commit touchant `src-tauri/` = `922f2e9` du **2026-07-14**, antérieur à la branche).
+      > **Tant que L33 n'est pas livré**, le critère se lit : *aucune variation qualité **imputable à
+      > L32*** — prouvé par `git diff --stat` **vide** sur `src/` et `src-tauri/` (critère précédent),
+      > et par la **liste nominative** des tests rouges, qui doit se limiter aux 4 `tail_file_*`
+      > connus. **Après L33**, le critère reprend sa forme littérale : **vert de bout en bout**.
+      > → `specs/instructions/L33-flake-tests-tail-file.md`
 
 **VM `.12` et documentation**
-- [ ] Le conteneur `litellm` de `192.168.2.12` est **Up**, sur une image **épinglée**, et
-      `docker exec litellm pip show litellm` affiche **`Version: 1.94.0`** — **plus d'`Exited (0)`
-      dormant**, avec la **preuve** en compte rendu.
+- [ ] Le conteneur `litellm` de `192.168.2.12` est **Up**, sur une image **épinglée**, et la lecture
+      brute du `METADATA` (même commande qu'à l'étape 6, **pas `pip show`**) affiche
+      **`Version: 1.94.0`** — **plus d'`Exited (0)` dormant**, avec la **preuve** en compte rendu.
 - [ ] `GET /v1/models` répond sur le port publié du `.12` (recette locale minimale).
 - [ ] La **config montée et les ports du `.12` sont inchangés** par rapport à l'inventaire d'avant
       (seule l'image a bougé).
@@ -512,10 +569,17 @@ Forme canonique amont depuis la v1.84.0 (PEP 440), celle des exemples de la doc 
 tag `v1.94.0` pointe vers le **même digest** ; le digest fait foi de toute façon. *Impact :
 cosmétique.*
 
-### AR-3 — **Épinglage des 3 autres images de la stack** → **renvoyé en lot séparé (L33)** (reco retenue)
+### AR-3 — **Épinglage des 3 autres images de la stack** → **renvoyé en lot séparé (L34)** (reco retenue)
 `ollama/ollama:latest`, `couchdb:3`, `docker.n8n.io/n8nio/n8n` (**sans tag** ⇒ `latest`) sont **aussi**
 flottants, et devront être épinglés — **mais pas ici**. Mélanger une montée de version et un chantier
 de reproductibilité rendrait tout échec ambigu ; **L32 doit rester diagnosticable**.
+
+> **Renumérotation du 2026-07-29.** Ce renvoi disait **« L33 »**. Le numéro **L33** a été pris par un
+> lot **prioritaire** : *stabiliser le flake `tail_file_*`*
+> (`specs/instructions/L33-flake-tests-tail-file.md`) — sans filet de non-régression fiable, aucun lot
+> ultérieur touchant `src-tauri/` n'est diagnosticable. Les suites de L32 glissent donc d'un cran :
+> **L34** = épinglage des 3 images restantes (ce point) · **L35** = dettes de L32 (DETTE-1 `master_key`,
+> DETTE-2 exposition LAN du `.12`, défaut ouvert `400`/`401`).
 
 ### AR-4 — **Correction iakaFreeVision** → **texte fourni par L32, édition dans le dépôt iakaFreeVision** (reco retenue)
 L32 produit le **texte de remplacement sourcé** (étape 15) ; l'**édition + commit** se font **dans le
@@ -539,7 +603,8 @@ est déjà déclaré et n'est pas touché. *Impact : nul sur le code.*
 > **⚠️ Ce paragraphe NOMME, il ne RÉSOUT PAS.** Aucune de ces deux dettes n'est à traiter dans L32 :
 > **L32 reste la montée de version.** Aucun schéma de secrets, aucun reverse-proxy, aucune
 > redéfinition d'architecture n'est proposé ici — ce serait de la sur-ingénierie sur un lot dont le
-> périmètre est fermé. **Suite attendue : L33 ou lot dédié**, cadré le jour où Stéphane le décide.
+> périmètre est fermé. **Suite attendue : L35 ou lot dédié**, cadré le jour où Stéphane le décide.
+> *(Ex-« L33 » — renumérotée le 2026-07-29, cf. AR-3.)*
 
 ### DETTE-1 — Le secret `master_key` est un secret **jetable, en clair et commité**
 `docker/litellm-config.yaml` porte `master_key: sk-iaka-test` **en clair dans le dépôt**. C'est
@@ -562,6 +627,37 @@ réponse est « on garde tel quel pour l'instant »**. Un port ouvert connu et �
 un port ouvert non écrit est un angle mort.
 **Ce que L32 ne fait pas** : le changer, le filtrer, le protéger. **Statut : dette nommée, suite
 attendue.**
+
+---
+
+## Défaut ouvert — **clé invalide → `400 No connected db.`** *(à NOMMER, pas à résoudre ici)*
+
+> **Ajouté le 2026-07-29 au constat du gate 🏹 Legolas.** Ce défaut est **PRÉ-EXISTANT** : il a été
+> **re-mesuré sur un témoin `1.91.0` reconstruit**, donc **la montée ne l'a ni créé ni aggravé**.
+> Il est écrit ici parce qu'un défaut mesuré et tu est un défaut qu'on redécouvre en incident.
+
+**Le fait.** Une requête portant une **clé invalide** ne reçoit **pas** `401`/`403` mais :
+
+```
+HTTP 400 — No connected db.
+```
+
+*(À distinguer de l'absence totale de clé, qui donne bien un **401**.)* La cause est structurelle :
+le proxy tourne **sans base de données** (choix assumé du lot — cf. § état des lieux), et la
+validation d'une clé **non-master** exige la base ; l'échec de lookup est rendu comme une **erreur de
+configuration serveur (4xx générique)** au lieu d'un **refus d'authentification**.
+
+**Pourquoi ça compte pour NOUS, concrètement.** Un client — **`src-tauri/src/ai.rs`** — ne peut pas
+**distinguer « clé refusée » de « passerelle en panne »**. Conséquence directe à l'IHM : l'app
+affichera **« erreur serveur »** là où l'utilisateur doit lire **« clé invalide »** — c'est-à-dire le
+seul message qui lui dise **quoi faire**. Le défaut est donc **d'ergonomie de diagnostic**, pas de
+sécurité : la clé invalide est bien **rejetée**, elle est juste **mal qualifiée**.
+
+**Statut : NOMMÉ, non traité.** Aucune correction dans L32 (ce serait toucher `ai.rs`, explicitement
+**hors périmètre**) et aucune solution n'est esquissée ici — ni contournement côté client (deviner
+l'intention derrière un 400), ni activation d'une base côté proxy, ni mapping d'erreur : chacune est
+une **décision d'architecture** qui demande son propre cadrage. **Suite attendue : L35** (dettes
+issues de L32), ou lot dédié le jour où Stéphane le décide.
 
 ---
 
