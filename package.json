@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:handoff-parity": "node scripts/test-handoff-parity.mjs",
     "quality": "bash scripts/quality.sh",
     "tauri": "tauri"
   },

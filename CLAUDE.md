@@ -49,6 +49,11 @@ npm run test                 # vitest
 npm run test:coverage        # vitest + couverture v8
 bash scripts/quality.sh      # chaîne qualité complète (front + Rust)
 
+# Garde de parité du contrat de handoff (forge → cockpit) — HORS gate par défaut,
+# car elle dépend du dépôt frère iakaFrameGUI (SKIP propre sur un clone isolé) :
+npm run test:handoff-parity  # ForgeTeam/ForgePersona/HandoffManifest vs @iakaframe/core
+                             # IAKAFRAMEGUI_HOME=<dir> pour pointer un autre frère (autoritaire)
+
 # Vignettes thémées (L9) — copie un sous-ensemble de PNG iakagraph + manifest :
 bash scripts/sync-vignettes.sh                       # défaut : naonedge {dark,light} x {lotr,avengers,starfleet} x 5 rôles
 IAKAGRAPH_ROOT=~/work/iakagraph TEAMS="lotr avengers starfleet" bash scripts/sync-vignettes.sh
