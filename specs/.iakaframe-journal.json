@@ -78,5 +78,25 @@
     "dirty": false,
     "files": 19459,
     "note": "Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue."
+  },
+  {
+    "date": "2026-07-29 17:40",
+    "reason": "manual",
+    "version": "v0.31.1",
+    "branch": "feat/L32-litellm-v194",
+    "commit": "e1a7c1f docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)",
+    "dirty": false,
+    "files": 9635,
+    "note": "L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)"
+  },
+  {
+    "date": "2026-07-30 11:54",
+    "reason": "pause",
+    "version": "v0.31.1",
+    "branch": "feat/L33-flake-tail-file",
+    "commit": "05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites",
+    "dirty": true,
+    "files": 13786,
+    "note": "L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas"
   }
 ]

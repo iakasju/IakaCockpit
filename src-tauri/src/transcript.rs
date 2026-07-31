@@ -876,33 +876,96 @@ mod tests {
     use std::io::Write as _;
     use std::sync::atomic::AtomicBool;
 
-    /// Chemin de transcript temporaire UNIQUE (nanos + compteur) pour ne pas collisionner
-    /// entre tests parallèles.
-    fn unique_transcript_path() -> std::path::PathBuf {
+    /// Arène de transcript temporaire UNIQUE (nanos + compteur) pour ne pas collisionner
+    /// entre tests parallèles. Rend `(arène, chemin du transcript)`.
+    ///
+    /// **L33 — la structure compte, pas seulement l'unicité.** Le chemin reproduit
+    /// l'arborescence RÉELLE `<racine>/projects/<escaped>/<session_id>.jsonl`, si bien que
+    /// le **grand-parent** du fichier (le `projects/` que `resolve_transcript` balaye tant
+    /// que le fichier n'existe pas) est un dossier DÉDIÉ ne contenant qu'une entrée.
+    ///
+    /// L'ancien chemin (`<temp>/iaka-tail-<pid>/t-….jsonl`) donnait pour grand-parent le
+    /// **répertoire temporaire du système** : sur cette machine, 57 819 entrées, soit
+    /// **5,3 à 6,5 s de scan MESURÉES par tour d'attente**. Le tailer, encore correct,
+    /// passait donc des secondes par pas de poll — la production, elle, balaye
+    /// `~/.claude/projects/` (quelques dizaines d'entrées). Le harnais faisait payer au
+    /// tailer un coût que la production ne paie jamais, et ce coût varie avec la charge et
+    /// le cache FS : c'est la source de variance qui faisait basculer ces tests.
+    fn unique_transcript_arena() -> (std::path::PathBuf, std::path::PathBuf) {
         use std::sync::atomic::AtomicU64;
         static SEQ: AtomicU64 = AtomicU64::new(0);
-        let dir = std::env::temp_dir().join(format!("iaka-tail-{}", std::process::id()));
-        let _ = std::fs::create_dir_all(&dir);
         let n = SEQ.fetch_add(1, Ordering::Relaxed);
-        dir.join(format!(
-            "t-{}-{n}.jsonl",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ))
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let arena =
+            std::env::temp_dir().join(format!("iaka-tail-{}-{nanos}-{n}", std::process::id()));
+        // `<arène>/projects/<escaped>/` — miroir de l'arborescence de Claude Code.
+        let dir = arena.join("projects").join("-escaped-cwd");
+        std::fs::create_dir_all(&dir).unwrap();
+        (arena, dir.join(format!("t-{nanos}-{n}.jsonl")))
+    }
+
+    // --- Rendez-vous explicites (L33) : plus AUCUN délai deviné ne gouverne une assertion.
+    //
+    // Le harnais de ces tests était entièrement calé sur l'horloge murale (`sleep(400ms)`
+    // puis `stop`, `sleep(40ms)` entre appends) face à un tailer qui poll toutes les
+    // `POLL_INTERVAL` (150 ms) : sous charge, le tailer était stoppé AVANT d'avoir émis et
+    // le vecteur collecté restait vide. On attend désormais une CONDITION OBSERVABLE, avec
+    // un plafond généreux — dont le prix n'est payé qu'en cas d'échec.
+
+    /// Plafond généreux de rendez-vous : ~8× la durée d'un run complet vert (1,15–1,24 s
+    /// mesuré) et ~66× `POLL_INTERVAL` (150 ms). Jamais payé sur le chemin nominal : le
+    /// rendez-vous rend la main dès que la condition est vraie.
+    const WAIT_DEADLINE: Duration = Duration::from_secs(10);
+
+    /// Pas de poll du helper (≤ 20 ms) : ≥ 15 relevés par pas de tailer. Ce `sleep`-là est
+    /// LÉGITIME — c'est un pas de poll, pas un délai deviné : il ne borne aucune assertion.
+    const POLL_STEP: Duration = Duration::from_millis(10);
+
+    /// Grâce (courte, NON FATALE) accordée à l'observation d'une ligne avant d'écrire la
+    /// suivante : toutes les lignes ne produisent pas forcément un event, c'est `done` qui
+    /// gouverne la fin, pas cette grâce.
+    const LINE_GRACE: Duration = Duration::from_secs(2);
+
+    /// Poll `pred` jusqu'à ce qu'elle soit vraie, ou jusqu'à `deadline`. Rend `true` si la
+    /// condition a été atteinte. Ne bloque JAMAIS indéfiniment. La prédicate ne doit pas
+    /// tenir de verrou pendant le sommeil : on évalue, on relâche, on dort.
+    fn wait_until(deadline: Duration, mut pred: impl FnMut() -> bool) -> bool {
+        let start = std::time::Instant::now();
+        loop {
+            if pred() {
+                return true;
+            }
+            if start.elapsed() >= deadline {
+                return false;
+            }
+            std::thread::sleep(POLL_STEP);
+        }
+    }
+
+    /// Instantané (clone) des events collectés — le verrou est relâché à la sortie.
+    fn snapshot(collected: &Arc<Mutex<Vec<RunnerEvent>>>) -> Vec<RunnerEvent> {
+        collected.lock().unwrap().clone()
     }
 
     /// Lance `tail_file` dans un thread, écrit des lignes JSONL INCRÉMENTALEMENT dans le
     /// fichier (comme Claude Code qui `append`), et renvoie les events collectés. Le
     /// fichier est créé `create_delay` APRÈS le démarrage du tailer (simule le délai
     /// spawn→transcript, piloté par l'utilisateur) ; `create_wait` borne l'attente.
+    ///
+    /// `done` est la **condition de fin** fournie par le test appelant : elle reprend le
+    /// prédicat de son assertion, et c'est ELLE qui déclenche l'arrêt du tailer (et non un
+    /// délai deviné). Si elle n'est jamais vraie, on rend la main à `WAIT_DEADLINE` et le
+    /// test échoue sur SA PROPRE assertion, avec le contenu réellement collecté.
     fn run_tail_collect_ext(
         lines: &[&str],
         create_delay: Duration,
         create_wait: Option<Duration>,
+        done: impl Fn(&[RunnerEvent]) -> bool,
     ) -> Vec<RunnerEvent> {
-        let path = unique_transcript_path();
+        let (arena, path) = unique_transcript_arena();
         let path_str = path.to_string_lossy().to_string();
 
         let stop = Arc::new(AtomicBool::new(false));
@@ -917,40 +980,100 @@ mod tests {
             });
         });
 
-        // Le fichier n'apparaît qu'APRÈS `create_delay` (le tailer doit l'attendre).
+        // Le fichier n'apparaît qu'APRÈS `create_delay` (le tailer doit l'attendre). Ce
+        // `sleep` est CONSERVÉ : la propriété qu'il installe (« le fichier n'existe pas
+        // encore ») est MONOTONE — un ordonnancement plus lent ne fait que la renforcer.
         std::thread::sleep(create_delay);
 
         // Crée puis fait GROSSIR le fichier par appends successifs (held fd côté tailer).
         let mut f = std::fs::File::create(&path).unwrap();
         for line in lines {
+            let before = collected.lock().unwrap().len();
             writeln!(f, "{line}").unwrap();
             f.flush().unwrap();
-            std::thread::sleep(Duration::from_millis(40));
+            // Rendez-vous : la ligne précédente a-t-elle été OBSERVÉE ? Le tailer a donc
+            // atteint l'EOF avant l'append suivant — c'est ce qui rend le test « appends
+            // après un premier EOF » réellement VALIDE (et plus seulement stable).
+            wait_until(LINE_GRACE, || collected.lock().unwrap().len() > before);
         }
-        // Laisse le tailer rattraper l'EOF puis on l'arrête.
-        std::thread::sleep(Duration::from_millis(400));
-        stop.store(true, Ordering::Relaxed);
-        let _ = handle.join();
-        let _ = std::fs::remove_file(&path);
 
-        let out = collected.lock().unwrap().clone();
-        out
+        // Rendez-vous d'arrêt : on stoppe le tailer quand la condition ATTENDUE PAR
+        // L'ASSERTION est satisfaite — jamais après un délai deviné.
+        wait_until(WAIT_DEADLINE, || done(&snapshot(&collected)));
+        stop.store(true, Ordering::Relaxed);
+        // Le join peut coûter jusqu'à un `POLL_INTERVAL` (le thread dort par pas) : normal.
+        let _ = handle.join();
+        let _ = std::fs::remove_dir_all(&arena);
+
+        snapshot(&collected)
     }
 
     /// Cas nominal : fichier créé tout de suite, attente bornée par `stop` (`None`).
-    fn run_tail_collect(lines: &[&str]) -> Vec<RunnerEvent> {
-        run_tail_collect_ext(lines, Duration::ZERO, None)
+    fn run_tail_collect(lines: &[&str], done: impl Fn(&[RunnerEvent]) -> bool) -> Vec<RunnerEvent> {
+        run_tail_collect_ext(lines, Duration::ZERO, None, done)
+    }
+
+    /// Harnais du cas NÉGATIF : le tailer doit ABANDONNER de lui-même (plafond
+    /// `create_wait` explicite). On attend la TERMINAISON SPONTANÉE du thread (U3), PUIS
+    /// seulement on crée le fichier : le thread est mort, plus aucune émission n'est
+    /// possible, la course d'ordonnancement n'existe plus. Si le tailer n'abandonne pas
+    /// dans `WAIT_DEADLINE`, on lève `stop`, on `join` et on panique EXPLICITEMENT —
+    /// jamais de blocage.
+    fn run_tail_abandon(lines: &[&str], create_wait: Duration) -> Vec<RunnerEvent> {
+        let (arena, path) = unique_transcript_arena();
+        let path_str = path.to_string_lossy().to_string();
+
+        let stop = Arc::new(AtomicBool::new(false));
+        let collected = Arc::new(Mutex::new(Vec::<RunnerEvent>::new()));
+
+        let stop_t = Arc::clone(&stop);
+        let collected_t = Arc::clone(&collected);
+        let path_t = path_str.clone();
+        let handle = std::thread::spawn(move || {
+            tail_file(&path_t, &stop_t, Some(create_wait), |ev| {
+                collected_t.lock().unwrap().push(ev.clone());
+            });
+        });
+
+        if !wait_until(WAIT_DEADLINE, || handle.is_finished()) {
+            stop.store(true, Ordering::Relaxed);
+            let _ = handle.join();
+            let _ = std::fs::remove_dir_all(&arena);
+            panic!(
+                "le tailer n'a pas abandonné en {WAIT_DEADLINE:?} malgré un plafond d'attente de {create_wait:?}"
+            );
+        }
+        let _ = handle.join();
+
+        // Le fichier n'apparaît qu'APRÈS la mort du tailer : aucune émission possible.
+        let mut f = std::fs::File::create(&path).unwrap();
+        for line in lines {
+            writeln!(f, "{line}").unwrap();
+        }
+        f.flush().unwrap();
+        drop(f);
+        let _ = std::fs::remove_dir_all(&arena);
+
+        snapshot(&collected)
     }
 
     #[test]
     fn tail_file_emet_les_events_dun_fichier_qui_grossit_en_direct() {
         // Schéma RÉEL (extraits du transcript de recette) : une parole user, une parole
         // assistant, un geste — ajoutés EN DIRECT après l'ouverture du tailer.
-        let evs = run_tail_collect(&[
-            r#"{"type":"user","message":{"role":"user","content":"hello"}}"#,
-            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"👋 Hello! Ready."}]}}"#,
-            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}"#,
-        ]);
+        let evs = run_tail_collect(
+            &[
+                r#"{"type":"user","message":{"role":"user","content":"hello"}}"#,
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"👋 Hello! Ready."}]}}"#,
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}"#,
+            ],
+            // Condition de fin = le prédicat des assertions ci-dessous, mot pour mot.
+            |evs| {
+                evs.iter()
+                    .any(|e| e.kind == EventKind::Parole && e.role == "assistant")
+                    && evs.iter().any(|e| e.kind == EventKind::Geste)
+            },
+        );
         // Au moins une parole assistant DOIT remonter (c'est ELLE qui peuple le chat et
         // retombe le `pending` côté front — le symptôme « chat muet / pending bloqué »).
         assert!(
@@ -981,6 +1104,14 @@ mod tests {
             ],
             Duration::from_millis(600),
             None,
+            // Condition de fin = le prédicat de l'assertion ci-dessous, mot pour mot.
+            |evs| {
+                evs.iter().any(|e| {
+                    e.kind == EventKind::Parole
+                        && e.role == "assistant"
+                        && e.text.as_deref() == Some("🟡 [COORDINATION][Aragorn] prêt")
+                })
+            },
         );
         assert!(
             evs.iter().any(|e| e.kind == EventKind::Parole
@@ -995,12 +1126,16 @@ mod tests {
         // Reproduit l'ANCIEN comportement fragile : un plafond d'attente PLUS COURT que le
         // délai d'apparition fait abandonner le tailer → AUCUN event (le bug). Verrouille
         // le fait que c'était bien le plafond, et que la production l'a retiré (`None`).
-        let evs = run_tail_collect_ext(
+        //
+        // Déterminisme : on attend que le tailer ait abandonné DE LUI-MÊME, et le fichier
+        // n'apparaît qu'APRÈS — le fichier arrive donc toujours « trop tard », quel que
+        // soit l'ordonnancement. (Le plafond est décompté par pas de `POLL_INTERVAL` :
+        // avec 200 ms l'abandon survient en pratique vers 300 ms — normal, côté production.)
+        let evs = run_tail_abandon(
             &[
                 r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"trop tard"}]}}"#,
             ],
-            Duration::from_millis(700),
-            Some(Duration::from_millis(200)),
+            Duration::from_millis(200),
         );
         assert!(
             evs.is_empty(),
@@ -1013,10 +1148,25 @@ mod tests {
         // Verrouille la mécanique « held fd » : le tailer atteint l'EOF sur la 1ʳᵉ ligne,
         // PUIS une nouvelle ligne est ajoutée → elle doit quand même être émise (la
         // recette a montré que le transcript apparaît ~20-30 s après, par appends).
-        let evs = run_tail_collect(&[
-            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"premier"}]}}"#,
-            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"second apres EOF"}]}}"#,
-        ]);
+        // La 2ᵉ ligne n'est écrite qu'APRÈS que la 1ʳᵉ ait été OBSERVÉE (rendez-vous du
+        // harnais) : le tailer a donc bien franchi l'EOF entre les deux, la mécanique
+        // « held fd » est réellement exercée (ce qui n'était pas garanti avec un sleep
+        // de 40 ms contre un poll de 150 ms).
+        let evs = run_tail_collect(
+            &[
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"premier"}]}}"#,
+                r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"second apres EOF"}]}}"#,
+            ],
+            // Condition de fin = le prédicat des assertions ci-dessous, mot pour mot.
+            |evs| {
+                let paroles: Vec<_> = evs
+                    .iter()
+                    .filter(|e| e.kind == EventKind::Parole)
+                    .filter_map(|e| e.text.as_deref())
+                    .collect();
+                paroles.contains(&"premier") && paroles.contains(&"second apres EOF")
+            },
+        );
         let paroles: Vec<_> = evs
             .iter()
             .filter(|e| e.kind == EventKind::Parole)
