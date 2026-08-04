@@ -10,6 +10,46 @@
 
 ---
 
+## ⚠️ Amendement du 2026-08-03 (🧙 Gandalf) — état réel du lot, à lire AVANT le reste
+
+Ce cadrage a été **consommé** : le lot est **implémenté** (branche `feat/L33-flake-tail-file`,
+2026-07-30) et **remis au gate 🏹 Legolas**, non auto-validé. L'instruction ci-dessous est donc
+**historique** — elle n'est plus à exécuter. Vérifié en lecture de code le 2026-08-03 :
+`wait_until` / `WAIT_DEADLINE` / `POLL_STEP` / `LINE_GRACE` (`transcript.rs:921-946`), harnais
+`run_tail_collect_ext` avec condition de fin `done` (`:962-1009`), harnais négatif dédié
+`run_tail_abandon` sur `JoinHandle::is_finished` (`:1022-1058`), et les 4 tests appelants
+(`:1061`, `:1097`, `:1125`, `:1147`) portant chacun sa condition de fin. **Toute demande de
+re-cadrage du même besoin est un doublon** : le besoin est couvert.
+
+**Trois rectifications de fond apportées par ce même amendement :**
+
+**A1 — La cause racine énoncée au § Problème était INCOMPLÈTE.** Le cadrage n'avait retenu que le
+calage sur l'horloge murale. L'exécution rapporte une seconde cause, **dominante** : le transcript
+de test vivait directement sous `$TMPDIR`, si bien que le filet `resolve_transcript` balayait le
+**répertoire temporaire du système** à chaque pas d'attente — **57 819 entrées, 5,3 à 6,5 s par
+tour** sur ce poste, là où la production balaye `~/.claude/projects/` (quelques dizaines
+d'entrées). Le harnais faisait donc payer au tailer un coût que la production ne paie **jamais**.
+La correction associée (arène dédiée reproduisant `<racine>/projects/<escaped>/<sid>.jsonl`) est
+en place et documentée dans le code (`transcript.rs:879-908`). *Fait rapporté par l'exécution,
+consigné ici tel quel — non re-mesuré par le cadrage, qui travaille en lecture seule.*
+
+**A2 — Le critère C3 de ce document était INOPPOSABLE (corrigé ci-dessous).** La commande écrite
+sélectionnait **0 test** et **verdissait à vide**. Cause vérifiée sur pièce : `--exact` exige le
+nom **pleinement qualifié**, or les tests vivent dans `mod tests` du module `transcript`
+(`lib.rs:31` `pub mod transcript;`, crate lib `app_lib` — `Cargo.toml:9-13`). Le préfixe
+`transcript::tests::` est donc **obligatoire**. Corrigé à l'étape 14 et au critère C3. **Un gate
+rendu sur l'ancienne commande serait sans valeur** — non pas faute de citer sa commande, mais
+parce que la commande citée ne mesure rien.
+
+**A3 — Ce qui reste dû au gate.** Les campagnes C1–C5 rapportées par l'exécution (C1 20/20,
+C2 10/10, C3 50/50 avec le nom qualifié, C4 20/20 sous charge, C5 `quality.sh` exit 0 ×2) sont
+des **déclarations d'exécutant** : elles doivent être **rejouées ou contre-vérifiées** par
+🏹 Legolas, commandes et sorties citées, avant tout verdict. Le contrefactuel (phase C) est le
+point à ne pas relâcher : c'est lui, et non les campagnes, qui prouve que les tests **mesurent
+encore quelque chose**.
+
+---
+
 ## Problème
 
 Quatre tests de `src-tauri/src/transcript.rs` échouent **par intermittence**, ce qui rend
@@ -267,8 +307,15 @@ conséquence le 2026-07-29.)*
 
 12. **C1** — 20 passes consécutives de `cargo test` (parallèle, défaut).
 13. **C2** — 10 passes consécutives de `cargo test -- --test-threads=1`.
-14. **C3** — 50 passes consécutives du seul `..._apparait_tard_...`
-    (`cargo test tail_file_attend_un_transcript_qui_apparait_tard_et_l_emet -- --exact`).
+14. **C3** — 50 passes consécutives du seul `..._apparait_tard_...`. Commande **exacte** — le nom
+    doit être **pleinement qualifié**, `--exact` matchant le chemin de module complet :
+    ```bash
+    cd src-tauri && cargo test transcript::tests::tail_file_attend_un_transcript_qui_apparait_tard_et_l_emet -- --exact
+    ```
+    ⚠️ **Garde anti-verdissement-à-vide** (rectifié le 2026-08-03, cf. A2) : la sortie **DOIT**
+    annoncer `running 1 test` puis `1 passed; 0 failed; … filtered out`. Si elle annonce
+    `running 0 tests`, **la campagne ne vaut rien** — c'est le symptôme de l'ancienne commande
+    non qualifiée. Exit code attendu : **0**, à chacune des 50 passes.
 15. **C4** — **une** des trois campagnes rejouée **sous charge** (en parallèle d'un `npm run test` ou
     d'un `cargo build`), puisque les runs rouges corrélaient avec la latence (2,43–3,20 s).
 16. **C5** — `bash scripts/quality.sh` **vert de bout en bout**, 2 fois de suite.
@@ -356,8 +403,11 @@ conséquence le 2026-07-29.)*
       couvert pour lui-même. 10 passes suffisent (le séquentiel est le plus coûteux en temps et le
       plus discriminant : il **sérialise** donc allonge chaque test, ce qui **augmente** l'exposition
       au défaut).*
-- [ ] **C3 — 50 passes consécutives vertes** du seul test incriminé
-      (`..._apparait_tard_...`, `--exact`).
+- [ ] **C3 — 50 passes consécutives vertes** du seul test incriminé, commande exacte
+      `cargo test transcript::tests::tail_file_attend_un_transcript_qui_apparait_tard_et_l_emet -- --exact`
+      (exit **0**), **chaque** passe annonçant `running 1 test` / `1 passed` — jamais
+      `running 0 tests`. *(Nom qualifié obligatoire : rectification A2 du 2026-08-03 ; l'ancienne
+      commande non qualifiée sélectionnait 0 test et verdissait à vide.)*
       *C'est le test dont l'échec **en isolement** (2 sur 5, r ≈ 40 %) a prouvé que le problème n'était
       pas la contention. Une passe est quasi gratuite (~ms), donc on paie le volume : sous H0
       (p(vert) = 0,6) : 0,6⁵⁰ ≈ **8 × 10⁻¹²**. En cas de succès, borne à 95 % : **r ≤ 5,8 %** — la

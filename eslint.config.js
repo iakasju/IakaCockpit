@@ -45,4 +45,19 @@ export default tseslint.config(
       globals: globals.node,
     },
   },
+  {
+    // Outillage Node ESM (scripts/) : gardes et utilitaires executes par `node`,
+    // pas du code de prod du cockpit. On expose les globales Node *builtin*
+    // (console, process, Buffer, URL...) et RIEN de plus.
+    //
+    // `nodeBuiltin` et NON `node` : le permissif `globals.node` declare aussi
+    // `require`/`module`/`exports`/`__dirname`, ce qui laisserait passer sans
+    // broncher du CommonJS dans un fichier ESM. L'instrument de mesure resterait
+    // vert sur du code qui casserait a l'execution. Jurisprudence portefeuille (D-8).
+    files: ["scripts/**"],
+    languageOptions: {
+      sourceType: "module",
+      globals: globals.nodeBuiltin,
+    },
+  },
 );
