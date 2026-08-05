@@ -15,13 +15,13 @@ Frontière avec [iakaFrameGUI](https://github.com/iakasju/iakaFrameGUI) : la for
 
 ## Installation
 
-La version scellée courante est **[v0.31.1](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.1)** — voir
+La version scellée courante est **[v0.31.2](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.2)** — voir
 [toutes les versions](https://github.com/iakasju/IakaCockpit/releases).
 
 ### macOS (Apple Silicon)
 
-Téléchargez **`IakaCockpit_v0.31.1_macos-arm64.dmg`** depuis la
-[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.1),
+Téléchargez **`IakaCockpit_0.31.2_aarch64.dmg`** depuis la
+[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.2),
 ouvrez-le et glissez l'application dans `Applications`.
 
 > L'application n'est pas signée par un certificat Apple. Au premier lancement, faites
@@ -40,7 +40,7 @@ plateforme (Xcode CLT sur macOS, WebView2 + Build Tools sur Windows, `webkit2gtk
 ```bash
 # 1. Récupérer l'archive de la version depuis la page des releases
 #    (Assets > Source code), puis la décompresser
-cd IakaCockpit-0.31.1
+cd IakaCockpit-0.31.2
 
 # 2. Installer les dépendances
 npm ci
