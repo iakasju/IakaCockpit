@@ -18,8 +18,19 @@ Frontière avec [iakaFrameGUI](https://github.com/iakasju/iakaFrameGUI) : la for
 La version scellée courante est **[v0.31.1](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.1)** — voir
 [toutes les versions](https://github.com/iakasju/IakaCockpit/releases).
 
-> **À ce stade, les releases publient les sources, pas de binaire pré-compilé.**
-> L'application se construit depuis l'archive de la version.
+### macOS (Apple Silicon)
+
+Téléchargez **`IakaCockpit_v0.31.1_macos-arm64.dmg`** depuis la
+[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.1),
+ouvrez-le et glissez l'application dans `Applications`.
+
+> L'application n'est pas signée par un certificat Apple. Au premier lancement, faites
+> **clic droit → Ouvrir** puis confirmez : un double-clic direct serait bloqué par macOS.
+
+Pour les autres plateformes — Windows, Linux, macOS Intel — construisez depuis les sources
+comme ci-dessous.
+
+### Construire depuis les sources
 
 **Prérequis :** Node.js ≥ 20, Rust stable (avec `cargo`), et les
 [dépendances système de Tauri 2](https://v2.tauri.app/start/prerequisites/) pour votre
