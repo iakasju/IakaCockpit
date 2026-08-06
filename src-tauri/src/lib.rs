@@ -42,6 +42,13 @@ pub fn run() {
     use tauri::Manager;
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        // L34 — auto-update : montage passe-plat. `updater` interroge l'endpoint
+        // réglé dans `tauri.conf.json` (appel émis par CE backend, pas par la
+        // webview : la CSP n'est donc pas concernée) et vérifie la signature
+        // minisign avant toute installation ; `process` permet le redémarrage
+        // que le front déclenche APRÈS un clic explicite de l'utilisateur.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(terminal::TermState::default())
         .manage(transcript::TranscriptState::default())
         .setup(|app| {
