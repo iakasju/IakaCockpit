@@ -17,6 +17,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+// L34 — auto-update : les plugins passent par la façade (D7), jamais par un hook.
+import { check as checkForUpdate } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { getVersion } from "@tauri-apps/api/app";
 
 /** Wrapper typé minimal autour de `invoke`. Seul endroit autorisé à l'appeler. */
 export async function call<T>(
@@ -998,6 +1002,85 @@ export function onRunnerEvent(
   return listen<RunnerEvent>(`runner://event/${sessionId}`, (e) => cb(e.payload));
 }
 
+// --- L34 : auto-update (plugins `updater` + `process`) ---
+//
+// Même discipline que `plugin-dialog` : les plugins Tauri passent par CETTE façade
+// (D7), jamais importés depuis un hook ou un composant. L'appel HTTP du contrôle de
+// version est émis par le BACKEND Rust (plugin `updater`) — la CSP de la webview
+// n'est donc pas concernée. La charge utile est vérifiée en minisign côté Rust avant
+// toute installation ; le front ne fait que décider (D3 : jamais d'install imposée).
+
+/** Progression de téléchargement, normalisée pour l'UI (octets cumulés). */
+export type UpdateProgress =
+  | { kind: "started"; contentLength: number | null }
+  | { kind: "progress"; downloaded: number; contentLength: number | null }
+  | { kind: "finished" };
+
+/**
+ * Mise à jour disponible, telle que l'UI en a besoin. `downloadAndInstall` reste
+ * une METHODE de l'objet renvoyé par le plugin (elle porte le contexte natif) :
+ * on l'enveloppe sans la détacher.
+ */
+export interface PendingUpdate {
+  /** Version proposée par le manifeste, exposée telle quelle (aucun reformatage). */
+  version: string;
+  /** Version actuellement installée, vue par le plugin. */
+  currentVersion: string;
+  /** Date de publication du manifeste (`pub_date`), `null` si absente. */
+  date: string | null;
+  /** Notes de version (`notes`), `null` si absentes. */
+  notes: string | null;
+  /** Télécharge PUIS installe. Ne relance pas : le redémarrage est un geste distinct. */
+  downloadAndInstall: (
+    onProgress?: (p: UpdateProgress) => void,
+  ) => Promise<void>;
+}
+
+/**
+ * Interroge les endpoints réglés dans `tauri.conf.json` (liste ordonnée, premier
+ * qui répond). Renvoie `null` quand l'application est à jour. Rejette si aucun
+ * endpoint n'est joignable — l'appelant décide si l'échec se voit (D3/C2).
+ */
+export async function checkUpdate(): Promise<PendingUpdate | null> {
+  const update = await checkForUpdate();
+  if (!update) return null;
+  return {
+    version: update.version,
+    currentVersion: update.currentVersion,
+    date: update.date ?? null,
+    notes: update.body ?? null,
+    downloadAndInstall: (onProgress) => {
+      // Le plugin n'émet que des DELTAS (`chunkLength`) : le cumul se fait ici,
+      // une fois par installation (état local, jamais partagé entre deux appels).
+      let downloaded = 0;
+      let contentLength: number | null = null;
+      return update.downloadAndInstall((event) => {
+        if (!onProgress) return;
+        if (event.event === "Started") {
+          downloaded = 0;
+          contentLength = event.data.contentLength ?? null;
+          onProgress({ kind: "started", contentLength });
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          onProgress({ kind: "progress", downloaded, contentLength });
+        } else {
+          onProgress({ kind: "finished" });
+        }
+      });
+    },
+  };
+}
+
+/** Redémarre l'application (plugin `process`) — appelé APRÈS une installation. */
+export async function relaunchApp(): Promise<void> {
+  await relaunch();
+}
+
+/** Version de l'application telle que déclarée dans `tauri.conf.json`. */
+export async function appVersion(): Promise<string> {
+  return getVersion();
+}
+
 /**
  * Façade backend. Exposée en objet pour faciliter le mock dans les tests, en plus
  * des exports nommés (utilisés directement par les hooks/composants en L2).
@@ -1054,6 +1137,9 @@ export const backend = {
   transcriptTailStart,
   transcriptTailStop,
   codexTailStart,
+  checkUpdate,
+  relaunchApp,
+  appVersion,
   onPtyOutput,
   onPtyClosed,
   onRunnerEvent,

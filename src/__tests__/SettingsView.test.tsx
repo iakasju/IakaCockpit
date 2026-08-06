@@ -256,6 +256,8 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     { item: "Main courante", id: "set-maincourante" },
     { item: "Canal adresse (n8n)", id: "set-adresse" },
     { item: "Services iakabox", id: "set-services" },
+    // L34 : section « Mises à jour » (version installée, contrôle manuel, endpoint).
+    { item: "Mises à jour", id: "set-maj" },
   ];
 
   // Libellé visible d'un item : le nœud texte du bouton (sommaire en texte seul,
@@ -267,7 +269,7 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     const nav = screen.getByRole("navigation", { name: "Sections réglages" });
     const items = Array.from(nav.querySelectorAll("button.seti")).map(labelOf);
     // Plus aucun item décoratif « Généraux »/« Cockpit » seul ; Teams sortie (L13)
-    // dans sa vue dédiée : 9 sections réelles restantes.
+    // dans sa vue dédiée : 10 sections réelles (9 + « Mises à jour », L34).
     expect(items).toEqual(EXPECTED.map((e) => e.item));
     // Chaque item a une section-cible présente dans le panneau.
     for (const e of EXPECTED) {

@@ -33,6 +33,8 @@ import { usePty } from "./hooks/usePty";
 import { useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
+import { useAppUpdate } from "./hooks/useAppUpdate";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { useDemoSeed, DEMO_PROJECT_ID } from "./hooks/useDemoSeed";
 // Nav vocale (L16-P1) DÉBRANCHÉE 2026-07-02 : le vocal sert à parler DANS le chat
 // (dictée, cf. WorkingView/useVoiceDictation), pas à piloter le cockpit. Les fichiers
@@ -102,6 +104,11 @@ export default function App(): JSX.Element {
   const settings = useSettings();
   const services = useServices();
   const nextStep = useNextStep();
+  // L34 — auto-update. UN SEUL exemplaire du hook pour toute l'app : le bandeau et
+  // l'écran des Réglages partagent la même machine à états (deux exemplaires =
+  // deux contrôles au démarrage). Le contrôle initial est différé et silencieux ;
+  // rien ne s'installe sans clic explicite (D3).
+  const appUpdate = useAppUpdate();
   // Cadre iakaframe (L22) : autorité du frame.json de la team courante (par défaut la
   // team par défaut ; l'utilisateur change de portée via le sélecteur de la vue Cadre).
   // Semence de démo DEV-gardée (`import.meta.env.DEV`) : si le frame.json de la team par
@@ -834,9 +841,22 @@ export default function App(): JSX.Element {
             settings={settings}
             services={services.services}
             onRescan={() => void portfolio.refresh()}
+            updateState={appUpdate.state}
+            appVersion={appUpdate.currentVersion}
+            onCheckUpdate={() => void appUpdate.check(true)}
           />
         )}
       </div>
+
+      {/* L34 — bandeau de mise à jour : discret, non modal, hors du flux des vues.
+          Ne rend rien tant qu'aucune version n'est disponible (et RIEN du tout en
+          cas d'échec du contrôle au démarrage : une box éteinte ne se voit pas). */}
+      <UpdateBanner
+        state={appUpdate.state}
+        dismissed={appUpdate.dismissed}
+        onInstall={() => void appUpdate.install()}
+        onDismiss={appUpdate.dismiss}
+      />
 
       {/* Popup de liaison projet↔team (L11 § 5.2) — affiché si pas de liaison. */}
       {pickerProject && (
