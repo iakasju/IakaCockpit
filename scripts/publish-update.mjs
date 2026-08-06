@@ -37,6 +37,9 @@ const MANIFEST_PATH = "updater/latest.json";
 // Seule branche depuis laquelle ce script a le droit de publier. Le feed EST un
 // fichier de `main` : publier depuis une autre branche pousserait son contenu
 // entier sur `main` — cf. `assertReleaseBranch`.
+//
+// C'est la RÉFÉRENCE COMPARÉE par la garde, et rien d'autre : la cible du push
+// est `HEAD`, pas cette constante (cf. § 5, fait mesuré au labo git).
 const RELEASE_BRANCH = "main";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -56,9 +59,13 @@ function git(...args) {
 
 // --- Garde de branche ------------------------------------------------------------------------------
 // La seule écriture sur `main` de tout le lot est le push final de ce script.
-// Lancé depuis une branche de feature, `git push origin HEAD:main` y déverserait
-// TOUT le contenu de la branche, pas seulement le manifeste. On refuse net, tôt
-// (avant la moindre écriture distante) et de nouveau juste avant le push.
+// Lancé depuis une branche de feature, il y déverserait TOUT le contenu de cette
+// branche, pas seulement le manifeste. On refuse net, tôt (avant la moindre
+// écriture distante — jeton compris) et de nouveau juste avant le push.
+//
+// La garde est la PREMIÈRE ligne de défense, la forme du push est la seconde :
+// `git push origin HEAD` échoue fermé si jamais la garde était contournée, là où
+// `git push origin main` publierait silencieusement le `main` local (cf. § 5).
 function assertReleaseBranch() {
   let branch;
   try {
@@ -324,5 +331,13 @@ if (!staged) {
 // `-- <path>` : le commit ne prend QUE le manifeste. Sans ce pathspec, tout ce qui
 // traîne dans l'index partirait dans le commit de release.
 git("commit", "-m", `chore(release): publie le manifeste de mise a jour ${tag}`, "--", MANIFEST_PATH);
-git("push", "origin", RELEASE_BRANCH);
+// On pousse `HEAD` — LA référence qui vient de recevoir le commit — et non le nom
+// `main`. Mesuré au labo git : garde contournée (HEAD détachée, `main` local en
+// avance d'un commit de travail), `git push origin main` publie le `main` LOCAL,
+// jamais relu par ce run, avec exit 0 et en silence : le manifeste tout juste
+// commité ne part même pas, et le contenu de la branche part à sa place.
+// `git push origin HEAD` échoue net dans la même situation (« not a full refname »),
+// et sur le chemin nominal — sur `main` — les deux formes sont équivalentes.
+// Échouer fermé plutôt qu'ouvert : c'est la seule différence, elle décide.
+git("push", "origin", "HEAD");
 info(`manifeste poussé sur main — la version ${alignment.version} est visible des clients.`);
