@@ -34,6 +34,10 @@ const FORGEJO_OWNER = "sjupin";
 const FORGEJO_REPO = "iakacockpit";
 const GITHUB_REPO = "iakasju/IakaCockpit";
 const MANIFEST_PATH = "updater/latest.json";
+// Seule branche depuis laquelle ce script a le droit de publier. Le feed EST un
+// fichier de `main` : publier depuis une autre branche pousserait son contenu
+// entier sur `main` — cf. `assertReleaseBranch`.
+const RELEASE_BRANCH = "main";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -44,6 +48,33 @@ function fail(message) {
 
 function info(message) {
   console.log(`publish-update : ${message}`);
+}
+
+function git(...args) {
+  return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+}
+
+// --- Garde de branche ------------------------------------------------------------------------------
+// La seule écriture sur `main` de tout le lot est le push final de ce script.
+// Lancé depuis une branche de feature, `git push origin HEAD:main` y déverserait
+// TOUT le contenu de la branche, pas seulement le manifeste. On refuse net, tôt
+// (avant la moindre écriture distante) et de nouveau juste avant le push.
+function assertReleaseBranch() {
+  let branch;
+  try {
+    branch = git("rev-parse", "--abbrev-ref", "HEAD");
+  } catch {
+    fail("branche courante illisible (dépôt git absent ?) — publication refusée.");
+  }
+  if (branch !== RELEASE_BRANCH) {
+    fail(
+      `branche courante « ${branch === "HEAD" ? "HEAD détachée" : branch} », attendue ` +
+        `« ${RELEASE_BRANCH} » — publication refusée. Le manifeste est un fichier de ` +
+        `${RELEASE_BRANCH} : publier d'ici pousserait tout le contenu de cette branche sur ` +
+        `${RELEASE_BRANCH}. Fusionnez d'abord, basculez (git switch ${RELEASE_BRANCH}) et relancez.`,
+    );
+  }
+  return branch;
 }
 
 // --- Arguments ------------------------------------------------------------------------------------
@@ -78,7 +109,13 @@ if (!alignment.ok) {
   fail("versions désalignées — publication refusée (l'updater mentirait sur la version).");
 }
 info(`versions alignées sur ${alignment.version} (tag, package.json, tauri.conf.json, Cargo.toml).`);
+// `--check-only` reste STRICTEMENT la garde d'alignement (son contrat, critère C7) :
+// il ne touche à rien, donc la garde de branche ne le concerne pas.
 if (checkOnly) process.exit(0);
+
+// Vérifié AVANT toute écriture, locale ou distante : mieux vaut refuser avant
+// d'avoir créé une release Forgejo à moitié remplie.
+info(`branche de publication : ${assertReleaseBranch()}.`);
 
 // --- Jetons ----------------------------------------------------------------------------------------
 function readDotEnvToken(name) {
@@ -271,16 +308,21 @@ info(`${MANIFEST_PATH} écrit.`);
 // --- 5. Commit + push : c'est CE push qui ouvre le robinet -------------------------------------------
 // Tant qu'il n'a pas eu lieu, rien ne bouge chez les clients — propriété utile :
 // on peut publier les binaires, vérifier, PUIS rendre la version visible.
-function git(...args) {
-  return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
-}
+
+// Deuxième contrôle : la ligne qui suit est la seule écriture sur `main` du lot
+// entier. Elle ne s'exécute que sur `main`, vérifié à l'instant de l'exécuter.
+assertReleaseBranch();
 
 git("add", MANIFEST_PATH);
-const staged = git("diff", "--cached", "--name-only");
+// Portée au SEUL manifeste : un `git diff --cached` nu verrait aussi les fichiers
+// déjà indexés par ailleurs et déclencherait un commit de release pour rien.
+const staged = git("diff", "--cached", "--name-only", "--", MANIFEST_PATH);
 if (!staged) {
   info("manifeste inchangé — aucun commit, rien à ouvrir.");
   process.exit(0);
 }
-git("commit", "-m", `chore(release): publie le manifeste de mise a jour ${tag}`);
-git("push", "origin", "HEAD:main");
+// `-- <path>` : le commit ne prend QUE le manifeste. Sans ce pathspec, tout ce qui
+// traîne dans l'index partirait dans le commit de release.
+git("commit", "-m", `chore(release): publie le manifeste de mise a jour ${tag}`, "--", MANIFEST_PATH);
+git("push", "origin", RELEASE_BRANCH);
 info(`manifeste poussé sur main — la version ${alignment.version} est visible des clients.`);
