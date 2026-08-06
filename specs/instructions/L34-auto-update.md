@@ -283,8 +283,34 @@ manquante.
 | **C3** | Détection correcte | avec un `latest.json` servi localement annonçant une version **supérieure** → bandeau avec la bonne version ; version **égale ou inférieure** → aucun bandeau |
 | **C4** | Le contrôle manuel parle | « Vérifier les mises à jour » box injoignable → message d'erreur **explicite** à l'écran |
 | **C5** | Bout en bout réel | une version installée détecte, télécharge, installe et redémarre sur la version suivante publiée sur Forgejo — **sur au moins une plateforme** (gate humain, cf. § Gates) |
-| **C6** | Aucun secret dans le dépôt | `git grep -nE "TAURI_SIGNING_PRIVATE_KEY *= *[^$]|untrusted comment"` → aucune correspondance ; `updater/latest.json` ne contient que des signatures publiques |
+| **C6** | Aucun secret dans le dépôt | **commande RECTIFIÉE le 2026-08-06 — celle d'origine était inopposable, voir le bloc sous le tableau.** Motif appliqué à l'arbre suivi **et** à l'historique du lot → aucune correspondance |
 | **C7** | Versions alignées | `node scripts/publish-update.mjs vX.Y.Z --check-only` sur une version volontairement désalignée → échec explicite |
+
+### C6 — pourquoi la commande d'origine ne mesurait rien, et celle qui mesure
+
+La commande initiale (`git grep -nE "TAURI_SIGNING_PRIVATE_KEY *= *[^$]|untrusted comment"`) était
+**inopposable pour deux raisons cumulées**, établies par les deux gates du 2026-08-06 :
+
+1. **Auto-réfutante** : elle matche l'instruction elle-même, qui contient la chaîne cherchée.
+   « Aucune correspondance » est inatteignable tant que ce document vit dans le dépôt.
+2. **Structurellement aveugle** : le fichier de clé privée est **déjà du base64** — la chaîne
+   `untrusted comment` n'y apparaît **jamais** en clair. Pire, son en-tête décodé dit
+   **`rsign`**, pas `minisign` : même une recherche en clair du bon mot manquerait la cible.
+
+Commande qui mesure réellement (motif **validé par témoins avant usage** : positif sur les deux
+clés privées réelles, négatif sur la clé publique légitime) :
+
+```bash
+RE='(untrusted comment: (mini|r)sign encrypted secret key|dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQg|TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)?[[:space:]]*[:=][[:space:]]*[^$[:space:]])'
+git grep -nIE "$RE" -- .                          # arbre suivi          → attendu : exit 1
+git log -p <base>..HEAD | grep -cE "$RE"          # historique du lot    → attendu : 0
+```
+
+Elle cible les **trois** formes réelles du secret (en-tête clair `rsign`/`minisign`, son préfixe
+base64, affectation de la variable à un littéral) et couvre l'**historique**, pas seulement
+l'instantané : un secret commité puis retiré resterait invisible à un grep de l'arbre.
+Sous-clause « `updater/latest.json` ne contient que des signatures publiques » : **sans objet tant
+que le fichier n'existe pas** — il naît à la première publication.
 
 ---
 
@@ -305,10 +331,17 @@ les déclarer faits.
 - **macOS non notarisée.** La mise à jour remplace le bundle `.app` et fonctionne sans notarisation
   Apple : la confiance vient de la signature **minisign**, indépendante de Gatekeeper. La levée de
   quarantaine reste nécessaire à la **première** installation manuelle seulement.
-- **L'échec DMG local n'est pas bloquant.** Sur le Mac de Stéphane, `tauri build` échoue à l'étape
-  DMG (Apple Events refusés par le Finder). L'artefact updater est le `.app.tar.gz`, produit **avant**
-  cette étape — et de toute façon les binaires publiés viennent du CI. À confirmer au premier build
-  local, sans en faire un blocage.
+- **⚠️ L'échec DMG local EST bloquant — fait RECTIFIÉ le 2026-08-06 ; ce paragraphe affirmait
+  l'inverse.** Sur le Mac de Stéphane, `tauri build` échoue à l'étape DMG (Apple Events refusés par
+  le Finder). Le cadrage en déduisait que l'artefact updater `.app.tar.gz`, « produit avant cette
+  étape », restait disponible : **c'est faux**. Mesuré indépendamment par ⚒️ Gimli puis re-mesuré par
+  🏹 Legolas — qui a d'abord **déplacé hors de l'arbre de build** les artefacts existants pour que la
+  mesure prouve quelque chose — et reproduit sur les **deux** dépôts jumeaux : l'échec
+  `bundle_dmg.sh` **avorte le bundle avant** la passe updater, et `bundle/macos/` ne contient alors
+  **ni `.tar.gz` ni `.sig`**. Tout build local d'un artefact signé doit donc passer par
+  `npm run tauri build -- --bundles app` (exit 0 ; le CLI annonce lui-même `… (updater)` puis
+  `Finished 1 updater signature`). Le CI GitHub n'est pas concerné : le DMG y passe.
+  *La ligne « à confirmer au premier build local » a fonctionné — la confirmation a infirmé.*
 - **`git push --force` proscrit** (règle méthode) : le feed vivant dans l'historique de `main`,
   réécrire l'historique casserait la traçabilité du canal de mise à jour.
 - **AppImage seul** côté Linux : `.deb` et `.rpm` ne sont pas des cibles de mise à jour.
