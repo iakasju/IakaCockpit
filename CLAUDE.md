@@ -621,12 +621,40 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **derrière aucune garde de branche** (`git push origin
       HEAD:main` depuis `feat/auto-update` aurait déversé la branche entière sur `main`) et commitait
       **l'index entier** → garde `assertReleaseBranch()` (refus net, vérifiée avant toute écriture
-      distante **et** juste avant le push, `HEAD` détachée comprise), push explicite sur `main`, commit
+      distante **et** juste avant le push, `HEAD` détachée comprise), ~~push explicite sur `main`~~
+      (**corrigé, voir S1 ci-dessous**), commit
       porté par le pathspec `-- updater/latest.json` ; `--check-only` inchangé (contrat C7). **D2** trous
       C3 (le test « `check()` → `null` » **postulait** la comparaison sémantique, qui vit dans le plugin
       Rust : il le **dit** désormais, + test neuf prouvant que le front n'ajoute aucune comparaison) et
       C4 (rendu de `SettingsView` en `error/visible` — le message à l'écran n'était garanti que par
       lecture de code). **D3** ces chiffres et ce constat C6.)*
+      *(**Convergence des jumeaux + réserves croisées** (2026-08-06, commits `b603cce` = S1,
+      `ee1f65e` = réserve n°1). **S1 — le push converge vers `git push origin HEAD`**
+      (`scripts/publish-update.mjs:342`). Le motif du choix précédent (« plus aucune indirection ») était
+      **faux, et c'est mesuré** : le script commite sur `HEAD` et poussait `refs/heads/main`, donc hors
+      nominal il poussait **une référence qui n'est pas celle qui vient de recevoir le commit**. Labo git
+      (origin nu, `main` local en avance d'un commit de travail, garde contournée sur `HEAD` détachée) :
+      `git push origin main` → **exit 0**, publie le `main` **local** jamais relu par le run (le manifeste
+      tout juste commité **ne part même pas** — le feed ment en silence) ; `git push origin HEAD` → **exit 1**
+      (`not a full refname`), origin intact. Sur le chemin nominal les deux formes sont **strictement
+      équivalentes** (mesuré). `RELEASE_BRANCH` reste la référence comparée par la garde, plus la cible du
+      push. **Réserves croisées, les trois mesurées** : **(1) jonction C4 — S'APPLIQUAIT** : la mutation
+      `App.tsx:846` `check(true)` → `check()` laissait **780/780 verts**. Comblée par
+      `src/__tests__/updateJunction.test.tsx` (clic réel sur « Vérifier les mises à jour » depuis l'App
+      complète, assertion sur ce qui est **à l'écran**) ; contrefactuel rejoué → la mutation fait
+      désormais **échouer** la suite, puis révoquée (`git diff` vide). **(2) `--no-push` — NE S'APPLIQUE
+      PAS** : ce drapeau **n'existe pas** ici ; les seules options sont `--check-only` (lecture pure,
+      sort avant la garde car il n'écrit rien) et `--from` (alimente le chemin **gardé**). Mesuré depuis
+      `feat/auto-update` : run complet → refus **exit 1** avant lecture du jeton et avant tout `fetch` —
+      le commentaire « avant toute écriture distante » est donc **exact**. **(3) re-publication d'un même
+      tag — NE S'APPLIQUE PAS** : la détection scopée `git diff --cached --name-only -- updater/latest.json`
+      renvoie vide et le script **sort 0 avant `git commit`** ; contrefactuel au labo : le `git commit`
+      qu'elle évite sort bien **1** (`nothing to commit`), et un index bruité ne fabrique **pas** de commit
+      de release. **C6** revérifié avec la commande **rectifiée sur `main`** (`ce88623`) : les motifs
+      en-tête clair et **préfixe base64** ne ramènent **rien** ; subsiste le **seul** faux positif déjà
+      signalé — `CLAUDE.md:56-57`, la commande de build documentée, où la variable est affectée à
+      `"$(cat ~/.tauri/…)"` (fichier **hors dépôt**) et à `""` : **aucune matière de clé dans le dépôt**.
+      `bash scripts/quality.sh` **exit 0 — 782 front + 337 Rust**. Instruction **non touchée**.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
