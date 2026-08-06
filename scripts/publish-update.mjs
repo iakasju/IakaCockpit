@@ -187,6 +187,30 @@ async function uploadAsset(releaseId, name, bytes, existingNames) {
 const assets = fromDir ? assetsFromDir(fromDir) : await assetsFromGithub();
 info(`${assets.length} artefact(s) trouvé(s) sur la source ${fromDir ? `locale ${fromDir}` : "GitHub"}.`);
 
+// Pré-vol : tout ce qui peut se vérifier sur les NOMS SEULS se vérifie AVANT la
+// moindre écriture distante. Échouer après avoir créé une release à moitié
+// remplie laisserait un état sale à nettoyer à la main.
+if (!assets.some((a) => a.name.endsWith(".sig"))) {
+  fail(
+    "aucun fichier .sig parmi les artefacts — le build n'a pas signé. " +
+      "Vérifiez les secrets TAURI_SIGNING_PRIVATE_KEY côté CI (gate humain).",
+  );
+}
+for (const asset of assets) {
+  // Cas MESURÉ : un build LOCAL nomme le bundle `IakaCockpit.app.tar.gz`, sans
+  // architecture — c'est `tauri-action` qui injecte `_aarch64`/`_x64` au moment
+  // de l'upload. Publier ce fichier tel quel servirait un binaire arm64 à un
+  // Mac Intel : on refuse, en disant quoi faire.
+  const n = asset.name.toLowerCase();
+  if (n.endsWith(".app.tar.gz") && !classifyArtifact(asset.name)) {
+    fail(
+      `${asset.name} ne porte pas d'architecture. Renommez-le en ` +
+        "« IakaCockpit_aarch64.app.tar.gz » ou « IakaCockpit_x64.app.tar.gz » " +
+        "(avec son .sig) avant de republier — aucune architecture n'est devinée.",
+    );
+  }
+}
+
 const release = await ensureForgejoRelease();
 const existingNames = new Set((release.assets ?? []).map((a) => a.name));
 
@@ -197,12 +221,6 @@ for (const asset of assets) {
   const bytes = await asset.fetch();
   signatures.set(asset.name.slice(0, -4), new TextDecoder().decode(bytes).trim());
   await uploadAsset(release.id, asset.name, bytes, existingNames);
-}
-if (signatures.size === 0) {
-  fail(
-    "aucun fichier .sig dans la release — le build n'a pas signé. " +
-      "Vérifiez les secrets TAURI_SIGNING_PRIVATE_KEY côté CI (gate humain).",
-  );
 }
 
 // Passe 2 : les binaires updater, un à la fois (téléchargé puis relâché).

@@ -97,10 +97,52 @@ describe("buildManifest — format attendu par le plugin updater", () => {
   });
 });
 
+describe("buildManifest — arbitrage déterministe entre deux candidats", () => {
+  // Une release Windows porte NSIS *et* MSI. Sans arbitrage, le gagnant dépendrait
+  // de l'ordre d'arrivée des assets — donc de l'API. On vérifie que l'ordre ne
+  // change rien : NSIS gagne dans les deux sens.
+  const nsis = { name: "IakaCockpit_0.31.3_x64-setup.exe", signature: "SIG-NSIS" };
+  const msi = { name: "IakaCockpit_0.31.3_x64_en-US.msi", signature: "SIG-MSI" };
+
+  for (const [label, entries] of [
+    ["NSIS d'abord", [nsis, msi]],
+    ["MSI d'abord", [msi, nsis]],
+  ]) {
+    it(`retient l'installeur NSIS quel que soit l'ordre (${label})`, () => {
+      const { manifest, duplicates } = buildManifest({
+        version: "v0.31.3",
+        pubDate: "2026-08-06T10:00:00Z",
+        entries,
+        baseUrl: BASE,
+      });
+      expect(manifest.platforms["windows-x86_64"].signature).toBe("SIG-NSIS");
+      expect(manifest.platforms["windows-x86_64"].url).toContain("-setup.exe");
+      expect(duplicates).toEqual([msi.name]);
+    });
+  }
+
+  it("ne laisse fuiter aucune donnée de travail dans le manifeste publié", () => {
+    const { manifest } = buildManifest({
+      version: "v0.31.3",
+      pubDate: "2026-08-06T10:00:00Z",
+      entries: FULL,
+      baseUrl: BASE,
+    });
+    for (const p of UPDATER_PLATFORMS) {
+      expect(Object.keys(manifest.platforms[p]).sort()).toEqual([
+        "signature",
+        "url",
+      ]);
+    }
+  });
+});
+
 describe("classifyArtifact — aucune supposition d'architecture", () => {
   it("refuse un .app.tar.gz dont le nom ne porte pas d'architecture", () => {
-    // Servir un bundle arm64 à un Mac Intel casserait l'installation : on préfère
-    // ne rien publier plutôt que ranger au hasard.
+    // Cas MESURÉ sur ce poste : un build local produit exactement ce nom-là
+    // (c'est `tauri-action` qui injecte l'architecture à l'upload). Servir un
+    // bundle arm64 à un Mac Intel casserait l'installation : on préfère ne rien
+    // publier plutôt que ranger au hasard.
     expect(classifyArtifact("IakaCockpit.app.tar.gz")).toBeNull();
     expect(classifyArtifact("IakaCockpit_aarch64.app.tar.gz")).toBe("darwin-aarch64");
     expect(classifyArtifact("IakaCockpit_x64.app.tar.gz")).toBe("darwin-x86_64");

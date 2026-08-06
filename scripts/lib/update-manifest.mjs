@@ -83,6 +83,19 @@ export function classifyArtifact(name) {
 }
 
 /**
+ * Rang de préférence quand DEUX artefacts revendiquent la même plateforme.
+ *
+ * Le cas réel : une release Windows porte à la fois l'installeur NSIS
+ * (`-setup.exe`) et le MSI. Sans arbitrage, le gagnant dépendrait de l'ordre —
+ * arbitraire — dans lequel l'API renvoie les assets, et deux publications
+ * successives pourraient servir des installeurs différents. On tranche : NSIS
+ * d'abord, cohérent avec `"windows": { "installMode": "passive" }` de la config.
+ */
+export function artifactRank(name) {
+  return String(name).toLowerCase().endsWith("-setup.exe") ? 1 : 0;
+}
+
+/**
  * Construit le manifeste attendu par le plugin `updater`.
  *
  * `entries` = `[{ name, signature }]` — `signature` est le CONTENU du `.sig`,
@@ -109,20 +122,35 @@ export function buildManifest({ version, notes, pubDate, entries, baseUrl }) {
       ignored.push(entry.name);
       continue;
     }
-    if (platforms[platform]) {
-      duplicates.push(entry.name);
-      continue;
-    }
-    platforms[platform] = {
+    const candidate = {
       signature: entry.signature,
       url: `${String(baseUrl).replace(/\/$/, "")}/${entry.name}`,
+      rank: artifactRank(entry.name),
+      name: entry.name,
     };
+    const held = platforms[platform];
+    if (held) {
+      // Arbitrage déterministe : le mieux classé gagne, quel que soit l'ordre
+      // d'arrivée. À rang égal, le premier reste (stabilité).
+      if (candidate.rank > held.rank) {
+        duplicates.push(held.name);
+        platforms[platform] = candidate;
+      } else {
+        duplicates.push(entry.name);
+      }
+      continue;
+    }
+    platforms[platform] = candidate;
   }
 
-  // Ordre stable des plateformes : un diff git du feed reste lisible.
+  // Ordre stable des plateformes (un diff git du feed reste lisible) + projection
+  // au format du plugin (le rang et le
+  // nom sont des données de travail, ils n'ont rien à faire dans le manifeste).
   const ordered = {};
   for (const p of UPDATER_PLATFORMS) {
-    if (platforms[p]) ordered[p] = platforms[p];
+    if (platforms[p]) {
+      ordered[p] = { signature: platforms[p].signature, url: platforms[p].url };
+    }
   }
 
   const manifest = {
