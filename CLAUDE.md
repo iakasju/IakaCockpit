@@ -49,6 +49,17 @@ npm run test                 # vitest
 npm run test:coverage        # vitest + couverture v8
 bash scripts/quality.sh      # chaîne qualité complète (front + Rust)
 
+# Auto-update (L34) — publication d'une version sur le canal de mise à jour.
+# Le build local exige les deux variables de signature depuis que
+# `createUpdaterArtifacts` est actif (sinon le bundler refuse de produire un
+# artefact updater non signé) ; la clé privée vit HORS DÉPÔT (~/.tauri/iakacockpit.key) :
+TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/iakacockpit.key)" \
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" npm run tauri build
+node scripts/publish-update.mjs vX.Y.Z              # release GitHub → Forgejo + latest.json
+node scripts/publish-update.mjs vX.Y.Z --from ./out # depuis un répertoire local (sans GitHub)
+node scripts/publish-update.mjs vX.Y.Z --check-only # garde d'alignement des versions seule
+# Jetons lus dans l'environnement ($FORGEJO_TOKEN, $GITHUB_TOKEN) ou ~/work/.env.
+
 # Garde de parité du contrat de handoff (forge → cockpit) — HORS gate par défaut,
 # car elle dépend du dépôt frère iakaFrameGUI (SKIP propre sur un clone isolé) :
 npm run test:handoff-parity  # ForgeTeam/ForgePersona/HandoffManifest vs @iakaframe/core
@@ -567,6 +578,33 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       l'instruction** : la commande C3 qui y est écrite (`cargo test <nom> -- --exact`) sélectionne **0 test**
       et verdit à vide — campagne rejouée avec le nom qualifié `transcript::tests::<nom>`. **Non fait** :
       pas de push (LAN iakabox toujours injoignable).)*
+- [ ] **L34** — **Auto-update de l'application (flux Forgejo LAN, endpoints extensibles)**
+      → `specs/instructions/L34-auto-update.md`
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-08-06), branche
+      `feat/auto-update`. Étapes **1 à 7 livrées** ; les **3 gates humains restent ouverts**.
+      **Étape 1** (déléguée par arbitrage d'Odin, la clé se régénère à coût nul tant qu'aucune release
+      signée n'existe) : paire minisign générée **hors dépôt** dans `~/.tauri/iakacockpit.key`
+      (+ `.pub`), passphrase vide assumée sur cette plateforme de dev ; la **sauvegarde hors dépôt de
+      la clé privée reste un gate humain**. **Étapes 2-4** : `tauri-plugin-updater`/`-process` (Rust
+      2.10.1/2.3.1) + paquets JS, montage passe-plat dans `run()`, `createUpdaterArtifacts: true`,
+      clé publique + endpoint Forgejo en **liste ordonnée** (D2 : un futur flux HTTPS se **préfixe**),
+      `dangerousInsecureTransportProtocol` **assumé et borné** (LAN privé, charge utile signée),
+      permissions `updater:default` + `process:allow-restart`. **CSP non touchée** (l'appel sort du
+      backend). **Étape 5** : `useAppUpdate` (machine à états, contrôle différé 3 s **silencieux** en
+      échec, contrôle manuel verbeux, install sur **clic explicite** puis `relaunch`, garde
+      anti-double-clic), `UpdateBanner` discret non modal, section **Mises à jour** des Réglages
+      (version installée, bouton, endpoint affiché), i18n fr/en, plugins passés par la **façade D7**.
+      **Étape 6** : secrets de signature dans `.github/workflows/release.yml` + `scripts/publish-update.mjs`
+      (garde d'alignement → artefacts GitHub ou `--from <dir>` → release Forgejo → `updater/latest.json`
+      → commit+push sur `main`), cœur pur extrait dans `scripts/lib/update-manifest.mjs`. **Étape 7** :
+      **25 tests neufs** (11 hook/bandeau plugins mockés zéro réseau, 4 garde de non-dérive du miroir
+      d'endpoints, 10 générateur de manifeste sur artefacts factices) ; vitest couvre désormais `scripts/`.
+      `bash scripts/quality.sh` **exit 0** — **774 front + 337 Rust**. **Écarts signalés** : (a) tests
+      rangés dans `src/__tests__/` (convention du dépôt) et non `src/hooks/__tests__/` ; (b) le grep C6
+      tel qu'écrit matche l'**instruction elle-même** (auto-match), il faut exclure `specs/` ;
+      (c) `createUpdaterArtifacts` rend les **deux variables de signature obligatoires au build local**
+      — commande mise à jour ci-dessus. **Gates humains ouverts** : sauvegarde hors dépôt de la clé,
+      pose des secrets côté GitHub, recette C5 de bout en bout.)*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
