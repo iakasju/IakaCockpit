@@ -78,6 +78,18 @@ afterEach(() => {
 });
 
 describe("useAppUpdate — contrôle de version", () => {
+  /**
+   * C3, MOITIÉ FRONT SEULEMENT. Ce test couvre le seul maillon qui vit ici :
+   * `checkUpdate()` ne rend rien ⇒ état `up-to-date` ⇒ aucun bandeau.
+   *
+   * CE QU'IL NE COUVRE PAS, et ne peut pas couvrir : la DÉCISION « version égale
+   * ou inférieure ⇒ rien à proposer ». Cette comparaison sémantique appartient à
+   * `tauri-plugin-updater`, côté Rust, et s'exécute AVANT que le front ne voie
+   * quoi que ce soit. Mocker `check()` pour qu'il renvoie `null`, c'est POSTULER
+   * son résultat, pas l'éprouver : ce test ne prouve donc rien sur la comparaison
+   * elle-même. Le pendant « égale ou inférieure » de C3 se recette en réel, sur
+   * un manifeste servi localement (cf. C3/C5 et § Gates humains de L34).
+   */
   it("check() renvoie null → état up-to-date, et AUCUN bandeau", async () => {
     h.checkMock.mockResolvedValue(null);
     const { result } = renderHook(() => useAppUpdate());
@@ -118,6 +130,35 @@ describe("useAppUpdate — contrôle de version", () => {
       />,
     );
     expect(screen.getByText("Version 0.31.3 disponible")).toBeTruthy();
+  });
+
+  it("le front ne compare AUCUNE version : il expose la décision du plugin telle quelle", async () => {
+    // Corollaire de la note ci-dessus, et ce qui EST vérifiable en unitaire : le
+    // front ne rejoue pas la comparaison sémantique. On lui annonce une version
+    // INFÉRIEURE à la version installée (0.30.0 < 0.31.2) — il la propose quand
+    // même, parce qu'il ne juge pas. C'est la frontière, mesurée : aucune règle de
+    // comparaison n'est dupliquée ici, donc aucune ne peut y diverger de celle du
+    // plugin. Si un jour ce test devenait rouge, c'est qu'on aurait ajouté une
+    // comparaison côté front — le vrai risque que ce test surveille.
+    h.checkMock.mockResolvedValue(makeUpdate([], "0.30.0"));
+    const { result } = renderHook(() => useAppUpdate());
+    await act(async () => {
+      await result.current.check(true);
+    });
+    expect(result.current.state).toEqual({
+      status: "available",
+      version: "0.30.0",
+      notes: "notes de version",
+    });
+    render(
+      <UpdateBanner
+        state={result.current.state}
+        dismissed={false}
+        onInstall={() => {}}
+        onDismiss={() => {}}
+      />,
+    );
+    expect(screen.getByText("Version 0.30.0 disponible")).toBeTruthy();
   });
 
   it("check() rejette en mode DÉMARRAGE → error invisible, UNE seule trace, rien à l'écran", async () => {
