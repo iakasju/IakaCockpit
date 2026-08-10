@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "iakacockpit"
-version = "0.32.0"
+version = "0.32.1"
 dependencies = [
  "cpal",
  "dirs 5.0.1",
