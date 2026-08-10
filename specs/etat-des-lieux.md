@@ -31,10 +31,10 @@
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : <!-- ... -->
-- **En cours / a reprendre** : <!-- ... -->
-- **Prochaine etape concrete** : <!-- premiere action a faire en reprenant -->
-- **Pieges connus** : <!-- ... -->
+- **Ce qui vient d'etre fait** : Lot **L34 auto-update** livre de bout en bout : cadrage, implementation, **2 gates Legolas PASS** (dont un lot correctif : garde de branche + commit limite au manifeste + jonction C4), merge `ef3ca20` sur `main`, publication reelle sur le canal Forgejo LAN (v0.32.0 puis v0.32.1) et **recette C5 PASSEE** — l'appli installee en 0.32.0 a detecte, telecharge, verifie la signature minisign, installe et redemarre en **0.32.1** (bundle reecrit le 10/08 a 19:26).
+- **En cours / a reprendre** : Le manifeste ne couvre que **macOS arm64** (1/4 plateformes) : les binaires des 3 autres viennent du CI GitHub, qui **ne peut pas signer** tant que les secrets ne sont pas poses. Les tags sont sur Forgejo, **pas sur GitHub**, deliberement.
+- **Prochaine etape concrete** : Poser `TAURI_SIGNING_PRIVATE_KEY` (contenu de `~/.tauri/iakacockpit.key`) et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (**vide**) dans les reglages GitHub de `iakasju/IakaCockpit`, puis `git push github v0.32.1` et relancer `node scripts/publish-update.mjs v0.32.1` — le script est **idempotent**, il reutilisera la release existante et completera le manifeste.
+- **Pieges connus** : (1) Tout build local d'artefact signe exige **`--bundles app`** : l'echec DMG du Finder avorte le bundle AVANT la passe updater, ni `.tar.gz` ni `.sig`. (2) Le bundler local **ne suffixe pas** le nom par l'architecture (c'est `tauri-action` qui le fait) : renommer l'artefact **et son `.sig`** en `_aarch64` avant `--from`, sinon le pre-vol refuse — a raison. (3) `publish-update.mjs` **refuse de publier hors de `main`**. (4) Le controle de version au demarrage est **differe de 3 s** et **silencieux** en echec : ne pas conclure a un defaut avant d'avoir attendu, ni avant d'avoir essaye le bouton **verbeux** des Reglages.
 
 ## Journal (versions & pauses)
 
