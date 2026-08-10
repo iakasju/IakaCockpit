@@ -833,6 +833,32 @@ export const fr = {
     supportSlack: "Slack",
     supportDiscord: "Discord",
     supportMqtt: "MQTT",
+
+    // L34 — section « Mises à jour » des Réglages.
+    sectionUpdate: "Mises à jour",
+    updateTitle: "Mises à jour",
+    updateCurrentLabel: "Version installée",
+    updateCurrentDesc:
+      "Version de l'application actuellement lancée sur ce poste.",
+    updateCurrentUnknown: "inconnue",
+    updateCheckLabel: "Vérifier les mises à jour",
+    updateCheckDesc:
+      "Interroge le flux de mise à jour et signale si une version plus récente existe. Rien ne s'installe sans votre accord.",
+    updateCheckAction: "Vérifier les mises à jour",
+    updateChecking: "Vérification…",
+    updateEndpointLabel: "Flux interrogé",
+  },
+
+  // L34 — bandeau de mise à jour + retours du contrôle manuel.
+  update: {
+    available: "Version {{version}} disponible",
+    install: "Installer et redémarrer",
+    dismiss: "Fermer le bandeau de mise à jour",
+    downloading: "Téléchargement…",
+    downloadingPct: "Téléchargement… {{pct}} %",
+    restarting: "Installée — redémarrage…",
+    upToDate: "L'application est à jour.",
+    error: "Vérification impossible : {{message}}",
   },
 };
 

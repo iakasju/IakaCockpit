@@ -831,5 +831,30 @@ export const en: Resources = {
     supportSlack: "Slack",
     supportDiscord: "Discord",
     supportMqtt: "MQTT",
+
+    // L34 — "Updates" section of the settings screen.
+    sectionUpdate: "Updates",
+    updateTitle: "Updates",
+    updateCurrentLabel: "Installed version",
+    updateCurrentDesc: "Version of the application currently running here.",
+    updateCurrentUnknown: "unknown",
+    updateCheckLabel: "Check for updates",
+    updateCheckDesc:
+      "Queries the update feed and reports whether a newer version exists. Nothing is installed without your consent.",
+    updateCheckAction: "Check for updates",
+    updateChecking: "Checking…",
+    updateEndpointLabel: "Feed queried",
+  },
+
+  // L34 — update banner + manual check feedback.
+  update: {
+    available: "Version {{version}} available",
+    install: "Install and restart",
+    dismiss: "Dismiss the update banner",
+    downloading: "Downloading…",
+    downloadingPct: "Downloading… {{pct}}%",
+    restarting: "Installed — restarting…",
+    upToDate: "The application is up to date.",
+    error: "Check failed: {{message}}",
   },
 };

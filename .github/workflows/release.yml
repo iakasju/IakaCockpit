@@ -90,6 +90,12 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # L34 : signature minisign des artefacts updater. Sans ces deux secrets,
+          # le bundler ne produit AUCUN `.sig` et la mise a jour automatique ne peut
+          # pas fonctionner (le client refuse une charge utile non signee). Leur
+          # renseignement cote GitHub est un gate humain.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
           releaseName: ${{ github.event.inputs.tag || github.ref_name }}

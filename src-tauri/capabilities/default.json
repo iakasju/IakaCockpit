@@ -1,7 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capabilities minimales de la fenetre principale (L0).",
+  "description": "Capabilities minimales de la fenetre principale (L0). L34 y ajoute le controle de mise a jour : `updater:default` ouvre un EGRESS RESEAU SORTANT vers le ou les endpoints regles dans tauri.conf.json (appel emis par le backend Rust, pas par la webview), borne par la verification de signature minisign avant toute installation ; `process:allow-restart` autorise le redemarrage, declenche uniquement sur clic explicite de l'utilisateur.",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-open"]
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "updater:default",
+    "process:allow-restart"
+  ]
 }

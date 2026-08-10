@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SettingsView } from "../views/SettingsView";
 import { DEFAULT_UI, type UseSettings } from "../hooks/useSettings";
+import type { UpdateState } from "../hooks/useAppUpdate";
 import type { NotifyAck, notifyUser } from "../api/backend";
 
 type NotifyFn = typeof notifyUser;
@@ -56,6 +57,8 @@ function makeSettings(overrides: Partial<UseSettings> = {}): UseSettings {
 function renderView(props: {
   settings?: UseSettings;
   onNotify?: NotifyFn;
+  updateState?: UpdateState;
+  onCheckUpdate?: () => void;
 }) {
   return render(
     <SettingsView
@@ -66,6 +69,8 @@ function renderView(props: {
         props.onNotify ??
         vi.fn(async () => ({ ok: true, provider: "mock", http_status: null }))
       }
+      updateState={props.updateState}
+      onCheckUpdate={props.onCheckUpdate}
     />,
   );
 }
@@ -242,6 +247,53 @@ describe("SettingsView — vignettes & chef-runner", () => {
   });
 });
 
+describe("SettingsView — mises à jour (L34)", () => {
+  // C4 : « le contrôle manuel parle ». Le chaînon `status:"error" + visible:true`
+  // ⇒ MESSAGE À L'ÉCRAN n'était jusqu'ici garanti que par lecture de code : aucun
+  // test ne rendait la vue dans cet état. Il est désormais rendu et lu.
+  it("C4 — le contrôle manuel affiche un message d'erreur EXPLICITE à l'écran", () => {
+    const onCheckUpdate = vi.fn();
+    renderView({
+      updateState: {
+        status: "error",
+        message: "box injoignable",
+        visible: true,
+      },
+      onCheckUpdate,
+    });
+
+    // Le bouton du contrôle manuel existe et déclenche bien le contrôle.
+    fireEvent.click(
+      screen.getByRole("button", { name: "Vérifier les mises à jour" }),
+    );
+    expect(onCheckUpdate).toHaveBeenCalledTimes(1);
+
+    // Et le message est LU à l'écran : cause reprise telle quelle, pas un code.
+    const row = screen
+      .getAllByRole("status")
+      .find((n) => n.textContent?.includes("Vérification impossible"));
+    expect(row).toBeTruthy();
+    expect(row!.textContent).toContain("box injoignable");
+  });
+
+  // Contrepartie C2, dans la même vue : l'échec du contrôle AU DÉMARRAGE
+  // (`visible:false`) ne doit se voir NULLE PART, Réglages compris.
+  it("C2 — un échec de démarrage (visible:false) ne s'affiche pas dans les Réglages", () => {
+    renderView({
+      updateState: {
+        status: "error",
+        message: "box injoignable",
+        visible: false,
+      },
+    });
+    expect(
+      screen
+        .queryAllByRole("status")
+        .some((n) => n.textContent?.includes("box injoignable")),
+    ).toBe(false);
+  });
+});
+
 describe("SettingsView — sommaire du menu gauche (L12)", () => {
   // Le menu DOIT refléter les sections RÉELLES du panneau (les <h2>), chacune
   // ayant une cible `id` dans le DOM. On vérifie l'exactitude (item ↔ section) et
@@ -256,6 +308,8 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     { item: "Main courante", id: "set-maincourante" },
     { item: "Canal adresse (n8n)", id: "set-adresse" },
     { item: "Services iakabox", id: "set-services" },
+    // L34 : section « Mises à jour » (version installée, contrôle manuel, endpoint).
+    { item: "Mises à jour", id: "set-maj" },
   ];
 
   // Libellé visible d'un item : le nœud texte du bouton (sommaire en texte seul,
@@ -267,7 +321,7 @@ describe("SettingsView — sommaire du menu gauche (L12)", () => {
     const nav = screen.getByRole("navigation", { name: "Sections réglages" });
     const items = Array.from(nav.querySelectorAll("button.seti")).map(labelOf);
     // Plus aucun item décoratif « Généraux »/« Cockpit » seul ; Teams sortie (L13)
-    // dans sa vue dédiée : 9 sections réelles restantes.
+    // dans sa vue dédiée : 10 sections réelles (9 + « Mises à jour », L34).
     expect(items).toEqual(EXPECTED.map((e) => e.item));
     // Chaque item a une section-cible présente dans le panneau.
     for (const e of EXPECTED) {

@@ -4295,3 +4295,46 @@ select.field {
   border-radius: 8px;
   background: rgba(240, 173, 78, 0.08);
 }
+
+/* ---------- L34 — bandeau de mise à jour (discret, non modal) ----------
+   Posé en bas à droite, au-dessus du contenu, sans jamais le bloquer : il
+   n'intercepte pas les clics ailleurs et ne prend pas le focus. Tokens de la
+   charte active uniquement (aucune couleur en dur) → suit les 10 chartes. */
+.updbanner {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 460px;
+  padding: 10px 12px 10px 16px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: var(--shadow-soft);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.updbanner-txt {
+  color: var(--text-1, var(--text-2));
+  font-weight: 600;
+}
+.updbanner-prog {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.updbanner-x {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.updbanner-x:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

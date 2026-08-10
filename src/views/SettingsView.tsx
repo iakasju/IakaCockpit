@@ -26,6 +26,10 @@ import type {
 // CSS associe (chartes.css) est importe au build dans App.tsx ; ici on ne lit que
 // le manifest (id + nom + swatches) pour peupler le sélecteur de charte.
 import { CHARTES } from "../assets/chartes/manifest";
+// L34 : l'endpoint interrogé est un miroir de `tauri.conf.json` (le plugin ne
+// l'expose pas à la webview) — sa cohérence est gardée par un test dédié.
+import { primaryUpdateEndpoint } from "../app/updateEndpoints";
+import type { UpdateState } from "../hooks/useAppUpdate";
 
 // Options de segmented controls : id + clé i18n du libellé (résolue au rendu).
 const NAV_POS: { id: NavPos; key: string }[] = [
@@ -91,6 +95,7 @@ const SETTINGS_GROUPS: { labelKey: string; items: SettingsSection[] }[] = [
       { id: "set-maincourante", labelKey: "settings.sectionJournal" },
       { id: "set-adresse", labelKey: "settings.sectionAddress" },
       { id: "set-services", labelKey: "settings.sectionServices" },
+      { id: "set-maj", labelKey: "settings.sectionUpdate" },
     ],
   },
 ];
@@ -106,6 +111,17 @@ export interface SettingsViewProps {
    * l'envoi » l'appelle et affiche l'ack ou l'erreur lisible.
    */
   onNotify?: typeof notifyUser;
+  /**
+   * L34 — état du contrôle de mise à jour, porté par `useAppUpdate` chez App
+   * (un seul exemplaire du hook pour toute l'app : le bandeau et cet écran
+   * partagent la même machine à états). La vue reste présentationnelle : elle
+   * reçoit l'état et remonte l'intention « vérifier ».
+   */
+  updateState?: UpdateState;
+  /** Version installée ; `null` = non lisible → on affiche « inconnue », jamais un chiffre inventé. */
+  appVersion?: string | null;
+  /** Contrôle MANUEL (verbose) : l'erreur, elle, s'affiche. */
+  onCheckUpdate?: () => void;
 }
 
 function Seg<T extends string>(props: {
@@ -135,6 +151,9 @@ export function SettingsView({
   services,
   onRescan,
   onNotify = notifyUser,
+  updateState = { status: "idle" },
+  appVersion = null,
+  onCheckUpdate,
 }: SettingsViewProps): JSX.Element {
   const { t } = useTranslation();
   const LANGS: { id: Lang; label: string }[] = [
@@ -839,6 +858,73 @@ export function SettingsView({
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* L34 — mises à jour. Le contrôle est MANUEL ici (verbose) : contrairement
+              au contrôle au démarrage, l'échec s'affiche. L'endpoint est montré en
+              clair : savoir d'où vient une mise à jour fait partie du contrat. */}
+          <div className="block" id="set-maj">
+            <div className="bt">
+              <h2>{t("settings.updateTitle")}</h2>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">{t("settings.updateCurrentLabel")}</div>
+                <div className="d">{t("settings.updateCurrentDesc")}</div>
+              </div>
+              <div className="ctl">
+                <span>{appVersion ?? t("settings.updateCurrentUnknown")}</span>
+              </div>
+            </div>
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">{t("settings.updateCheckLabel")}</div>
+                <div className="d">{t("settings.updateCheckDesc")}</div>
+              </div>
+              <div className="ctl">
+                <button
+                  type="button"
+                  className="btn accent sm"
+                  disabled={updateState.status === "checking"}
+                  onClick={() => onCheckUpdate?.()}
+                >
+                  {updateState.status === "checking"
+                    ? t("settings.updateChecking")
+                    : t("settings.updateCheckAction")}
+                </button>
+              </div>
+            </div>
+
+            {updateState.status === "up-to-date" && (
+              <div className="svcrow" role="status" aria-live="polite">
+                {t("update.upToDate")}
+              </div>
+            )}
+            {updateState.status === "available" && (
+              <div className="svcrow" role="status" aria-live="polite">
+                {t("update.available", { version: updateState.version })}
+              </div>
+            )}
+            {/* `visible: false` = échec du contrôle AU DÉMARRAGE : il ne s'affiche
+                nulle part (C2). Seul un contrôle demandé par l'utilisateur parle. */}
+            {updateState.status === "error" && updateState.visible && (
+              <div className="svcrow" role="status" aria-live="polite">
+                {t("update.error", { message: updateState.message })}
+              </div>
+            )}
+
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">{t("settings.updateEndpointLabel")}</div>
+              </div>
+              <div className="ctl">
+                <span style={{ color: "var(--text-3)" }}>
+                  {primaryUpdateEndpoint() ?? "—"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
