@@ -556,8 +556,43 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **DETTE-1 et DETTE-2 sont donc plus lourdes sur `.12` que ce que L32 anticipait** ; conformément à R6
       elles sont **constatées ici, non traitées** → **L35**.
       **NON MESURÉ** : recette GUI `npm run tauri dev` (critère Stéphane).)*
-- [ ] **L33** — **Stabilisation du flake `tail_file_*` (harnais de test calé sur l'horloge murale)**
+- [x] **L33** — **Stabilisation du flake `tail_file_*` (harnais de test calé sur l'horloge murale)**
       → `specs/instructions/L33-flake-tests-tail-file.md`
+      *(**GATE 🏹 Legolas PASS — rendu RÉTROACTIVEMENT le 2026-08-10.** Le code était sur `main`
+      depuis le 04/08 (`121fb24`) **sans verdict** : le gate de fin juillet n'avait jamais été
+      prononcé (LAN tombé, session interrompue), et cette case est restée `[ ]` alors que le
+      travail était livré. Portée dite explicitement par le gate : ce PASS **ne débloque aucune
+      fusion**, il **atteste** que le lot méritait de passer ; un défaut y aurait ouvert un lot
+      correctif, pas bloqué une intégration. **Provenance vérifiée** (reflog + `transcript.rs`
+      inchangé depuis `f315441`), **forme vérifiée** (5 hunks tous ≥ 876 donc tous sous
+      `#[cfg(test)]` — **zéro ligne de production**, aucune dépendance ajoutée, aucun `#[ignore]`,
+      exactement 2 `sleep` légitimes, **assertions des 4 tests identiques avant/après**).
+      **Stabilité re-mesurée, aucun chiffre repris de l'exécutant** : **53 passes de suite complète**
+      (20 parallèle + 10 séquentiel + 20 sous charge à load 12,6 + quality.sh ×2) et **50 passes du
+      test seul** avec le nom **qualifié**, **0 échec** — sous l'hypothèse « le flake persiste au
+      taux rapporté de 88 % de rouge », P = **1,4 × 10⁻⁴⁸** ; borne haute 95 % du rouge résiduel
+      **≤ 5,5 %/passe**. Durées 1,08–1,35 s, la signature des runs **verts** historiques : le
+      plafond de 10 s **n'est jamais payé** sur le chemin nominal. **Le point qui comptait — le
+      pouvoir de détection est-il conservé ? — est PROUVÉ par 4 mutations de production écrites par
+      le gate lui-même** : chacun des 4 tests a été mis au rouge **individuellement et pour la bonne
+      raison** (MA→3 tests, MB/MC/MD→le bon test seul, dont un message explicite « le tailer n'a pas
+      abandonné en 10s »), révocation prouvée **au sha256**. Le harnais n'est donc **pas décoratif** :
+      le `done` est le prédicat de l'assertion, pas un contournement. **Arène vérifiée à
+      l'exécution** (sonde sur `$TMPDIR` pendant les runs) : le transcript vit dans un dossier dédié
+      reproduisant `projects/<escaped>/<sid>.jsonl`, plus sous `$TMPDIR` nu (74 740 entrées ce jour).
+      **Non re-mesurés, déclarés tels** : le taux historique de 88 % et les 57 819 entrées — faits
+      rapportés par l'exécution, la lecture statistique leur est relative.)*
+      *(**S1 — signalement non bloquant, à trancher.** `src-tauri/src/transcript.rs:997` : la valeur
+      de retour de `wait_until(LINE_GRACE, …)` est **ignorée** — grâce non fatale, **conforme au
+      cadrage** (§ 4.3). Mais si l'observation de la ligne *i* expirait, le harnais écrirait la ligne
+      *i+1* quand même et le test redeviendrait un « lit deux lignes déjà présentes » — le défaut de
+      validité que L33 prétend supprimer. **Le commentaire du code affirme donc une propriété que
+      rien n'assert** ; elle a tenu sur 103 passes. Correctif d'très faible ampleur : soit rendre la
+      grâce fatale, soit dire le vrai dans le commentaire.)*
+      *(**S2 — cosmétique, hors dépôt** : 153 dossiers `iaka-tail-<pid>` **vides** datés du 30/07
+      traînent dans `$TMPDIR` — l'ancien harnais ne nettoyait que le fichier. Le nouveau fait
+      `remove_dir_all` et n'en laisse **aucun** : dette **éteinte par L33**, trace résiduelle sur ce
+      poste seulement.)*
       *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-07-30), branche
       `feat/L33-flake-tail-file` (issue de `feat/L32-litellm-v194` : les deux se re-gatent ensemble).
       **Aucune ligne de production touchée** — le diff est confiné au module `#[cfg(test)] mod tests` de
