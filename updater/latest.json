@@ -1,0 +1,11 @@
+{
+  "version": "0.32.0",
+  "notes": "IakaCockpit 0.32.0",
+  "pub_date": "2026-08-10T17:05:21Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGhSVGltVmpZWGN1MnZiaUN4WnhZZnM2b2lKdVVaVkpRdlpMdy9hK3lFc1FlR242NUhSRExtK0s0TGVJcVhLdXRFc0IyZkZ6anV2WURlUVV1MEJNV0FFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MzgxNTA1CWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpmblNiVUU3cG5mc0JjdkV2TkEwcisyVStIRXhORlhaSzVuelkrUkJHZG9OaGtCQSs3aURaU2NBcjBjelVIWXVPSWVJTkZUUnZzM0VTZ252b3FINUxEUT09Cg==",
+      "url": "http://192.168.2.11:3001/sjupin/iakacockpit/releases/download/v0.32.0/IakaCockpit_aarch64.app.tar.gz"
+    }
+  }
+}
