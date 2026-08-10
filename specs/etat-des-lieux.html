@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Etat des lieux - iakacockpit</title>
+<title>Etat des lieux - IakaCockpit</title>
 <style>
 :root{--gold:#c8a44e;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -23,30 +23,31 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 .r-manual{background:rgba(150,150,150,.15);color:#aaa;}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
-<h1>Etat des lieux - <span class="accent">iakacockpit</span></h1>
-<div class="sub">Genere le 2026-07-30 11:54 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
+<h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
+<div class="sub">Genere le 2026-08-10 20:15 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.31.1</div>
-  <div class="k">Branche</div><div>feat/L33-flake-tail-file</div>
-  <div class="k">Dernier commit</div><div><code>05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites</code></div>
-  <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
-  <div class="k">Fichiers</div><div>13786 (hors .git / node_modules)</div>
-  <div class='k'>Note</div><div>L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas</div>
+  <div class="k">Version</div><div>v0.32.1</div>
+  <div class="k">Branche</div><div>main</div>
+  <div class="k">Dernier commit</div><div><code>4904f2b chore(release): publie le manifeste de mise a jour v0.32.1</code></div>
+  <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
+  <div class="k">Fichiers</div><div>22014 (hors .git / node_modules)</div>
+  <div class='k'>Note</div><div>Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -&gt; 0.32.1)</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>05dc3d0</code></td><td>2026-07-30</td><td>test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites</td></tr>
-<tr><td><code>c0400e0</code></td><td>2026-07-30</td><td>docs(cadrage): L33 stabilisation du flake tail_file_* + rectifications L32</td></tr>
-<tr><td><code>604882f</code></td><td>2026-07-29</td><td>docs(etat-des-lieux): regenere apres epinglage litellm 1.94.0 (L32)</td></tr>
-<tr><td><code>e1a7c1f</code></td><td>2026-07-29</td><td>docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN)</td></tr>
-<tr><td><code>5ddd485</code></td><td>2026-07-29</td><td>chore(docker): epingle litellm sur 1.94.0 (tag + digest), fin du tag flottant main-latest</td></tr>
-<tr><td><code>f4063dd</code></td><td>2026-07-29</td><td>docs(instructions): ajoute L32 - montee LiteLLM 1.82.6 -&gt; 1.94.0 epinglee</td></tr>
-<tr><td><code>a247ffe</code></td><td>2026-07-15</td><td>docs(reprise): état des lieux v0.31.1 (Analytics complet + programme fais-tout ; reprise)</td></tr>
-<tr><td><code>4906935</code></td><td>2026-07-14</td><td>docs(orchestration): sceau v0.31.1 (L31-P2 statut vivant par slot + cascade-close)</td></tr>
-<tr><td><code>053dce2</code></td><td>2026-07-14</td><td>fix(orchestration): fermeture en cascade des slots au retrait du projet</td></tr>
-<tr><td><code>ee8f71b</code></td><td>2026-07-14</td><td>feat(orchestration): statut vivant par slot (L31-P2)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>4904f2b</code></td><td>2026-08-10</td><td>chore(release): publie le manifeste de mise a jour v0.32.1</td></tr>
+<tr><td><code>5f08655</code></td><td>2026-08-10</td><td>chore(release): v0.32.1 — version de recette pour la bascule auto-update</td></tr>
+<tr><td><code>5b179da</code></td><td>2026-08-10</td><td>chore(release): publie le manifeste de mise a jour v0.32.0</td></tr>
+<tr><td><code>6994f6e</code></td><td>2026-08-10</td><td>chore(release): v0.32.0 — auto-update de l'application</td></tr>
+<tr><td><code>ef3ca20</code></td><td>2026-08-10</td><td>Merge branch 'feat/auto-update' — L34 auto-update (gate Legolas PASS)</td></tr>
+<tr><td><code>e4511b1</code></td><td>2026-08-06</td><td>docs(claude): corrige la note de push et consigne les 3 reserves croisees</td></tr>
+<tr><td><code>ee1f65e</code></td><td>2026-08-06</td><td>test(update): exerce la jonction C4 entre le hook et la vue</td></tr>
+<tr><td><code>b603cce</code></td><td>2026-08-06</td><td>fix(release): pousse HEAD, la ref qui vient de recevoir le commit</td></tr>
+<tr><td><code>142bc50</code></td><td>2026-08-06</td><td>docs(claude): rectifie le compte de tests et le constat C6 de la note L34</td></tr>
+<tr><td><code>3b2b3f1</code></td><td>2026-08-06</td><td>test(update): comble les trous C3 et C4 releves au gate</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-08-10 20:15</td><td><span class='r r-version'>version</span></td><td>v0.32.1</td><td>main</td><td>Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -&gt; 0.32.1)</td></tr>
 <tr><td>2026-07-30 11:54</td><td><span class='r r-pause'>pause</span></td><td>v0.31.1</td><td>feat/L33-flake-tail-file</td><td>L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas</td></tr>
 <tr><td>2026-07-29 17:40</td><td><span class='r r-manual'>manual</span></td><td>v0.31.1</td><td>feat/L32-litellm-v194</td><td>L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable)</td></tr>
 <tr><td>2026-06-26 14:01</td><td><span class='r r-pause'>pause</span></td><td>-</td><td>main</td><td>Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue.</td></tr>

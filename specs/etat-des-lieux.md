@@ -1,33 +1,33 @@
-# Etat des lieux - iakacockpit
+# Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-07-30 11:54 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-08-10 20:15 (motif: version).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.31.1 |
-| Branche | feat/L33-flake-tail-file |
-| Dernier commit | 05dc3d0 test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites |
-| Arbre | MODIFICATIONS NON COMMITEES |
-| Fichiers (hors .git/node_modules) | 13786 |
-| Note | L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas |
+| Version | v0.32.1 |
+| Branche | main |
+| Dernier commit | 4904f2b chore(release): publie le manifeste de mise a jour v0.32.1 |
+| Arbre | propre |
+| Fichiers (hors .git/node_modules) | 22014 |
+| Note | Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1) |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `05dc3d0` | 2026-07-30 | test(transcript): remplace les sleeps du harnais tail_file par des rendez-vous explicites |
-| `c0400e0` | 2026-07-30 | docs(cadrage): L33 stabilisation du flake tail_file_* + rectifications L32 |
-| `604882f` | 2026-07-29 | docs(etat-des-lieux): regenere apres epinglage litellm 1.94.0 (L32) |
-| `e1a7c1f` | 2026-07-29 | docs(backlog): L32 - etat de la montee litellm 1.94.0 (stack faite, VM .12 bloquee LAN) |
-| `5ddd485` | 2026-07-29 | chore(docker): epingle litellm sur 1.94.0 (tag + digest), fin du tag flottant main-latest |
-| `f4063dd` | 2026-07-29 | docs(instructions): ajoute L32 - montee LiteLLM 1.82.6 -> 1.94.0 epinglee |
-| `a247ffe` | 2026-07-15 | docs(reprise): état des lieux v0.31.1 (Analytics complet + programme fais-tout ; reprise) |
-| `4906935` | 2026-07-14 | docs(orchestration): sceau v0.31.1 (L31-P2 statut vivant par slot + cascade-close) |
-| `053dce2` | 2026-07-14 | fix(orchestration): fermeture en cascade des slots au retrait du projet |
-| `ee8f71b` | 2026-07-14 | feat(orchestration): statut vivant par slot (L31-P2) |
+| `4904f2b` | 2026-08-10 | chore(release): publie le manifeste de mise a jour v0.32.1 |
+| `5f08655` | 2026-08-10 | chore(release): v0.32.1 — version de recette pour la bascule auto-update |
+| `5b179da` | 2026-08-10 | chore(release): publie le manifeste de mise a jour v0.32.0 |
+| `6994f6e` | 2026-08-10 | chore(release): v0.32.0 — auto-update de l'application |
+| `ef3ca20` | 2026-08-10 | Merge branch 'feat/auto-update' — L34 auto-update (gate Legolas PASS) |
+| `e4511b1` | 2026-08-06 | docs(claude): corrige la note de push et consigne les 3 reserves croisees |
+| `ee1f65e` | 2026-08-06 | test(update): exerce la jonction C4 entre le hook et la vue |
+| `b603cce` | 2026-08-06 | fix(release): pousse HEAD, la ref qui vient de recevoir le commit |
+| `142bc50` | 2026-08-06 | docs(claude): rectifie le compte de tests et le constat C6 de la note L34 |
+| `3b2b3f1` | 2026-08-06 | test(update): comble les trous C3 et C4 releves au gate |
 
 ## Reprise du travail (a completer par Cowork)
 
@@ -40,6 +40,7 @@
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-10 20:15 | version | v0.32.1 | main | Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1) |
 | 2026-07-30 11:54 | pause | v0.31.1 | feat/L33-flake-tail-file | L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas |
 | 2026-07-29 17:40 | manual | v0.31.1 | feat/L32-litellm-v194 | L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable) |
 | 2026-06-26 14:01 | pause | - | main | Pause avant reboot terminal (droits modif apps). REPRISE = lancer le SPIKE P0 de L10 (stream-json Claude Code) puis P1+. Lots livres jusqu'a L9 (v0.8.0-rc) + fix trace. L10 cadre, valide, a demarrer par le spike. Vision PROJET.md §0 = terminal-source/chat-vue. |

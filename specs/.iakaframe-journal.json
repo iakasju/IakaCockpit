@@ -98,5 +98,15 @@
     "dirty": true,
     "files": 13786,
     "note": "L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas"
+  },
+  {
+    "date": "2026-08-10 20:15",
+    "reason": "version",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "4904f2b chore(release): publie le manifeste de mise a jour v0.32.1",
+    "dirty": false,
+    "files": 22014,
+    "note": "Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1)"
   }
 ]
