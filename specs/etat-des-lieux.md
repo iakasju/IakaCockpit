@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-10 20:15 (motif: version).
+> Genere par iakaframe (CLI) le 2026-08-23 11:21 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,15 +9,18 @@
 |---|---|
 | Version | v0.32.1 |
 | Branche | main |
-| Dernier commit | 4904f2b chore(release): publie le manifeste de mise a jour v0.32.1 |
-| Arbre | propre |
-| Fichiers (hors .git/node_modules) | 22014 |
-| Note | Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1) |
+| Dernier commit | 17f13de docs(backlog): L33 coche — gate Legolas PASS rendu retroactivement |
+| Arbre | MODIFICATIONS NON COMMITEES |
+| Fichiers (hors .git/node_modules) | 7591 |
+| Note | checkpoint : cadrage L36 (backend distant / mode serveur) depose, en attente d arbitrage AR-1..AR-8 |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `17f13de` | 2026-08-10 | docs(backlog): L33 coche — gate Legolas PASS rendu retroactivement |
+| `f8587e6` | 2026-08-10 | docs(etat-des-lieux): recit de reprise du lot auto-update |
+| `ed85bcd` | 2026-08-10 | chore(iakaframe): update etat des lieux + commit global (version v0.32.1) |
 | `4904f2b` | 2026-08-10 | chore(release): publie le manifeste de mise a jour v0.32.1 |
 | `5f08655` | 2026-08-10 | chore(release): v0.32.1 — version de recette pour la bascule auto-update |
 | `5b179da` | 2026-08-10 | chore(release): publie le manifeste de mise a jour v0.32.0 |
@@ -25,21 +28,19 @@
 | `ef3ca20` | 2026-08-10 | Merge branch 'feat/auto-update' — L34 auto-update (gate Legolas PASS) |
 | `e4511b1` | 2026-08-06 | docs(claude): corrige la note de push et consigne les 3 reserves croisees |
 | `ee1f65e` | 2026-08-06 | test(update): exerce la jonction C4 entre le hook et la vue |
-| `b603cce` | 2026-08-06 | fix(release): pousse HEAD, la ref qui vient de recevoir le commit |
-| `142bc50` | 2026-08-06 | docs(claude): rectifie le compte de tests et le constat C6 de la note L34 |
-| `3b2b3f1` | 2026-08-06 | test(update): comble les trous C3 et C4 releves au gate |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : Lot **L34 auto-update** livre de bout en bout : cadrage, implementation, **2 gates Legolas PASS** (dont un lot correctif : garde de branche + commit limite au manifeste + jonction C4), merge `ef3ca20` sur `main`, publication reelle sur le canal Forgejo LAN (v0.32.0 puis v0.32.1) et **recette C5 PASSEE** — l'appli installee en 0.32.0 a detecte, telecharge, verifie la signature minisign, installe et redemarre en **0.32.1** (bundle reecrit le 10/08 a 19:26).
-- **En cours / a reprendre** : Le manifeste ne couvre que **macOS arm64** (1/4 plateformes) : les binaires des 3 autres viennent du CI GitHub, qui **ne peut pas signer** tant que les secrets ne sont pas poses. Les tags sont sur Forgejo, **pas sur GitHub**, deliberement.
-- **Prochaine etape concrete** : Poser `TAURI_SIGNING_PRIVATE_KEY` (contenu de `~/.tauri/iakacockpit.key`) et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (**vide**) dans les reglages GitHub de `iakasju/IakaCockpit`, puis `git push github v0.32.1` et relancer `node scripts/publish-update.mjs v0.32.1` — le script est **idempotent**, il reutilisera la release existante et completera le manifeste.
-- **Pieges connus** : (1) Tout build local d'artefact signe exige **`--bundles app`** : l'echec DMG du Finder avorte le bundle AVANT la passe updater, ni `.tar.gz` ni `.sig`. (2) Le bundler local **ne suffixe pas** le nom par l'architecture (c'est `tauri-action` qui le fait) : renommer l'artefact **et son `.sig`** en `_aarch64` avant `--from`, sinon le pre-vol refuse — a raison. (3) `publish-update.mjs` **refuse de publier hors de `main`**. (4) Le controle de version au demarrage est **differe de 3 s** et **silencieux** en echec : ne pas conclure a un defaut avant d'avoir attendu, ni avant d'avoir essaye le bouton **verbeux** des Reglages.
+- **Ce qui vient d'etre fait** : <!-- ... -->
+- **En cours / a reprendre** : <!-- ... -->
+- **Prochaine etape concrete** : <!-- premiere action a faire en reprenant -->
+- **Pieges connus** : <!-- ... -->
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-23 11:21 | pause | v0.32.1 | main | checkpoint : cadrage L36 (backend distant / mode serveur) depose, en attente d arbitrage AR-1..AR-8 |
 | 2026-08-10 20:15 | version | v0.32.1 | main | Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1) |
 | 2026-07-30 11:54 | pause | v0.31.1 | feat/L33-flake-tail-file | L33 : harnais tail_file de-flake (rendez-vous explicites), remis au gate Legolas |
 | 2026-07-29 17:40 | manual | v0.31.1 | feat/L32-litellm-v194 | L32 - montee LiteLLM 1.94.0 epinglee (stack Cockpit) ; VM .12 bloquee (LAN iakabox injoignable) |

@@ -108,5 +108,15 @@
     "dirty": false,
     "files": 22014,
     "note": "Auto-update de l'application livre, gate PASS, publie sur le canal Forgejo LAN et bascule recettee (0.32.0 -> 0.32.1)"
+  },
+  {
+    "date": "2026-08-23 11:21",
+    "reason": "pause",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "17f13de docs(backlog): L33 coche — gate Legolas PASS rendu retroactivement",
+    "dirty": true,
+    "files": 7591,
+    "note": "checkpoint : cadrage L36 (backend distant / mode serveur) depose, en attente d arbitrage AR-1..AR-8"
   }
 ]
