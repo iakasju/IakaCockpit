@@ -31,10 +31,66 @@
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : <!-- ... -->
-- **En cours / a reprendre** : <!-- ... -->
-- **Prochaine etape concrete** : <!-- premiere action a faire en reprenant -->
-- **Pieges connus** : <!-- ... -->
+> Le tableau *Etat courant* ci-dessus a ete fige par le snapshot **juste avant** le commit
+> global du checkpoint : il annonce `17f13de` et un arbre sale. A la lecture, le point de
+> sauvegarde est `5c91066` et l'arbre est **propre**, aligne avec `origin/main`.
+
+- **Ce qui vient d'etre fait** : depuis le scellement de **v0.32.1** (10/08), une seule
+  chose est entree au depot, et c'est un **cadrage, pas du code** :
+  `specs/instructions/L36-backend-distant-mode-serveur.md` (563 lignes, cadre par Gandalf
+  le **18/08**, versionne aujourd'hui par ce checkpoint). Treize jours separent les deux
+  commits : la periode a produit de la reflexion, aucune ligne de production.
+  Rappel du dernier lot livre : **L34 auto-update**, 2 gates Legolas PASS, merge `ef3ca20`,
+  bascule reelle 0.32.0 -> 0.32.1 recettee sur le canal Forgejo LAN.
+- **En cours / a reprendre** : quatre chantiers ouverts, aucun n'avance sans une decision
+  de Stephane.
+  1. **L36 — EN ATTENTE D'ARBITRAGE.** 8 arbitrages (AR-1..AR-8) poses avec recommandation.
+     Le motif n'est plus « avoir une version web » mais **decharger le Mac**. Le cadrage
+     chiffre **~9 j** pour sortir la chauffe (lots 0+A+D) contre **~18,5 j** pour le mode
+     serveur complet — c'est ce rapport qui fonde le phasage recommande. **Aucune case au
+     backlog `CLAUDE.md` pour l'instant** : elle ne s'ouvrira qu'une fois les arbitrages
+     tranches.
+  2. **L34 — gates humains toujours ouverts, verifie ce jour** : `git ls-remote --tags
+     github` s'arrete a **v0.31.2**. Ni v0.32.0 ni v0.32.1 ne sont sur GitHub, donc les
+     secrets de signature ne sont pas poses et le manifeste ne couvre toujours que
+     **macOS arm64** (1 plateforme sur 4). La sauvegarde hors depot de
+     `~/.tauri/iakacockpit.key` reste elle aussi un gate humain.
+  3. **L32 — case `[ ]`.** La stack Cockpit est faite et son historique est raccroche a
+     `main` (`ac55c23`) ; c'est la **phase D sur la VM `.12`** qui est arretee **avant
+     toute action**, sur un point de blocage : ce LiteLLM a une **base Postgres sur une
+     machine tierce**, donc rallumer en 1.94.0 declencherait 12 minors de migrations
+     Prisma **irreversibles**, hors du filet de rollback du lot. Rien n'a ete modifie
+     sur `.12`.
+  4. **L35 (dette securite `.12`)** et la **purge de l'historique git (~118 Mo)** :
+     tracees, non traitees. La purge attend un **feu vert explicite** (reecriture
+     d'historique).
+- **Prochaine etape concrete** : **trancher les arbitrages de L36**, en commencant par les
+  deux qui commandent tous les autres — **AR-1** (phasage : lot A « lecture seule +
+  travail deplace » puis mesure, plutot que le mode serveur complet d'un bloc) et **AR-2**
+  (ou vit le chapeau `~/work`). AR-2 n'est pas un choix technique : le retenir, c'est
+  acter que **la box devient la machine de travail et que le Mac ne fait plus que
+  regarder**. Une fois tranche, lancer le **lot 0 (mesure, 0,5 j, zero code)**, dont la
+  sortie est un GO/NO-GO argumente : un `cargo build` plus de ~2x plus lent sur la box
+  est un **NO-GO** a remonter, pas a absorber.
+- **Pieges connus** :
+  1. **`iakaframe update` reecrit `specs/etat-des-lieux.md`** : le recit de reprise
+     precedent est **ecrase** a chaque checkpoint. Celui du lot auto-update n'est plus
+     lisible que via `git show f8587e6:specs/etat-des-lieux.md`. Relire l'ancien avant
+     d'ecrire le nouveau.
+  2. **Trois remotes, deux Forgejo.** `origin` = `192.168.1.139:3001` (celui que suit
+     `main`, joignable) ; `iakabox` = `192.168.2.11:3001` (**injoignable**, cf. la
+     direction « ne pas dependre de iakabox ») ; `github` = miroir en retard de **deux** tags (v0.32.0, v0.32.1).
+     Ne pas les confondre au moment de publier.
+  3. **Chaine de publication L34**, toujours valable : tout build local d'artefact signe
+     exige **`--bundles app`** (l'echec DMG du Finder avorte le bundle avant la passe
+     updater) ; le bundler local **ne suffixe pas** le nom par l'architecture — renommer
+     l'artefact **et son `.sig`** en `_aarch64` avant `--from` ; `publish-update.mjs`
+     **refuse de publier hors de `main`** ; le controle de version au demarrage est
+     **differe de 3 s et silencieux** en echec — passer par le bouton verbeux des Reglages
+     avant de conclure a un defaut.
+  4. **L36 ne se lit pas en diagonale** : son § 1.1 conditionne tout le reste. Une lecture
+     seule a distance **ne refroidit rien** tant que les projets et les runners sont restes
+     sur le Mac — le serveur lirait un `~/work` vide.
 
 ## Journal (versions & pauses)
 
