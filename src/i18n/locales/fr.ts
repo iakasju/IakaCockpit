@@ -731,14 +731,9 @@ export const fr = {
     fontScaleAria: "Échelle de police",
     termFontLabel: "Texte du terminal",
     termFontDesc:
-      "Taille de police du shell, en px. Indépendante de l'échelle de l'interface : le terminal ne suit pas le zoom de l'UI.",
+      "Seul réglage de lisibilité du shell : interligne, espacement des caractères et marges en sont déduits automatiquement. Indépendant de l'échelle de l'interface.",
     termFontValue: "{{size}} px",
     termFontAria: "Taille de police du terminal",
-    termLineHeightLabel: "Interligne du terminal",
-    termLineHeightDesc:
-      "Hauteur de ligne du shell, en multiple de la hauteur d'un caractère. xterm vaut 1,00 : sans marge, les lignes se touchent dès que la police grossit.",
-    termLineHeightValue: "×{{ratio}}",
-    termLineHeightAria: "Interligne du terminal",
 
     charteTitle: "Charte",
     teamVignettesLabel: "Team (vignettes)",

@@ -730,14 +730,9 @@ export const en: Resources = {
     fontScaleAria: "Font scale",
     termFontLabel: "Terminal text",
     termFontDesc:
-      "Shell font size, in px. Independent of the interface scale: the terminal does not follow UI zoom.",
+      "The only shell readability setting: line spacing, character spacing and margins are derived from it. Independent of the interface scale.",
     termFontValue: "{{size}} px",
     termFontAria: "Terminal font size",
-    termLineHeightLabel: "Terminal line spacing",
-    termLineHeightDesc:
-      "Shell line height, as a multiple of character height. xterm defaults to 1.00: with no leading, lines touch as soon as the font grows.",
-    termLineHeightValue: "×{{ratio}}",
-    termLineHeightAria: "Terminal line spacing",
 
     charteTitle: "Theme",
     teamVignettesLabel: "Team (avatars)",

@@ -24,11 +24,10 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import type { ChefRunnerKind } from "../api/backend";
 import type { UsePty } from "../hooks/usePty";
+import { deriveTermMetrics } from "../theme/termMetrics";
 
 /** Défaut historique (miroir de `DEFAULT_UI.termFontSize`) si le parent ne passe rien. */
 const DEFAULT_TERM_FONT_SIZE = 13;
-/** Miroir de `DEFAULT_UI.termLineHeight` — voir là-bas pourquoi ce n'est pas le 1.0 de xterm. */
-const DEFAULT_TERM_LINE_HEIGHT = 1.25;
 
 export interface PtyTerminalProps {
   /** id de session/onglet (unique). */
@@ -56,18 +55,15 @@ export interface PtyTerminalProps {
    */
   systemPromptExtra?: string;
   /**
-   * Taille de police du terminal en px (réglage `ui_term_font_size`). Appliquée À CHAUD :
-   * un changement ne recrée NI la session PTY (garde L10 : le runner survit) NI la surface
-   * xterm (le scrollback est conservé) — il ne fait que réécrire `term.options.fontSize`,
-   * refitter et propager les nouvelles `cols/rows` au PTY. Absente → défaut historique.
+   * Taille du texte du terminal en px (réglage `ui_term_font_size`) — SEULE entrée de
+   * lisibilité. Interligne, espacement des caractères et respiration en sont dérivés par
+   * `deriveTermMetrics` : le composant ne prend pas ces valeurs en props, sinon on pourrait
+   * lui en passer d'incohérentes.
+   *
+   * Appliquée À CHAUD : un changement ne recrée NI la session PTY (garde L10 : le runner
+   * survit) NI la surface xterm (le scrollback est conservé). Absente → défaut historique.
    */
   fontSize?: number;
-  /**
-   * Interligne du terminal (multiplicateur xterm, réglage `ui_term_line_height`). Appliqué
-   * à chaud comme `fontSize`, et pour la même raison : grossir les glyphes sans donner
-   * d'air aux lignes rend le shell illisible.
-   */
-  lineHeight?: number;
 }
 
 export function PtyTerminal({
@@ -79,8 +75,9 @@ export function PtyTerminal({
   allowedTools,
   systemPromptExtra,
   fontSize = DEFAULT_TERM_FONT_SIZE,
-  lineHeight = DEFAULT_TERM_LINE_HEIGHT,
 }: PtyTerminalProps): JSX.Element {
+  // Source unique des métriques : une seule taille entre, tout le reste en découle.
+  const metrics = deriveTermMetrics(fontSize);
   const mountRef = useRef<HTMLDivElement | null>(null);
   // Surface xterm exposée aux effets SECONDAIRES (taille de police) : ils doivent agir sur
   // le terminal VIVANT sans entrer dans les dépendances de l'effet d'init, dont le rejeu
@@ -89,10 +86,8 @@ export function PtyTerminal({
   const fitRef = useRef<FitAddon | null>(null);
   // Lue par l'effet d'init pour la taille INITIALE, hors dépendances (sinon un changement
   // de taille rejouerait l'init).
-  const fontSizeRef = useRef(fontSize);
-  fontSizeRef.current = fontSize;
-  const lineHeightRef = useRef(lineHeight);
-  lineHeightRef.current = lineHeight;
+  const metricsRef = useRef(metrics);
+  metricsRef.current = metrics;
 
   // `pty` est stable (callbacks mémorisés) mais on capture la version courante
   // pour l'effet d'init, qui ne doit s'exécuter qu'une fois par session.
@@ -108,8 +103,9 @@ export function PtyTerminal({
       cursorBlink: true,
       fontFamily:
         'var(--mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
-      fontSize: fontSizeRef.current,
-      lineHeight: lineHeightRef.current,
+      fontSize: metricsRef.current.fontSize,
+      lineHeight: metricsRef.current.lineHeight,
+      letterSpacing: metricsRef.current.letterSpacing,
       theme: { background: "#000000", foreground: "#f0f0f0" },
     });
     const fit = new FitAddon();
@@ -197,14 +193,23 @@ export function PtyTerminal({
     const fit = fitRef.current;
     if (!term || !fit) return;
     try {
-      term.options.fontSize = fontSize;
-      term.options.lineHeight = lineHeight;
+      term.options.fontSize = metrics.fontSize;
+      term.options.lineHeight = metrics.lineHeight;
+      term.options.letterSpacing = metrics.letterSpacing;
       fit.fit();
       void ptyRef.current.resize(sessionId, term.cols, term.rows);
     } catch {
       /* surface non montée / dimensions nulles : le prochain ResizeObserver rattrapera */
     }
-  }, [fontSize, lineHeight, sessionId]);
+  }, [metrics.fontSize, metrics.lineHeight, metrics.letterSpacing, sessionId]);
 
-  return <div className="termmount" ref={mountRef} />;
+  // La respiration autour de la grille suit la taille du texte : un padding figé à 10/14 px
+  // paraît serré à 28 px de police. Posée en style inline (donc dérivée, pas réglée).
+  return (
+    <div
+      className="termmount"
+      ref={mountRef}
+      style={{ padding: `${metrics.padY}px ${metrics.padX}px` }}
+    />
+  );
 }

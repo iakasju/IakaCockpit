@@ -15,14 +15,10 @@ import type { NotifySupport, ServiceStatus } from "../api/backend";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
 import {
   clampTermFontSize,
-  clampTermLineHeight,
   DEFAULT_CHEF_ALLOWED_TOOLS,
   TERM_FONT_MAX,
   TERM_FONT_MIN,
   TERM_FONT_STEP,
-  TERM_LINE_HEIGHT_MAX,
-  TERM_LINE_HEIGHT_MIN,
-  TERM_LINE_HEIGHT_STEP,
 } from "../hooks/useSettings";
 import type {
   ChefTrustMode,
@@ -408,37 +404,6 @@ export function SettingsView({
                 <span className="rangeval">
                   {t("settings.termFontValue", {
                     size: settings.ui.termFontSize,
-                  })}
-                </span>
-              </div>
-            </div>
-            {/* Interligne : indissociable de la taille. xterm vaut 1.0 par défaut, donc une
-                police plus grande produit des lignes plus serrées EN PROPORTION — c'est ce
-                qui rendait le shell illisible en grand. */}
-            <div className="fieldrow">
-              <div className="lab">
-                <div className="t">{t("settings.termLineHeightLabel")}</div>
-                <div className="d">{t("settings.termLineHeightDesc")}</div>
-              </div>
-              <div className="ctl">
-                <input
-                  className="range"
-                  type="range"
-                  min={TERM_LINE_HEIGHT_MIN}
-                  max={TERM_LINE_HEIGHT_MAX}
-                  step={TERM_LINE_HEIGHT_STEP}
-                  value={settings.ui.termLineHeight}
-                  onChange={(e) =>
-                    void settings.setUiPref(
-                      "termLineHeight",
-                      clampTermLineHeight(Number(e.target.value)),
-                    )
-                  }
-                  aria-label={t("settings.termLineHeightAria")}
-                />
-                <span className="rangeval">
-                  {t("settings.termLineHeightValue", {
-                    ratio: settings.ui.termLineHeight.toFixed(2),
                   })}
                 </span>
               </div>

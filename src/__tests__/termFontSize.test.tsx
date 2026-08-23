@@ -24,16 +24,16 @@ import {
 const fitSpy = vi.fn();
 const disposeSpy = vi.fn();
 const terminals: {
-  options: { fontSize?: number; lineHeight?: number };
+  options: { fontSize?: number; lineHeight?: number; letterSpacing?: number };
   cols: number;
   rows: number;
 }[] = [];
 vi.mock("@xterm/xterm", () => ({
   Terminal: class {
-    options: { fontSize?: number; lineHeight?: number };
+    options: { fontSize?: number; lineHeight?: number; letterSpacing?: number };
     cols = 80;
     rows = 24;
-    constructor(opts: { fontSize?: number; lineHeight?: number }) {
+    constructor(opts: { fontSize?: number; lineHeight?: number; letterSpacing?: number }) {
       this.options = { ...opts };
       terminals.push(this);
     }
@@ -61,16 +61,14 @@ import { PtyTerminal } from "../components/PtyTerminal";
 import { ProjectTabs } from "../components/ProjectTabs";
 import {
   clampTermFontSize,
-  clampTermLineHeight,
   parsePrefsExport,
   useSettings,
   CONFIG_KEYS,
   DEFAULT_UI,
   TERM_FONT_MAX,
   TERM_FONT_MIN,
-  TERM_LINE_HEIGHT_MAX,
-  TERM_LINE_HEIGHT_MIN,
 } from "../hooks/useSettings";
+import { deriveTermMetrics } from "../theme/termMetrics";
 import type { UsePty } from "../hooks/usePty";
 import type { Backend } from "../api/backend";
 
@@ -107,28 +105,55 @@ describe("bornage", () => {
   });
 });
 
-describe("interligne", () => {
-  it("le défaut N'EST PAS le 1.0 de xterm — c'est le correctif lui-même", () => {
-    // Régression visée : avec 1.0, grossir la police resserre les lignes EN PROPORTION
-    // (mesuré au labo : 22 px -> lignes de 25 px, soit 3 px d'air) et le shell devient
-    // illisible. Le défaut doit donc donner de la marge.
-    expect(DEFAULT_UI.termLineHeight).toBeGreaterThan(1);
+describe("dérivation — un seul réglage gouverne tout", () => {
+  it("l'interligne n'est JAMAIS le 1.0 de xterm, à aucune taille", () => {
+    // Régression visée : avec 1.0, la ligne fait exactement la hauteur d'un caractère
+    // (mesuré : 22 px -> 25 px de ligne) et les glyphes se touchent.
+    for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
+      expect(deriveTermMetrics(px).lineHeight).toBeGreaterThan(1.15);
+    }
   });
 
-  it("clampTermLineHeight respecte le contrat xterm (jamais < 1)", () => {
-    // xterm REFUSE une valeur < 1 : la borne basse n'est pas un goût, c'est la biblio.
-    expect(clampTermLineHeight(0.5)).toBe(TERM_LINE_HEIGHT_MIN);
-    expect(clampTermLineHeight(9)).toBe(TERM_LINE_HEIGHT_MAX);
-    expect(clampTermLineHeight(Number.NaN)).toBe(DEFAULT_UI.termLineHeight);
+  it("l'interligne RELATIF décroît quand le texte grossit (convention typographique)", () => {
+    const small = deriveTermMetrics(10).lineHeight;
+    const mid = deriveTermMetrics(17).lineHeight;
+    const large = deriveTermMetrics(24).lineHeight;
+    expect(small).toBeGreaterThan(mid);
+    expect(mid).toBeGreaterThan(large);
   });
 
-  it("parsePrefsExport lit ui_term_line_height et rejette le hors-bornes", () => {
-    expect(
-      parsePrefsExport({ [CONFIG_KEYS.termLineHeight]: "1.4" }).termLineHeight,
-    ).toBe(1.4);
-    expect(
-      parsePrefsExport({ [CONFIG_KEYS.termLineHeight]: "0.4" }).termLineHeight,
-    ).toBe(DEFAULT_UI.termLineHeight);
+  it("l'interligne ABSOLU croît quand même avec la taille (le texte respire plus)", () => {
+    // Le piège du point précédent : un ratio décroissant pourrait annuler le gain. On
+    // vérifie la hauteur de ligne RÉELLE, modèle mesuré au banc (cellule ~ px x 1.15 x lh).
+    const cell = (px: number) => px * 1.15 * deriveTermMetrics(px).lineHeight;
+    expect(cell(20)).toBeGreaterThan(cell(13));
+    expect(cell(28)).toBeGreaterThan(cell(20));
+  });
+
+  it("l'espacement des caractères est dérivé à ZÉRO à toute taille", () => {
+    // Mesuré en capture d'écran : dès 1 px, les bordures de boîte des TUI (Claude Code,
+    // Codex) se hachent en pointillés. Ce zéro est une contrainte de rendu, pas un oubli.
+    for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
+      expect(deriveTermMetrics(px).letterSpacing).toBe(0);
+    }
+  });
+
+  it("la respiration suit la taille, et NE BOUGE PAS au défaut (zéro régression visuelle)", () => {
+    const d = deriveTermMetrics(DEFAULT_UI.termFontSize);
+    expect([d.padY, d.padX]).toEqual([10, 14]); // padding historique de `.termmount`
+    const big = deriveTermMetrics(26);
+    expect(big.padY).toBeGreaterThan(d.padY);
+    expect(big.padX).toBeGreaterThan(d.padX);
+  });
+
+  it("monotone et bornée : aucune taille ne produit de valeur absurde", () => {
+    for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
+      const m = deriveTermMetrics(px);
+      expect(m.lineHeight).toBeLessThanOrEqual(1.35);
+      expect(m.lineHeight).toBeGreaterThanOrEqual(1.2);
+      expect(m.padY).toBeGreaterThan(0);
+      expect(m.padX).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -175,23 +200,12 @@ describe("persistance", () => {
 });
 
 describe("PtyTerminal — application à chaud", () => {
-  it("pose la taille ET l'interligne reçus à la création du terminal", () => {
-    render(
-      <PtyTerminal
-        sessionId="s1"
-        cwd="/w/p"
-        pty={makePty()}
-        fontSize={18}
-        lineHeight={1.4}
-      />,
-    );
+  it("la SEULE prop de taille suffit : interligne et espacement en sont dérivés", () => {
+    render(<PtyTerminal sessionId="s1" cwd="/w/p" pty={makePty()} fontSize={18} />);
+    const expected = deriveTermMetrics(18);
     expect(terminals[0].options.fontSize).toBe(18);
-    expect(terminals[0].options.lineHeight).toBe(1.4);
-  });
-
-  it("sans prop, l'interligne par défaut est > 1 (jamais le 1.0 de xterm)", () => {
-    render(<PtyTerminal sessionId="s1" cwd="/w/p" pty={makePty()} />);
-    expect(terminals[0].options.lineHeight).toBeGreaterThan(1);
+    expect(terminals[0].options.lineHeight).toBe(expected.lineHeight);
+    expect(terminals[0].options.letterSpacing).toBe(0);
   });
 
   it("un changement de taille N'OUVRE PAS une nouvelle session (garde L10)", async () => {
@@ -229,19 +243,21 @@ describe("PtyTerminal — application à chaud", () => {
     await waitFor(() => expect(pty.resize).toHaveBeenCalledWith("s1", 80, 24));
   });
 
-  it("l'interligne change AUSSI à chaud, sans rouvrir la session", async () => {
+  it("changer la taille change AUSSI l'interligne à chaud, sans rouvrir la session", async () => {
+    // Le défaut terrain : la taille bougeait, l'interligne non — donc illisible.
     const pty = makePty();
     const props = {
       sessionId: "s1",
       cwd: "/w/p",
       pty,
       runnerKind: "claude-code" as const,
-      fontSize: 20,
     };
-    const { rerender } = render(<PtyTerminal {...props} lineHeight={1.25} />);
-    expect(terminals[0].options.lineHeight).toBe(1.25);
-    rerender(<PtyTerminal {...props} lineHeight={1.6} />);
-    expect(terminals[0].options.lineHeight).toBe(1.6);
+    const { rerender } = render(<PtyTerminal {...props} fontSize={12} />);
+    const before = terminals[0].options.lineHeight;
+    rerender(<PtyTerminal {...props} fontSize={26} />);
+    expect(terminals[0].options.fontSize).toBe(26);
+    expect(terminals[0].options.lineHeight).toBe(deriveTermMetrics(26).lineHeight);
+    expect(terminals[0].options.lineHeight).not.toBe(before);
     expect(pty.openRunner).toHaveBeenCalledTimes(1);
     expect(disposeSpy).not.toHaveBeenCalled();
     await waitFor(() => expect(pty.resize).toHaveBeenCalled());

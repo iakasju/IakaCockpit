@@ -45,7 +45,13 @@ export interface UiPrefs {
   /** Échelle de police en % (ex. 100). */
   fontScale: number;
   /**
-   * Taille de police du TERMINAL en px (xterm), indépendante de `fontScale`.
+   * Taille du texte du TERMINAL en px — le SEUL réglage de lisibilité du shell.
+   *
+   * Tout le reste (interligne, espacement des caractères, respiration autour de la grille)
+   * en est DÉRIVÉ par `deriveTermMetrics` : ce sont des grandeurs liées, les exposer
+   * séparément offrirait des combinaisons illisibles.
+   *
+   * Indépendante de `fontScale`.
    *
    * Pourquoi une préférence à part et non l'échelle UI : xterm ne se met pas à l'échelle
    * par `--fscale` (il rend dans son propre canvas et calcule cols/rows à partir d'une
@@ -54,18 +60,6 @@ export interface UiPrefs {
    * du terminal se règle aussi indépendamment de la densité de l'interface.
    */
   termFontSize: number;
-  /**
-   * Interligne du TERMINAL, en multiplicateur de la hauteur de glyphe (option `lineHeight`
-   * de xterm).
-   *
-   * Pourquoi ce réglage existe : xterm vaut `1.0` par défaut, c'est-à-dire une ligne haute
-   * exactement comme un caractère. Mesuré sur ce poste : à 22 px de police, les lignes font
-   * 25 px — 3 px d'air. Grossir la police sans toucher à ce multiplicateur rapproche donc
-   * visuellement les lignes au lieu de les aérer, et les polices à grands glyphes (Nerd
-   * Fonts, dessins de boîtes des TUI) finissent par se toucher. C'est le défaut signalé au
-   * terrain : « la taille change mais on ne lit plus rien ».
-   */
-  termLineHeight: number;
 }
 
 /** Clés de config (D4-bis) — snake_case, namespacées `ui_`. */
@@ -77,8 +71,6 @@ export const CONFIG_KEYS = {
   fontScale: "ui_font_scale",
   /** Taille de police du terminal en px (non sensible : ne matche pas token|key|secret|password). */
   termFontSize: "ui_term_font_size",
-  /** Interligne du terminal (multiplicateur xterm). Non sensible. */
-  termLineHeight: "ui_term_line_height",
   /** Langue de l'interface (i18n, FR défaut). */
   lang: "ui_lang",
   theme: "theme",
@@ -112,21 +104,6 @@ export const TERM_FONT_MAX = 32;
 /** Pas des boutons de réglage rapide (Travail) et du curseur (Réglages). */
 export const TERM_FONT_STEP = 1;
 
-/**
- * Bornes de l'interligne (multiplicateur). xterm REFUSE une valeur < 1 (elle ferait des
- * lignes plus courtes qu'un caractère) : la borne basse n'est donc pas un goût, c'est le
- * contrat de la bibliothèque. Au-delà de 2, on perd trop de lignes à l'écran pour une TUI.
- */
-export const TERM_LINE_HEIGHT_MIN = 1;
-export const TERM_LINE_HEIGHT_MAX = 2;
-export const TERM_LINE_HEIGHT_STEP = 0.05;
-
-/** Borne un interligne dans [TERM_LINE_HEIGHT_MIN, TERM_LINE_HEIGHT_MAX]. */
-export function clampTermLineHeight(value: number): number {
-  if (!Number.isFinite(value)) return DEFAULT_UI.termLineHeight;
-  const rounded = Math.round(value * 100) / 100;
-  return Math.min(TERM_LINE_HEIGHT_MAX, Math.max(TERM_LINE_HEIGHT_MIN, rounded));
-}
 
 /** Borne une taille de terminal dans [TERM_FONT_MIN, TERM_FONT_MAX] (arrondie). */
 export function clampTermFontSize(value: number): number {
@@ -147,11 +124,6 @@ export const DEFAULT_UI: UiPrefs = {
   // réglage ne doit surprendre aucune configuration existante. Le confort se règle, il ne
   // se décrète pas à la place de l'utilisateur.
   termFontSize: 13,
-  // Défaut CHANGÉ par rapport à xterm (qui vaut 1.0) : c'est le correctif lui-même, pas un
-  // réglage cosmétique. 1.25 donne de l'air à toute taille (mesuré : 22 px -> 32 px de ligne
-  // au lieu de 25) et reste dense pour une TUI. Le coût assumé : quelques lignes visibles en
-  // moins à l'écran.
-  termLineHeight: 1.25,
 };
 
 // Direction A (redesign) : charte par défaut = studio-clair (clair, aéré, accent
@@ -322,13 +294,6 @@ function parsePrefs(cfg: Record<string, string>): UiPrefs {
   const tfs = Number(cfg[CONFIG_KEYS.termFontSize]);
   if (Number.isFinite(tfs) && tfs >= TERM_FONT_MIN && tfs <= TERM_FONT_MAX)
     ui.termFontSize = tfs;
-  const tlh = Number(cfg[CONFIG_KEYS.termLineHeight]);
-  if (
-    Number.isFinite(tlh) &&
-    tlh >= TERM_LINE_HEIGHT_MIN &&
-    tlh <= TERM_LINE_HEIGHT_MAX
-  )
-    ui.termLineHeight = tlh;
   return ui;
 }
 
@@ -610,9 +575,7 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
                 ? CONFIG_KEYS.fontFamily
                 : key === "termFontSize"
                   ? CONFIG_KEYS.termFontSize
-                  : key === "termLineHeight"
-                    ? CONFIG_KEYS.termLineHeight
-                    : CONFIG_KEYS.fontScale;
+                  : CONFIG_KEYS.fontScale;
       await api.configSet(cfgKey, String(value));
       setUi(next);
       applyToDom(domRef.current, theme, next);
