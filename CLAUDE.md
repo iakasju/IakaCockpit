@@ -728,6 +728,31 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       échoue toujours).
       Différés : la charte n'est re-résolue qu'au prochain changement de taille ou remontage ;
       `minimumContrastRatio` et `fontWeight` non dérivés (non liés à la taille).
+- [x] **L39** — **Synchronisation Cockpit ↔ réservoir iakaframe (Charon, Helm, Fëanor)**
+      *(**LIVRÉ** 2026-08-23, commits `c7443ce` + `3225eac` ; 804 front + 344 Rust, `quality.sh` OK.
+      Ouvert sur une question de Stéphane — « on a rajouté feanor et charon dans les teams, où
+      sont-ils ? » — arbitrage : **le réservoir devient la source de vérité**.)*
+      **Constat** : côté réservoir ils y étaient depuis longtemps (persona + roster
+      `teams/iakaframe-8.md` + agent déployé) ; côté Cockpit **nulle part — et Helm non plus**.
+      Le Cockpit ne lisait pas le réservoir : il tenait sa **propre liste de 7**, qui avait
+      divergé en silence.
+      **Livré** : commande Rust `read_reservoir` (`reservoir.rs`, lecture seule, `IAKAFRAME_HOME`
+      autoritaire, `None` — jamais une erreur — si absent, pour qu'un clone isolé fonctionne ;
+      parseur de frontmatter minimal, zéro dépendance YAML) + façade `readReservoir()` ;
+      `AGENT_ROLES` étendu à 10 (roleIndex 7/8/9 = `deploiement`/`surveillance`/`frame`, clés du
+      réservoir **verbatim**) ; `DEMO_TEAM` alignée sur le roster (10 agents, son ordre) ; i18n fr/en ;
+      **garde `npm run test:reservoir-parity`** qui échoue en NOMMANT les absents.
+      **Fait qui a invalidé le plan initial** : les deux vocabulaires divergent sur **5 des 7**
+      rôles historiques (`cadrage`/architecture, `dev`/fabrication, `qualite`/tests,
+      `design`/graphisme, `documentation`/doc). D'où `RESERVOIR_ROLE_ALIAS` plutôt qu'un renommage :
+      la clé est **persistée** dans `agent.royaume` et pilote la vignette — renommer casserait les deux.
+      **Contrainte mesurée** : le casting iakagraph n'a que **8 emplacements** (roleIndex 0..7).
+      `deploiement` a une vignette ; `surveillance` et `frame` retombent sur la **pastille** (repli L9).
+      Les doter d'une image suppose une mise à jour d'**iakagraph** — hors dépôt, **différé**.
+      **11 tests figeaient « 7 rôles / 7 agents / roleIndex 0..6 »** — le modèle fermé qui avait
+      *permis* la dérive. Réécrits pour **dériver** du modèle au lieu d'en recopier une image.
+      Différés : le Cockpit ne consomme pas encore `readReservoir()` à l'exécution (la team par défaut
+      reste embarquée, la garde de parité tient l'alignement) ; vignettes iakagraph des 3 rôles.
 - [ ] **L37** — **Persistance de la Table (le « set de Work » survit au redémarrage)**
       *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
       chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
