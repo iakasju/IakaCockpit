@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { DEMO_TEAM } from "../mock/demoTeam";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import {
   useTeams,
@@ -100,21 +101,17 @@ describe("useTeams — pures (parse / runner)", () => {
     expect(parseTeams(json)[0].coordinator).toBe("premier");
   });
 
-  it("defaultTeamFromDemo : 7 agents (un par rôle), coord aragorn, claude-code, skills connus", () => {
+  it("defaultTeamFromDemo : un agent par membre de DEMO_TEAM, coord aragorn, claude-code, skills connus", () => {
     const t = defaultTeamFromDemo("lotr");
     expect(t.id).toBe(DEFAULT_TEAM_ID);
     expect(t.vignetteTeam).toBe("lotr");
     expect(t.coordinator).toBe("aragorn");
-    expect(t.agents).toHaveLength(7);
-    expect(t.agents.map((a) => a.id)).toEqual([
-      "odin",
-      "aragorn",
-      "gandalf",
-      "gimli",
-      "legolas",
-      "loki",
-      "nathalie",
-    ]);
+    expect(t.agents).toHaveLength(DEMO_TEAM.length);
+    // Ids DÉRIVÉS de la team : recopier la liste ici la figerait, et c'est ce figeage qui
+    // avait laissé le Cockpit diverger du réservoir sans alerte. Ordre = celui du roster.
+    expect(t.agents.map((a) => a.id)).toEqual(
+      DEMO_TEAM.map((m) => m.agent.toLowerCase()),
+    );
     expect(t.agents.every((a) => a.runner === "claude-code")).toBe(true);
     // Royaume = clé de rôle ; coordinateur (aragorn) à roleIndex 1 (coordination).
     expect(t.agents.find((a) => a.id === "aragorn")?.royaume).toBe("coordination");
@@ -209,30 +206,30 @@ describe("L15-B — catalogue & teams par défaut (teamFromCatalog / ensureDefau
     expect(teams).toHaveLength(12);
   });
 
-  it("reconcileDefaultTeamCasting : team iakaframe stale (à 5, modèle 7-rôles) → complétée à 7, triée", () => {
-    // Simule une config antérieure à 5 agents (avant Loki/graphisme + Nathalie/doc).
-    const full = defaultTeamFromDemo("lotr"); // 7 agents
+  it("reconcileDefaultTeamCasting : team iakaframe stale (à 5) → complétée au modèle courant, triée", () => {
+    // Simule une config ANTÉRIEURE, amputée de Loki/Nathalie — le cas réel qui compte : une
+    // team persistée avant l'alignement sur le réservoir doit être complétée, pas figée.
+    const full = defaultTeamFromDemo("lotr"); // modèle courant (roster réservoir)
     const stale: Team = {
       ...full,
       agents: full.agents.filter(
         (a) => a.id !== "loki" && a.id !== "nathalie",
       ),
     };
-    expect(stale.agents).toHaveLength(5);
+    expect(stale.agents).toHaveLength(DEMO_TEAM.length - 2);
     const { teams, changed } = reconcileDefaultTeamCasting([stale]);
     expect(changed).toBe(true);
     const iaka = teams.find((t) => t.id === DEFAULT_TEAM_ID)!;
-    // Casting canonique complet (7) ; Loki/Nathalie ajoutés à leur place (roleIndex 5/6).
-    expect(iaka.agents).toHaveLength(7);
-    expect(iaka.agents.map((a) => a.id)).toEqual([
-      "odin",
-      "aragorn",
-      "gandalf",
-      "gimli",
-      "legolas",
-      "loki",
-      "nathalie",
-    ]);
+    // Casting canonique COMPLET ; Loki/Nathalie remis à leur place (roleIndex 5/6).
+    expect(iaka.agents).toHaveLength(DEMO_TEAM.length);
+    // ATTENTION à l'ordre : la réconciliation trie par `roleIndex`, pas par ordre de
+    // roster. Les rôles ajoutés lors de l'alignement (7/8/9) se rangent donc APRÈS `doc`,
+    // là où l'affichage, lui, suit le roster. Les deux ordres coexistent volontairement.
+    expect(iaka.agents.map((a) => a.id)).toEqual(
+      [...DEMO_TEAM]
+        .sort((a, b) => a.roleIndex - b.roleIndex)
+        .map((m) => m.agent.toLowerCase()),
+    );
     // Non destructif : coordinateur inchangé.
     expect(iaka.coordinator).toBe(stale.coordinator);
   });

@@ -7,9 +7,10 @@ import { isCanonicalRole, roleLabel } from "../theme/roles";
 afterEach(cleanup);
 
 describe("Roster — widget team (L8/D6)", () => {
-  it("rend les 7 agents : nom en clair + rôle en label discret (direction A)", () => {
+  it("rend TOUS les agents de la team : nom en clair + rôle en label discret (direction A)", () => {
     render(<Roster currentAgent="Aragorn" pending={false} onPick={() => {}} />);
-    expect(DEMO_TEAM).toHaveLength(7);
+    // Effectif non figé : il suit la team, qui suit désormais le roster du réservoir.
+    expect(DEMO_TEAM.length).toBeGreaterThanOrEqual(7);
     for (const m of DEMO_TEAM) {
       // Nom de l'agent en clair (plus de pastille [ROYAUME][Agent] tronquée).
       expect(screen.getByText(m.agent)).toBeTruthy();
@@ -25,12 +26,12 @@ describe("Roster — widget team (L8/D6)", () => {
     );
     // Aucun « travaille » tant que pas pending.
     expect(screen.queryByText("travaille")).toBeNull();
-    expect(screen.getAllByText("attend")).toHaveLength(7);
+    expect(screen.getAllByText("attend")).toHaveLength(DEMO_TEAM.length);
 
     rerender(<Roster currentAgent="Gimli" pending onPick={() => {}} />);
     // Seul l'agent courant « travaille ».
     expect(screen.getAllByText("travaille")).toHaveLength(1);
-    expect(screen.getAllByText("attend")).toHaveLength(6);
+    expect(screen.getAllByText("attend")).toHaveLength(DEMO_TEAM.length - 1);
   });
 
   it("L10b/P3 : workingAgents (transcript) prime — un délégué « travaille » même hors courant", () => {

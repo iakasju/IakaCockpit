@@ -235,6 +235,9 @@ export const fr = {
     tests: "Tests",
     graphisme: "Graphisme",
     doc: "Doc",
+    deploiement: "Déploiement",
+    surveillance: "Surveillance",
+    frame: "Frame",
   },
 
   portfolio: {

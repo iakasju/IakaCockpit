@@ -8,6 +8,7 @@ import {
   type Team,
   type UseTeams,
 } from "../hooks/useTeams";
+import { AGENT_ROLE_KEYS, AGENT_ROLES } from "../theme/roles";
 
 function makeTeams(overrides: Partial<UseTeams> = {}): UseTeams {
   const team = defaultTeamFromDemo("lotr");
@@ -55,7 +56,7 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     );
   });
 
-  it("le rôle est un menu des 7 rôles canoniques ; le changer appelle upsertAgent", () => {
+  it("le rôle est un menu de TOUS les rôles canoniques ; le changer appelle upsertAgent", () => {
     const upsertAgent = vi.fn(async () => {});
     render(<TeamsEditor teams={makeTeams({ upsertAgent })} />);
     selectAgent("gimli");
@@ -63,16 +64,9 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     const values = Array.from(select.querySelectorAll("option")).map(
       (o) => o.value,
     );
-    // Les 7 rôles canoniques, dans l'ordre roleIndex.
-    expect(values).toEqual([
-      "portefeuille",
-      "coordination",
-      "architecture",
-      "fabrication",
-      "tests",
-      "graphisme",
-      "doc",
-    ]);
+    // Liste DÉRIVÉE du modèle : recopier les clés ici figerait ce que le test doit suivre
+    // — c'est ce figeage qui avait laissé le Cockpit diverger du réservoir sans alerte.
+    expect(values).toEqual([...AGENT_ROLE_KEYS]);
     // Gimli = fabrication par défaut.
     expect(select.value).toBe("fabrication");
     fireEvent.change(select, { target: { value: "doc" } });
@@ -129,7 +123,7 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
 
   it("rôle hors-liste (team L15) : valeur courante conservée comme option (tolérant)", () => {
     const team: Team = defaultTeamFromDemo("lotr");
-    // Force un royaume dérivé hors des 7 rôles (cas teams catalogue L15).
+    // Force un royaume dérivé hors des rôles canoniques (cas teams catalogue L15).
     team.agents = team.agents.map((a) =>
       a.id === "gimli" ? { ...a, royaume: "GALADRIEL" } : a,
     );
@@ -139,9 +133,10 @@ describe("TeamsEditor — définition team/agents (L11, liste + fiche)", () => {
     const values = Array.from(select.querySelectorAll("option")).map(
       (o) => o.value,
     );
-    // La valeur hors-liste est présente (jamais perdue) + les 7 canoniques.
+    // La valeur hors-liste est présente (jamais perdue) + tous les rôles canoniques.
+    // Longueur DÉRIVÉE : recopier un nombre ici figerait la liste que le test doit suivre.
     expect(values).toContain("GALADRIEL");
-    expect(values).toHaveLength(8);
+    expect(values).toHaveLength(AGENT_ROLES.length + 1);
     expect(select.value).toBe("GALADRIEL");
   });
 
@@ -257,15 +252,18 @@ describe("TeamsEditor — rendu EN (aucun menu/select mélangé FR/EN)", () => {
     cleanup();
   });
 
-  it("le role-select rend les 7 rôles traduits en EN (aucun libellé FR résiduel)", () => {
+  it("le role-select rend TOUS les rôles traduits en EN (aucun libellé FR résiduel)", () => {
     render(<TeamsEditor teams={makeTeams()} />);
     selectAgent("gimli");
     const select = screen.getByLabelText("Role of gimli") as HTMLSelectElement;
     const labels = Array.from(select.querySelectorAll("option")).map(
       (o) => o.textContent,
     );
-    // Libellés EN attendus, dans l'ordre roleIndex (fabrication → "Build", etc.).
-    expect(labels).toEqual([
+    // Libellés EN attendus, dans l'ordre roleIndex (fabrication → "Build", etc.). La liste
+    // est DÉRIVÉE de AGENT_ROLES : le test doit suivre le modèle, pas en figer une copie.
+    // Ce qu'il garde : chaque rôle a bien une traduction EN, et aucune ne fuit en FR.
+    expect(labels).toHaveLength(AGENT_ROLES.length);
+    expect(labels.slice(0, 7)).toEqual([
       "Portfolio",
       "Coordination",
       "Architecture",
@@ -274,9 +272,14 @@ describe("TeamsEditor — rendu EN (aucun menu/select mélangé FR/EN)", () => {
       "Design",
       "Docs",
     ]);
+    expect(labels).toContain("Deployment");
+    expect(labels).toContain("Monitoring");
+    // Un rôle sans traduction rendrait la clé brute (« roles.xxx ») : on l'interdit.
+    for (const l of labels) expect(l).not.toMatch(/^roles\./);
     // Aucun libellé FR distinctif ne doit subsister dans le menu.
     expect(labels).not.toContain("Fabrication");
     expect(labels).not.toContain("Graphisme");
+    expect(labels).not.toContain("Déploiement");
   });
 
   it("le runner-select rend les libellés EN + suffixe « definable » (pas « définissable »)", () => {

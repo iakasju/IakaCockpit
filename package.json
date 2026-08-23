@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "test:handoff-parity": "node scripts/test-handoff-parity.mjs",
     "quality": "bash scripts/quality.sh",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:reservoir-parity": "node scripts/test-reservoir-parity.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

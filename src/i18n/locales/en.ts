@@ -236,6 +236,9 @@ export const en: Resources = {
     tests: "Testing",
     graphisme: "Design",
     doc: "Docs",
+    deploiement: "Deployment",
+    surveillance: "Monitoring",
+    frame: "Frame",
   },
 
   portfolio: {

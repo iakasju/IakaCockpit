@@ -852,6 +852,40 @@ export function latestTranscript(cwd: string): Promise<LatestTranscript | null> 
   return call<LatestTranscript | null>("latest_transcript", { cwd });
 }
 
+// --- Réservoir iakaframe (source de vérité des teams) ---
+
+/** Un persona du réservoir : id de fichier + `roleKey` déclarée (miroir `reservoir.rs`). */
+export interface ReservoirPersona {
+  id: string;
+  role_key: string;
+}
+
+/** Une équipe du réservoir (miroir `reservoir.rs`). L'ordre de `personas` porte du sens. */
+export interface ReservoirTeam {
+  id: string;
+  name: string;
+  personas: string[];
+  coordinator: string;
+}
+
+/** Ce que le Cockpit lit du réservoir (miroir `reservoir.rs`). */
+export interface Reservoir {
+  root: string;
+  teams: ReservoirTeam[];
+  personas: ReservoirPersona[];
+  roles: string[];
+}
+
+/**
+ * Lit le **réservoir iakaframe** (dépôt frère), source de vérité des équipes et de leurs
+ * personas. `null` = aucun réservoir sur ce poste : le Cockpit doit alors continuer de
+ * fonctionner sur ses défauts embarqués (clone isolé). Rejette seulement si
+ * `IAKAFRAME_HOME` est posé mais faux — un repli silencieux lirait un autre dépôt.
+ */
+export function readReservoir(): Promise<Reservoir | null> {
+  return call<Reservoir | null>("read_reservoir");
+}
+
 // --- Mode focus plein écran (L26) ---
 
 /**
@@ -1133,6 +1167,7 @@ export const backend = {
   ptyClose,
   ptyRunnerOpen,
   latestTranscript,
+  readReservoir,
   setFullscreen,
   transcriptTailStart,
   transcriptTailStop,
