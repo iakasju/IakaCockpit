@@ -191,6 +191,14 @@ export interface WorkingViewProps {
    */
   onToggleFocus?: () => void;
   /**
+   * Taille de police du terminal en px (`ui_term_font_size`). Descendue TELLE QUELLE aux
+   * `PtyTerminal` (appliquée à chaud, sans respawn) et à la barre d'onglets pour le réglage
+   * rapide. Absente → défaut du composant terminal.
+   */
+  termFontSize?: number;
+  /** Persiste une nouvelle taille de terminal (bornée par App, source unique du bornage). */
+  onTermFontSize?: (size: number) => void;
+  /**
    * L31-P2 — statut vivant RÉEL par agent du roster (dérivé de la récence du tailer de son
    * slot), keyé nom MINUSCULE : `running`/`idle`/`none`. Passé au Roster (prime sur le repli
    * L8). Absent → repli L8 (`workingAgents`/`pending`).
@@ -237,6 +245,8 @@ export function WorkingView({
   hidePensee,
   onToggleHidePensee,
   focus = false,
+  termFontSize,
+  onTermFontSize,
   onToggleFocus,
   rosterLiveStatus,
   tabLiveStatus,
@@ -450,6 +460,8 @@ export function WorkingView({
           onAddProject={onAddProject}
           focus={focus}
           onToggleFocus={onToggleFocus ?? (() => {})}
+          termFontSize={termFontSize}
+          onTermFontSize={onTermFontSize}
           liveStatus={tabLiveStatus}
         />
         {active ? (
@@ -689,6 +701,7 @@ export function WorkingView({
                       model={runner.model || undefined}
                       allowedTools={runner.allowedTools}
                       systemPromptExtra={runner.systemPromptExtra}
+                      fontSize={termFontSize}
                     />
                   </div>
                 );

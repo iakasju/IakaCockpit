@@ -353,6 +353,10 @@ export const en: Resources = {
     tabsAria: "Open project tabs",
     tabCloseAria: "Close {{project}} tab",
     tabAddAria: "Open a project on the table",
+    termFontGroupAria: "Terminal text size",
+    termFontDecAria: "Decrease terminal text size",
+    termFontIncAria: "Increase terminal text size",
+    termFontValue: "{{size}} px",
     focusToggleEnterAria: "Fullscreen (focus mode)",
     focusToggleExitAria: "Exit fullscreen",
     removeAria: "Remove {{project}} from the table",
@@ -724,6 +728,11 @@ export const en: Resources = {
     fontScaleLabel: "Scale",
     fontScaleValue: "{{scale}}%",
     fontScaleAria: "Font scale",
+    termFontLabel: "Terminal text",
+    termFontDesc:
+      "Shell font size, in px. Independent of the interface scale: the terminal does not follow UI zoom.",
+    termFontValue: "{{size}} px",
+    termFontAria: "Terminal font size",
 
     charteTitle: "Theme",
     teamVignettesLabel: "Team (avatars)",

@@ -13,7 +13,13 @@ import type { Lang } from "../i18n";
 import { notifyUser } from "../api/backend";
 import type { NotifySupport, ServiceStatus } from "../api/backend";
 import { embeddedTeams, TEAM_NONE } from "../theme/vignettes";
-import { DEFAULT_CHEF_ALLOWED_TOOLS } from "../hooks/useSettings";
+import {
+  clampTermFontSize,
+  DEFAULT_CHEF_ALLOWED_TOOLS,
+  TERM_FONT_MAX,
+  TERM_FONT_MIN,
+  TERM_FONT_STEP,
+} from "../hooks/useSettings";
 import type {
   ChefTrustMode,
   Density,
@@ -369,6 +375,37 @@ export function SettingsView({
                   }
                   aria-label={t("settings.fontScaleAria")}
                 />
+              </div>
+            </div>
+            {/* Taille du TERMINAL : réglage distinct de l'échelle ci-dessus, parce que xterm
+                rend dans son propre canvas et ne suit pas `--fscale`. Même contrôle rapide
+                disponible au-dessus du shell (barre d'onglets de la Table). */}
+            <div className="fieldrow">
+              <div className="lab">
+                <div className="t">{t("settings.termFontLabel")}</div>
+                <div className="d">{t("settings.termFontDesc")}</div>
+              </div>
+              <div className="ctl">
+                <input
+                  className="range"
+                  type="range"
+                  min={TERM_FONT_MIN}
+                  max={TERM_FONT_MAX}
+                  step={TERM_FONT_STEP}
+                  value={settings.ui.termFontSize}
+                  onChange={(e) =>
+                    void settings.setUiPref(
+                      "termFontSize",
+                      clampTermFontSize(Number(e.target.value)),
+                    )
+                  }
+                  aria-label={t("settings.termFontAria")}
+                />
+                <span className="rangeval">
+                  {t("settings.termFontValue", {
+                    size: settings.ui.termFontSize,
+                  })}
+                </span>
               </div>
             </div>
           </div>

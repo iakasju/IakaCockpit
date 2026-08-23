@@ -30,7 +30,7 @@ import { usePortfolioActivity } from "./hooks/usePortfolioActivity";
 import { useWorkset } from "./hooks/useWorkset";
 import { usePrepareResume } from "./hooks/usePrepareResume";
 import { usePty } from "./hooks/usePty";
-import { useSettings } from "./hooks/useSettings";
+import { clampTermFontSize, useSettings } from "./hooks/useSettings";
 import { useServices } from "./hooks/useServices";
 import { useNextStep } from "./hooks/useNextStep";
 import { useAppUpdate } from "./hooks/useAppUpdate";
@@ -253,6 +253,17 @@ export default function App(): JSX.Element {
       return next;
     });
   }, []);
+
+  // Taille de police du terminal : le BORNAGE vit ici, en source unique, et pas dans chaque
+  // appelant — la barre d'onglets et les Réglages émettent tous deux une taille voulue, que
+  // `clampTermFontSize` ramène dans [TERM_FONT_MIN, TERM_FONT_MAX]. Conséquence voulue :
+  // marteler `A+` sature à la borne au lieu de fabriquer un terminal à 3 colonnes.
+  const setTermFontSize = useCallback(
+    (size: number): void => {
+      void settings.setUiPref("termFontSize", clampTermFontSize(size));
+    },
+    [settings],
+  );
 
   // Vrai id de projet de la conversation active (L31-P1) : un SLOT d'agent a un
   // `projectId` synthétique → on lit `slot.realProjectId` pour que team/avatars/roster
@@ -816,6 +827,8 @@ export default function App(): JSX.Element {
             }
             focus={workFocus}
             onToggleFocus={toggleWorkFocus}
+            termFontSize={settings.ui.termFontSize}
+            onTermFontSize={setTermFontSize}
             rosterLiveStatus={rosterLiveStatus}
             tabLiveStatus={tabLiveStatus}
           />

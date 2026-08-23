@@ -1776,6 +1776,40 @@ button {
   background: var(--surface-2, transparent);
 }
 
+/* Réglage rapide de la taille du texte du terminal, posé entre le « + » et le switch plein
+   écran. Même grammaire discrète que `.pt-add` (sans bord, accent au survol) : c'est un
+   confort de lecture, pas une action de premier plan. La valeur est en chiffres tabulaires
+   pour que la largeur ne saute pas d'un cran à l'autre. */
+.pt-termfs {
+  align-self: center;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 8px 10px;
+}
+.pt-termfs-btn {
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.pt-termfs-btn:hover {
+  color: var(--text);
+  background: var(--surface-2, transparent);
+}
+.pt-termfs-val {
+  min-width: 3.4em;
+  text-align: center;
+  color: var(--text-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* L26 (révision recette v3) — SWITCH coulissant « plein écran » poussé à DROITE de la
    barre d'onglets (`margin-left:auto`). Piste + pastille qui glisse : off = pastille à
    gauche / piste neutre ; on = pastille à droite / piste accent. Le glyphe `⤢` vit DANS

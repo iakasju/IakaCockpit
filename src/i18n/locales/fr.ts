@@ -353,6 +353,10 @@ export const fr = {
     tabsAria: "Onglets des projets ouverts",
     tabCloseAria: "Fermer l'onglet {{project}}",
     tabAddAria: "Ouvrir un projet sur la table",
+    termFontGroupAria: "Taille du texte du terminal",
+    termFontDecAria: "Réduire le texte du terminal",
+    termFontIncAria: "Agrandir le texte du terminal",
+    termFontValue: "{{size}} px",
     focusToggleEnterAria: "Plein écran (mode focus)",
     focusToggleExitAria: "Quitter le plein écran",
     removeAria: "Retirer {{project}} de la table",
@@ -725,6 +729,11 @@ export const fr = {
     fontScaleLabel: "Échelle",
     fontScaleValue: "{{scale}}%",
     fontScaleAria: "Échelle de police",
+    termFontLabel: "Texte du terminal",
+    termFontDesc:
+      "Taille de police du shell, en px. Indépendante de l'échelle de l'interface : le terminal ne suit pas le zoom de l'UI.",
+    termFontValue: "{{size}} px",
+    termFontAria: "Taille de police du terminal",
 
     charteTitle: "Charte",
     teamVignettesLabel: "Team (vignettes)",

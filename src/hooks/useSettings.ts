@@ -44,6 +44,16 @@ export interface UiPrefs {
   fontFamily: FontFamily;
   /** Échelle de police en % (ex. 100). */
   fontScale: number;
+  /**
+   * Taille de police du TERMINAL en px (xterm), indépendante de `fontScale`.
+   *
+   * Pourquoi une préférence à part et non l'échelle UI : xterm ne se met pas à l'échelle
+   * par `--fscale` (il rend dans son propre canvas et calcule cols/rows à partir d'une
+   * taille en px). Un facteur d'UI ne l'atteint donc pas — c'est exactement pourquoi le
+   * shell restait petit alors que l'interface, elle, grossissait. Le confort de LECTURE
+   * du terminal se règle aussi indépendamment de la densité de l'interface.
+   */
+  termFontSize: number;
 }
 
 /** Clés de config (D4-bis) — snake_case, namespacées `ui_`. */
@@ -53,6 +63,8 @@ export const CONFIG_KEYS = {
   shape: "ui_shape",
   fontFamily: "ui_font_family",
   fontScale: "ui_font_scale",
+  /** Taille de police du terminal en px (non sensible : ne matche pas token|key|secret|password). */
+  termFontSize: "ui_term_font_size",
   /** Langue de l'interface (i18n, FR défaut). */
   lang: "ui_lang",
   theme: "theme",
@@ -76,6 +88,22 @@ export const CONFIG_KEYS = {
 /** Support de diffusion par défaut (L6, D2) si non configuré. */
 export const DEFAULT_SUPPORT: NotifySupport = "slack";
 
+/**
+ * Bornes de la taille de police du terminal (px). En dessous de 8 le rendu xterm devient
+ * illisible ; au-dessus de 32, un terminal de largeur usuelle tombe sous ~40 colonnes et les
+ * TUI natives (Claude Code, Codex) cassent leur mise en page. Hors bornes → défaut.
+ */
+export const TERM_FONT_MIN = 8;
+export const TERM_FONT_MAX = 32;
+/** Pas des boutons de réglage rapide (Travail) et du curseur (Réglages). */
+export const TERM_FONT_STEP = 1;
+
+/** Borne une taille de terminal dans [TERM_FONT_MIN, TERM_FONT_MAX] (arrondie). */
+export function clampTermFontSize(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_UI.termFontSize;
+  return Math.min(TERM_FONT_MAX, Math.max(TERM_FONT_MIN, Math.round(value)));
+}
+
 /** Défauts documentés (appliqués si la clé est absente). */
 export const DEFAULT_UI: UiPrefs = {
   // Direction A : rail d'icônes à GAUCHE par défaut (décision Stéphane). `right`
@@ -85,6 +113,10 @@ export const DEFAULT_UI: UiPrefs = {
   shape: "round",
   fontFamily: "system",
   fontScale: 100,
+  // Défaut INCHANGÉ (valeur historiquement codée en dur dans `PtyTerminal`) : ajouter le
+  // réglage ne doit surprendre aucune configuration existante. Le confort se règle, il ne
+  // se décrète pas à la place de l'utilisateur.
+  termFontSize: 13,
 };
 
 // Direction A (redesign) : charte par défaut = studio-clair (clair, aéré, accent
@@ -252,6 +284,9 @@ function parsePrefs(cfg: Record<string, string>): UiPrefs {
   if (ff === "system" || ff === "serif" || ff === "mono-ui") ui.fontFamily = ff;
   const fs = Number(cfg[CONFIG_KEYS.fontScale]);
   if (Number.isFinite(fs) && fs >= 50 && fs <= 200) ui.fontScale = fs;
+  const tfs = Number(cfg[CONFIG_KEYS.termFontSize]);
+  if (Number.isFinite(tfs) && tfs >= TERM_FONT_MIN && tfs <= TERM_FONT_MAX)
+    ui.termFontSize = tfs;
   return ui;
 }
 
@@ -531,7 +566,9 @@ export function useSettings(deps: UseSettingsDeps = {}): UseSettings {
               ? CONFIG_KEYS.shape
               : key === "fontFamily"
                 ? CONFIG_KEYS.fontFamily
-                : CONFIG_KEYS.fontScale;
+                : key === "termFontSize"
+                  ? CONFIG_KEYS.termFontSize
+                  : CONFIG_KEYS.fontScale;
       await api.configSet(cfgKey, String(value));
       setUi(next);
       applyToDom(domRef.current, theme, next);

@@ -45,6 +45,18 @@ export interface ProjectTabsProps {
    * onglets, AVANT le switch plein écran (jamais dans la zone scrollable). Optionnel.
    */
   onAddProject?: () => void;
+  /**
+   * Taille de police courante du terminal (px). Affichée entre les deux boutons de réglage
+   * rapide. Absente (avec `onTermFontSize`) → le groupe n'est pas rendu.
+   */
+  termFontSize?: number;
+  /**
+   * Réglage rapide de la taille du terminal, posé LÀ où la gêne se constate (au-dessus du
+   * shell, à côté du plein écran) plutôt que dans les seuls Réglages : agrandir la fenêtre
+   * et agrandir le texte sont le même geste de confort. Reçoit la taille VOULUE (déjà
+   * bornée par l'appelant). Absent → aucun groupe rendu (rétro-compat).
+   */
+  onTermFontSize?: (size: number) => void;
   /** L26 — la Table est-elle en mode focus (colonnes gauche masquées) ? */
   focus: boolean;
   /**
@@ -60,6 +72,8 @@ export function ProjectTabs({
   onSelect,
   onClose,
   onAddProject,
+  termFontSize,
+  onTermFontSize,
   focus,
   onToggleFocus,
   liveStatus,
@@ -116,6 +130,39 @@ export function ProjectTabs({
         >
           +
         </button>
+      )}
+      {/* Réglage rapide de la taille du texte du terminal — FRÈRE de `.projtabs-list` (hors
+          zone scrollable), posé AVANT le switch plein écran : le confort de lecture se règle
+          là où il se constate. `A−`/`A+` encadrent la valeur courante en px. Le bornage vit
+          chez l'appelant (source unique) ; ici on ne fait qu'émettre l'intention. */}
+      {onTermFontSize && termFontSize !== undefined && (
+        <div
+          className="pt-termfs"
+          role="group"
+          aria-label={t("working.termFontGroupAria")}
+        >
+          <button
+            type="button"
+            className="pt-termfs-btn"
+            aria-label={t("working.termFontDecAria")}
+            title={t("working.termFontDecAria")}
+            onClick={() => onTermFontSize(termFontSize - 1)}
+          >
+            A−
+          </button>
+          <span className="pt-termfs-val" aria-live="polite">
+            {t("working.termFontValue", { size: termFontSize })}
+          </span>
+          <button
+            type="button"
+            className="pt-termfs-btn"
+            aria-label={t("working.termFontIncAria")}
+            title={t("working.termFontIncAria")}
+            onClick={() => onTermFontSize(termFontSize + 1)}
+          >
+            A+
+          </button>
+        </div>
       )}
       {/* L26 (recette v5) — SWITCH coulissant « plein écran », FRÈRE de `.projtabs-list`
           (hors zone scrollable) → il se pose collé au BORD DROIT de la barre (padding-right

@@ -25,6 +25,9 @@ import "@xterm/xterm/css/xterm.css";
 import type { ChefRunnerKind } from "../api/backend";
 import type { UsePty } from "../hooks/usePty";
 
+/** Défaut historique (miroir de `DEFAULT_UI.termFontSize`) si le parent ne passe rien. */
+const DEFAULT_TERM_FONT_SIZE = 13;
+
 export interface PtyTerminalProps {
   /** id de session/onglet (unique). */
   sessionId: string;
@@ -50,6 +53,13 @@ export interface PtyTerminalProps {
    * ajouté APRÈS l'obligation coordinateur L19 côté Rust. Absent → seule L19 s'applique.
    */
   systemPromptExtra?: string;
+  /**
+   * Taille de police du terminal en px (réglage `ui_term_font_size`). Appliquée À CHAUD :
+   * un changement ne recrée NI la session PTY (garde L10 : le runner survit) NI la surface
+   * xterm (le scrollback est conservé) — il ne fait que réécrire `term.options.fontSize`,
+   * refitter et propager les nouvelles `cols/rows` au PTY. Absente → défaut historique.
+   */
+  fontSize?: number;
 }
 
 export function PtyTerminal({
@@ -60,8 +70,18 @@ export function PtyTerminal({
   model,
   allowedTools,
   systemPromptExtra,
+  fontSize = DEFAULT_TERM_FONT_SIZE,
 }: PtyTerminalProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement | null>(null);
+  // Surface xterm exposée aux effets SECONDAIRES (taille de police) : ils doivent agir sur
+  // le terminal VIVANT sans entrer dans les dépendances de l'effet d'init, dont le rejeu
+  // recréerait la surface et perdrait le scrollback.
+  const termRef = useRef<Terminal | null>(null);
+  const fitRef = useRef<FitAddon | null>(null);
+  // Lue par l'effet d'init pour la taille INITIALE, hors dépendances (sinon un changement
+  // de taille rejouerait l'init).
+  const fontSizeRef = useRef(fontSize);
+  fontSizeRef.current = fontSize;
 
   // `pty` est stable (callbacks mémorisés) mais on capture la version courante
   // pour l'effet d'init, qui ne doit s'exécuter qu'une fois par session.
@@ -77,13 +97,15 @@ export function PtyTerminal({
       cursorBlink: true,
       fontFamily:
         'var(--mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
-      fontSize: 13,
+      fontSize: fontSizeRef.current,
       theme: { background: "#000000", foreground: "#f0f0f0" },
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
     fit.fit();
+    termRef.current = term;
+    fitRef.current = fit;
 
     // Saisie clavier → PTY.
     const onDataDisp = term.onData((data) => {
@@ -132,6 +154,8 @@ export function PtyTerminal({
     return () => {
       onDataDisp.dispose();
       ro.disconnect();
+      termRef.current = null;
+      fitRef.current = null;
       term.dispose();
       // NE FERME PAS le runner ici (R-L10b-1) : le chef-runner doit SURVIVRE au
       // remontage du composant (navigation Working↔Portfolio, double-invocation des
@@ -147,6 +171,26 @@ export function PtyTerminal({
     // se charge APRÈS le 1er spawn, l'effet rejoue mais NE respawne pas (rebind seul) —
     // l'enforcement s'applique au spawn INITIAL, le repli global tient sinon (documenté).
   }, [sessionId, cwd, runnerKind, model, allowedTools, systemPromptExtra]);
+
+  // Taille de police À CHAUD. Effet SÉPARÉ, et c'est le point important : mettre `fontSize`
+  // dans les dépendances de l'effet d'init aurait recréé la surface xterm à chaque cran de
+  // réglage (scrollback perdu, flux rebranché). Ici on ne touche qu'aux options du terminal
+  // vivant, puis on refitte — car changer la taille des glyphes change cols/rows, et le PTY
+  // doit l'apprendre, sinon la TUI native rend sur une grille périmée (lignes tronquées).
+  // Ne fait rien au premier rendu (l'init a déjà posé la bonne taille) : `term.options` est
+  // idempotent, donc le cas est inoffensif et non gardé.
+  useEffect(() => {
+    const term = termRef.current;
+    const fit = fitRef.current;
+    if (!term || !fit) return;
+    try {
+      term.options.fontSize = fontSize;
+      fit.fit();
+      void ptyRef.current.resize(sessionId, term.cols, term.rows);
+    } catch {
+      /* surface non montée / dimensions nulles : le prochain ResizeObserver rattrapera */
+    }
+  }, [fontSize, sessionId]);
 
   return <div className="termmount" ref={mountRef} />;
 }
