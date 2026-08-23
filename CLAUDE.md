@@ -690,6 +690,44 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       signalé — `CLAUDE.md:56-57`, la commande de build documentée, où la variable est affectée à
       `"$(cat ~/.tauri/…)"` (fichier **hors dépôt**) et à `""` : **aucune matière de clé dans le dépôt**.
       `bash scripts/quality.sh` **exit 0 — 782 front + 337 Rust**. Instruction **non touchée**.)*
+- [x] **L38** — **Lisibilité du terminal : taille du texte réglable, tout le reste dérivé**
+      *(**LIVRÉ, recette terrain OK** 2026-08-23 ; 8 commits `18b2295`→`f607cfb` ; 803 front + 337 Rust,
+      `quality.sh` OK ; Rust **non touché**. Front seul, aucune instruction préalable — lot ouvert sur
+      un retour terrain direct, tracé ici a posteriori.)* Un **unique** réglage exposé —
+      `ui_term_font_size` (persisté, borné [8, 32], défaut 13) — réglable **à chaud** depuis deux
+      points : `A− / A+` dans la barre d'onglets de la Table et un curseur dans Réglages > Police.
+      Tous les autres critères de lisibilité en sont **dérivés** (`src/theme/termMetrics.ts`, module
+      pur) : interligne, espacement des caractères, respiration autour de la grille.
+      **Garde L10 tenue** : un changement de taille ne recrée ni la session PTY (le runner survit) ni
+      la surface xterm (scrollback conservé) — effet séparé de l'init, puis refit + `pty.resize` pour
+      que la TUI native apprenne la nouvelle grille.
+      **Trois faits établis par MESURE** (banc xterm réel piloté en Chrome headless, captures à
+      l'appui — `scratchpad/xtermlab/`), chacun ayant corrigé une hypothèse fausse :
+      **(1) `var(--mono)` figeait la grille de caractères.** `PtyTerminal` passait une **variable CSS**
+      à xterm, qui s'en sert pour **mesurer** un caractère via un contexte **canvas** — où `var()` est
+      invalide et l'affectation rejetée en silence. Métriques identiques à 13 px et à 32 px (cellule
+      9,43 px, ligne 19 px dans les deux cas) → glyphes chevauchés. **Défaut ANTÉRIEUR au lot** : à
+      13 px la cellule était trop *large* (9,43 contre 7,82), donc invisible ; l'agrandissement l'a
+      révélé, pas créé. Corrigé par `src/theme/termFont.ts` (résolution en pile **littérale**, refus
+      d'une valeur contenant encore `var(`), appliqué à la construction **et** à chaud.
+      **(2) L'espacement des caractères est dérivé à ZÉRO**, définitivement : à 1 px comme à 2 px, les
+      bordures `─` des boîtes TUI (Claude Code, Codex) se **hachent en pointillés**. Contrainte de
+      rendu, pas un oubli.
+      **(3) L'interligne est un multiplicateur CONSTANT** (`LINE_HEIGHT_RATIO = 1.2`), donc strictement
+      proportionnel — `lineHeight` de xterm étant *déjà* relatif à la hauteur de glyphe. Une courbe
+      décroissante essayée en cours de route **cassait** cette proportionnalité (0,61 d'air en grand
+      contre 0,83 en petit). Valeur finale abaissée depuis 1.6 : ce 1.6 avait été choisi sur un retour
+      « trop serré » émis **alors que la grille était fausse** — jugement biaisé. Bénéfice non cherché :
+      descendre **referme** les bordures verticales des boîtes.
+      **Deux gardes de test défaillantes, corrigées après contrefactuel** — les deux avaient été écrites
+      par l'exécution et validaient à tort : (a) la garde « pas de `var()` » assertait l'état **après**
+      montage, que l'effet à chaud repose correctement → le défaut réintroduit laissait **21/21 vertes** ;
+      elle porte désormais sur les options de **construction**, là où xterm mesure. (b) Un seuil
+      « air ≥ 40 % de la taille » encodait un **goût** (formé sur le rendu cassé) et a **bloqué** la
+      réduction ensuite demandée ; abaissé à 25 %, il ne garde plus que l'**invariant** (le 1.0 de xterm
+      échoue toujours).
+      Différés : la charte n'est re-résolue qu'au prochain changement de taille ou remontage ;
+      `minimumContrastRatio` et `fontWeight` non dérivés (non liés à la taille).
 - [ ] **L37** — **Persistance de la Table (le « set de Work » survit au redémarrage)**
       *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
       chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
