@@ -198,6 +198,8 @@ export interface WorkingViewProps {
   termFontSize?: number;
   /** Persiste une nouvelle taille de terminal (bornée par App, source unique du bornage). */
   onTermFontSize?: (size: number) => void;
+  /** Interligne du terminal (multiplicateur xterm) descendu aux `PtyTerminal`. */
+  termLineHeight?: number;
   /**
    * L31-P2 — statut vivant RÉEL par agent du roster (dérivé de la récence du tailer de son
    * slot), keyé nom MINUSCULE : `running`/`idle`/`none`. Passé au Roster (prime sur le repli
@@ -247,6 +249,7 @@ export function WorkingView({
   focus = false,
   termFontSize,
   onTermFontSize,
+  termLineHeight,
   onToggleFocus,
   rosterLiveStatus,
   tabLiveStatus,
@@ -702,6 +705,7 @@ export function WorkingView({
                       allowedTools={runner.allowedTools}
                       systemPromptExtra={runner.systemPromptExtra}
                       fontSize={termFontSize}
+                      lineHeight={termLineHeight}
                     />
                   </div>
                 );

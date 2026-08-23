@@ -829,6 +829,7 @@ export default function App(): JSX.Element {
             onToggleFocus={toggleWorkFocus}
             termFontSize={settings.ui.termFontSize}
             onTermFontSize={setTermFontSize}
+            termLineHeight={settings.ui.termLineHeight}
             rosterLiveStatus={rosterLiveStatus}
             tabLiveStatus={tabLiveStatus}
           />

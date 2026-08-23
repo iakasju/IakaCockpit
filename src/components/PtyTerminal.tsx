@@ -27,6 +27,8 @@ import type { UsePty } from "../hooks/usePty";
 
 /** Défaut historique (miroir de `DEFAULT_UI.termFontSize`) si le parent ne passe rien. */
 const DEFAULT_TERM_FONT_SIZE = 13;
+/** Miroir de `DEFAULT_UI.termLineHeight` — voir là-bas pourquoi ce n'est pas le 1.0 de xterm. */
+const DEFAULT_TERM_LINE_HEIGHT = 1.25;
 
 export interface PtyTerminalProps {
   /** id de session/onglet (unique). */
@@ -60,6 +62,12 @@ export interface PtyTerminalProps {
    * refitter et propager les nouvelles `cols/rows` au PTY. Absente → défaut historique.
    */
   fontSize?: number;
+  /**
+   * Interligne du terminal (multiplicateur xterm, réglage `ui_term_line_height`). Appliqué
+   * à chaud comme `fontSize`, et pour la même raison : grossir les glyphes sans donner
+   * d'air aux lignes rend le shell illisible.
+   */
+  lineHeight?: number;
 }
 
 export function PtyTerminal({
@@ -71,6 +79,7 @@ export function PtyTerminal({
   allowedTools,
   systemPromptExtra,
   fontSize = DEFAULT_TERM_FONT_SIZE,
+  lineHeight = DEFAULT_TERM_LINE_HEIGHT,
 }: PtyTerminalProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement | null>(null);
   // Surface xterm exposée aux effets SECONDAIRES (taille de police) : ils doivent agir sur
@@ -82,6 +91,8 @@ export function PtyTerminal({
   // de taille rejouerait l'init).
   const fontSizeRef = useRef(fontSize);
   fontSizeRef.current = fontSize;
+  const lineHeightRef = useRef(lineHeight);
+  lineHeightRef.current = lineHeight;
 
   // `pty` est stable (callbacks mémorisés) mais on capture la version courante
   // pour l'effet d'init, qui ne doit s'exécuter qu'une fois par session.
@@ -98,6 +109,7 @@ export function PtyTerminal({
       fontFamily:
         'var(--mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
       fontSize: fontSizeRef.current,
+      lineHeight: lineHeightRef.current,
       theme: { background: "#000000", foreground: "#f0f0f0" },
     });
     const fit = new FitAddon();
@@ -172,7 +184,8 @@ export function PtyTerminal({
     // l'enforcement s'applique au spawn INITIAL, le repli global tient sinon (documenté).
   }, [sessionId, cwd, runnerKind, model, allowedTools, systemPromptExtra]);
 
-  // Taille de police À CHAUD. Effet SÉPARÉ, et c'est le point important : mettre `fontSize`
+  // Taille de police ET interligne À CHAUD. Effet SÉPARÉ, et c'est le point important :
+  // mettre ces options
   // dans les dépendances de l'effet d'init aurait recréé la surface xterm à chaque cran de
   // réglage (scrollback perdu, flux rebranché). Ici on ne touche qu'aux options du terminal
   // vivant, puis on refitte — car changer la taille des glyphes change cols/rows, et le PTY
@@ -185,12 +198,13 @@ export function PtyTerminal({
     if (!term || !fit) return;
     try {
       term.options.fontSize = fontSize;
+      term.options.lineHeight = lineHeight;
       fit.fit();
       void ptyRef.current.resize(sessionId, term.cols, term.rows);
     } catch {
       /* surface non montée / dimensions nulles : le prochain ResizeObserver rattrapera */
     }
-  }, [fontSize, sessionId]);
+  }, [fontSize, lineHeight, sessionId]);
 
   return <div className="termmount" ref={mountRef} />;
 }
