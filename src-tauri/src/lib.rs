@@ -22,6 +22,7 @@ pub mod pathguard;
 pub mod paths;
 pub mod portfolio;
 pub mod pricing;
+pub mod reservoir;
 pub mod resume;
 pub mod secrets;
 pub mod seed;
@@ -84,6 +85,7 @@ pub fn run() {
             portfolio::list_extra_projects,
             economy::portfolio_economy,
             economy::portfolio_activity,
+            reservoir::read_reservoir,
             economy::analytics_cost,
             economy::delegations_by_agent,
             economy::agent_attribution,
