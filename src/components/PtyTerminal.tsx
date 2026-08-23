@@ -25,6 +25,7 @@ import "@xterm/xterm/css/xterm.css";
 import type { ChefRunnerKind } from "../api/backend";
 import type { UsePty } from "../hooks/usePty";
 import { deriveTermMetrics } from "../theme/termMetrics";
+import { resolveMonoFamily } from "../theme/termFont";
 
 /** Défaut historique (miroir de `DEFAULT_UI.termFontSize`) si le parent ne passe rien. */
 const DEFAULT_TERM_FONT_SIZE = 13;
@@ -101,8 +102,10 @@ export function PtyTerminal({
     const term = new Terminal({
       convertEol: true,
       cursorBlink: true,
-      fontFamily:
-        'var(--mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
+      // RÉSOLUE, jamais `var(--mono)` : xterm mesure le caractère via un canvas, où une
+      // variable CSS est invalide — la mesure restait alors figée quelle que soit la
+      // taille, et les glyphes se chevauchaient. Voir `theme/termFont`.
+      fontFamily: resolveMonoFamily(),
       fontSize: metricsRef.current.fontSize,
       lineHeight: metricsRef.current.lineHeight,
       letterSpacing: metricsRef.current.letterSpacing,
@@ -193,6 +196,9 @@ export function PtyTerminal({
     const fit = fitRef.current;
     if (!term || !fit) return;
     try {
+      // Ré-résolue ici aussi : un changement de charte change `--mono`, et la police doit
+      // suivre sans attendre un remontage du terminal.
+      term.options.fontFamily = resolveMonoFamily();
       term.options.fontSize = metrics.fontSize;
       term.options.lineHeight = metrics.lineHeight;
       term.options.letterSpacing = metrics.letterSpacing;

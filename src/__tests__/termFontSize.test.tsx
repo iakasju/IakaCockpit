@@ -24,17 +24,47 @@ import {
 const fitSpy = vi.fn();
 const disposeSpy = vi.fn();
 const terminals: {
-  options: { fontSize?: number; lineHeight?: number; letterSpacing?: number };
+  initialOptions: {
+    fontSize?: number;
+    lineHeight?: number;
+    letterSpacing?: number;
+    fontFamily?: string;
+  };
+  options: {
+    fontSize?: number;
+    lineHeight?: number;
+    letterSpacing?: number;
+    fontFamily?: string;
+  };
   cols: number;
   rows: number;
 }[] = [];
 vi.mock("@xterm/xterm", () => ({
   Terminal: class {
-    options: { fontSize?: number; lineHeight?: number; letterSpacing?: number };
+    options: {
+    fontSize?: number;
+    lineHeight?: number;
+    letterSpacing?: number;
+    fontFamily?: string;
+  };
     cols = 80;
     rows = 24;
-    constructor(opts: { fontSize?: number; lineHeight?: number; letterSpacing?: number }) {
+    initialOptions: {
+      fontSize?: number;
+      lineHeight?: number;
+      letterSpacing?: number;
+      fontFamily?: string;
+    };
+    constructor(opts: {
+      fontSize?: number;
+      lineHeight?: number;
+      letterSpacing?: number;
+      fontFamily?: string;
+    }) {
       this.options = { ...opts };
+      // Figées : l'effet « à chaud » réécrit `options` dès le montage, ce qui masquerait
+      // une valeur de CONSTRUCTION fautive (le cas exact du défaut `var(--mono)`).
+      this.initialOptions = { ...opts };
       terminals.push(this);
     }
     loadAddon(): void {}
@@ -69,6 +99,7 @@ import {
   TERM_FONT_MIN,
 } from "../hooks/useSettings";
 import { deriveTermMetrics, LINE_HEIGHT_RATIO } from "../theme/termMetrics";
+import { MONO_FALLBACK, resolveMonoFamily } from "../theme/termFont";
 import type { UsePty } from "../hooks/usePty";
 import type { Backend } from "../api/backend";
 
@@ -102,6 +133,31 @@ describe("bornage", () => {
     expect(clampTermFontSize(999)).toBe(TERM_FONT_MAX);
     expect(clampTermFontSize(17.4)).toBe(17);
     expect(clampTermFontSize(Number.NaN)).toBe(DEFAULT_UI.termFontSize);
+  });
+});
+
+describe("police du terminal — jamais de var() vers xterm", () => {
+  // Défaut réparé : `PtyTerminal` passait `var(--mono), …` à xterm. xterm MESURE le
+  // caractère via un canvas, où `var()` est invalide : la mesure restait figée (9.43 px de
+  // cellule à 13 px comme à 32 px, mesuré au banc), donc la grille ne suivait pas la
+  // police et les glyphes se chevauchaient.
+  it("résout la variable de charte", () => {
+    expect(resolveMonoFamily(() => ' "Cascadia Code", monospace ')).toBe(
+      '"Cascadia Code", monospace',
+    );
+  });
+
+  it("retombe sur une pile littérale si la variable est illisible", () => {
+    expect(resolveMonoFamily(() => "")).toBe(MONO_FALLBACK);
+    expect(resolveMonoFamily(() => "   ")).toBe(MONO_FALLBACK);
+  });
+
+  it("REFUSE une valeur qui contient encore var() — c'est le défaut lui-même", () => {
+    expect(resolveMonoFamily(() => "var(--autre), monospace")).toBe(MONO_FALLBACK);
+  });
+
+  it("le repli littéral ne contient pas de var()", () => {
+    expect(MONO_FALLBACK).not.toContain("var(");
   });
 });
 
@@ -217,6 +273,16 @@ describe("persistance", () => {
 });
 
 describe("PtyTerminal — application à chaud", () => {
+  it("la police passée à xterm ne contient JAMAIS var() — dès la CONSTRUCTION", () => {
+    render(<PtyTerminal sessionId="s1" cwd="/w/p" pty={makePty()} fontSize={32} />);
+    // On assertie sur les options de CONSTRUCTION : c'est là que xterm mesure le
+    // caractère pour la première fois. Assertier seulement l'état vivant laissait passer
+    // le défaut, puisque l'effet à chaud repose une valeur correcte juste après.
+    expect(terminals[0].initialOptions.fontFamily).toBeDefined();
+    expect(terminals[0].initialOptions.fontFamily).not.toContain("var(");
+    expect(terminals[0].options.fontFamily).not.toContain("var(");
+  });
+
   it("la SEULE prop de taille suffit : interligne et espacement en sont dérivés", () => {
     render(<PtyTerminal sessionId="s1" cwd="/w/p" pty={makePty()} fontSize={18} />);
     const expected = deriveTermMetrics(18);
