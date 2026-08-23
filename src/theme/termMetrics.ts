@@ -55,8 +55,20 @@ export interface TermMetrics {
  * hauteur de glyphe). Vérifié en capture : le rythme visuel sautait d'une taille à l'autre.
  *
  * Une constante rend le rythme identique à toutes les tailles — et le calcul lisible.
+ *
+ * ── Pourquoi 1.2, et pourquoi ce n'est plus 1.6 ───────────────────────────────────────
+ * La valeur 1.6 avait été retenue sur un retour « trop serré » émis alors que la GRILLE
+ * DE CARACTÈRES ÉTAIT FAUSSE (défaut `var(--mono)`, cf. `theme/termFont`) : le jugement
+ * portait sur un rendu où les glyphes se chevauchaient, pas sur l'interligne. La police
+ * une fois correctement mesurée, 1.6 s'est révélé trop aéré.
+ *
+ * 1.2 apporte en prime un gain qui n'était pas cherché : à 1.6 et 1.4 les bordures
+ * VERTICALES des boîtes TUI se détachent de leurs horizontales ; en descendant, le cadre
+ * se referme (constaté en capture à 1.60 / 1.40 / 1.25 / 1.15 — continu dès ~1.15).
+ * L'arbitrage « lisibilité du texte contre intégrité du cadre » documenté plus haut n'a
+ * donc plus à être payé aussi cher.
  */
-export const LINE_HEIGHT_RATIO = 1.6;
+export const LINE_HEIGHT_RATIO = 1.2;
 
 /**
  * Respiration autour de la grille, en fraction de la taille du texte. Les deux valeurs

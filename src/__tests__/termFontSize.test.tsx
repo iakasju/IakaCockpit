@@ -167,10 +167,14 @@ describe("dérivation — un seul réglage gouverne tout", () => {
     // (mesuré : 22 px -> 25 px de ligne) et les glyphes se touchent.
     for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
       expect(deriveTermMetrics(px).lineHeight).toBeGreaterThan(1.15);
-      // Et l'air réel doit rester confortable : retour terrain « trop serré » sur une
-      // courbe qui laissait 8 px à 18 px de police. Modèle mesuré : cellule ~ px x 1.15 x lh.
+      // Plancher d'air réel. Le seuil a été ABAISSÉ de 0.4 à 0.25 : à 0.4 il encodait un
+      // goût — celui formé sur un retour « trop serré » émis alors que la grille de
+      // caractères était fausse (défaut `var(--mono)`) — et il bloquait ensuite la
+      // réduction demandée par la même personne une fois le rendu réparé. Ce qui reste
+      // gardé est l'INVARIANT, pas la préférence : un retour au 1.0 de xterm donnerait
+      // 0.15 et échouerait toujours. Modèle mesuré : cellule ~ px x 1.15 x lh.
       const air = px * 1.15 * deriveTermMetrics(px).lineHeight - px;
-      expect(air).toBeGreaterThanOrEqual(px * 0.4);
+      expect(air).toBeGreaterThanOrEqual(px * 0.25);
     }
   });
 
