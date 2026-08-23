@@ -68,11 +68,7 @@ import {
   TERM_FONT_MAX,
   TERM_FONT_MIN,
 } from "../hooks/useSettings";
-import {
-  deriveTermMetrics,
-  LH_AT_LARGE,
-  LH_AT_SMALL,
-} from "../theme/termMetrics";
+import { deriveTermMetrics, LINE_HEIGHT_RATIO } from "../theme/termMetrics";
 import type { UsePty } from "../hooks/usePty";
 import type { Backend } from "../api/backend";
 
@@ -122,17 +118,31 @@ describe("dérivation — un seul réglage gouverne tout", () => {
     }
   });
 
-  it("l'interligne RELATIF décroît quand le texte grossit (convention typographique)", () => {
-    const small = deriveTermMetrics(10).lineHeight;
-    const mid = deriveTermMetrics(17).lineHeight;
-    const large = deriveTermMetrics(24).lineHeight;
-    expect(small).toBeGreaterThan(mid);
-    expect(mid).toBeGreaterThan(large);
+  it("l'interligne est STRICTEMENT proportionnel : même multiplicateur à toute taille", () => {
+    // Le défaut corrigé : une courbe faisait DÉCROÎTRE le multiplicateur avec la taille
+    // (1.60 -> 1.40), donc le gros texte recevait proportionnellement MOINS d'air que le
+    // petit — l'inverse d'un calcul « en relatif ». `lineHeight` étant déjà un
+    // multiplicateur de la hauteur de glyphe, une constante suffit à être proportionnel.
+    const ratios = new Set<number>();
+    for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
+      ratios.add(deriveTermMetrics(px).lineHeight);
+    }
+    expect([...ratios]).toEqual([LINE_HEIGHT_RATIO]);
   });
 
-  it("l'interligne ABSOLU croît quand même avec la taille (le texte respire plus)", () => {
-    // Le piège du point précédent : un ratio décroissant pourrait annuler le gain. On
-    // vérifie la hauteur de ligne RÉELLE, modèle mesuré au banc (cellule ~ px x 1.15 x lh).
+  it("l'air par unité de texte est CONSTANT d'une taille à l'autre", () => {
+    // Formulation indépendante de la précédente : on mesure le rapport air/taille via le
+    // modèle relevé au banc (cellule ~ px x 1.15 x lh). Un écart entre deux tailles
+    // signifierait que le rythme visuel saute quand on bouge le curseur.
+    const airRatio = (px: number) =>
+      (px * 1.15 * deriveTermMetrics(px).lineHeight - px) / px;
+    const ref = airRatio(13);
+    for (const px of [TERM_FONT_MIN, 18, 24, TERM_FONT_MAX]) {
+      expect(Math.abs(airRatio(px) - ref)).toBeLessThan(1e-9);
+    }
+  });
+
+  it("l'interligne ABSOLU croît avec la taille (le texte respire plus en grand)", () => {
     const cell = (px: number) => px * 1.15 * deriveTermMetrics(px).lineHeight;
     expect(cell(20)).toBeGreaterThan(cell(13));
     expect(cell(28)).toBeGreaterThan(cell(20));
@@ -157,8 +167,7 @@ describe("dérivation — un seul réglage gouverne tout", () => {
   it("monotone et bornée : aucune taille ne produit de valeur absurde", () => {
     for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
       const m = deriveTermMetrics(px);
-      expect(m.lineHeight).toBeLessThanOrEqual(LH_AT_SMALL);
-      expect(m.lineHeight).toBeGreaterThanOrEqual(LH_AT_LARGE);
+      expect(m.lineHeight).toBe(LINE_HEIGHT_RATIO);
       expect(m.padY).toBeGreaterThan(0);
       expect(m.padX).toBeGreaterThan(0);
     }
@@ -260,12 +269,19 @@ describe("PtyTerminal — application à chaud", () => {
       pty,
       runnerKind: "claude-code" as const,
     };
-    const { rerender } = render(<PtyTerminal {...props} fontSize={12} />);
-    const before = terminals[0].options.lineHeight;
+    const { container, rerender } = render(<PtyTerminal {...props} fontSize={12} />);
+    const mount = container.querySelector(".termmount") as HTMLElement;
+    const padBefore = mount.style.padding;
     rerender(<PtyTerminal {...props} fontSize={26} />);
     expect(terminals[0].options.fontSize).toBe(26);
+    // Le multiplicateur, lui, NE bouge PAS — et c'est le correctif : etant relatif a la
+    // hauteur de glyphe, il produit un interligne proportionnel sans avoir a varier. Ce
+    // qui change, c'est la taille appliquee et la respiration derivee.
     expect(terminals[0].options.lineHeight).toBe(deriveTermMetrics(26).lineHeight);
-    expect(terminals[0].options.lineHeight).not.toBe(before);
+    expect(mount.style.padding).not.toBe(padBefore);
+    expect(mount.style.padding).toBe(
+      `${deriveTermMetrics(26).padY}px ${deriveTermMetrics(26).padX}px`,
+    );
     expect(pty.openRunner).toHaveBeenCalledTimes(1);
     expect(disposeSpy).not.toHaveBeenCalled();
     await waitFor(() => expect(pty.resize).toHaveBeenCalled());
