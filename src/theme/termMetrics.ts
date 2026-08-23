@@ -40,11 +40,23 @@ export interface TermMetrics {
 
 /**
  * Courbe d'interligne. Convention typographique : plus le texte est GRAND, moins il a
- * besoin d'interligne RELATIF. On interpole donc de 1.35 (petit) à 1.20 (grand), bornes
+ * besoin d'interligne RELATIF. On interpole donc de 1.60 (petit) à 1.40 (grand), bornes
  * comprises — jamais le 1.0 de xterm, qui colle les lignes les unes aux autres.
+ *
+ * Ces deux bornes ont été OUVERTES sur retour terrain (« trop serré ») : elles valaient
+ * 1.35/1.20, ce qui donnait 8 px d'air à 18 px de police. Elles en donnent 13 maintenant.
+ *
+ * ── Le COÛT, mesuré et assumé ─────────────────────────────────────────────────────────
+ * Aérer les lignes DÉTACHE les bordures verticales des boîtes TUI de leurs horizontales :
+ * les glyphes `│` ne se touchent plus d'une ligne à l'autre. C'est l'exact symétrique de
+ * ce que fait `letterSpacing` à l'horizontale. Vérifié en capture au banc à 1.26 / 1.50 /
+ * 1.70 : le cadre se disjoint visiblement à partir de ~1.5. Arbitrage retenu : la
+ * lisibilité du TEXTE prime sur l'intégrité du CADRE, parce qu'on lit le texte et qu'on
+ * ne fait que deviner le cadre. C'est le seul endroit où les deux ne peuvent pas être
+ * satisfaits ensemble ; monter les bornes davantage aggraverait la disjonction.
  */
-const LH_AT_SMALL = 1.35;
-const LH_AT_LARGE = 1.2;
+export const LH_AT_SMALL = 1.6;
+export const LH_AT_LARGE = 1.4;
 const SIZE_SMALL = 10;
 const SIZE_LARGE = 24;
 

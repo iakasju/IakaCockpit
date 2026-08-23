@@ -68,7 +68,11 @@ import {
   TERM_FONT_MAX,
   TERM_FONT_MIN,
 } from "../hooks/useSettings";
-import { deriveTermMetrics } from "../theme/termMetrics";
+import {
+  deriveTermMetrics,
+  LH_AT_LARGE,
+  LH_AT_SMALL,
+} from "../theme/termMetrics";
 import type { UsePty } from "../hooks/usePty";
 import type { Backend } from "../api/backend";
 
@@ -111,6 +115,10 @@ describe("dérivation — un seul réglage gouverne tout", () => {
     // (mesuré : 22 px -> 25 px de ligne) et les glyphes se touchent.
     for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
       expect(deriveTermMetrics(px).lineHeight).toBeGreaterThan(1.15);
+      // Et l'air réel doit rester confortable : retour terrain « trop serré » sur une
+      // courbe qui laissait 8 px à 18 px de police. Modèle mesuré : cellule ~ px x 1.15 x lh.
+      const air = px * 1.15 * deriveTermMetrics(px).lineHeight - px;
+      expect(air).toBeGreaterThanOrEqual(px * 0.4);
     }
   });
 
@@ -149,8 +157,8 @@ describe("dérivation — un seul réglage gouverne tout", () => {
   it("monotone et bornée : aucune taille ne produit de valeur absurde", () => {
     for (let px = TERM_FONT_MIN; px <= TERM_FONT_MAX; px++) {
       const m = deriveTermMetrics(px);
-      expect(m.lineHeight).toBeLessThanOrEqual(1.35);
-      expect(m.lineHeight).toBeGreaterThanOrEqual(1.2);
+      expect(m.lineHeight).toBeLessThanOrEqual(LH_AT_SMALL);
+      expect(m.lineHeight).toBeGreaterThanOrEqual(LH_AT_LARGE);
       expect(m.padY).toBeGreaterThan(0);
       expect(m.padX).toBeGreaterThan(0);
     }
