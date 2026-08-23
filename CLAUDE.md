@@ -690,6 +690,22 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       signalé — `CLAUDE.md:56-57`, la commande de build documentée, où la variable est affectée à
       `"$(cat ~/.tauri/…)"` (fichier **hors dépôt**) et à `""` : **aucune matière de clé dans le dépôt**.
       `bash scripts/quality.sh` **exit 0 — 782 front + 337 Rust**. Instruction **non touchée**.)*
+- [ ] **L37** — **Persistance de la Table (le « set de Work » survit au redémarrage)**
+      *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
+      chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
+      **Ce n'est pas une régression** : `src/hooks/useWorkset.ts` est un état **front pur** (un `Set`
+      d'ids en `useState`), et son en-tête le dit explicitement — « la persistance backend
+      (`configSet("workset", …)`) est un PLUS non bloquant (PO-2) — **non implémentée** en L2 pour
+      rester MVP ». Vérifié : **aucune clé `workset` côté Rust** (`config.rs`). Le comportement est
+      donc conforme au cadrage L2 d'origine ; c'est le confort d'usage qui a changé d'avis, une fois
+      la Table devenue le lieu de travail quotidien (L24 onglets, L25 session vivante, L26 focus).
+      **Portée pressentie** (à cadrer) : persister le set d'ids sous une clé de config **non
+      sensible** (`workset`, ne matche pas `token|key|secret|password`), relu au montage comme le
+      fait déjà `useSettings` ; **projets disparus** du chapeau à ignorer silencieusement au
+      rechargement (jamais d'onglet mort) ; interaction à trancher avec l'**ouverture eager** L24-F1
+      (poser N projets au démarrage = spawner N runners — cf. le différé « garde perf N runners »
+      déjà tracé en L24) et avec le **seed démo** L7/L9 qui ajoute `iaka-demo` au set. Front +
+      1 clé de config ; aucune commande Rust nouvelle.*
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
