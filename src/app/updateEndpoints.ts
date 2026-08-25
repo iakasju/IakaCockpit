@@ -13,7 +13,7 @@
  * l'entrée Forgejo devient le repli LAN, on ne la retire pas.
  */
 export const UPDATE_ENDPOINTS: readonly string[] = [
-  "http://192.168.2.11:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
+  "http://192.168.1.139:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
 ];
 
 /** Endpoint affiché à l'utilisateur (le premier de la liste), `null` si vide. */

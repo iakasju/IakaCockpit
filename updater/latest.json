@@ -5,7 +5,7 @@
   "platforms": {
     "darwin-aarch64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG9SNGRNdnBQaWZvalBmUFBTTEZXUXpzK2I2c2JjbkVxV0Y1cFdNdm5DeDEwRjNoSGUyZUVjdGFMTC9RSy9YNng5UFBzQjcvSllBaVBIRm9hbldVdGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MzgxNzMwCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpMaUFueksvVFc2aFYzbnJKQmhMSG1BaVkrbGtOY3Y3dHBseWgybVZnNmxVTWxiUzlwSHc4OEs4SjRIMW9KRloxYU9ibEZNU1VrUGpxNE8ycSs0SGNDUT09Cg==",
-      "url": "http://192.168.2.11:3001/sjupin/iakacockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz"
+      "url": "http://192.168.1.139:3001/sjupin/iakacockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz"
     }
   }
 }

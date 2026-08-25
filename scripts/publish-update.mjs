@@ -29,7 +29,11 @@ import {
 } from "./lib/update-manifest.mjs";
 
 // --- Constantes de CE projet (cf. § Annexe de l'instruction) -------------------------------------
-const FORGEJO_BASE = "http://192.168.2.11:3001";
+// HÔTE DE LA FORGE : NAS Synology. L'ancienne iakabox (192.168.2.11) est HORS SERVICE et ne
+// répond plus (sonde du 2026-08-25) ; l'infra du portefeuille y a été rejouée. Tant que ce
+// constante pointait la box morte, `publish-update` ne pouvait NI créer une release NI produire
+// un manifeste téléchargeable — le canal d'auto-update était rompu des deux côtés.
+const FORGEJO_BASE = "http://192.168.1.139:3001";
 const FORGEJO_OWNER = "sjupin";
 const FORGEJO_REPO = "iakacockpit";
 const GITHUB_REPO = "iakasju/IakaCockpit";
