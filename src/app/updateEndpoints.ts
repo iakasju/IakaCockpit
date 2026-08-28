@@ -18,10 +18,13 @@ export const UPDATE_ENDPOINTS: readonly string[] = [
   //    par `scripts/publish-update.mjs`, et c'est donc le seul endpoint dont le contenu est
   //    garanti cohérent avec les URL d'artefacts qu'il annonce.
   "http://192.168.1.139:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
-  // 2. GitHub — le seul chemin qui ne dépende pas du LAN. ⚠️ Le dépôt `iakasju/IakaCockpit`
-  //    est un dépôt PRIVÉ : tant qu'il l'est, cette URL brute répond 404 à un client non
-  //    authentifié, et l'updater ne peut pas s'y authentifier. Elle est donc en place pour le
-  //    jour où le dépôt sera public (ou remplacé par une release publique) — pas avant.
+  // 2. GitHub — le seul chemin qui ne dépende pas du LAN. Le dépôt `iakasju/IakaCockpit` est
+  //    PUBLIC depuis le 2026-08-28 (décision du décideur) : mesuré `200` en anonyme le jour même
+  //    par `iakaframe endpoints`, il sert le manifeste. C'est LUI qui rend CA-11 réel — jusque-là,
+  //    ce dépôt était privé, cette URL rendait 404, et la liste n'avait de redondance que le
+  //    nombre de ses lignes. ⚠️ Le rendre privé à nouveau désarmerait la bascule en silence : un
+  //    dépôt privé répond volontiers 200 + une page de connexion, ce qu'aucun code HTTP ne trahit.
+  //    La seule vérification qui vaille est la mesure : `iakaframe endpoints --app .`
   "https://raw.githubusercontent.com/iakasju/IakaCockpit/main/updater/latest.json",
   // 3. iakabox — mesurée hors service depuis le 2026-08-25 ; gardée en DERNIER secours, au cas
   //    où elle revienne, jamais en tête.

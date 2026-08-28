@@ -26,6 +26,20 @@ describe("L34 — endpoints de mise à jour", () => {
     expect(primaryUpdateEndpoint()).toBe(UPDATE_ENDPOINTS[0]);
   });
 
+  it("la liste porte au moins DEUX hôtes distincts : sans quoi il n'y a rien à basculer", () => {
+    // CA-11 : « une app dont le premier endpoint est mort voit quand même la mise à jour ». Une
+    // liste d'un seul hôte (ou d'un hôte répété) ne bascule sur rien — elle réessaie la panne.
+    // Défaut réparé : au gate du 2026-08-28, la liste comptait trois URL et UN SEUL hôte
+    // anonymement résolvable ; les deux replis rendaient 404 (dépôt privé) et 000 (machine
+    // éteinte). La redondance était déclarée, pas acquise.
+    //
+    // ⚠️ Ce que ce test NE prouve PAS : que ces hôtes répondent. Une configuration ne se mesure
+    // pas elle-même. La mesure est un geste réseau : `iakaframe endpoints --app .`
+    const hosts = UPDATE_ENDPOINTS.map((u) => new URL(u).host);
+    expect(new Set(hosts).size, `endpoints en doublon : ${hosts.join(", ")}`).toBe(hosts.length);
+    expect(new Set(hosts).size, "un seul hôte : aucune redondance").toBeGreaterThanOrEqual(2);
+  });
+
   it("la config déclare une clé publique : rien ne s'installe sans vérification", () => {
     expect((tauriConf.plugins?.updater?.pubkey ?? "").length).toBeGreaterThan(0);
   });
