@@ -101,4 +101,21 @@ jobs:
           releaseName: ${{ github.event.inputs.tag || github.ref_name }}
           releaseDraft: false
           prerelease: false
+          # DEFAUT G — le CI posait sur la release un SECOND manifeste `latest.json`, concurrent
+          # du notre. Deux manifestes cote a cote, et celui du CI ne connait pas nos cles
+          # d'installeur : il n'annonce que {os}-{arch}, et prefere le MSI au NSIS
+          # (`updaterJsonPreferNsis` vaut `false` par defaut) — l'inverse exact de notre
+          # arbitrage. Le manifeste qui fait autorite est `updater/latest.json`, versionne et
+          # servi par les endpoints ; celui-ci n'etait qu'un doublon trompeur.
+          #
+          # `uploadUpdaterSignatures` reste a son defaut `true` : les `.sig` continuent d'etre
+          # televerses, et ils sont INDISPENSABLES — `publish-update.mjs` les lit sur la release
+          # pour remplir le champ `signature` du manifeste ; sans eux le manifeste serait vide.
+          # L'entree est DISTINCTE, verifie sur la source de l'action : « Does not affect the
+          # latest.json generator ».
+          #
+          # Aucune entree de RENOMMAGE n'existe (verifie sur action.yml : seules
+          # `uploadUpdaterJson`, `updaterJsonPreferNsis`, `uploadUpdaterSignatures`) — « lui
+          # faire ecrire un nom distinct » n'etait pas une option disponible.
+          uploadUpdaterJson: false
           args: ${{ matrix.args }}
