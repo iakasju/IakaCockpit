@@ -61,6 +61,25 @@ TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/iakacockpit.key)" \
 node scripts/publish-update.mjs vX.Y.Z              # release GitHub → Forgejo + latest.json
 node scripts/publish-update.mjs vX.Y.Z --from ./out # depuis un répertoire local (sans GitHub)
 node scripts/publish-update.mjs vX.Y.Z --check-only # garde d'alignement des versions seule
+node scripts/publish-update.mjs vX.Y.Z --dry-run    # le manifeste sur stdout, RIEN d'écrit
+node scripts/publish-update.mjs vX.Y.Z --pub-date 2026-01-01T00:00:00Z  # date figée (L40)
+# `--pub-date` (défaut : maintenant) rend la publication REPRODUCTIBLE : deux exécutions sur le
+# même tag avec la même date produisent un `updater/latest.json` identique à l'octet. Les
+# messages de progression sortent sur STDERR — stdout ne porte que le manifeste.
+
+# L40 — MESURE des artefacts annoncés. `updater/mesures.json` n'est JAMAIS écrit à la main :
+# il est produit par ce script, qui télécharge chaque clé de plateforme EN ANONYME (aucun jeton),
+# calcule octets + sha256, vérifie la signature minisign du manifeste contre l'OCTET SERVI
+# (signature globale + keyid), et rejoue chaque signature sur un octet altéré (témoin négatif,
+# qui doit rendre `invalide`). Le champ `mesurePar` cite cette commande, et elle se relance :
+node scripts/mesurer-artefacts.mjs                  # mesure et ÉCRIT updater/mesures.json
+node scripts/mesurer-artefacts.mjs --dry-run        # mesure et affiche, sans écrire
+# Deux exécutions consécutives ne diffèrent QUE par `mesureLe` (vérifié au `git diff`).
+
+# Le manifeste porte NEUF clés depuis L40 : les quatre génériques `{os}-{arch}` (inchangées, donc
+# aucun client existant ne change de comportement) et cinq clés d'installeur
+# `{os}-{arch}-{installer}` — que `tauri-plugin-updater` cherche EN PREMIER. La table de
+# conformité `fixtures/updater-cles.json` est BYTE-IDENTIQUE avec celle d'iakaFrameGUI.
 # Jetons lus dans l'environnement ($FORGEJO_TOKEN, $GITHUB_TOKEN) ou ~/work/.env.
 
 # Garde de parité du contrat de handoff (forge → cockpit) — HORS gate par défaut,
@@ -769,6 +788,36 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (poser N projets au démarrage = spawner N runners — cf. le différé « garde perf N runners »
       déjà tracé en L24) et avec le **seed démo** L7/L9 qui ajoute `iaka-demo` au set. Front +
       1 clé de config ; aucune commande Rust nouvelle.*
+- [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
+      → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
+      `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-08-29),
+      branche `feat/L40-cles-installeur-manifeste`. Cadré par 🔵 Gandalf, 8 arbitrages TRANCHÉS.)*
+      **Problème** : le générateur n'émettait que `{os}-{arch}`, or le plugin cherche d'abord
+      `{os}-{arch}-{installer}` — un client Windows installé **par MSI** recevait l'exe NSIS et
+      s'installait **à côté** de son enregistrement MSI ; un client Linux installé **par `.deb`**
+      téléchargeait une AppImage de 92 Mo et échouait en `InvalidUpdaterFormat` **à chaque
+      tentative**. Le manifeste ne mentait pas sur *où* télécharger, mais sur *quoi* il sert.
+      **Ordre imposé par une dépendance, pas par le confort** : mesurer → versionner l'instrument
+      → réparer `I4` → émettre les clés → re-mesurer.
+      **Livré** : (A) **9 clés** émises — 4 génériques **inchangées** (`windows-x86_64` = NSIS,
+      `linux-x86_64` = AppImage : aucun client existant ne change de comportement, vérifié clé par
+      clé) + 5 clés d'installeur ; `.deb`/`.rpm`/`.msi` obtiennent leur clé d'installeur mais
+      **jamais** la générique. (B) `I4` sortie du fichier de test vers la fonction **pure**
+      `scripts/lib/verifier-mesures.mjs` : index par **plateforme**, doublon de plateforme =
+      violation **nommée**, et la mesure doit porter **l'URL de cette plateforme**. Les **deux
+      exploits écrits ROUGES D'ABORD** (`3 failed | 7 passed`) et figés dans l'historique avant
+      correctif. (J) instrument **versionné** `scripts/mesurer-artefacts.mjs` (téléchargement
+      anonyme, sha256, minisign globale + keyid, **témoin négatif**) — l'ancien vivait dans
+      `scratchpad/`, hors dépôt, et **a disparu**. (G) `uploadUpdaterJson: false` (AR-5).
+      (I) `--pub-date` pilotable + `--dry-run`. Convergence : **6 fichiers byte-identiques** avec
+      le GUI.
+      **Fait mesuré contredisant un risque du cadrage** : `.deb` et `.rpm` sont **signés** sur les
+      deux releases (`.sig` appariés) — **R2 et AR-2 sans objet**, aucun `HORS_COUVERTURE` ouvert.
+      **NON FAIT** : l'**étape 5.1** (bump + publication d'une version neuve) — les actes de
+      publication sont **refusés aux agents** et appartiennent au décideur. Le lot se clôt en
+      **« mesuré, non recetté »** ; les deux recettes réelles (Windows MSI, Linux `.deb`) restent
+      le **gate humain**.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
