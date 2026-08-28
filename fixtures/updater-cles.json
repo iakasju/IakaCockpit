@@ -1,0 +1,92 @@
+{
+  "objet": "TABLE DE CONFORMITE des cles updater : nom d'artefact -> cles attendues. Fichier BYTE-IDENTIQUE dans IakaCockpit et iakaFrameGUI (AR-6 = O2). Les deux depots ont deux generateurs DISTINCTS ; c'est cette table, consommee par le test unitaire de chacun, qui les empeche de diverger. Un diff non vide entre les deux copies est un defaut (CA-16).",
+  "conventionVerifieeContre": {
+    "paquet": "tauri-plugin-updater",
+    "version": "2.10.1",
+    "getUrls": "src/updater.rs:568-598 — essaie {os}-{arch}-{installer} PUIS {os}-{arch}, dans cet ordre",
+    "installerName": "src/updater.rs:59-68 — Installer::name() rend exactement : appimage, deb, rpm, app, msi, nsis",
+    "avertissement": "cette convention n'est PAS documentee par Tauri (la doc ne decrit que OS-ARCH) : c'est un detail d'implementation de la version VERROUILLEE. Si Cargo.lock change de version, re-verifier get_urls EN AMONT avant de lever la garde (CA-15)."
+  },
+  "gabarits": {
+    "produit": "{PRODUIT} = nom du produit tel qu'il apparait dans les noms d'artefacts (IakaCockpit / iakaFrameGUI)",
+    "version": "{VERSION} = version sans le v du tag (0.32.1 / 0.1.7)"
+  },
+  "regles": {
+    "generique": "la cle generique NE CHANGE PAS de porteur : Windows -> NSIS, Linux -> AppImage, macOS -> l'unique bundle .app.tar.gz de son architecture. Aucun client deja installe ne change de comportement du seul fait de l'emission des cles d'installeur (AR-4).",
+    "signature": "aucune cle n'est emise pour un artefact sans .sig apparie — ni generique, ni d'installeur. Le client refuse une charge non signee : l'annoncer deplacerait l'echec du telechargement vers l'installation.",
+    "pasDeCleApp": "AUCUNE cle darwin-*-app n'est emise (AR-3). bundle_type() rend Some(App) par defaut sur macOS, donc le plugin demande TOUJOURS cette cle en premier ; elle est absente aujourd'hui et le repli generique fonctionne (mesure 4/4). L'ajouter serait une promesse de plus sans gain."
+  },
+  "artefacts": [
+    {
+      "nom": "{PRODUIT}_{VERSION}_amd64.AppImage",
+      "generique": "linux-x86_64",
+      "installeur": "linux-x86_64-appimage",
+      "porteLeGenerique": true
+    },
+    {
+      "nom": "{PRODUIT}_{VERSION}_amd64.deb",
+      "generique": "linux-x86_64",
+      "installeur": "linux-x86_64-deb",
+      "porteLeGenerique": false
+    },
+    {
+      "nom": "{PRODUIT}-{VERSION}-1.x86_64.rpm",
+      "generique": "linux-x86_64",
+      "installeur": "linux-x86_64-rpm",
+      "porteLeGenerique": false
+    },
+    {
+      "nom": "{PRODUIT}_{VERSION}_x64-setup.exe",
+      "generique": "windows-x86_64",
+      "installeur": "windows-x86_64-nsis",
+      "porteLeGenerique": true
+    },
+    {
+      "nom": "{PRODUIT}_{VERSION}_x64_en-US.msi",
+      "generique": "windows-x86_64",
+      "installeur": "windows-x86_64-msi",
+      "porteLeGenerique": false
+    },
+    {
+      "nom": "{PRODUIT}_aarch64.app.tar.gz",
+      "generique": "darwin-aarch64",
+      "installeur": null,
+      "porteLeGenerique": true
+    },
+    {
+      "nom": "{PRODUIT}_x64.app.tar.gz",
+      "generique": "darwin-x86_64",
+      "installeur": null,
+      "porteLeGenerique": true
+    },
+    {
+      "nom": "{PRODUIT}_{VERSION}_x64.dmg",
+      "generique": null,
+      "installeur": null,
+      "porteLeGenerique": false
+    },
+    {
+      "nom": "{PRODUIT}_{VERSION}_aarch64.dmg",
+      "generique": null,
+      "installeur": null,
+      "porteLeGenerique": false
+    },
+    {
+      "nom": "{PRODUIT}.app.tar.gz",
+      "generique": null,
+      "installeur": null,
+      "porteLeGenerique": false
+    }
+  ],
+  "clesAttenduesOrdonnees": [
+    "darwin-aarch64",
+    "darwin-x86_64",
+    "linux-x86_64",
+    "linux-x86_64-appimage",
+    "linux-x86_64-deb",
+    "linux-x86_64-rpm",
+    "windows-x86_64",
+    "windows-x86_64-msi",
+    "windows-x86_64-nsis"
+  ]
+}

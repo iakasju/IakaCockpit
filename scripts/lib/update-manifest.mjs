@@ -7,13 +7,55 @@
 //
 // Zéro dépendance externe (esprit des scripts existants du dépôt).
 
-/** Les quatre cibles de mise à jour, dans l'ordre d'écriture du manifeste. */
-export const UPDATER_PLATFORMS = [
+/**
+ * LA VERSION DU PLUGIN CONTRE LAQUELLE LA CONVENTION DE CLÉS A ÉTÉ VÉRIFIÉE.
+ *
+ * Les clés `{os}-{arch}-{installer}` ne sont PAS documentées par Tauri : la doc officielle ne
+ * décrit que `OS-ARCH`. Elles n'existent que dans la SOURCE de la version verrouillée
+ * (`get_urls`, `updater.rs:568-598`). Or `Cargo.toml` déclare `tauri-plugin-updater = "2"` : un
+ * `cargo update` peut monter la version sans rien dire, et emporter la convention avec.
+ * D'où le cliquet — cf. `versionPluginUpdater` et la garde qui la compare.
+ */
+export const VERSION_PLUGIN_UPDATER_VERIFIEE = "2.10.1";
+
+/**
+ * Les plateformes GÉNÉRIQUES `{os}-{arch}` — le REPLI du plugin, et le comportement historique.
+ * Elles restent émises telles quelles : aucun client déjà installé ne change de comportement du
+ * seul fait de ce lot.
+ */
+export const PLATEFORMES_GENERIQUES = [
   "darwin-aarch64",
   "darwin-x86_64",
   "linux-x86_64",
   "windows-x86_64",
 ];
+
+/**
+ * Les installeurs émis PAR plateforme générique, dans l'ordre d'écriture.
+ *
+ * Valeurs prises de `Installer::name()` (`updater.rs:59-68`) : `appimage`, `deb`, `rpm`, `app`,
+ * `msi`, `nsis`. `app` est délibérément ABSENT (AR-3) : `bundle_type()` rend `Some(App)` par
+ * défaut sur macOS, donc le plugin demande toujours `darwin-*-app` en premier ; elle est absente
+ * aujourd'hui et le repli générique fonctionne, mesuré. L'ajouter serait une promesse de plus
+ * sans gain — et un piège le jour où elle se périmerait.
+ */
+export const INSTALLEURS_PAR_PLATEFORME = {
+  "darwin-aarch64": [],
+  "darwin-x86_64": [],
+  "linux-x86_64": ["appimage", "deb", "rpm"],
+  "windows-x86_64": ["msi", "nsis"],
+};
+
+/**
+ * La liste ORDONNÉE des clés que le manifeste peut porter — DÉRIVÉE des deux tables ci-dessus,
+ * et non plus une liste figée de quatre. Ajouter un installeur se fait à UN endroit.
+ *
+ * L'ordre est l'ordre d'écriture du manifeste : un `diff` git du feed doit rester lisible.
+ */
+export const UPDATER_PLATFORMS = PLATEFORMES_GENERIQUES.flatMap((g) => [
+  g,
+  ...INSTALLEURS_PAR_PLATEFORME[g].map((i) => `${g}-${i}`),
+]);
 
 /** Normalise un tag (`v0.31.3`) en version de manifeste (`0.31.3`). */
 export function versionFromTag(tag) {
@@ -42,6 +84,22 @@ export function cargoVersion(cargoToml) {
 }
 
 /**
+ * Lit la version VERROUILLÉE de `tauri-plugin-updater` dans un `Cargo.lock`.
+ *
+ * Fonction pure : la garde peut donc l'exercer sur une FIXTURE (contrefactuel de CA-15) sans
+ * jamais toucher au `Cargo.lock` réel.
+ */
+export function versionPluginUpdater(cargoLock) {
+  const blocs = String(cargoLock).split(/\n\[\[package\]\]\n/);
+  for (const bloc of blocs) {
+    if (!/^name = "tauri-plugin-updater"$/m.test(bloc)) continue;
+    const m = /^version = "([^"]+)"$/m.exec(bloc);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/**
  * GARDE D'ALIGNEMENT (§ 6b.1). `package.json`, `tauri.conf.json`, `Cargo.toml` et
  * le tag doivent porter la MÊME version. Une dérive ici et l'updater annonce une
  * version qui n'est pas celle du binaire : le client se croit à jour, ou boucle.
@@ -64,88 +122,118 @@ export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml }
 }
 
 /**
- * Classe un artefact de release en plateforme updater, ou `null` s'il n'en est
- * pas un. Aucune supposition d'architecture : un `.app.tar.gz` dont le nom ne
- * porte pas d'architecture reconnaissable est REFUSÉ plutôt que rangé au hasard
- * (un binaire arm64 servi à un Mac Intel casserait l'installation).
+ * Classe un artefact de release, ou `null` s'il n'est pas une cible de mise à jour.
+ *
+ * Rend le COUPLE `{ generique, installeur }` — c'est le changement du lot. Le plugin cherche
+ * d'abord `{os}-{arch}-{installer}`, PUIS `{os}-{arch}` (`get_urls`) ; n'émettre que la seconde
+ * fait qu'un client installé par MSI reçoit l'exe NSIS et s'installe À CÔTÉ de son enregistrement
+ * MSI, et qu'un client installé par `.deb` reçoit une AppImage et échoue en `InvalidUpdaterFormat`
+ * à chaque tentative. Le manifeste ne mentait pas sur OÙ télécharger — il mentait sur QUOI il sert.
+ *
+ * Aucune supposition d'architecture : un `.app.tar.gz` dont le nom ne porte pas d'architecture
+ * reconnaissable est REFUSÉ plutôt que rangé au hasard (un binaire arm64 servi à un Mac Intel
+ * casserait l'installation).
  */
 export function classifyArtifact(name) {
   const n = String(name).toLowerCase();
   if (n.endsWith(".sig")) return null;
   if (n.endsWith(".app.tar.gz")) {
-    if (/aarch64|arm64/.test(n)) return "darwin-aarch64";
-    if (/x64|x86_64|amd64|intel/.test(n)) return "darwin-x86_64";
+    // Pas de clé `darwin-*-app` (AR-3) : `installeur` reste `null`, le générique suffit.
+    if (/aarch64|arm64/.test(n)) return { generique: "darwin-aarch64", installeur: null };
+    if (/x64|x86_64|amd64|intel/.test(n)) return { generique: "darwin-x86_64", installeur: null };
     return null;
   }
-  if (n.endsWith(".appimage")) return "linux-x86_64";
-  if (n.endsWith("-setup.exe") || n.endsWith(".msi")) return "windows-x86_64";
+  if (n.endsWith(".appimage")) {
+    return { generique: "linux-x86_64", installeur: "linux-x86_64-appimage" };
+  }
+  if (n.endsWith(".deb")) return { generique: "linux-x86_64", installeur: "linux-x86_64-deb" };
+  if (n.endsWith(".rpm")) return { generique: "linux-x86_64", installeur: "linux-x86_64-rpm" };
+  if (n.endsWith("-setup.exe")) {
+    return { generique: "windows-x86_64", installeur: "windows-x86_64-nsis" };
+  }
+  if (n.endsWith(".msi")) return { generique: "windows-x86_64", installeur: "windows-x86_64-msi" };
   return null;
 }
 
 /**
- * Rang de préférence quand DEUX artefacts revendiquent la même plateforme.
+ * Rang de préférence pour la clé GÉNÉRIQUE de la plateforme.
  *
- * Le cas réel : une release Windows porte à la fois l'installeur NSIS
- * (`-setup.exe`) et le MSI. Sans arbitrage, le gagnant dépendrait de l'ordre —
- * arbitraire — dans lequel l'API renvoie les assets, et deux publications
- * successives pourraient servir des installeurs différents. On tranche : NSIS
- * d'abord, cohérent avec `"windows": { "installMode": "passive" }` de la config.
+ * Un rang > 0 signifie « cet artefact a le droit de PORTER la clé générique ». C'est ce qui fige
+ * le statu quo : Windows générique = NSIS (cohérent avec `"windows": { "installMode": "passive" }`),
+ * Linux générique = AppImage, macOS = son unique bundle updater. Le `.msi`, le `.deb` et le `.rpm`
+ * rendent 0 : ils obtiennent leur clé d'INSTALLEUR, jamais la générique — sans quoi une release
+ * privée d'AppImage servirait un `.deb` à tous les clients Linux, qui le refuseraient.
+ *
+ * À rang égal sur une même clé, le premier arrivé reste (stabilité, indépendante de l'ordre
+ * — arbitraire — dans lequel l'API renvoie les assets).
  */
 export function artifactRank(name) {
-  return String(name).toLowerCase().endsWith("-setup.exe") ? 1 : 0;
+  const n = String(name).toLowerCase();
+  if (n.endsWith("-setup.exe")) return 1;
+  if (n.endsWith(".appimage")) return 1;
+  if (n.endsWith(".app.tar.gz")) return 1;
+  return 0;
 }
 
 /**
  * Construit le manifeste attendu par le plugin `updater`.
  *
- * `entries` = `[{ name, signature }]` — `signature` est le CONTENU du `.sig`,
- * jamais un chemin. `baseUrl` sert à produire des URL ABSOLUES (le manifeste est
- * lu depuis un autre chemin que les binaires : une URL relative ne résoudrait
- * pas). Une plateforme sans artefact est OMISE du manifeste et remontée dans
- * `missing` — jamais écrite avec une URL fantôme, qui ferait échouer les clients
- * de cette plateforme au téléchargement au lieu de les laisser à jour.
+ * `entries` = `[{ name, signature }]` — `signature` est le CONTENU du `.sig`, jamais un chemin.
+ * `baseUrl` sert à produire des URL ABSOLUES (le manifeste est lu depuis un autre chemin que les
+ * binaires : une URL relative ne résoudrait pas).
+ *
+ * Un artefact SANS signature ne produit AUCUNE clé — ni générique, ni d'installeur — et est
+ * remonté dans `nonSignes` : le client refuse une charge non signée, l'annoncer déplacerait
+ * l'échec du téléchargement vers l'installation.
+ *
+ * Une clé sans artefact est OMISE et remontée dans `missing` — jamais écrite avec une URL fantôme.
  */
 export function buildManifest({ version, notes, pubDate, entries, baseUrl }) {
   const platforms = {};
   const ignored = [];
   const duplicates = [];
+  const nonSignes = [];
+  const base = String(baseUrl).replace(/\/$/, "");
+
+  const poser = (cle, candidat) => {
+    const tenant = platforms[cle];
+    if (!tenant) {
+      platforms[cle] = candidat;
+      return;
+    }
+    if (candidat.rank > tenant.rank) {
+      duplicates.push(tenant.name);
+      platforms[cle] = candidat;
+    } else {
+      duplicates.push(candidat.name);
+    }
+  };
 
   for (const entry of entries ?? []) {
-    const platform = classifyArtifact(entry.name);
-    if (!platform) {
+    const cls = classifyArtifact(entry.name);
+    if (!cls) {
       ignored.push(entry.name);
       continue;
     }
     if (!entry.signature) {
-      // Sans signature, le client refusera la charge utile : mieux vaut l'omettre
-      // (et le dire) que publier une entrée qui échouera à l'installation.
+      nonSignes.push(entry.name);
       ignored.push(entry.name);
       continue;
     }
-    const candidate = {
+    const candidat = {
       signature: entry.signature,
-      url: `${String(baseUrl).replace(/\/$/, "")}/${entry.name}`,
+      url: `${base}/${entry.name}`,
       rank: artifactRank(entry.name),
       name: entry.name,
     };
-    const held = platforms[platform];
-    if (held) {
-      // Arbitrage déterministe : le mieux classé gagne, quel que soit l'ordre
-      // d'arrivée. À rang égal, le premier reste (stabilité).
-      if (candidate.rank > held.rank) {
-        duplicates.push(held.name);
-        platforms[platform] = candidate;
-      } else {
-        duplicates.push(entry.name);
-      }
-      continue;
-    }
-    platforms[platform] = candidate;
+    // La clé d'INSTALLEUR — ce que le plugin cherche EN PREMIER.
+    if (cls.installeur) poser(cls.installeur, candidat);
+    // La clé GÉNÉRIQUE — le repli, réservé au porteur historique de la plateforme.
+    if (candidat.rank > 0) poser(cls.generique, candidat);
   }
 
-  // Ordre stable des plateformes (un diff git du feed reste lisible) + projection
-  // au format du plugin (le rang et le
-  // nom sont des données de travail, ils n'ont rien à faire dans le manifeste).
+  // Ordre stable des clés (un diff git du feed reste lisible) + projection au format du plugin
+  // (le rang et le nom sont des données de travail, ils n'ont rien à faire dans le manifeste).
   const ordered = {};
   for (const p of UPDATER_PLATFORMS) {
     if (platforms[p]) {
@@ -160,5 +248,5 @@ export function buildManifest({ version, notes, pubDate, entries, baseUrl }) {
     platforms: ordered,
   };
   const missing = UPDATER_PLATFORMS.filter((p) => !ordered[p]);
-  return { manifest, missing, ignored, duplicates };
+  return { manifest, missing, ignored, duplicates, nonSignes };
 }

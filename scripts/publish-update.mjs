@@ -11,6 +11,12 @@
 //   node scripts/publish-update.mjs v0.31.3               (depuis la release GitHub)
 //   node scripts/publish-update.mjs v0.31.3 --from ./out   (depuis un répertoire local)
 //   node scripts/publish-update.mjs v0.31.3 --check-only   (garde d'alignement seule)
+//   node scripts/publish-update.mjs v0.31.3 --dry-run      (tout sauf ecrire/televerser/pousser)
+//   node scripts/publish-update.mjs v0.31.3 --pub-date 2026-01-01T00:00:00Z
+//
+// `--pub-date` (defaut : maintenant) rend la publication REPRODUCTIBLE. Sans elle, `pub_date`
+// changeait a chaque execution, ce qui rendait INATTEIGNABLE le chemin « republier a l'identique
+// = aucun commit » : le manifeste differait toujours, ne serait-ce que par sa date.
 //
 // Jetons : `$FORGEJO_TOKEN` (ou `~/work/.env`) et `$GITHUB_TOKEN`/`$GH_TOKEN`.
 // JAMAIS en dur, jamais affichés, jamais écrits dans un fichier suivi.
@@ -69,8 +75,10 @@ function fail(message) {
   process.exit(1);
 }
 
+// Les messages de progression vont sur STDERR : la sortie standard du script peut porter un
+// DOCUMENT (le manifeste, en `--dry-run`), et un document mele de journal ne se compare pas.
 function info(message) {
-  console.log(`publish-update : ${message}`);
+  console.error(`publish-update : ${message}`);
 }
 
 function git(...args) {
@@ -108,13 +116,25 @@ function assertReleaseBranch() {
 const argv = process.argv.slice(2);
 const tag = argv.find((a) => !a.startsWith("--"));
 const checkOnly = argv.includes("--check-only");
+const dryRun = argv.includes("--dry-run");
 const fromIndex = argv.indexOf("--from");
 const fromDir = fromIndex >= 0 ? argv[fromIndex + 1] : null;
+const pubDateIndex = argv.indexOf("--pub-date");
+const pubDateArg = pubDateIndex >= 0 ? argv[pubDateIndex + 1] : null;
 
 if (!tag) {
-  fail("tag manquant. Usage : node scripts/publish-update.mjs v0.31.3 [--from <dir>] [--check-only]");
+  fail(
+    "tag manquant. Usage : node scripts/publish-update.mjs v0.31.3 " +
+      "[--from <dir>] [--check-only] [--dry-run] [--pub-date <ISO>]",
+  );
 }
 if (fromIndex >= 0 && !fromDir) fail("--from attend un répertoire.");
+if (pubDateIndex >= 0 && !pubDateArg) fail("--pub-date attend une date ISO 8601.");
+if (pubDateArg && Number.isNaN(Date.parse(pubDateArg))) {
+  fail(`--pub-date : « ${pubDateArg} » n'est pas une date ISO 8601 lisible.`);
+}
+// Date de publication : PILOTABLE, defaut = maintenant, normalisee a la seconde.
+const pubDate = pubDateArg ?? new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
 // --- 1. Garde d'alignement des versions ------------------------------------------------------------
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -141,8 +161,10 @@ info(`versions alignées sur ${alignment.version} (tag, package.json, tauri.conf
 if (checkOnly) process.exit(0);
 
 // Vérifié AVANT toute écriture, locale ou distante : mieux vaut refuser avant
-// d'avoir créé une release Forgejo à moitié remplie.
-info(`branche de publication : ${assertReleaseBranch()}.`);
+// d'avoir créé une release Forgejo à moitié remplie. `--dry-run` n'écrit RIEN — ni fichier, ni
+// release, ni commit : la garde de branche n'a rien à protéger, et l'exiger empêcherait
+// justement de vérifier le manifeste depuis une branche de travail.
+if (!dryRun) info(`branche de publication : ${assertReleaseBranch()}.`);
 
 // --- Jetons ----------------------------------------------------------------------------------------
 function readDotEnvToken(name) {
@@ -161,7 +183,7 @@ function readDotEnvToken(name) {
 }
 
 const forgejoToken = process.env.FORGEJO_TOKEN || readDotEnvToken("FORGEJO_TOKEN");
-if (!forgejoToken) {
+if (!forgejoToken && !dryRun) {
   fail("FORGEJO_TOKEN introuvable (variable d'environnement ou ~/work/.env). Aucun jeton inventé.");
 }
 
@@ -275,8 +297,8 @@ for (const asset of assets) {
   }
 }
 
-const release = await ensureForgejoRelease();
-const existingNames = new Set((release.assets ?? []).map((a) => a.name));
+const release = dryRun ? null : await ensureForgejoRelease();
+const existingNames = new Set((release?.assets ?? []).map((a) => a.name));
 
 // Passe 1 : les signatures (petits fichiers texte, indispensables au manifeste).
 const signatures = new Map();
@@ -284,15 +306,18 @@ for (const asset of assets) {
   if (!asset.name.endsWith(".sig")) continue;
   const bytes = await asset.fetch();
   signatures.set(asset.name.slice(0, -4), new TextDecoder().decode(bytes).trim());
-  await uploadAsset(release.id, asset.name, bytes, existingNames);
+  if (!dryRun) await uploadAsset(release.id, asset.name, bytes, existingNames);
 }
 
 // Passe 2 : les binaires updater, un à la fois (téléchargé puis relâché).
+// `classifyArtifact` rend désormais le COUPLE `{ generique, installeur }` ; ici seule sa
+// VÉRITÉ compte (cet artefact est-il une cible de mise à jour ?), le détail des clés est
+// l'affaire de `buildManifest`.
 const entries = [];
 for (const asset of assets) {
   if (asset.name.endsWith(".sig")) continue;
-  const platform = classifyArtifact(asset.name);
-  if (!platform) {
+  const classe = classifyArtifact(asset.name);
+  if (!classe) {
     info(`  ${asset.name} : hors périmètre updater, ignoré.`);
     continue;
   }
@@ -301,16 +326,18 @@ for (const asset of assets) {
     info(`  ${asset.name} : aucune signature associée, ignoré (jamais publié non signé).`);
     continue;
   }
-  const bytes = await asset.fetch();
-  await uploadAsset(release.id, asset.name, bytes, existingNames);
+  if (!dryRun) {
+    const bytes = await asset.fetch();
+    await uploadAsset(release.id, asset.name, bytes, existingNames);
+  }
   entries.push({ name: asset.name, signature });
 }
 
 // --- 4. Manifeste ------------------------------------------------------------------------------------
-const { manifest, missing, duplicates } = buildManifest({
+const { manifest, missing, duplicates, nonSignes } = buildManifest({
   version: tag,
   notes: `IakaCockpit ${alignment.version}`,
-  pubDate: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+  pubDate,
   entries,
   baseUrl: `${ARTEFACT_BASE}/${tag}`,
 });
@@ -322,11 +349,23 @@ for (const p of missing) {
   console.warn(`publish-update : plateforme ${p} ABSENTE du manifeste (artefact manquant).`);
 }
 for (const d of duplicates) {
-  console.warn(`publish-update : ${d} ignoré (plateforme déjà pourvue).`);
+  console.warn(`publish-update : ${d} ignoré (clé déjà pourvue).`);
+}
+for (const n of nonSignes) {
+  // CA-3 : sans `.sig`, AUCUNE clé — ni générique, ni d'installeur. Le client refuserait la
+  // charge : l'annoncer déplacerait l'échec du téléchargement vers l'installation.
+  console.warn(`publish-update : ${n} NON SIGNÉ — aucune clé émise pour cet artefact.`);
 }
 info(
   `manifeste : ${Object.keys(manifest.platforms).length}/${UPDATER_PLATFORMS.length} plateforme(s).`,
 );
+
+if (dryRun) {
+  // `--dry-run` : le manifeste sur la sortie standard, RIEN sur le disque ni sur le réseau.
+  // C'est la forme sous laquelle deux exécutions se comparent à l'octet (CA-14).
+  process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
+  process.exit(0);
+}
 
 mkdirSync(join(root, dirname(MANIFEST_PATH)), { recursive: true });
 writeFileSync(join(root, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
