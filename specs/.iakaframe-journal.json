@@ -158,5 +158,15 @@
     "dirty": false,
     "files": 1399,
     "note": "Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service"
+  },
+  {
+    "date": "2026-08-29 01:55",
+    "reason": "manual",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "cd0849b docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog",
+    "dirty": false,
+    "files": 1404,
+    "note": "Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA."
   }
 ]

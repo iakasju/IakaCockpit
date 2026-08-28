@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-08-29 00:06 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-08-29 01:55 - motif : manual - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
   <div class="k">Version</div><div>v0.32.1</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>e246812 fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb</code></div>
+  <div class="k">Dernier commit</div><div><code>cd0849b docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog</code></div>
   <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
-  <div class="k">Fichiers</div><div>1399 (suivis + non ignores)</div>
-  <div class='k'>Note</div><div>Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service</div>
+  <div class="k">Fichiers</div><div>1404 (suivis + non ignores)</div>
+  <div class='k'>Note</div><div>Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>e246812</code></td><td>2026-08-28</td><td>fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb</td></tr>
-<tr><td><code>08efcc6</code></td><td>2026-08-28</td><td>fix(canal): windows-x86_64 annonce, et mesure — le NSIS, pas le MSI</td></tr>
-<tr><td><code>1aca3cc</code></td><td>2026-08-28</td><td>chore(iakaframe): checkpoint de pause — etat des lieux + recit de reprise (lot 0 + L1)</td></tr>
-<tr><td><code>cc3348d</code></td><td>2026-08-28</td><td>fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire</td></tr>
-<tr><td><code>80adf82</code></td><td>2026-08-28</td><td>fix(canal): manifeste v0.32.1 sur des URL publiques — artefacts construits, signes, PAS publies</td></tr>
-<tr><td><code>5db1240</code></td><td>2026-08-28</td><td>fix(canal): le commentaire declarait GitHub prive — c est faux depuis le 2026-08-28</td></tr>
-<tr><td><code>4ecc2f5</code></td><td>2026-08-28</td><td>chore(journal): entrees de pause du checkpoint de reprise</td></tr>
-<tr><td><code>0722ad3</code></td><td>2026-08-28</td><td>docs(etat-des-lieux): recit de reprise — lot 0 remis au gate, rien pousse (reseau coupe)</td></tr>
-<tr><td><code>f481ed9</code></td><td>2026-08-28</td><td>fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus</td></tr>
-<tr><td><code>2f1e7b9</code></td><td>2026-08-25</td><td>fix(canal): repointe l auto-update sur le NAS — l ancienne iakabox ne repond plus</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>cd0849b</code></td><td>2026-08-29</td><td>docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog</td></tr>
+<tr><td><code>d49f692</code></td><td>2026-08-29</td><td>chore(updater): manifeste a 9 cles, et mesure regeneree par l instrument versionne</td></tr>
+<tr><td><code>5010941</code></td><td>2026-08-29</td><td>test(garde): les deux gardes convergent, et I4 devient un appelant mince</td></tr>
+<tr><td><code>3608aff</code></td><td>2026-08-29</td><td>ci(release): le CI cesse de poser un SECOND manifeste concurrent sur la release</td></tr>
+<tr><td><code>4b0cdc9</code></td><td>2026-08-29</td><td>fix(garde): I4 indexe par PLATEFORME, refuse les doublons, exige l URL de la plateforme</td></tr>
+<tr><td><code>397cf86</code></td><td>2026-08-29</td><td>test(garde): les deux exploits de I4, ECRITS ROUGES D'ABORD</td></tr>
+<tr><td><code>b9df4bb</code></td><td>2026-08-29</td><td>feat(mesure): instrument de mesure versionne des artefacts annonces</td></tr>
+<tr><td><code>9833b94</code></td><td>2026-08-29</td><td>docs(instruction): les 8 arbitrages tranches — instruction validee par le decideur</td></tr>
+<tr><td><code>5b5713d</code></td><td>2026-08-29</td><td>chore(iakaframe): checkpoint de pause — auto-update 4/4 telechargeable</td></tr>
+<tr><td><code>e246812</code></td><td>2026-08-28</td><td>fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-08-29 01:55</td><td><span class='r r-manual'>manual</span></td><td>v0.32.1</td><td>main</td><td>Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA.</td></tr>
 <tr><td>2026-08-29 00:06</td><td><span class='r r-pause'>pause</span></td><td>v0.32.1</td><td>main</td><td>Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service</td></tr>
 <tr><td>2026-08-28 21:55</td><td><span class='r r-pause'>pause</span></td><td>v0.32.1</td><td>main</td><td>Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable</td></tr>
 <tr><td>2026-08-28 14:31</td><td><span class='r r-pause'>pause</span></td><td>v0.32.1</td><td>feat/L0-trois-canaux-synchrones</td><td>Recit de reprise redige (lot 0 - part 0.b).</td></tr>

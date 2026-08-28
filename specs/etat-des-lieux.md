@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-29 00:06 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-08-29 01:55 (motif: manual).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,97 +9,105 @@
 |---|---|
 | Version | v0.32.1 |
 | Branche | main |
-| Dernier commit | e246812 fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb |
+| Dernier commit | cd0849b docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog |
 | Arbre | propre |
-| Fichiers (suivis + non ignores) | 1399 |
-| Note | Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service |
+| Fichiers (suivis + non ignores) | 1404 |
+| Note | Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `cd0849b` | 2026-08-29 | docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog |
+| `d49f692` | 2026-08-29 | chore(updater): manifeste a 9 cles, et mesure regeneree par l instrument versionne |
+| `5010941` | 2026-08-29 | test(garde): les deux gardes convergent, et I4 devient un appelant mince |
+| `3608aff` | 2026-08-29 | ci(release): le CI cesse de poser un SECOND manifeste concurrent sur la release |
+| `4b0cdc9` | 2026-08-29 | fix(garde): I4 indexe par PLATEFORME, refuse les doublons, exige l URL de la plateforme |
+| `397cf86` | 2026-08-29 | test(garde): les deux exploits de I4, ECRITS ROUGES D'ABORD |
+| `b9df4bb` | 2026-08-29 | feat(mesure): instrument de mesure versionne des artefacts annonces |
+| `9833b94` | 2026-08-29 | docs(instruction): les 8 arbitrages tranches — instruction validee par le decideur |
+| `5b5713d` | 2026-08-29 | chore(iakaframe): checkpoint de pause — auto-update 4/4 telechargeable |
 | `e246812` | 2026-08-28 | fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb |
-| `08efcc6` | 2026-08-28 | fix(canal): windows-x86_64 annonce, et mesure — le NSIS, pas le MSI |
-| `1aca3cc` | 2026-08-28 | chore(iakaframe): checkpoint de pause — etat des lieux + recit de reprise (lot 0 + L1) |
-| `cc3348d` | 2026-08-28 | fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire |
-| `80adf82` | 2026-08-28 | fix(canal): manifeste v0.32.1 sur des URL publiques — artefacts construits, signes, PAS publies |
-| `5db1240` | 2026-08-28 | fix(canal): le commentaire declarait GitHub prive — c est faux depuis le 2026-08-28 |
-| `4ecc2f5` | 2026-08-28 | chore(journal): entrees de pause du checkpoint de reprise |
-| `0722ad3` | 2026-08-28 | docs(etat-des-lieux): recit de reprise — lot 0 remis au gate, rien pousse (reseau coupe) |
-| `f481ed9` | 2026-08-28 | fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus |
-| `2f1e7b9` | 2026-08-25 | fix(canal): repointe l auto-update sur le NAS — l ancienne iakabox ne repond plus |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : l'auto-update est passe de **casse** a **4 plateformes sur 4
-  telechargeables**. Au reveil, le manifeste servi par `main` annoncait **une seule** plateforme
-  (`darwin-aarch64`) vers une release **sans asset** : mesure `0/1`. L'app **voyait** une mise a jour
-  et **ne pouvait pas la telecharger**. Etat final mesure en anonyme sur ce que `main` sert :
-  **`TELECHARGEABLE : 4/4 — le manifeste tient sa promesse.`**
-- **Architecture** : `FORGEJO_BASE` (ou l'on **LIT** le manifeste : NAS `192.168.1.139` ->
-  `raw.githubusercontent.com` -> iakabox en dernier secours) est **distinct** de `ARTEFACT_BASE`
-  (ou l'on **TELECHARGE** : les releases GitHub, hote **public**). Un updater Tauri ne sait pas
-  s'authentifier : toute URL de LAN ou de depot prive est un **404 garanti** pour l'utilisateur final.
-  Le depot est **public** depuis le 2026-08-28, pour cette raison.
-- **La chaine complete de la journee**, quatre lots, quatre gates independants, **aucun auto-valide** :
-  1. **Levee du hors-couverture** (apres publication manuelle de la release v0.32.1, artefacts darwin
-     construits et signes a la main). Le **cliquet** de `HORS_COUVERTURE` a fonctionne **en reel** et a
-     dicte l'ordre exact de sa propre levee.
-  2. **`windows-x86_64`** ajoute au manifeste, apres pose de la cle de signature et build CI.
-  3. **`linux-x86_64`** ajoute, apres build CI Linux.
-  4. Chaque lot : diff **strictement additif**, prouve a l'octet ; manifeste **regenere par
-     `buildManifest()`**, jamais ecrit a la main ; mesures refaites sur **l'octet retelecharge**.
-- **La cle de signature est posee** (`TAURI_SIGNING_PRIVATE_KEY`, 2026-08-28) et **`release.yml` est
-  reactive**. C'etait la cause racine : `gh secret list` rendait **vide**, le depot ne pouvait produire
-  aucun artefact signe. Les deux builds CI (Windows puis Linux) sont les **premieres releases signees
-  du Cockpit produites par son CI** — la v0.31.2 ne porte aucun `.sig`.
-- **Arbitrages tranches, avec leur raison** :
-  - **Windows -> le `-setup.exe` (NSIS), pas le `.msi`.** L'arbitrage etait **deja ecrit** dans
-    `scripts/lib/update-manifest.mjs` (`artifactRank`) depuis le 2026-08-06 et n'avait **jamais ete
-    exerce**, faute de build Windows. La voie d'installation suit le **magic byte** (`4d5a9000` MZ ->
-    NSIS ; `d0cf11e0` CFB -> MSI) : le choix du binaire **est** le choix du mecanisme.
-  - **Linux -> l'AppImage**, et **pas** parce que le plugin ignorerait `.deb`/`.rpm` — **il sait les
-    installer** (`dpkg -i`, `rpm -U`). La vraie raison : le choix de l'installeur vient de
-    `bundle_type()`, le type du **binaire qui tourne**, jamais de l'octet telecharge. Sous la cle
-    generique, l'AppImage est **le seul octet qui n'endommage personne** : client AppImage ou bundle
-    inconnu -> installe ; client deb/rpm -> `InvalidUpdaterFormat`, refus en **premiere instruction**
-    de `install_deb`, **avant tout acces disque**.
-- **Prochaine etape concrete — un seul lot successeur, deux defauts jumeaux** :
-  1. **Les cles specifiques que le generateur n'emet pas** (`windows-x86_64-msi`, `-nsis`,
-     `linux-x86_64-deb`, `-rpm`). Consequences reelles et symetriques : un utilisateur Windows installe
-     **par MSI** recevra l'exe NSIS, qui s'installera **a cote** de l'enregistrement MSI au lieu de le
-     remplacer ; un utilisateur Linux installe **par `.deb` ou `.rpm`** telechargera **92 Mo a chaque
-     tentative** pour echouer proprement. **Le CI produit deja ces cles** (son `latest.json` en porte
-     sept) — c'est notre `buildManifest()` qui ne les emet pas.
-  2. **Le trou `parUrl` d'I4** : la garde indexe les mesures **par URL** sans verifier que la
-     plateforme correspond. Exerce au gate : mettre l'URL de l'exe Windows dans l'entree Linux passe
-     **au VERT**. A durcir (dedupliquer, ou refuser les doublons, ou croiser plateforme + URL).
+- **Ce qui vient d'etre fait** : le lot **L40 « cles d'installeur du manifeste updater »** est livre,
+  gate **PASS** (16/18 CA verts), fusionne dans `main` et pousse sur les deux canaux. Le manifeste
+  emet desormais **9 cles** au lieu de 4 : les 4 generiques **inchangees** + `linux-x86_64-{appimage,
+  deb,rpm}` + `windows-x86_64-{msi,nsis}`. Mesure anonyme sur ce que `main` sert : **9/9
+  telechargeables**.
+- **Le defaut repare, en une phrase** : le manifeste ne mentait pas sur *ou* telecharger, il mentait
+  sur *quoi* il sert. `tauri-plugin-updater` cherche `{os}-{arch}-{installer}` **puis**
+  `{os}-{arch}` ; n'emettre que le generique faisait qu'un client Windows installe **par MSI**
+  recevait l'exe NSIS et s'installait **a cote** de son enregistrement, et qu'un client Linux installe
+  **par .deb/.rpm** telechargeait 92 Mo pour echouer en `InvalidUpdaterFormat` **a chaque tentative**.
+- **Deux prerequis, decouverts au cadrage et traites en premier** :
+  1. **La garde qui protege tout le reste etait trouee.** `I4` indexait les mesures **par URL** sans
+     verifier la plateforme. Or emettre les cles d'installeur fait que **plusieurs plateformes
+     partagent la meme URL par construction** (`linux-x86_64` et `-appimage` = le meme octet) :
+     l'index s'effondrait **exactement au moment de s'en servir**. Repare : index **par plateforme**,
+     refus des doublons de plateforme, et assertion que la mesure porte bien l'URL de cette plateforme.
+  2. **Il n'existait aucun instrument de mesure versionne**, alors que `I4` asserte
+     `signature: "valide"`. Le script d'origine vivait dans `scratchpad/` — **le repertoire n'existe
+     meme plus**, la provenance etait irrecuperable. Cote GUI, la provenance declaree etait **fausse**
+     (`iakaframe endpoints` fait un `HEAD`, ne calcule ni sha256 ni signature). Livre :
+     `scripts/mesurer-artefacts.mjs` (telechargement anonyme, sha256, minisign Ed25519/blake2b-512,
+     signature globale, keyid, temoin negatif, zero dependance), **byte-identique dans les deux depots**.
+- **Regle de derivation** : le jeu de cles est **derive de ce qui est SIGNE**, jamais d'une liste
+  souhaitee. Prouve sur 5 fixtures adverses, les deux generateurs d'accord : AppImage sans `.sig` ->
+  `linux-x86_64` **disparait** · aucune signature -> **aucune cle** · un `.deb` seul ne prend
+  **jamais** la generique Linux.
+- **Non-regression des clients deja installes, verifiee cle par cle** : les 4 cles preexistantes
+  gardent **url ET signature identiques**, generique Windows = **NSIS**, generique Linux = **AppImage**.
+  Un client dont `bundle_type()` rend `None` retombe sur la generique : **meme octet qu'avant le lot**.
+- **Ce qui reste ouvert, et qui appartient au decideur** :
+  1. **Un bump + tag + run CI** sur chaque app. C'est la **seule** facon de clore **CA-12** (mesure
+     **ROUGE** aujourd'hui : l'asset `latest.json` concurrent est **toujours** sur les deux releases,
+     `uploadUpdaterJson: false` n'agit qu'au prochain build) et la premiere moitie de **CA-13**.
+  2. **Les deux recettes reelles** (gate humain, ecrit dans l'instruction) : un client Windows **MSI**
+     qui **remplace** son enregistrement au lieu de doubler ; un client Linux **`.deb`** qui
+     **installe** au lieu d'echouer. **Personne ne les a jamais observees** — tout le benefice repose
+     sur `bundle_type()`, lu dans la source, **jamais vu tourner**. Le lot se declare donc
+     **« mesure, non recette »**, jamais « corrige ».
+- **Prochaine etape concrete** : le successeur **« gardes tiedes »** — **C** cliquet passif sans borne
+  de fraicheur · **D** `estPrive` manque le nom d'hote nu et **casse sur l'IPv6 litteral** (`[::1]` ->
+  `split(":")[0]` rend `"["`, donc une boucle locale est declaree **publique** : I2 conclut l'inverse
+  de la verite) · **E** `I4bis` **vacuous** sur registre vide, mesure ouvert au gate. Puis le
+  successeur **« installer depuis rien »** (les 3 README annoncent une version scellee perimee, et
+  GitHub designe **v0.1.6** comme `latest` du GUI alors que **v0.1.7** existe — il classe par date de
+  publication).
+- **Specifique a ce depot** : `release.yml` est **actif** et sa cle de signature **posee**
+  (`TAURI_SIGNING_PRIVATE_KEY`, 2026-08-28) — c'etait la cause racine de l'absence de tout artefact
+  signe ; la v0.31.2 ne porte aucun `.sig`. Le generateur de manifeste (`scripts/lib/update-manifest.mjs`)
+  vit ici et fait autorite ; `HORS_COUVERTURE` + `I4bis` n'existaient qu'ici avant le lot.
+- **Sept defauts non bloquants nommes au gate** : **D-1** un commit non atomique, plus large que
+  l'auto-denonciation de l'executant · **D-2** `mesurer-artefacts.mjs` mele journal et document sur
+  stdout — le defaut meme corrige dans `publish-update.mjs` · **D-3** deux `console.log` residuels ·
+  **D-4** les workflows epinglent **`tauri-action@v0`, tag flottant** : la preuve du comportement de
+  `uploadUpdaterJson` porte sur la branche `dev`, elle peut deriver en silence · **D-5** le `test:all`
+  du GUI **ne couvre pas le Rust** alors que le CA le laisse croire · **D-6** le dry-run rend
+  `notes: ""` : le chemin « republication a l'identique » reste **non prouve de bout en bout** ·
+  **D-7** defaut E confirme ouvert.
 - **Pieges connus** :
-  1. **`release.yml` se declenche `on: push: tags: v*`.** Desarmer AVANT de pousser un tag si l'on
-     veut proteger des artefacts deja publies (`gh workflow disable release.yml`). La cle etant
-     desormais posee, le risque d'un build **non signe** a disparu — le risque d'**ecrasement** d'un
-     artefact construit a la main, lui, demeure.
-  2. **Le `latest.json` depose par `tauri-action` sur la release est FAUX mais INERTE.** Il accumule
-     les runs (7 cles) et ne portera **jamais** les deux darwin, construits hors CI ; il pointe encore
-     `windows-x86_64` sur le **`.msi`**, l'inverse de notre arbitrage. **Aucun endpoint ne le lit** —
-     verifie par mesure sur les trois. A supprimer ou a faire renommer, avant qu'il ne trompe quelqu'un.
-  3. **`pub_date` est une ENTREE, pas une sortie** (`new Date()` dans `publish-update.mjs`). La
-     reproductibilite du manifeste a l'octet n'existe qu'a `pub_date` fige.
-  4. **Verifier une signature sans minisign** (absent du Mac, LibreSSL d'Apple incapable d'Ed25519
-     brut) : format `"ED"` = Ed25519 sur **blake2b-512 prehashe**. Verifier la signature **ecrite dans
-     le manifeste** (celle que l'updater utilise), sur **l'octet retelecharge**, et **valider
-     l'instrument sur un temoin negatif** avant de conclure.
-  5. **Les actes de publication sont refuses aux agents** par le classifieur de permissions
-     (`gh workflow disable/run`, push de tag, `gh release create`). Le decideur les tape lui-meme avec
-     le prefixe `!`. Mode operatoire a retenir.
-  6. **Aucune recette reelle n'a ete faite** : pas d'installation Windows ni Linux exercee, pas de
-     bascule du plugin Tauri app lancee. Tout ce qui precede est etabli par **mesure reseau et lecture
-     de source**, pas par un essai sur machine. La recette terrain reste due.
+  1. **CA-8 protege le cas LEGITIME** — deux **cles distinctes** partageant la **meme URL** doit rester
+     **vert**, alors que **CA-7** (une **plateforme** en doublon) doit rougir. Le gate a montre que
+     CA-8 etait vert avant comme apres, donc qu'il ne prouvait rien ; il a invente la mutation
+     manquante (dedupliquer par URL) et **CA-8 seul l'a tuee**. Ne jamais confondre les deux.
+  2. **Les actes de publication sont refuses aux agents** par le classifieur de permissions
+     (`gh workflow disable/run`, push de tag, `gh release create`, `gh secret set` selon le contexte).
+     Le decideur les tape lui-meme avec le prefixe `!`.
+  3. **Une garde s'ecrit ROUGE D'ABORD**, et l'etat rouge se **fige dans l'historique** pour etre
+     rejouable au gate. C'est ce qui a permis de prouver, et pas seulement d'affirmer, que les deux
+     exploits d'`I4` etaient verts a tort.
+  4. **Verifier une signature sans minisign** (absent du Mac) : format `"ED"` = Ed25519 sur
+     **blake2b-512 prehashe**. Verifier la signature **du manifeste** (celle que l'updater utilise),
+     sur **l'octet retelecharge**, et **valider l'instrument sur un temoin negatif** avant de conclure.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-29 01:55 | manual | v0.32.1 | main | Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA. |
 | 2026-08-29 00:06 | pause | v0.32.1 | main | Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service |
 | 2026-08-28 21:55 | pause | v0.32.1 | main | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |
 | 2026-08-28 14:31 | pause | v0.32.1 | feat/L0-trois-canaux-synchrones | Recit de reprise redige (lot 0 - part 0.b). |
