@@ -36,30 +36,27 @@ const HOTE_MORT = "192.168.2.11:3001";
 /**
  * LE REGISTRE DES HORS-COUVERTURE — motivé, daté, et porteur de sa condition de levée.
  *
- * Une garde qui se tait sur ce qu'elle ne couvre pas est pire qu'absente. Celle-ci NOMME le trou :
- * les deux plateformes de `v0.32.1` sont construites, signées et vérifiées localement, mais la
- * release GitHub qui les portera **n'existe pas encore** — la créer est un acte de PUBLICATION,
- * qui appartient au gate humain. Les URL annoncées sont donc mesurées `404` à cette date.
+ * Une garde qui se tait sur ce qu'elle ne couvre pas est pire qu'absente. Celle-ci NOMME ses trous.
  *
- * CLIQUET — ce registre se DÉTRUIT tout seul : I4 exige qu'une plateforme inscrite ici soit
- * encore mesurée NON téléchargeable. Le jour où la release existe et où `updater/mesures.json`
- * est régénéré, l'entrée devient fausse, le test tombe, et il faut la RETIRER. Une exception ne
- * peut donc pas survivre à sa raison d'être.
+ * IL EST VIDE, ET C'EST UN RÉSULTAT — pas un oubli. Il portait, au 2026-08-28, les deux plateformes
+ * de `v0.32.1` : construites, signées et vérifiées localement, mais annoncées vers une release
+ * GitHub qui n'existait pas encore, donc mesurées `404`. La release a été publiée le même jour ;
+ * les deux URL répondent `200` et leur signature vérifie l'octet SERVI. Le trou n'existe plus,
+ * l'exception non plus.
+ *
+ * CLIQUET — ce registre se DÉTRUIT tout seul, et il l'a fait : I4 exige qu'une plateforme inscrite
+ * ici soit encore mesurée NON téléchargeable. Régénérer `updater/mesures.json` après publication a
+ * fait tomber I4 sur ces deux entrées, avec pour message l'ordre de les retirer. Une exception ne
+ * peut pas survivre à sa raison d'être.
+ *
+ * CE QUE LE VIDE RALLUME — toute plateforme du manifeste passe désormais par la branche STRICTE de
+ * I4 : `200`, non vide, ET `signature: "valide"`. Une plateforme hors-couverture ne voyait sa
+ * signature assertée par rien ; plus aucune n'échappe à cette assertion.
+ *
+ * Y RÉINSCRIRE UNE PLATEFORME reste possible — c'est le point du registre — mais jamais en
+ * silence : I4bis exige motif, date, condition de levée, et une plateforme réellement annoncée.
  */
-const HORS_COUVERTURE = [
-  {
-    plateforme: "darwin-aarch64",
-    motif: "release GitHub v0.32.1 non creee — artefact construit, signe et verifie localement",
-    date: "2026-08-28",
-    leveePar: "creation de la release GitHub v0.32.1 + televersement des artefacts (acte humain)",
-  },
-  {
-    plateforme: "darwin-x86_64",
-    motif: "release GitHub v0.32.1 non creee — artefact construit, signe et verifie localement",
-    date: "2026-08-28",
-    leveePar: "creation de la release GitHub v0.32.1 + televersement des artefacts (acte humain)",
-  },
-];
+const HORS_COUVERTURE = [];
 
 /** La liste ORDONNÉE d'endpoints de l'updater — source de vérité du canal de LECTURE. */
 function endpoints() {

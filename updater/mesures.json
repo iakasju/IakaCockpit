@@ -1,36 +1,34 @@
 {
   "objet": "mesure des artefacts annonces par updater/latest.json — aucune URL n'est annoncee sans avoir ete ouverte",
   "version": "0.32.1",
-  "mesureLe": "2026-08-28T16:21:07.597Z",
-  "mesurePar": "iakaframe endpoints --manifeste updater/latest.json --json (@naonedge/iakaframe 0.39.0), en ANONYME",
-  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'artefact PRET A TELEVERSER, l'URL n'etant pas encore servie",
-  "etat": "NON TELECHARGEABLE : la release GitHub v0.32.1 n'existe pas (mesure 404). Les deux artefacts sont construits, signes et verifies ; leur publication est un acte humain. Trou DECLARE dans scripts/__tests__/forge-host-parity.test.mjs (HORS_COUVERTURE), avec cliquet.",
+  "mesureLe": "2026-08-28T17:10:30.060Z",
+  "mesurePar": "iakaframe endpoints --manifeste updater/latest.json --json (cli/src/index.js), en ANONYME (aucun jeton)",
+  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'OCTET RETELECHARGE depuis l'URL annoncee, pas sur le fichier local",
+  "etat": "TELECHARGEABLE : 2/2 — la release GitHub v0.32.1 est publiee, chaque URL annoncee repond 200 et sa signature de manifeste verifie l'octet servi. Aucun hors-couverture.",
   "artefacts": [
     {
       "plateforme": "darwin-aarch64",
       "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz",
       "hote": "github.com",
-      "status": 404,
-      "octets": 29,
-      "motif": "absent",
-      "artefactPret": "IakaCockpit_aarch64.app.tar.gz",
-      "octetsPret": 14922054,
-      "sha256Pret": "47085930e412a88d943b7f3a335be4e8714c2f668b614b5bb829fe5e03b87e28",
+      "status": 200,
+      "octets": 14922054,
+      "motif": "ok",
+      "sha256": "47085930e412a88d943b7f3a335be4e8714c2f668b614b5bb829fe5e03b87e28",
       "signature": "valide",
-      "enAttenteDe": "creation de la release GitHub v0.32.1 et televersement — acte de PUBLICATION, gate humain"
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "sigPublieIdentiqueAuManifeste": true
     },
     {
       "plateforme": "darwin-x86_64",
       "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_x64.app.tar.gz",
       "hote": "github.com",
-      "status": 404,
-      "octets": 29,
-      "motif": "absent",
-      "artefactPret": "IakaCockpit_x64.app.tar.gz",
-      "octetsPret": 15065561,
-      "sha256Pret": "56c7c0d7d5ea6a2951a962ca00d32c7f6ba16432bbb98147fac129b1c7e9b88b",
+      "status": 200,
+      "octets": 15065561,
+      "motif": "ok",
+      "sha256": "56c7c0d7d5ea6a2951a962ca00d32c7f6ba16432bbb98147fac129b1c7e9b88b",
       "signature": "valide",
-      "enAttenteDe": "creation de la release GitHub v0.32.1 et televersement — acte de PUBLICATION, gate humain"
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "sigPublieIdentiqueAuManifeste": true
     }
   ]
 }
