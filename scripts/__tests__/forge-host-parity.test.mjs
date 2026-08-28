@@ -1,5 +1,13 @@
 // Cohérence du CANAL de distribution — garde de non-dérive.
 //
+// ┌─ FICHIER CONVERGENT ─────────────────────────────────────────────────────────────────────────┐
+// │ Ce fichier est BYTE-IDENTIQUE dans IakaCockpit et iakaFrameGUI. Il ne l'était pas : le       │
+// │ registre `HORS_COUVERTURE` et son contrôle de forme `I4bis` n'existaient QUE côté Cockpit,   │
+// │ et rien ne signalait ce trou côté GUI. Deux gardes qui divergent, c'est une garde et demie.  │
+// │ Ce qui les rendait différentes — le nom du produit, la forme de la déclaration               │
+// │ d'`ARTEFACT_BASE` — est désormais LU, plus écrit en dur.                                     │
+// └──────────────────────────────────────────────────────────────────────────────────────────────┘
+//
 // ┌─ CE QUI CHANGE ICI, ET POURQUOI (révision du 2026-08-28, décision du décideur) ──────────────┐
 // │                                                                                              │
 // │ INVARIANT RETIRÉ — « endpoint, miroir front, script de publication et manifeste désignent le │
@@ -18,17 +26,23 @@
 // │   — qu'un hôte MORT apparaisse là où il ferait échouer quelque chose (I3) ;                  │
 // │   — qu'on ANNONCE une URL que personne n'a ouverte (I4) — le défaut exact du 2026-08-28.     │
 // │                                                                                              │
-// │ La parité `tauri.conf.json` ↔ miroir front n'est PAS abandonnée : elle est déjà tenue, liste │
-// │ complète et ordre compris, par `src/__tests__/updateEndpoints.test.ts`. On ne la duplique pas.│
+// │ L'ASSERTION D'I4 N'EST PLUS ÉCRITE ICI (L40, défaut B) : elle vit dans la fonction PURE      │
+// │ `scripts/lib/verifier-mesures.mjs`, testable sur fixtures — donc sur les cas qu'elle est     │
+// │ censée interdire, ce qu'un test sur les fichiers réels du dépôt ne peut pas faire. Ce        │
+// │ fichier en est l'APPELANT MINCE sur les fichiers réels.                                      │
 // └──────────────────────────────────────────────────────────────────────────────────────────────┘
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { verifierMesures, verifierHorsCouverture } from "../lib/verifier-mesures.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const read = (p) => readFileSync(resolve(ROOT, p), "utf8");
 const hostOf = (url) => new URL(url).host;
+
+/** Le nom du produit — LU, jamais écrit en dur : c'est ce qui rend ce fichier convergent. */
+const PRODUIT = JSON.parse(read("package.json")).name;
 
 /** Hôte mesuré hors service : machine éteinte, elle ne reviendra pas (constat du 2026-08-28). */
 const HOTE_MORT = "192.168.2.11:3001";
@@ -38,23 +52,21 @@ const HOTE_MORT = "192.168.2.11:3001";
  *
  * Une garde qui se tait sur ce qu'elle ne couvre pas est pire qu'absente. Celle-ci NOMME ses trous.
  *
- * IL EST VIDE, ET C'EST UN RÉSULTAT — pas un oubli. Il portait, au 2026-08-28, les deux plateformes
- * de `v0.32.1` : construites, signées et vérifiées localement, mais annoncées vers une release
- * GitHub qui n'existait pas encore, donc mesurées `404`. La release a été publiée le même jour ;
- * les deux URL répondent `200` et leur signature vérifie l'octet SERVI. Le trou n'existe plus,
- * l'exception non plus.
+ * IL EST VIDE, ET C'EST UN RÉSULTAT — pas un oubli. Au 2026-08-29, les NEUF clés du manifeste
+ * (les quatre génériques et les cinq clés d'installeur) répondent `200`, servent un octet non
+ * vide, et leur signature vérifie l'octet SERVI — y compris `.deb` et `.rpm`, qui se sont avérés
+ * SIGNÉS sur les deux releases : le risque « installeurs non signés » ne s'est pas matérialisé,
+ * et aucune exception n'a eu à être ouverte pour lui.
  *
- * CLIQUET — ce registre se DÉTRUIT tout seul, et il l'a fait : I4 exige qu'une plateforme inscrite
- * ici soit encore mesurée NON téléchargeable. Régénérer `updater/mesures.json` après publication a
- * fait tomber I4 sur ces deux entrées, avec pour message l'ordre de les retirer. Une exception ne
- * peut pas survivre à sa raison d'être.
+ * CLIQUET — ce registre se DÉTRUIT tout seul : `I4` exige qu'une plateforme inscrite ici soit
+ * encore mesurée NON téléchargeable. Une exception ne peut pas survivre à sa raison d'être.
  *
- * CE QUE LE VIDE RALLUME — toute plateforme du manifeste passe désormais par la branche STRICTE de
- * I4 : `200`, non vide, ET `signature: "valide"`. Une plateforme hors-couverture ne voyait sa
- * signature assertée par rien ; plus aucune n'échappe à cette assertion.
+ * CE QUE LE VIDE RALLUME — toute clé du manifeste passe par la branche STRICTE de `I4` : `200`,
+ * non vide, ET `signature: "valide"`. Une plateforme hors-couverture ne voyait sa signature
+ * assertée par rien ; plus aucune n'échappe à cette assertion.
  *
  * Y RÉINSCRIRE UNE PLATEFORME reste possible — c'est le point du registre — mais jamais en
- * silence : I4bis exige motif, date, condition de levée, et une plateforme réellement annoncée.
+ * silence : `I4bis` exige motif, date, condition de levée, et une plateforme réellement annoncée.
  */
 const HORS_COUVERTURE = [];
 
@@ -66,9 +78,15 @@ function endpoints() {
   return eps;
 }
 
-/** Hôte de TÉLÉCHARGEMENT déclaré par `publish-update.mjs` — celui qu'écrira le manifeste. */
+/**
+ * Hôte de TÉLÉCHARGEMENT déclaré par `publish-update.mjs` — celui qu'écrira le manifeste.
+ * Le `export` est optionnel : un dépôt exporte la constante pour ses tests, l'autre non, et ce
+ * détail de forme n'a jamais eu à faire diverger deux gardes.
+ */
 function hostFromArtefactBase() {
-  const m = read("scripts/publish-update.mjs").match(/^const ARTEFACT_BASE = "([^"]+)";/m);
+  const m = read("scripts/publish-update.mjs").match(
+    /^(?:export )?const ARTEFACT_BASE = "([^"]+)";/m,
+  );
   expect(m, "publish-update.mjs doit déclarer ARTEFACT_BASE").toBeTruthy();
   return hostOf(m[1]);
 }
@@ -87,7 +105,8 @@ function plateformesDuManifeste() {
 
 /**
  * Un hôte PUBLIC : ni adresse de LAN, ni boucle locale, ni nom non résolvable hors du réseau.
- * On teste la PROPRIÉTÉ (« atteignable depuis n'importe où »), jamais une valeur.
+ * On teste la PROPRIÉTÉ (« atteignable depuis n'importe où »), jamais une valeur : demain
+ * l'hébergeur peut changer, le critère ne bouge pas.
  */
 function estPrive(hote) {
   const h = hote.split(":")[0];
@@ -106,8 +125,9 @@ function mesures() {
   return JSON.parse(read("updater/mesures.json"));
 }
 
-describe("canal de distribution (Cockpit) — cohérence, publicité, mesure", () => {
+describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`, () => {
   it("I1 — le manifeste désigne l'hôte de téléchargement déclaré, et un SEUL", () => {
+    // Deux hôtes dans un même manifeste signifieraient deux publications mélangées : on refuse.
     const base = hostFromArtefactBase();
     for (const [nom, p] of plateformesDuManifeste()) {
       expect(hostOf(p.url), `manifeste[${nom}] ≠ ARTEFACT_BASE`).toBe(base);
@@ -133,52 +153,53 @@ describe("canal de distribution (Cockpit) — cohérence, publicité, mesure", (
   });
 
   it("I4 — aucune plateforme annoncée sans MESURE, et tout trou est DÉCLARÉ", () => {
-    const m = mesures();
-    expect(m.mesureLe, "mesures.json sans date de mesure").toBeTruthy();
-    expect(m.version, "mesures.json doit dire de quelle version il parle").toBe(manifeste().version);
-
-    const parUrl = new Map((m.artefacts ?? []).map((a) => [a.url, a]));
-    const declarees = new Map(HORS_COUVERTURE.map((h) => [h.plateforme, h]));
-
-    for (const [nom, p] of plateformesDuManifeste()) {
-      const mesure = parUrl.get(p.url);
-      expect(mesure, `plateforme ${nom} ANNONCÉE sans mesure de ${p.url}`).toBeTruthy();
-
-      const trou = declarees.get(nom);
-      if (!trou) {
-        expect(mesure.status, `${nom} : mesuré ${mesure.status}, pas 200`).toBe(200);
-        expect(mesure.octets, `${nom} : mesuré vide`).toBeGreaterThan(0);
-        expect(mesure.signature, `${nom} : signature non vérifiée`).toBe("valide");
-        continue;
-      }
-      // CLIQUET : l'exception doit encore correspondre à la réalité mesurée. Dès que l'artefact
-      // devient téléchargeable, cette ligne tombe — et l'exception DOIT être retirée.
-      expect(
-        mesure.status,
-        `${nom} : hors-couverture déclaré alors que l'artefact répond ${mesure.status} — ` +
-          `retirer l'entrée de HORS_COUVERTURE (${trou.leveePar})`,
-      ).not.toBe(200);
-    }
+    // APPELANT MINCE : l'assertion vit dans `verifierMesures`, où elle est exercée sur les cas
+    // qu'elle interdit. Ici on ne fait que la brancher sur les fichiers RÉELS et VERSIONNÉS.
+    const violations = verifierMesures({
+      manifeste: manifeste(),
+      mesures: mesures(),
+      horsCouverture: HORS_COUVERTURE,
+    });
+    expect(violations.map((v) => v.motif).join("\n"), "manifeste non prouvé par la mesure").toBe("");
   });
 
   it("I4bis — une exception ne peut pas être ajoutée en silence : motif, date, condition", () => {
     // Ce qui distingue un hors-couverture d'un mensonge : il se lit, il se date, et il dit à
     // quelle condition il disparaît.
-    const plats = new Set(Object.keys(manifeste().platforms ?? {}));
-    for (const h of HORS_COUVERTURE) {
-      expect(h.motif, `exception ${h.plateforme} sans motif`).toBeTruthy();
-      expect(h.date, `exception ${h.plateforme} sans date`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(h.leveePar, `exception ${h.plateforme} sans condition de levée`).toBeTruthy();
-      expect(
-        plats.has(h.plateforme),
-        `exception ${h.plateforme} : plateforme absente du manifeste — exception fantôme`,
-      ).toBe(true);
-    }
+    const violations = verifierHorsCouverture({
+      manifeste: manifeste(),
+      horsCouverture: HORS_COUVERTURE,
+    });
+    expect(violations.map((v) => v.motif).join("\n")).toBe("");
+  });
+
+  it("I4ter — CONTREFACTUEL : inscrire une plateforme TÉLÉCHARGEABLE fait rougir I4", () => {
+    // CE QUE CE TEST PROUVE, EXACTEMENT : que le CLIQUET d'`I4` mord sur les fichiers RÉELS —
+    // une exception ouverte pour une plateforme téléchargeable est refusée. Il porte sur une
+    // exception FABRIQUÉE ICI, jamais sur le registre versionné, qui reste vide.
+    // CE QU'IL NE PROUVE PAS : que `I4bis` cesse d'être vacuous quand le registre est vide. La
+    // LOGIQUE d'`I4bis` est exercée non vacuously ailleurs, sur fixtures
+    // (`verifier-mesures.test.mjs`, describe « verifierHorsCouverture ») ; le fait que son
+    // appel ci-dessus ne teste rien tant que le registre est vide reste un défaut CONNU et
+    // NON TRAITÉ ici (défaut E du relevé, renvoyé au lot successeur « gardes tièdes »).
+    const m = manifeste();
+    const [premiere] = Object.keys(m.platforms);
+    const violations = verifierMesures({
+      manifeste: m,
+      mesures: mesures(),
+      horsCouverture: [
+        { plateforme: premiere, motif: "contrefactuel", date: "2026-08-29", leveePar: "n/a" },
+      ],
+    });
+    expect(
+      violations.some((v) => v.plateforme === premiere && /hors-couverture/.test(v.motif)),
+      `le cliquet ne mord pas : ${premiere} est téléchargeable et l'exception survit`,
+    ).toBe(true);
   });
 
   it("I5 — la liste de lecture porte au moins DEUX hôtes distincts, sinon rien ne bascule", () => {
-    // CA-11 : « une app dont le premier endpoint est mort voit quand même la mise à jour ». Une
-    // liste d'un seul hôte (ou d'un hôte répété) ne bascule sur rien — elle réessaie la panne.
+    // « une app dont le premier endpoint est mort voit quand même la mise à jour ». Une liste
+    // d'un seul hôte (ou d'un hôte répété) ne bascule sur rien — elle réessaie la panne.
     const hotes = endpoints().map(hostOf);
     expect(new Set(hotes).size, `endpoints en doublon : ${hotes.join(", ")}`).toBe(hotes.length);
     expect(new Set(hotes).size, "un seul hôte : aucune redondance").toBeGreaterThanOrEqual(2);
