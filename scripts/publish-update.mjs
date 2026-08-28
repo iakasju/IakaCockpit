@@ -34,6 +34,22 @@ import {
 // constante pointait la box morte, `publish-update` ne pouvait NI créer une release NI produire
 // un manifeste téléchargeable — le canal d'auto-update était rompu des deux côtés.
 const FORGEJO_BASE = "http://192.168.1.139:3001";
+
+/**
+ * LA BASE DE TELECHARGEMENT ANNONCEE PAR LE MANIFESTE — les releases GitHub.
+ *
+ * Distincte de `FORGEJO_BASE`, et c'est le point qui manquait. Le manifeste est un fichier
+ * UNIQUE, recopie sur plusieurs canaux, dont les URL sont ABSOLUES : le meme document est lu par
+ * un poste du LAN et par une machine qui n'y sera jamais. Faire pointer ses URL vers une adresse
+ * de LAN, c'est promettre un telechargement a des lecteurs qui ne peuvent pas l'atteindre — etat
+ * mesure le 2026-08-28 : manifeste servi sur deux canaux, URL d'artefact a 404, mise a jour VUE
+ * et telechargeable NULLE PART.
+ *
+ * L'hote de LECTURE (les `endpoints`) reste la forge du LAN, la plus proche ; l'hote de
+ * TELECHARGEMENT doit etre PUBLIC. Decision du decideur, 2026-08-28 : « les manifestes pointent
+ * sur GitHub ». Ce que la forge du LAN continue de recevoir est un MIROIR, pas la cible annoncee.
+ */
+const ARTEFACT_BASE = "https://github.com/iakasju/IakaCockpit/releases/download";
 const FORGEJO_OWNER = "sjupin";
 const FORGEJO_REPO = "iakacockpit";
 const GITHUB_REPO = "iakasju/IakaCockpit";
@@ -296,7 +312,7 @@ const { manifest, missing, duplicates } = buildManifest({
   notes: `IakaCockpit ${alignment.version}`,
   pubDate: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
   entries,
-  baseUrl: `${FORGEJO_BASE}/${FORGEJO_OWNER}/${FORGEJO_REPO}/releases/download/${tag}`,
+  baseUrl: `${ARTEFACT_BASE}/${tag}`,
 });
 
 if (Object.keys(manifest.platforms).length === 0) {

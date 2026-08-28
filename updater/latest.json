@@ -1,11 +1,15 @@
 {
   "version": "0.32.1",
   "notes": "IakaCockpit 0.32.1",
-  "pub_date": "2026-08-10T17:09:11Z",
+  "pub_date": "2026-08-28T16:21:01Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG9SNGRNdnBQaWZvalBmUFBTTEZXUXpzK2I2c2JjbkVxV0Y1cFdNdm5DeDEwRjNoSGUyZUVjdGFMTC9RSy9YNng5UFBzQjcvSllBaVBIRm9hbldVdGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MzgxNzMwCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpMaUFueksvVFc2aFYzbnJKQmhMSG1BaVkrbGtOY3Y3dHBseWgybVZnNmxVTWxiUzlwSHc4OEs4SjRIMW9KRloxYU9ibEZNU1VrUGpxNE8ycSs0SGNDUT09Cg==",
-      "url": "http://192.168.1.139:3001/sjupin/iakacockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG5zb3ZNQ0p0Q1cvQURCZUl4YUlHczRqb2hYNDBmUUdDZG5KbXZWK0ovTDg2QTlLVjI1NEx6VVAzMlVhc2xkQjZnS3hTcEdEK2NMazFPWDRQd2NBZkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTMzMjMyCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpHNGhEQURyM0FZdEJJalQzUU9ybzhsQTdNVXdOeTdYSjBiR1hyeENrWFdCWnhZVVptcTRvWkFDY0xWK1F3dFEwYkJRaWN3cUxoL3dWRUxDQmpaemlBQT09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGpmY29XVXZVQlVLSEM4S2VvM1lZdjAwdTNlN2JIL0I4WE9LVnQ1WFBmaVFCN0t1TUhxN2doQmVFd085b3d3THljZkg5NkhXV3B4RTFkbjNnS0ZqYWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTMzMzYzCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpyT2hQSFBGaTVHbFp2ZjBZOTdwMUFXSG1FaStCOHVaamJ6a2NEVi9RblFUc2JQbS9GM3B4RTJYUXgvT2FUYk1JaHA2NzdBUGd2dmFrUDhESjF6WVJDZz09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_x64.app.tar.gz"
     }
   }
 }
