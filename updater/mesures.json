@@ -1,22 +1,11 @@
 {
   "objet": "mesure des artefacts annonces par updater/latest.json — aucune URL n'est annoncee sans avoir ete ouverte",
   "version": "0.32.1",
-  "mesureLe": "2026-08-28T21:45:22.740Z",
-  "mesurePar": "re-telechargement anonyme (aucun jeton) de chaque URL ANNONCEE par le manifeste, puis verification minisign en Node (node:crypto, Ed25519 + blake2b-512) — scratchpad l34lin/mesurer.mjs",
-  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'OCTET RETELECHARGE depuis l'URL annoncee, pas sur le fichier local. La verification couvre AUSSI le global signature (signature || trusted comment), et le keyid de la signature est compare a celui de la cle publique.",
-  "temoinNegatif": "chaque signature a ete rejouee contre le MEME octet avec UN octet retourne (xor 0xff au milieu) : les 4 rendent INVALIDE. Une verification qui n'echoue jamais ne prouve rien.",
-  "etat": "TELECHARGEABLE : 4/4 — chaque URL annoncee repond 200, sert un contenu non vide, et sa signature de manifeste verifie l'octet SERVI. Aucun hors-couverture. Les quatre plateformes de UPDATER_PLATFORMS sont desormais annoncees ET mesurees.",
-  "plateformesNonAnnoncees": [],
-  "artefactsPresentsNonAnnonces": [
-    {
-      "artefacts": [
-        "IakaCockpit_0.32.1_amd64.deb",
-        "IakaCockpit-0.32.1-1.x86_64.rpm"
-      ],
-      "motif": "le generateur les classe hors perimetre updater : classifyArtifact() rend null pour .deb et .rpm, donc publish-update.mjs les ecarte AVANT buildManifest (ils n'apparaissent ni dans duplicates ni dans artifactRank). Sous la clef GENERIQUE linux-x86_64 ils seraient de toute facon refusees par un client non-Deb/non-Rpm : tauri-plugin-updater 2.10.1 choisit l'installeur d'apres le bundle_type du binaire QUI TOURNE (updater.rs:967-973), pas d'apres l'octet telecharge, et install_deb/install_rpm rejettent tout octet dont le magic ne correspond pas (InvalidUpdaterFormat).",
-      "consequenceMesuree": "un client Linux installe par .deb ou .rpm qui retombe sur linux-x86_64 recoit l'AppImage (magic mesure 7f454c46...414902, ni is_deb ni is_rpm) et refuse la charge au lieu de l'installer : la mise a jour echoue, elle n'installe rien de faux. Les clefs specifiques linux-x86_64-deb / -rpm que le generateur n'emet pas leveraient ce cas — hors perimetre de ce lot, signale."
-    }
-  ],
+  "mesureLe": "2026-08-28T23:04:08.301Z",
+  "mesurePar": "node scripts/mesurer-artefacts.mjs",
+  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'OCTET RETELECHARGE depuis l'URL annoncee, pas sur le fichier local. La verification couvre AUSSI la signature globale (sig || trusted comment), et le keyid de la signature est compare a celui de la cle publique.",
+  "temoinNegatif": "chaque signature a ete rejouee contre le MEME octet avec UN octet retourne (xor 0xff au milieu) : elle doit rendre INVALIDE. Une verification qui n'echoue jamais ne prouve rien.",
+  "etat": "TELECHARGEABLE : 9/9 — chaque cle listee ci-dessous a ete ouverte en anonyme, son octet hache, et sa signature de manifeste verifiee contre l'octet SERVI.",
   "artefacts": [
     {
       "plateforme": "darwin-aarch64",
@@ -28,9 +17,10 @@
       "sha256": "47085930e412a88d943b7f3a335be4e8714c2f668b614b5bb829fe5e03b87e28",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
       "fichierSigneParLaSignature": "IakaCockpit.app.tar.gz",
-      "temoinNegatifOctetAltere": "invalide",
-      "sigPublieIdentiqueAuManifeste": true
+      "temoinNegatifOctetAltere": "invalide"
     },
     {
       "plateforme": "darwin-x86_64",
@@ -42,9 +32,10 @@
       "sha256": "56c7c0d7d5ea6a2951a962ca00d32c7f6ba16432bbb98147fac129b1c7e9b88b",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
       "fichierSigneParLaSignature": "IakaCockpit.app.tar.gz",
-      "temoinNegatifOctetAltere": "invalide",
-      "sigPublieIdentiqueAuManifeste": true
+      "temoinNegatifOctetAltere": "invalide"
     },
     {
       "plateforme": "linux-x86_64",
@@ -56,9 +47,55 @@
       "sha256": "04330733171cf0bcebcc419dafd5aa74e4b5476e614ae9a2bb13d854ebd699a5",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
       "fichierSigneParLaSignature": "IakaCockpit_0.32.1_amd64.AppImage",
-      "temoinNegatifOctetAltere": "invalide",
-      "sigPublieIdentiqueAuManifeste": true
+      "temoinNegatifOctetAltere": "invalide"
+    },
+    {
+      "plateforme": "linux-x86_64-appimage",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_amd64.AppImage",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 92355064,
+      "motif": "ok",
+      "sha256": "04330733171cf0bcebcc419dafd5aa74e4b5476e614ae9a2bb13d854ebd699a5",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
+      "fichierSigneParLaSignature": "IakaCockpit_0.32.1_amd64.AppImage",
+      "temoinNegatifOctetAltere": "invalide"
+    },
+    {
+      "plateforme": "linux-x86_64-deb",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_amd64.deb",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 15183296,
+      "motif": "ok",
+      "sha256": "1c3cf3ae59f2192808e515128e5331c233d43b41d73d4ff9cb399616e4c484c9",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
+      "fichierSigneParLaSignature": "IakaCockpit_0.32.1_amd64.deb",
+      "temoinNegatifOctetAltere": "invalide"
+    },
+    {
+      "plateforme": "linux-x86_64-rpm",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit-0.32.1-1.x86_64.rpm",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 15183182,
+      "motif": "ok",
+      "sha256": "b99c3cf2592b6fee3fbc0057135b521f6a31102f02dfd34b3ca081d180b40a75",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
+      "fichierSigneParLaSignature": "IakaCockpit-0.32.1-1.x86_64.rpm",
+      "temoinNegatifOctetAltere": "invalide"
     },
     {
       "plateforme": "windows-x86_64",
@@ -70,9 +107,40 @@
       "sha256": "82b6b27a46ed9f7d23d47a7bd220cacb467708d9ad857ca3f2458f740f48f066",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
       "fichierSigneParLaSignature": "IakaCockpit_0.32.1_x64-setup.exe",
-      "temoinNegatifOctetAltere": "invalide",
-      "sigPublieIdentiqueAuManifeste": true
+      "temoinNegatifOctetAltere": "invalide"
+    },
+    {
+      "plateforme": "windows-x86_64-msi",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64_en-US.msi",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 14491648,
+      "motif": "ok",
+      "sha256": "aca187c72f781cae914c2785d2f02726d74cf86100430615523ca2b03a679ea8",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
+      "fichierSigneParLaSignature": "IakaCockpit_0.32.1_x64_en-US.msi",
+      "temoinNegatifOctetAltere": "invalide"
+    },
+    {
+      "plateforme": "windows-x86_64-nsis",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64-setup.exe",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 12684125,
+      "motif": "ok",
+      "sha256": "82b6b27a46ed9f7d23d47a7bd220cacb467708d9ad857ca3f2458f740f48f066",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "signatureGlobale": "valide",
+      "keyIdConcorde": true,
+      "fichierSigneParLaSignature": "IakaCockpit_0.32.1_x64-setup.exe",
+      "temoinNegatifOctetAltere": "invalide"
     }
   ]
 }
