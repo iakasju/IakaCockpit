@@ -148,5 +148,15 @@
     "dirty": false,
     "files": 1399,
     "note": "Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable"
+  },
+  {
+    "date": "2026-08-29 00:06",
+    "reason": "pause",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "e246812 fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb",
+    "dirty": false,
+    "files": 1399,
+    "note": "Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service"
   }
 ]

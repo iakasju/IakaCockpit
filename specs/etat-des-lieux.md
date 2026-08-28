@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-28 21:55 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-08-29 00:06 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,15 +9,18 @@
 |---|---|
 | Version | v0.32.1 |
 | Branche | main |
-| Dernier commit | cc3348d fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire |
+| Dernier commit | e246812 fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb |
 | Arbre | propre |
 | Fichiers (suivis + non ignores) | 1399 |
-| Note | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |
+| Note | Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `e246812` | 2026-08-28 | fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb |
+| `08efcc6` | 2026-08-28 | fix(canal): windows-x86_64 annonce, et mesure — le NSIS, pas le MSI |
+| `1aca3cc` | 2026-08-28 | chore(iakaframe): checkpoint de pause — etat des lieux + recit de reprise (lot 0 + L1) |
 | `cc3348d` | 2026-08-28 | fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire |
 | `80adf82` | 2026-08-28 | fix(canal): manifeste v0.32.1 sur des URL publiques — artefacts construits, signes, PAS publies |
 | `5db1240` | 2026-08-28 | fix(canal): le commentaire declarait GitHub prive — c est faux depuis le 2026-08-28 |
@@ -25,56 +28,79 @@
 | `0722ad3` | 2026-08-28 | docs(etat-des-lieux): recit de reprise — lot 0 remis au gate, rien pousse (reseau coupe) |
 | `f481ed9` | 2026-08-28 | fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus |
 | `2f1e7b9` | 2026-08-25 | fix(canal): repointe l auto-update sur le NAS — l ancienne iakabox ne repond plus |
-| `8241e14` | 2026-08-23 | docs(backlog): L39 — synchronisation Cockpit / reservoir iakaframe |
-| `3225eac` | 2026-08-23 | feat(teams): Charon, Helm et Feanor rejoignent le Cockpit — aligne sur le reservoir |
-| `c7443ce` | 2026-08-23 | feat(reservoir): lecture du reservoir iakaframe cote Rust (source de verite des teams) |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : l'auto-update de cette app etait **entierement casse** et personne
-  ne le savait — le manifeste servi par `main` annoncait des artefacts sur une release **sans asset** (le NAS ne portait aucune release). Mesure au reveil :
-  ****0/1** telechargeable**. L'app **voyait** une mise a jour et **ne pouvait la telecharger sur
-  aucune plateforme**. Repare, mesure, fusionne dans `main` et pousse sur le NAS et sur GitHub.
-- **Architecture retenue** : `FORGEJO_BASE` (ou l'on **LIT** le manifeste : NAS ->
-  `raw.githubusercontent.com` -> iakabox en dernier secours) est desormais **distinct** de
-  `ARTEFACT_BASE` (ou l'on **TELECHARGE** : les releases GitHub, hote **public**). Un updater Tauri
-  ne sait pas s'authentifier : toute URL de LAN ou de depot prive est un **404 garanti** pour
-  l'utilisateur final. Les trois depots iaka sont passes **publics** le 2026-08-28 pour cette raison.
-- **Garde de parite reecrite** (`scripts/__tests__/forge-host-parity.test.mjs`), invariant
-  **remplace** et non affaibli : **I1** un seul hote designe · **I2** cet hote est **PUBLIC**,
-  propriete testee (ni RFC1918, ni loopback, ni `.local`), jamais une liste en dur · **I3** l'hote
-  mort `192.168.2.11` absent partout · **I4** **aucune plateforme annoncee sans mesure**, la preuve
-  etant `updater/mesures.json`, **fichier versionne** · **I5** au moins 2 hotes de lecture distincts.
-- **Etat final MESURE en anonyme sur ce que `main` sert** : **`TELECHARGEABLE : 2/2 — le manifeste tient sa promesse.`**.
-- **L'artefact de la version annoncee n'existait NULLE PART** : il a fallu **construire** v0.32.1
-  (`tauri build --bundles app`, plus `--target x86_64-apple-darwin` pour l'Intel), le **signer**, puis
-  creer la release GitHub. Signatures verifiees sur **l'octet retelecharge**, par deux instruments
-  independants. **Seules 2 plateformes darwin sont annoncees** : pas de build Linux/Windows depuis un
-  Mac, et une entree sans artefact est **interdite** par la garde I4. Le `darwin-x86_64` est **croise,
-  non recette sur materiel Intel** — gate humain declare, non couvert.
-- **Le cliquet a fonctionne en reel, et sa limite s'est vue le meme jour** : a la publication, la
-  suite est restee **VERTE** — I4 ne mesure pas le reseau, il compare le manifeste a `mesures.json`,
-  fichier versionne. Le rouge n'est apparu **qu'apres remesure**, en dictant l'ordre exact de sa
-  propre levee : *« hors-couverture declare alors que l'artefact repond 200 — retirer l'entree »*.
-  Le registre `HORS_COUVERTURE` reste en place, **vide mais arme** (6 reinscriptions tentees, 6
-  rejetees) : on ne peut pas y rentrer en silence.
-- **Prochaine etape** : lot successeur des residus de garde nommes au gate — **R1** cliquet passif
-  sans borne de fraicheur, **R4** `estPrive` manque le nom d'hote nu et casse sur l'IPv6 litteral,
-  **R5** signature globale minisign non controlee, **R6** `I4bis` *vacuous* quand le registre est vide.
+- **Ce qui vient d'etre fait** : l'auto-update est passe de **casse** a **4 plateformes sur 4
+  telechargeables**. Au reveil, le manifeste servi par `main` annoncait **une seule** plateforme
+  (`darwin-aarch64`) vers une release **sans asset** : mesure `0/1`. L'app **voyait** une mise a jour
+  et **ne pouvait pas la telecharger**. Etat final mesure en anonyme sur ce que `main` sert :
+  **`TELECHARGEABLE : 4/4 — le manifeste tient sa promesse.`**
+- **Architecture** : `FORGEJO_BASE` (ou l'on **LIT** le manifeste : NAS `192.168.1.139` ->
+  `raw.githubusercontent.com` -> iakabox en dernier secours) est **distinct** de `ARTEFACT_BASE`
+  (ou l'on **TELECHARGE** : les releases GitHub, hote **public**). Un updater Tauri ne sait pas
+  s'authentifier : toute URL de LAN ou de depot prive est un **404 garanti** pour l'utilisateur final.
+  Le depot est **public** depuis le 2026-08-28, pour cette raison.
+- **La chaine complete de la journee**, quatre lots, quatre gates independants, **aucun auto-valide** :
+  1. **Levee du hors-couverture** (apres publication manuelle de la release v0.32.1, artefacts darwin
+     construits et signes a la main). Le **cliquet** de `HORS_COUVERTURE` a fonctionne **en reel** et a
+     dicte l'ordre exact de sa propre levee.
+  2. **`windows-x86_64`** ajoute au manifeste, apres pose de la cle de signature et build CI.
+  3. **`linux-x86_64`** ajoute, apres build CI Linux.
+  4. Chaque lot : diff **strictement additif**, prouve a l'octet ; manifeste **regenere par
+     `buildManifest()`**, jamais ecrit a la main ; mesures refaites sur **l'octet retelecharge**.
+- **La cle de signature est posee** (`TAURI_SIGNING_PRIVATE_KEY`, 2026-08-28) et **`release.yml` est
+  reactive**. C'etait la cause racine : `gh secret list` rendait **vide**, le depot ne pouvait produire
+  aucun artefact signe. Les deux builds CI (Windows puis Linux) sont les **premieres releases signees
+  du Cockpit produites par son CI** — la v0.31.2 ne porte aucun `.sig`.
+- **Arbitrages tranches, avec leur raison** :
+  - **Windows -> le `-setup.exe` (NSIS), pas le `.msi`.** L'arbitrage etait **deja ecrit** dans
+    `scripts/lib/update-manifest.mjs` (`artifactRank`) depuis le 2026-08-06 et n'avait **jamais ete
+    exerce**, faute de build Windows. La voie d'installation suit le **magic byte** (`4d5a9000` MZ ->
+    NSIS ; `d0cf11e0` CFB -> MSI) : le choix du binaire **est** le choix du mecanisme.
+  - **Linux -> l'AppImage**, et **pas** parce que le plugin ignorerait `.deb`/`.rpm` — **il sait les
+    installer** (`dpkg -i`, `rpm -U`). La vraie raison : le choix de l'installeur vient de
+    `bundle_type()`, le type du **binaire qui tourne**, jamais de l'octet telecharge. Sous la cle
+    generique, l'AppImage est **le seul octet qui n'endommage personne** : client AppImage ou bundle
+    inconnu -> installe ; client deb/rpm -> `InvalidUpdaterFormat`, refus en **premiere instruction**
+    de `install_deb`, **avant tout acces disque**.
+- **Prochaine etape concrete — un seul lot successeur, deux defauts jumeaux** :
+  1. **Les cles specifiques que le generateur n'emet pas** (`windows-x86_64-msi`, `-nsis`,
+     `linux-x86_64-deb`, `-rpm`). Consequences reelles et symetriques : un utilisateur Windows installe
+     **par MSI** recevra l'exe NSIS, qui s'installera **a cote** de l'enregistrement MSI au lieu de le
+     remplacer ; un utilisateur Linux installe **par `.deb` ou `.rpm`** telechargera **92 Mo a chaque
+     tentative** pour echouer proprement. **Le CI produit deja ces cles** (son `latest.json` en porte
+     sept) — c'est notre `buildManifest()` qui ne les emet pas.
+  2. **Le trou `parUrl` d'I4** : la garde indexe les mesures **par URL** sans verifier que la
+     plateforme correspond. Exerce au gate : mettre l'URL de l'exe Windows dans l'entree Linux passe
+     **au VERT**. A durcir (dedupliquer, ou refuser les doublons, ou croiser plateforme + URL).
 - **Pieges connus** :
-  1. **`release.yml` est `disabled_manually` depuis le 2026-08-28, et doit le rester** tant qu'aucun
-     secret de signature n'est pose (`gh secret list -R iakasju/IakaCockpit` rend **vide**, la ou
-     iakaFrameGUI a le sien). Le workflow se declenche `on: push: tags: v*` : le rearmer expose a un
-     build non signe ou en echec au prochain tag. **Desarmer AVANT de pousser un tag.**
-  2. La release `v0.31.2` ne porte **aucun `.sig`** — mais la cause n'est pas l'absence de secrets :
-     `createUpdaterArtifacts` a ete introduit **apres** ce tag.
-  3. Les tags `v0.32.0` et `v0.32.1` etaient **deja pousses sur le NAS** avant de l'etre sur GitHub.
-  4. **Un `200` ne suffit pas** : seul un manifeste **au contrat** compte comme servant.
+  1. **`release.yml` se declenche `on: push: tags: v*`.** Desarmer AVANT de pousser un tag si l'on
+     veut proteger des artefacts deja publies (`gh workflow disable release.yml`). La cle etant
+     desormais posee, le risque d'un build **non signe** a disparu — le risque d'**ecrasement** d'un
+     artefact construit a la main, lui, demeure.
+  2. **Le `latest.json` depose par `tauri-action` sur la release est FAUX mais INERTE.** Il accumule
+     les runs (7 cles) et ne portera **jamais** les deux darwin, construits hors CI ; il pointe encore
+     `windows-x86_64` sur le **`.msi`**, l'inverse de notre arbitrage. **Aucun endpoint ne le lit** —
+     verifie par mesure sur les trois. A supprimer ou a faire renommer, avant qu'il ne trompe quelqu'un.
+  3. **`pub_date` est une ENTREE, pas une sortie** (`new Date()` dans `publish-update.mjs`). La
+     reproductibilite du manifeste a l'octet n'existe qu'a `pub_date` fige.
+  4. **Verifier une signature sans minisign** (absent du Mac, LibreSSL d'Apple incapable d'Ed25519
+     brut) : format `"ED"` = Ed25519 sur **blake2b-512 prehashe**. Verifier la signature **ecrite dans
+     le manifeste** (celle que l'updater utilise), sur **l'octet retelecharge**, et **valider
+     l'instrument sur un temoin negatif** avant de conclure.
+  5. **Les actes de publication sont refuses aux agents** par le classifieur de permissions
+     (`gh workflow disable/run`, push de tag, `gh release create`). Le decideur les tape lui-meme avec
+     le prefixe `!`. Mode operatoire a retenir.
+  6. **Aucune recette reelle n'a ete faite** : pas d'installation Windows ni Linux exercee, pas de
+     bascule du plugin Tauri app lancee. Tout ce qui precede est etabli par **mesure reseau et lecture
+     de source**, pas par un essai sur machine. La recette terrain reste due.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-29 00:06 | pause | v0.32.1 | main | Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service |
 | 2026-08-28 21:55 | pause | v0.32.1 | main | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |
 | 2026-08-28 14:31 | pause | v0.32.1 | feat/L0-trois-canaux-synchrones | Recit de reprise redige (lot 0 - part 0.b). |
 | 2026-08-28 14:29 | pause | v0.32.1 | feat/L0-trois-canaux-synchrones | Lot 0 (0.b failover de lecture) : 3 endpoints ordonnes + miroir front. Branche feat/L0-trois-canaux-synchrones, non poussee (reseau coupe). |
