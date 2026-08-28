@@ -8,12 +8,24 @@
  * (`plugins.updater.endpoints`). Un test de garde (`updateEndpoints.test.ts`) lit
  * le fichier de config et échoue si les deux listes divergent.
  *
- * La liste est ORDONNÉE : le premier endpoint qui répond gagne. Le jour où le flux
- * passe sur un site public, on PRÉFIXE la liste (ici et dans `tauri.conf.json`) —
- * l'entrée Forgejo devient le repli LAN, on ne la retire pas.
+ * La liste est ORDONNÉE : le premier endpoint qui répond gagne. Depuis le lot 0
+ * (« trois canaux synchrones »), elle en porte TROIS — une cible morte ne bloque plus
+ * la mise à jour, l'updater essaie la suivante (CA-11). L'ordre suit la disponibilité
+ * constatée, pas une préférence : voir les commentaires de chaque entrée.
  */
 export const UPDATE_ENDPOINTS: readonly string[] = [
+  // 1. NAS (forge courante, même LAN que le poste) — c'est ELLE qui reçoit le manifeste publié
+  //    par `scripts/publish-update.mjs`, et c'est donc le seul endpoint dont le contenu est
+  //    garanti cohérent avec les URL d'artefacts qu'il annonce.
   "http://192.168.1.139:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
+  // 2. GitHub — le seul chemin qui ne dépende pas du LAN. ⚠️ Le dépôt `iakasju/IakaCockpit`
+  //    est un dépôt PRIVÉ : tant qu'il l'est, cette URL brute répond 404 à un client non
+  //    authentifié, et l'updater ne peut pas s'y authentifier. Elle est donc en place pour le
+  //    jour où le dépôt sera public (ou remplacé par une release publique) — pas avant.
+  "https://raw.githubusercontent.com/iakasju/IakaCockpit/main/updater/latest.json",
+  // 3. iakabox — mesurée hors service depuis le 2026-08-25 ; gardée en DERNIER secours, au cas
+  //    où elle revienne, jamais en tête.
+  "http://192.168.2.11:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
 ];
 
 /** Endpoint affiché à l'utilisateur (le premier de la liste), `null` si vide. */
