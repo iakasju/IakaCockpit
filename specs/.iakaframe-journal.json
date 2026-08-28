@@ -118,5 +118,25 @@
     "dirty": true,
     "files": 7591,
     "note": "checkpoint : cadrage L36 (backend distant / mode serveur) depose, en attente d arbitrage AR-1..AR-8"
+  },
+  {
+    "date": "2026-08-28 14:29",
+    "reason": "pause",
+    "version": "v0.32.1",
+    "branch": "feat/L0-trois-canaux-synchrones",
+    "commit": "f481ed9 fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus",
+    "dirty": false,
+    "files": 1398,
+    "note": "Lot 0 (0.b failover de lecture) : 3 endpoints ordonnes + miroir front. Branche feat/L0-trois-canaux-synchrones, non poussee (reseau coupe)."
+  },
+  {
+    "date": "2026-08-28 14:31",
+    "reason": "pause",
+    "version": "v0.32.1",
+    "branch": "feat/L0-trois-canaux-synchrones",
+    "commit": "f481ed9 fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus",
+    "dirty": true,
+    "files": 1398,
+    "note": "Recit de reprise redige (lot 0 - part 0.b)."
   }
 ]
