@@ -1,10 +1,18 @@
 {
   "objet": "mesure des artefacts annonces par updater/latest.json — aucune URL n'est annoncee sans avoir ete ouverte",
   "version": "0.32.1",
-  "mesureLe": "2026-08-28T17:10:30.060Z",
-  "mesurePar": "iakaframe endpoints --manifeste updater/latest.json --json (cli/src/index.js), en ANONYME (aucun jeton)",
-  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'OCTET RETELECHARGE depuis l'URL annoncee, pas sur le fichier local",
-  "etat": "TELECHARGEABLE : 2/2 — la release GitHub v0.32.1 est publiee, chaque URL annoncee repond 200 et sa signature de manifeste verifie l'octet servi. Aucun hors-couverture.",
+  "mesureLe": "2026-08-28T21:04:40.142Z",
+  "mesurePar": "re-telechargement anonyme (aucun jeton) de chaque URL ANNONCEE par le manifeste, puis verification minisign en Node (node:crypto, Ed25519 + blake2b-512) — scratchpad l34win/mesurer.mjs",
+  "signatureVerifieePar": "minisign Ed25519 sur blake2b-512, contre la cle publique declaree dans src-tauri/tauri.conf.json (plugins.updater.pubkey) — sur l'OCTET RETELECHARGE depuis l'URL annoncee, pas sur le fichier local. La verification couvre AUSSI le global signature (signature || trusted comment), et le keyid de la signature est compare a celui de la cle publique.",
+  "temoinNegatif": "chaque signature a ete rejouee contre le MEME octet avec UN octet retourne (xor 0xff au milieu) : les 3 rendent INVALIDE. Une verification qui n'echoue jamais ne prouve rien.",
+  "etat": "TELECHARGEABLE : 3/3 — chaque URL annoncee repond 200, sert un contenu non vide, et sa signature de manifeste verifie l'octet SERVI. Aucun hors-couverture.",
+  "plateformesNonAnnoncees": [
+    {
+      "plateforme": "linux-x86_64",
+      "motif": "AUCUN artefact Linux n'existe pour v0.32.1 (release mesuree : 9 assets, aucun .AppImage). Une entree sans artefact promettrait un telechargement impossible.",
+      "leveePar": "un build Linux publie sur la release, puis mesure ici comme les trois autres"
+    }
+  ],
   "artefacts": [
     {
       "plateforme": "darwin-aarch64",
@@ -16,6 +24,8 @@
       "sha256": "47085930e412a88d943b7f3a335be4e8714c2f668b614b5bb829fe5e03b87e28",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "fichierSigneParLaSignature": "IakaCockpit.app.tar.gz",
+      "temoinNegatifOctetAltere": "invalide",
       "sigPublieIdentiqueAuManifeste": true
     },
     {
@@ -28,6 +38,22 @@
       "sha256": "56c7c0d7d5ea6a2951a962ca00d32c7f6ba16432bbb98147fac129b1c7e9b88b",
       "signature": "valide",
       "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "fichierSigneParLaSignature": "IakaCockpit.app.tar.gz",
+      "temoinNegatifOctetAltere": "invalide",
+      "sigPublieIdentiqueAuManifeste": true
+    },
+    {
+      "plateforme": "windows-x86_64",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64-setup.exe",
+      "hote": "github.com",
+      "status": 200,
+      "octets": 12684125,
+      "motif": "ok",
+      "sha256": "82b6b27a46ed9f7d23d47a7bd220cacb467708d9ad857ca3f2458f740f48f066",
+      "signature": "valide",
+      "signatureAlgo": "minisign \"ED\" (Ed25519 sur blake2b-512), keyid 3382c749cc7199e2",
+      "fichierSigneParLaSignature": "IakaCockpit_0.32.1_x64-setup.exe",
+      "temoinNegatifOctetAltere": "invalide",
       "sigPublieIdentiqueAuManifeste": true
     }
   ]
