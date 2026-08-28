@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-28 14:31 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-08-28 21:55 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -8,73 +8,74 @@
 | Champ | Valeur |
 |---|---|
 | Version | v0.32.1 |
-| Branche | feat/L0-trois-canaux-synchrones |
-| Dernier commit | f481ed9 fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus |
-| Arbre | MODIFICATIONS NON COMMITEES |
-| Fichiers (suivis + non ignores) | 1398 |
-| Note | Recit de reprise redige (lot 0 - part 0.b). |
+| Branche | main |
+| Dernier commit | cc3348d fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire |
+| Arbre | propre |
+| Fichiers (suivis + non ignores) | 1399 |
+| Note | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `cc3348d` | 2026-08-28 | fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire |
+| `80adf82` | 2026-08-28 | fix(canal): manifeste v0.32.1 sur des URL publiques — artefacts construits, signes, PAS publies |
+| `5db1240` | 2026-08-28 | fix(canal): le commentaire declarait GitHub prive — c est faux depuis le 2026-08-28 |
+| `4ecc2f5` | 2026-08-28 | chore(journal): entrees de pause du checkpoint de reprise |
+| `0722ad3` | 2026-08-28 | docs(etat-des-lieux): recit de reprise — lot 0 remis au gate, rien pousse (reseau coupe) |
 | `f481ed9` | 2026-08-28 | fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus |
 | `2f1e7b9` | 2026-08-25 | fix(canal): repointe l auto-update sur le NAS — l ancienne iakabox ne repond plus |
 | `8241e14` | 2026-08-23 | docs(backlog): L39 — synchronisation Cockpit / reservoir iakaframe |
 | `3225eac` | 2026-08-23 | feat(teams): Charon, Helm et Feanor rejoignent le Cockpit — aligne sur le reservoir |
 | `c7443ce` | 2026-08-23 | feat(reservoir): lecture du reservoir iakaframe cote Rust (source de verite des teams) |
-| `65ccbf3` | 2026-08-23 | docs(backlog): L38 — lisibilite du terminal (livre, recette OK) |
-| `f607cfb` | 2026-08-23 | fix(terminal): interligne 1.6 -> 1.2 — la valeur avait ete choisie sur un rendu casse |
-| `d041268` | 2026-08-23 | docs(backlog): L37 — persistance de la Table (set de Work) |
-| `9313f11` | 2026-08-23 | fix(terminal): police resolue avant xterm — var(--mono) figeait la grille |
-| `3e28c3b` | 2026-08-23 | fix(terminal): interligne STRICTEMENT proportionnel — la courbe cassait le relatif |
 
 ## Reprise du travail (a completer par Cowork)
 
-> **Le recit complet de cette session vit dans `~/work/iakaframe/specs/etat-des-lieux.md`** : le
-> travail est un lot **portefeuille** qui traverse trois depots, et le Cockpit n'en porte qu'une
-> part. Ce qui suit est ce qui concerne CE depot.
-
-- **Ce qui vient d'etre fait ici** : **un seul commit**, `f481ed9`
-  (`fix(canal): trois endpoints d update ordonnes, une cible morte ne bloque plus`), sur la branche
-  **`feat/L0-trois-canaux-synchrones`**, **non poussee**. C'est la part **0.b (failover de lecture)**
-  du lot 0 « trois canaux synchrones », decide par le decideur le 2026-08-28 : *iakabox, NAS et
-  GitHub synchrones, chacun le secours des autres*.
-- **Contenu du commit** : `src-tauri/tauri.conf.json:42` — les `endpoints` de l'updater passent de
-  **une** URL a **trois, ordonnees** (`NAS -> GitHub -> iakabox`) ; l'updater Tauri les essaie dans
-  l'ordre, donc une cible morte ne bloque plus la mise a jour. Et
-  `src/app/updateEndpoints.ts:16` — **fichier que le mandat n'avait pas prevu** : c'est un **miroir
-  front** de la liste, et `src/__tests__/updateEndpoints.test.ts` exige l'egalite **exacte** des deux
-  ; ne pas le toucher aurait mis le depot au rouge. **Aucune ligne Rust touchee.**
-- **L'ordre des endpoints n'etait PAS libre** : `scripts/__tests__/forge-host-parity.test.mjs` exige
-  que l'hote de `endpoints[0]` soit celui de `publish-update.mjs` **et** de `updater/latest.json`.
-  Mettre GitHub en tete aurait oblige a toucher ces deux fichiers — **hors mandat**. D'ou le NAS en
-  tete.
-- **Mesure faite** : front **806 / 806** vert (84 fichiers, `npx vitest run`). **Rust non execute**
-  et **aucun chiffre `cargo` rapporte** — aucune ligne Rust n'a ete modifiee.
-- **Rappel de l'avant-lot** : `main` est a `2f1e7b9`, et il a ete **rattrape sur GitHub** au debut de
-  la session — il y accusait **15 commits de retard**, pousses en avance rapide et verifies en direct.
-- **En cours / a reprendre** : **le gate 🏹 Legolas n'est pas passe** sur ce lot (remise Gimli, pas
-  d'auto-validation). Rien n'est pousse : **tout le TCP sortant du poste est coupe**, loopback compris.
-- **Prochaine etape concrete** : gate Legolas hors ligne, puis — au retour d'un canal — poussee de la
-  branche et **recette reelle de la bascule** : rendre le premier endpoint injoignable et verifier que
-  l'app voit **quand meme** la mise a jour (**CA-11**).
+- **Ce qui vient d'etre fait** : l'auto-update de cette app etait **entierement casse** et personne
+  ne le savait — le manifeste servi par `main` annoncait des artefacts sur une release **sans asset** (le NAS ne portait aucune release). Mesure au reveil :
+  ****0/1** telechargeable**. L'app **voyait** une mise a jour et **ne pouvait la telecharger sur
+  aucune plateforme**. Repare, mesure, fusionne dans `main` et pousse sur le NAS et sur GitHub.
+- **Architecture retenue** : `FORGEJO_BASE` (ou l'on **LIT** le manifeste : NAS ->
+  `raw.githubusercontent.com` -> iakabox en dernier secours) est desormais **distinct** de
+  `ARTEFACT_BASE` (ou l'on **TELECHARGE** : les releases GitHub, hote **public**). Un updater Tauri
+  ne sait pas s'authentifier : toute URL de LAN ou de depot prive est un **404 garanti** pour
+  l'utilisateur final. Les trois depots iaka sont passes **publics** le 2026-08-28 pour cette raison.
+- **Garde de parite reecrite** (`scripts/__tests__/forge-host-parity.test.mjs`), invariant
+  **remplace** et non affaibli : **I1** un seul hote designe · **I2** cet hote est **PUBLIC**,
+  propriete testee (ni RFC1918, ni loopback, ni `.local`), jamais une liste en dur · **I3** l'hote
+  mort `192.168.2.11` absent partout · **I4** **aucune plateforme annoncee sans mesure**, la preuve
+  etant `updater/mesures.json`, **fichier versionne** · **I5** au moins 2 hotes de lecture distincts.
+- **Etat final MESURE en anonyme sur ce que `main` sert** : **`TELECHARGEABLE : 2/2 — le manifeste tient sa promesse.`**.
+- **L'artefact de la version annoncee n'existait NULLE PART** : il a fallu **construire** v0.32.1
+  (`tauri build --bundles app`, plus `--target x86_64-apple-darwin` pour l'Intel), le **signer**, puis
+  creer la release GitHub. Signatures verifiees sur **l'octet retelecharge**, par deux instruments
+  independants. **Seules 2 plateformes darwin sont annoncees** : pas de build Linux/Windows depuis un
+  Mac, et une entree sans artefact est **interdite** par la garde I4. Le `darwin-x86_64` est **croise,
+  non recette sur materiel Intel** — gate humain declare, non couvert.
+- **Le cliquet a fonctionne en reel, et sa limite s'est vue le meme jour** : a la publication, la
+  suite est restee **VERTE** — I4 ne mesure pas le reseau, il compare le manifeste a `mesures.json`,
+  fichier versionne. Le rouge n'est apparu **qu'apres remesure**, en dictant l'ordre exact de sa
+  propre levee : *« hors-couverture declare alors que l'artefact repond 200 — retirer l'entree »*.
+  Le registre `HORS_COUVERTURE` reste en place, **vide mais arme** (6 reinscriptions tentees, 6
+  rejetees) : on ne peut pas y rentrer en silence.
+- **Prochaine etape** : lot successeur des residus de garde nommes au gate — **R1** cliquet passif
+  sans borne de fraicheur, **R4** `estPrive` manque le nom d'hote nu et casse sur l'IPv6 litteral,
+  **R5** signature globale minisign non controlee, **R6** `I4bis` *vacuous* quand le registre est vide.
 - **Pieges connus** :
-  1. ⚠️ **La 3e entree (GitHub) est aujourd'hui decorative.** Les depots GitHub sont **prives** :
-     `raw.githubusercontent.com` repondra **404** a l'updater Tauri, qui ne sait pas s'authentifier.
-     **CA-11 n'est donc pas atteignable par la voie GitHub** tant que le depot reste prive — a
-     trancher (rendre public, ou designer un autre 3e canal). *Deduction documentaire, **non verifiee
-     en direct** : le reseau etait coupe.*
-  2. **Ne pas toucher `updater/latest.json` ni `scripts/publish-update.mjs`** en croyant completer le
-     lot : ils sont **produits** par la chaine de publication et etaient **hors mandat**. Le meme trou
-     existe, plus grave, cote `iakaFrameGUI` (4 URL de telechargement sur l'iakabox morte).
-  3. **Le miroir front est contraint** : toute modification de la liste d'endpoints doit etre faite
-     **dans les deux fichiers**, sinon `updateEndpoints.test.ts` rougit.
+  1. **`release.yml` est `disabled_manually` depuis le 2026-08-28, et doit le rester** tant qu'aucun
+     secret de signature n'est pose (`gh secret list -R iakasju/IakaCockpit` rend **vide**, la ou
+     iakaFrameGUI a le sien). Le workflow se declenche `on: push: tags: v*` : le rearmer expose a un
+     build non signe ou en echec au prochain tag. **Desarmer AVANT de pousser un tag.**
+  2. La release `v0.31.2` ne porte **aucun `.sig`** — mais la cause n'est pas l'absence de secrets :
+     `createUpdaterArtifacts` a ete introduit **apres** ce tag.
+  3. Les tags `v0.32.0` et `v0.32.1` etaient **deja pousses sur le NAS** avant de l'etre sur GitHub.
+  4. **Un `200` ne suffit pas** : seul un manifeste **au contrat** compte comme servant.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-28 21:55 | pause | v0.32.1 | main | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |
 | 2026-08-28 14:31 | pause | v0.32.1 | feat/L0-trois-canaux-synchrones | Recit de reprise redige (lot 0 - part 0.b). |
 | 2026-08-28 14:29 | pause | v0.32.1 | feat/L0-trois-canaux-synchrones | Lot 0 (0.b failover de lecture) : 3 endpoints ordonnes + miroir front. Branche feat/L0-trois-canaux-synchrones, non poussee (reseau coupe). |
 | 2026-08-23 11:21 | pause | v0.32.1 | main | checkpoint : cadrage L36 (backend distant / mode serveur) depose, en attente d arbitrage AR-1..AR-8 |

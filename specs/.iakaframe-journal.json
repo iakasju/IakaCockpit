@@ -138,5 +138,15 @@
     "dirty": true,
     "files": 1398,
     "note": "Recit de reprise redige (lot 0 - part 0.b)."
+  },
+  {
+    "date": "2026-08-28 21:55",
+    "reason": "pause",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "cc3348d fix(canal): le cliquet a saute — release v0.32.1 publiee, hors-couverture retire",
+    "dirty": false,
+    "files": 1399,
+    "note": "Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable"
   }
 ]
