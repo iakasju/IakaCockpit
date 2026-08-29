@@ -267,14 +267,16 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
       .map((l) => l.trim())
       .filter((l) => l.length > 0 && !l.startsWith("#"));
     // CLIQUET DE COMPLÉTUDE — motivé, daté, et il ne descend que sur décision. Au 2026-08-29 le
-    // registre porte DOUZE entrées ; ajouter un fichier partagé le fait monter, et ce nombre monte
-    // avec lui. Le baisser signifie qu'un fichier CESSE d'être partagé : ça se décide et ça se
-    // justifie dans le commit, ça ne se constate pas.
+    // registre porte DIX-SEPT entrées : les douze de L41, plus les CINQ de L42 (la vitrine —
+    // `fixtures/vitrine-assets.json`, `scripts/lib/vitrine.mjs`, `scripts/vitrine.mjs`,
+    // `scripts/vitrine-en-ligne.mjs`, `scripts/__tests__/vitrine.test.mjs`). Ajouter un fichier
+    // partagé le fait monter, et ce nombre monte avec lui. Le baisser signifie qu'un fichier CESSE
+    // d'être partagé : ça se décide et ça se justifie dans le commit, ça ne se constate pas.
     expect(
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(12);
+    ).toBeGreaterThanOrEqual(17);
 
     const derives = [];
     for (const ligne of registre) {
