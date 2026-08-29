@@ -218,6 +218,52 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
+- [ ] **L43** — **Contrefactuel du vol de `latest` : la branche `--latest=false` est INERTE**
+      *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel NON fait, suspendu.)*
+      Instruction : `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` ; procédure du
+      décideur : `…/contrefactuel-ca5-procedure-decideur.md`.
+      **FAIT — prose rectifiée** : le cartouche `release.yml:130-146` et le bloc `⚠️ REPUBLIER…` de
+      ce `CLAUDE.md` affirmaient deux choses **fausses**, corrigées **en les datant**, pas en les
+      effaçant. (i) « Republier un tag ancien vole le `latest` » : FAUX au SHA épinglé — lu dans
+      `tauri-action@84b9d35b`, `getOrCreateRelease` renvoie une release **existante telle quelle**,
+      sans `updateRelease` ; **le vol vient de la CRÉATION** (`createRelease` sans `make_latest`,
+      défaut `true`). (ii) « Le job `latest` est ce qui l'en empêche » : FAUX aussi.
+      **FAIT — répétition (V-D), dépôt privé `iakasju/latest-contrefactuel`, conservé (AR-4)** :
+      topologie fabriquée sur trois commits distincts (`v0.10.0` plus haut semver / `created_at` le
+      plus ancien · `v0.9.0` · `v0.2.0` le plus récent · tag `archive/feat/x`). **Mesuré** :
+      `gh release create v0.2.0` sans `--latest` → `releases/latest` passe de `v0.10.0` à `v0.2.0`
+      (**le vol est réel**) ; run `33277643229`, `plus haut semver: v0.10.0` (tri `sort -V` + filtre
+      corrects sur le cas de bord `0.9` vs `0.10`), `DECISION : v0.2.0 n'est PAS le plus haut` →
+      `--latest=false` **accepté**, et `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`.
+      **DÉCOUVERTE MAJEURE** : `make_latest=false` est un **NO-OP** sur `GET /releases/latest`.
+      Vérifié **quatre fois** — via `gh release edit --latest=false` sur la release au `created_at`
+      le plus **ancien** et sur celle au plus **récent**, et via un `PATCH` REST **brut** hors `gh`.
+      Ni repli par date, ni repli par semver : **aucun repli**. La branche `--latest=false` du job
+      **ne rend rien**. En revanche `gh release edit <PLUS_HAUT> --latest` **fonctionne en < 3 s** :
+      la procédure de restauration est **validée par la mesure**.
+      **FAIT — transport de preuve (CA-5.8)** : le banc télécharge `release.yml` d'`IakaCockpit@main`
+      et compare le bloc `latest:` octet à octet (`sha256`
+      `3547f66746fae90721879ad0115cb84764ff5a2da5c07fd251b75c2634457173`). **Contrefactuel joué** :
+      un octet muté (`publie`→`Publie`) → rouge **nommé** avec le `diff` et les deux empreintes
+      (run `33278026605`) ; **révocation par `git revert`**, `sha256` revenu à l'origine et run vert
+      (`33278079380`). Le banc n'est pas décoratif.
+      **NON FAIT — AR-2 tombe, faute mesurée** : les deux `release.yml` **ne sont PAS byte-identiques**
+      (`278a3f52…` Cockpit vs `9f020e32…` GUI ; deux écarts : dépendances Linux ligne 72 —
+      `libasound2-dev cmake pkg-config` en plus côté Cockpit — et le commentaire des secrets minisign
+      lignes 96-99). AR-2 prévoyait ce cas : **(b) s'impose**, on n'inscrit rien et on **ne les aligne
+      pas en passant**. Le plancher de convergence **reste à 17** (registre à 18 entrées, inchangé).
+      Le **bloc `latest:` (147-199), lui, EST byte-identique** entre les deux dépôts
+      (`40d93359…`) — coïncidence utile mais **non gardée**.
+      **NON FAIT — contrefactuel réel (V-C) : SUSPENDU.** AR-3 tranchait « V-D puis V-C » avec une
+      clause d'arrêt ; la répétition l'a déclenchée. La fenêtre de vol n'est **pas** de quelques
+      minutes refermées par le job : elle dure **jusqu'au geste manuel du décideur**. Séquence
+      exacte, contrôles et restauration écrits § 3-4 de la procédure ; **question tranchée par le
+      décideur** au § 5 : (α) lancer V-C · (β) clore en partiellement prouvé, daté · (γ) re-cadrer
+      la garde d'abord *(recommandation de l'exécution)*.
+      **HORS PÉRIMÈTRE, rappelé** : la dette de canal (NAS mort + `publish-update.mjs:418` qui ne
+      pousse que vers `origin`), le bump du GUI et d'`iakaframe`, les porteurs de version non gardés,
+      les cinq successeurs de L42.
+
 - [ ] **L42** — **Installer depuis rien : la vitrine dit ce que l'étagère porte**
       → **instruction (copie UNIQUE, AR-5 = (b))** :
       `/Users/sjupin/work/iakaframe/specs/instructions/installer-depuis-rien.md`
