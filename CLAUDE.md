@@ -248,6 +248,36 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (`fixtures/vitrine-locale.json`) et ne touche **ni la matrice du CI, ni le bundler** ; le
       **cliquet auto-destructeur** E-5 de la face en ligne rougira dès que les `.dmg` réapparaîtront,
       et c'est ce rouge qui commandera de retirer la déclaration.
+      **➜ CE ROUGE A EU LIEU, ET IL A ÉTÉ SUIVI** *(2026-08-29, commit de lot dédié — ⚒️ Gimli,
+      remis au gate 🏹 Legolas, non auto-validé)*. Le décideur a poussé le tag `v0.32.2`
+      lui-même (les actes de publication restent refusés aux agents) : le run **`33273513846`**
+      — **`event: push`** sur `v0.32.2`, donc `SEL='toutes'` — a rendu **six jobs verts**
+      (`prepare`, `build` ×4 dont `macos-arm64` et `macos-x64`, `latest`). Les deux `.dmg` sont
+      revenus, et **E-5 a rougi sur les deux entrées d'absence devenues fausses**. Elles ont été
+      retirées, `README.md` régénéré par `node scripts/vitrine.mjs --write` : `vitrine:en-ligne`
+      passe de **2 écarts à exit 0**, et « Tous les systèmes sont couverts » redevient un
+      **constat mesuré**. **Mesuré avant le retrait**, en anonyme : les deux `.dmg` sont assets de
+      `v0.32.2` **et téléchargeables** (HTTP 200, octets complets, `hdiutil verify` → checksum
+      VALID). **Contrefactuel rejoué** : redéclarer une absence fausse refait rougir E-5 nommément
+      (`exit 1`), révocation prouvée au `sha256` de `fixtures/vitrine-locale.json`.
+      **Ce que ce run prouve, et ce qu'il ne prouve PAS — la nuance est le point :**
+      **CA-12 est prouvé** (absence déclarée puis levée, contrefactuel rouge — c'est exactement sa
+      *Vérif*). **CA-13 est prouvé** : `latest.json` concurrent = **0** sur `v0.32.2` alors que
+      **7 `.sig`** sont présents — donc `tauri-action` **avait** de quoi poser son manifeste et ne
+      l'a pas fait ; ce n'est pas le faux vert du profil v0.31.2 (où l'absence de signatures aurait
+      suffi à l'expliquer). **CA-5 n'est PAS prouvé**, et l'annoncer prouvé serait faux : sa *Vérif*
+      exige de **republier un tag ANTÉRIEUR** en `workflow_dispatch` puis de constater le `latest`
+      **inchangé**. Ce run publie le **plus haut** tag : il exerce la branche `--latest`, jamais la
+      branche `--latest=false`. Ce qui est acquis est **E-1 nominal** (`latest` = plus haut tag,
+      mesuré en anonyme) ; le contrefactuel du vol de `latest` reste **dû**.
+      **Constats du lot, NON traités (ils appartiennent au décideur)** : (a) `updater/latest.json`
+      est resté sur **0.32.1** ; les artefacts de `v0.32.2` existent désormais, mais la publication
+      du manifeste passe par une release Forgejo sur le NAS `192.168.1.139` (**code 000**) ;
+      (b) même NAS revenu, `scripts/publish-update.mjs:418` fait `git push origin HEAD` et **rien
+      d'autre** — or l'endpoint que les clients atteignent réellement est le **second** de la liste
+      (`raw.githubusercontent.com/…/main/updater/latest.json`, le premier étant le NAS mort), et
+      **aucun script ne pousse vers `github`** ; le message « la version est visible des clients »
+      est donc, en l'état, une promesse que le script ne tient pas.
       **NON FAIT — actes de publication, refusés aux agents** : l'étape 7 (republier, re-mesurer)
       et le contrefactuel **CA-5** (republier délibérément un tag ancien pour prouver que le
       `latest` n'est plus volé) appartiennent au décideur. **V3 est donc câblé et lisible, mais non
