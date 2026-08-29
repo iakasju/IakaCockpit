@@ -188,5 +188,15 @@
     "dirty": false,
     "files": 1419,
     "note": "Lot L42 installer depuis rien livre : la vitrine ne promet plus ce qu elle n a pas. NAS injoignable, push GitHub seul."
+  },
+  {
+    "date": "2026-08-29 23:01",
+    "reason": "version",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "df35940 docs(backlog): le rouge d'E-5 a eu lieu — et CA-5 n'est PAS prouve",
+    "dirty": false,
+    "files": 1419,
+    "note": "v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee."
   }
 ]

@@ -1,111 +1,108 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-29 21:34 (motif: manual).
+> Genere par iakaframe (CLI) le 2026-08-29 23:01 (motif: version).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.32.1 |
+| Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | 14b8b96 fix(vitrine): le temoin de la promesse en PROSE mesure enfin ce qu'il nomme |
+| Dernier commit | df35940 docs(backlog): le rouge d'E-5 a eu lieu — et CA-5 n'est PAS prouve |
 | Arbre | propre |
 | Fichiers (suivis + non ignores) | 1419 |
-| Note | Lot L42 installer depuis rien livre : la vitrine ne promet plus ce qu elle n a pas. NAS injoignable, push GitHub seul. |
+| Note | v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `df35940` | 2026-08-29 | docs(backlog): le rouge d'E-5 a eu lieu — et CA-5 n'est PAS prouve |
+| `6e72c22` | 2026-08-29 | fix(vitrine): l'absence macOS ne survit pas a sa raison d'etre — E-5 obeie |
+| `eceb498` | 2026-08-29 | chore(vitrine): le README DERIVE suit le porteur — v0.32.2, absents macOS conserves |
+| `e8b3e91` | 2026-08-29 | fix(version): package-lock.json portait 0.31.2 — un porteur que rien ne gardait |
+| `6b84d59` | 2026-08-29 | chore(version): 0.32.1 -> 0.32.2, les quatre porteurs de code alignes |
+| `eae19f9` | 2026-08-29 | chore(iakaframe): checkpoint — lot L42 installer depuis rien livre |
 | `14b8b96` | 2026-08-29 | fix(vitrine): le temoin de la promesse en PROSE mesure enfin ce qu'il nomme |
 | `6b0aea6` | 2026-08-29 | docs(claude): « promis » se lit hors bloc d'absence, pas « ligne de tableau » |
 | `04ceb0e` | 2026-08-29 | chore(quality): le code 3 rappelle un STATUT, il ne devine plus une cause |
 | `ea1cda6` | 2026-08-29 | fix(vitrine): promis, c'est promis PARTOUT — pas seulement dans un tableau |
-| `19e04f1` | 2026-08-29 | chore(quality): la face en ligne de la vitrine, jouee HORS GATE et sans pouvoir le bloquer |
-| `fe61e10` | 2026-08-29 | docs: la regle du latest, les deux faces de la vitrine, et L42 au backlog |
-| `715cfcb` | 2026-08-29 | ci(release): le latest est DESIGNE, plus subi — sans toucher au SHA epingle |
-| `9ddb936` | 2026-08-29 | chore(convergence): cinq fichiers de vitrine au registre, plancher 12 -> 17 |
-| `f107afc` | 2026-08-29 | feat(vitrine): le README rejoint checkVersionAlignment, avec un cliquet d'omission |
-| `feedfd3` | 2026-08-29 | feat(vitrine): face EN LIGNE du cliquet — anonyme, hors gate, SKIP explicite |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : le lot **L42 « Installer depuis rien »** est livre, gate **PASS au
-  troisieme passage**, fusionne dans `main` et pousse. Son critere n'etait pas technique : **ce qu'un
-  inconnu obtient en suivant ce qu'on lui montre**. Il ne construit aucun installeur — **il rend vraie
-  la page qu'on montre**.
-- **Quatre defauts, pas trois** (le 4e trouve au cadrage) : **H-1** les 3 README annoncaient une
-  version perimee (jusqu'a **dix-neuf mineures** d'ecart pour la CLI) · **H-2** GitHub ne classe pas
-  par numero mais par un drapeau **`make_latest`** que personne n'avait jamais touche — republier une
-  version ancienne **vole** le latest, et c'est ce qui s'etait passe · **H-3** la ligne de publication
-  d'`iakaframe` s'etait tue depuis le 2026-08-04 · **H-4** la vitrine promettait des fichiers
-  **inexistants** : la release « Latest » du Cockpit ne porte **aucun `.dmg`** alors que le README en
-  promettait deux. **Un visiteur macOS repartait les mains vides.**
-- **La cause de H-4, MESUREE et non intuitee** : `v0.32.1` a ete publiee par **deux
-  `workflow_dispatch` successifs** (`platforms: windows` puis `platforms: linux`) — **aucun ne
-  selectionnait macOS**. Le dernier run a matrice complete (`v0.31.2`) avait produit les deux `.dmg`
-  sans difficulte. **Ce n'est pas un echec de build : l'artefact n'a jamais ete demande.**
-- **Trois gates, deux FAIL, et le second est le plus instructif de la journee** : le lot qui supprime
-  les gardes muettes contenait **un temoin vide** — un test nomme *« une promesse en PROSE est VUE »*
-  qui **ne pouvait pas rougir**, parce qu'il visait un artefact **deja promis par le tableau**. Il
-  aurait verdi meme si la fonction ignorait entierement la prose. Repare **et verrouille** : la
-  premiere assertion exige desormais que le nom ne soit **pas** deja promis avant la prose. Le temoin
-  ne peut plus redevenir creux en silence.
-- **Ce qu'un inconnu obtient aujourd'hui** : **iakaFrameGUI** installable **de bout en bout sur les
-  trois OS** (7 fichiers promis, 7 presents) · **IakaCockpit** Windows et Linux, l'absence macOS
-  **declaree, datee et levable** au lieu d'etre promise · **la CLI** installable par
-  `git clone && npm install -g ./cli` — **voie eprouvee deux fois**, dont sur un clone reel du depot
-  public — avec ses deux impasses (`.tgz` et « Source code », toutes deux dependantes d'une release
-  **absente**) nommees comme telles.
-- **Specifique a ce depot** : il porte les deux entrees **« Non fourni pour v0.32.1 »** (macOS ARM et
-  Intel), avec motif mesure, date et condition de levee — leve des que la matrice macOS sera relancee.
-  Il porte aussi le registre de convergence (**17 entrees**, plancher **17**) et le generateur de
-  manifeste qui fait autorite.
-- **Etat des canaux — DETTE A RATTRAPER** : le **NAS `192.168.1.139` est tombe pendant la fusion**
-  (timeout 75 s, code 000). **`main` est pousse sur GitHub, en avance sur `origin`.** Rien n'est
-  perdu ; le verbe livre la veille est fait pour ca : **`iakaframe canaux --rattraper`** au retour du
-  NAS, **en avance rapide seulement**.
-- **Prochaine etape concrete** : **l'etape 5.1 de L40** — bump + tag + run CI. C'est **la seule preuve
-  manquante de toute la chaine** : on sait par lecture du bundle execute que `includeUpdaterJson: false`
-  supprimera le manifeste concurrent, **personne ne l'a vu**. Elle clot aussi CA-12 et la moitie de
-  CA-13 de L40. ⚠️ **Pour `iakaframe`, ce serait la PREMIERE execution de son workflow** : mesure
-  `actions/runs` -> **`total_count: 0`**, et le commit qui ajoute le workflow **n'est meme pas un
-  ancetre du tag `v0.20.4`** (douze jours d'ecart). **Le premier essai sera un essai.**
-- **Cinq successeurs inscrits, aucun bloquant** :
-  1. **F-2** — une promesse n'est mesurable qu'**entre backticks**. Un lien markdown dont l'URL porte
-     le nom, un `curl -LO` en bloc de code, une prose nue : **verts**. Pre-existant, aucun README
-     actuel n'en contient — *« pas un mensonge present, un piege futur »*. Mais le commentaire du code
-     promet plus que la mesure.
-  2. **F-3** — la **face en ligne n'est exercee par aucun test**. Desarmee **symetriquement dans les
-     deux depots**, tout reste vert : l'empreinte de convergence prouve l'**alteration**, pas le
-     **comportement**.
-  3. **Couverture asymetrique** — sous une meme mutation, le Cockpit rougit sur **3** tests et le GUI
-     sur **1**, parce que `absents: []` cote GUI. **Le fichier est convergent, sa couverture ne l'est
-     pas.**
-  4. **`D3-OBSERVABLE-ENREGISTREMENT`** — une phrase dit « avant que le workflow n'existe » la ou la
-     mesure dit « son enregistrement ».
-  5. **`CI-RELEASE-AUCUN-EPINGLAGE`** — le workflow d'`iakaframe` **n'epingle rien** (`checkout@v4`,
-     `setup-node@v4`, `action-gh-release@v2`, trois **tags flottants**). C'est le depot dont le CI n'a
-     jamais tourne, et le seul a ne pas avoir l'acquis de L41.
+- **Ce qui vient d'etre fait — l'etape 5.1 a enfin eu lieu.** Elle etait due depuis deux jours et
+  c'etait **la seule preuve manquante de toute la chaine**. Le decideur a pousse le tag `v0.32.2` ;
+  le run **`33273513846`** (`event: push`) a reussi sur **six jobs**, **matrice complete**. Mesure de
+  la release : `assets 16 · sig 7 · latest.json 0 · dmg 2` · `releases/latest -> v0.32.2`.
+- **La matrice complete est la reparation de H-4.** Les deux `workflow_dispatch` qui avaient garni
+  `v0.32.1` ne selectionnaient que `windows` puis `linux` — **aucun ne demandait macOS**, et c'est
+  pourquoi la release « Latest » ne portait aucun `.dmg`. Sur un **push de tag**,
+  `github.event.inputs.platforms` est vide -> `SEL='toutes'` -> les 4 plateformes. **Ne jamais publier
+  par `workflow_dispatch` sans choisir `toutes` a la main.**
+- **Ce qui est PROUVE, et ce qui ne l'est pas — la nuance a couté une correction en seance** :
+  - **CA-12 : PROUVE**, mais **par le CONTREFACTUEL** (declarer absente une plateforme reellement
+    presente doit rougir), **pas** par le couple `sig`/`latest.json`, qui n'a aucun rapport avec lui.
+  - **CA-13 : PROUVE ENTIER.** Le critere n'a **qu'une** clause ; parler de « premiere moitie » n'a
+    pas de sens. Renforce par une mesure faite au gate : **`v0.32.1` portait encore le `latest.json`
+    concurrent** (`assets 15 · sig 7 · latest.json 1`), donc le correctif a atterri **apres** elle et
+    **`v0.32.2` est bien la premiere release du workflow corrige**. Son `latest.json = 0` **avec**
+    `sig = 7` n'est **pas** explicable par « rien a televerser » — le profil `v0.31.2`
+    (`sig 0 / latest.json 0`) l'aurait ete.
+  - **CA-5 : NON PROUVE.** Le run publie le **plus haut** tag, donc le job a pris la branche
+    `--latest` ; la branche **`--latest=false`**, *celle qui rend le vol du `latest` mecaniquement
+    impossible*, **n'a jamais ete executee**. Acquis : **E-1 nominal** seulement. L'instruction le dit
+    elle-meme : « sans ce critere, V3 n'est pas prouve, il est **espere** ».
+- **L'absence macOS est levee, et c'est le cliquet qui l'a commande.** Ecrit la veille, declenche le
+  jour meme : `E-5 : « …_aarch64.dmg » est declare ABSENT … mais il EST present sur v0.32.2. La
+  declaration a survecu a sa raison d'etre`. **Une exception qui ne survit pas a sa raison d'etre.**
+  Retrait fonde sur mesure, pas sur l'API seule : les deux `.dmg` ont ete **telecharges** en anonyme,
+  tailles egales a l'octet, `hdiutil verify` -> **checksum VALID**. Un bloc `//absents` conserve la
+  **memoire** du retrait (date, run, motif, conditions de reouverture) — *« sans lui, une liste vide se
+  lit comme un champ oublie »* — et il est **strictement inerte**, prouve en supprimant la vraie cle.
+- **Le cliquet discrimine dans les DEUX sens**, mesure au gate : une absence **fausse** rougit ; une
+  absence **vraie** (version ramenee a 0.32.1, sans `.dmg`) fait **taire** les E-3 et **E-5 reste
+  muet**. **L'honnetete n'est pas punie ; le silence l'est.**
+- **Les `.dmg` viennent enfin du CI.** Constat du gate : les 4 assets macOS de `v0.32.1` ne venaient
+  d'**aucun run** — ils avaient ete poses **a la main**. Cette etape manuelle disparait.
+- **Un porteur de version avait derive sans que rien ne le voie** : `package-lock.json` portait
+  **0.31.2** — trois bumps de derive silencieuse. Contrefactuels : `package.json`, `tauri.conf.json`,
+  `Cargo.toml`, `README.md` **rougissent en se nommant** ; **`Cargo.lock` et `package-lock.json`
+  restent VERTS**. Et les deux verts ne le sont pas pour la meme raison : `Cargo.lock` **s'auto-repare
+  en silence** au moindre `cargo` (risque = arbre sali sans un mot), `package-lock.json` **pourrit**
+  et **`npm ci` ne le voit pas non plus**. Realigne a la main ; **la garde n'a pas ete elargie** —
+  arbitrage reserve a un autre lot.
+- **Prochaine etape concrete** : **le contrefactuel de CA-5**. Il exige de **republier un tag ancien**
+  en `workflow_dispatch` et de constater que le `latest` **ne bouge pas**. ⚠️ C'est exactement le
+  geste que le piege de L41 interdit sans precaution — et cette fois **il y a quelque chose a
+  proteger**, `v0.32.1` et `v0.32.2` portant leurs artefacts. **A cadrer, pas a improviser.**
+- **Dette de canal, a deux etages** :
+  1. **Le NAS `192.168.1.139` est injoignable** (code 000) depuis la fusion de L42. `main` est pousse
+     sur **GitHub seulement**, en avance sur `origin`. Rattrapage : `iakaframe canaux --rattraper`,
+     **avance rapide seulement**.
+  2. **Et meme NAS revenu, ca ne suffira pas.** `publish-update.mjs:418` fait `git push origin HEAD`
+     **et rien d'autre**, alors que `tauri.conf.json:43-45` place le NAS en **premier** endpoint et
+     **`raw.githubusercontent.com` en second** — l'endpoint que les clients atteignent **reellement**.
+     **Rafraichir la vitrine publique de l'updater exige un `git push github main` supplementaire,
+     qu'aucun script n'execute et qu'aucune garde ne nomme.** `updater/latest.json` porte encore
+     `0.32.1` : **aucun client installe ne passera a 0.32.2** tant que ces deux etages ne sont pas
+     traites.
 - **Pieges connus** :
-  1. **GitHub ne classe pas les releases par numero.** Le `latest` suit **`make_latest`** (defaut
-     `true`, reecrit a chaque creation/mise a jour). **Publier une version ancienne vole le latest.**
-     Remede : `gh release edit &lt;tag&gt; --latest`, ou le job conditionne au plus haut semver.
-  2. **Les `.app.tar.gz` ne sont PAS des installeurs macOS** — ce sont des charges d'updater, on ne
-     les double-clique pas. Ce piege a fait compter de faux installeurs **deux fois** dans la journee.
-  3. **Un temoin qui vise un cas deja couvert par ailleurs ne prouve rien.** Verifier qu'il rougit
-     **quand on restaure le defaut**, pas seulement qu'il est vert.
-  4. **Une mutation de gate peut survivre a une interruption d'agent.** Un agent coupe a laisse
-     `npm install -g ./CLI` dans un README. **Muter et revoquer une par une**, en verifiant la
-     revocation immediatement — jamais en fin de campagne.
-  5. **Le quota de l'API GitHub anonyme est de 60/h** et s'epuise vite en recette. Un `SKIP` doit
-     rendre un **code distinct** (ici **3**), jamais 0.
+  1. **Publier par `workflow_dispatch` prive de plateformes** si l'on ne choisit pas `toutes`.
+     Le **push de tag** est la voie sure.
+  2. **`latest.json = 0` ne prouve rien seul.** `tauri-action` ne pose son manifeste **que s'il a des
+     signatures a y mettre** (`upload-version-json.ts` : `if (!signatureFiles[0]) return;`). Un run
+     dont les secrets auraient saute rendrait `sig 0 / latest.json 0` — le profil `v0.31.2` — **sans
+     que le correctif y soit pour rien**. **Toujours lire `sig` en face.**
+  3. **Deux porteurs de version ne sont pas gardes** (`Cargo.lock`, `package-lock.json`), et `npm ci`
+     ne rattrape pas le second.
+  4. **Une levee d'absence se fonde sur un TELECHARGEMENT**, pas sur la presence dans l'API.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-29 23:01 | version | v0.32.2 | main | v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee. |
 | 2026-08-29 21:34 | manual | v0.32.1 | main | Lot L42 installer depuis rien livre : la vitrine ne promet plus ce qu elle n a pas. NAS injoignable, push GitHub seul. |
 | 2026-08-29 10:51 | manual | v0.32.1 | main | Lot L41 gardes tiedes livre : les gardes qui ne pouvaient pas rougir rougissent. Gate PASS au second passage. |
 | 2026-08-29 01:55 | manual | v0.32.1 | main | Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA. |
