@@ -15,22 +15,34 @@ Frontière avec [iakaFrameGUI](https://github.com/iakasju/iakaFrameGUI) : la for
 
 ## Installation
 
-La version scellée courante est **[v0.31.2](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.2)** — voir
+<!-- vitrine:debut:binaires -->
+La version scellée courante est **[v0.32.1](https://github.com/iakasju/IakaCockpit/releases/tag/v0.32.1)** — voir
 [toutes les versions](https://github.com/iakasju/IakaCockpit/releases).
 
 ### Binaires prêts à l'emploi
 
-Tous les systèmes sont couverts. Prenez le fichier de votre plateforme sur la
-[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.31.2) :
+Prenez le fichier de votre plateforme sur la
+[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.32.1) :
 
 | Système | Fichier à télécharger |
 |---|---|
-| **Windows** | `IakaCockpit_0.31.2_x64-setup.exe` (installeur) ou `_x64_en-US.msi` |
-| **macOS Apple Silicon** | `IakaCockpit_0.31.2_aarch64.dmg` |
-| **macOS Intel** | `IakaCockpit_0.31.2_x64.dmg` |
-| **Linux (Debian/Ubuntu)** | `IakaCockpit_0.31.2_amd64.deb` |
-| **Linux (Fedora/RHEL)** | `IakaCockpit-0.31.2-1.x86_64.rpm` |
-| **Linux (portable)** | `IakaCockpit_0.31.2_amd64.AppImage` |
+| **Windows (installeur)** | `IakaCockpit_0.32.1_x64-setup.exe` |
+| **Windows (MSI)** | `IakaCockpit_0.32.1_x64_en-US.msi` |
+| **Linux (Debian/Ubuntu)** | `IakaCockpit_0.32.1_amd64.deb` |
+| **Linux (Fedora/RHEL)** | `IakaCockpit-0.32.1-1.x86_64.rpm` |
+| **Linux (portable)** | `IakaCockpit_0.32.1_amd64.AppImage` |
+
+> **⚠️ Non fourni pour v0.32.1** — les plateformes ci-dessous ne sont **pas** livrées par
+> cette version. L'absence est déclarée, datée et levable ; elle n'est pas un oubli, et
+> rien ci-dessus ne la promet.
+>
+> - **macOS Apple Silicon** (`IakaCockpit_0.32.1_aarch64.dmg`)
+>   — *constaté sur la release v0.32.1, le 2026-08-29.* la matrice macOS n'a pas tourné pour cette version. v0.32.1 a été publiée par **deux déclenchements manuels successifs** — run 33209504569 (`platforms: windows`) puis run 33212446776 (`platforms: linux`) —, aucun des deux ne sélectionnant macOS. Ce n'est donc **pas** un échec de build : le dernier run à matrice complète (31027777984, tag v0.31.2) avait produit les deux `.dmg` sans difficulté. L'artefact n'a jamais été demandé.
+>   **Levée :** une publication de la version courante avec `platforms: toutes`. L'artefact reparaîtra, la face en ligne rougira sur cette entrée devenue fausse, et c'est ce rouge qui commande de la retirer.
+> - **macOS Intel** (`IakaCockpit_0.32.1_x64.dmg`)
+>   — *constaté sur la release v0.32.1, le 2026-08-29.* même cause que la ligne ci-dessus : les deux jobs macOS (`macos-arm64` et `macos-x64`) appartiennent à la même sélection de plateformes, et cette sélection n'a pas été faite pour v0.32.1.
+>   **Levée :** identique — une publication avec `platforms: toutes`.
+<!-- vitrine:fin:binaires -->
 
 > **macOS** — l'application n'est pas signée par un certificat Apple. Au premier lancement,
 > faites **clic droit → Ouvrir** puis confirmez : un double-clic direct serait bloqué.
@@ -44,10 +56,11 @@ Tous les systèmes sont couverts. Prenez le fichier de votre plateforme sur la
 plateforme (Xcode CLT sur macOS, WebView2 + Build Tools sur Windows, `webkit2gtk` et
 `libayatana-appindicator` sur Linux).
 
+<!-- vitrine:debut:sources -->
 ```bash
 # 1. Récupérer l'archive de la version depuis la page des releases
 #    (Assets > Source code), puis la décompresser
-cd IakaCockpit-0.31.2
+cd IakaCockpit-0.32.1
 
 # 2. Installer les dépendances
 npm ci
@@ -58,6 +71,7 @@ npm run tauri dev
 # 4. Ou produire l'exécutable de votre plateforme
 npm run tauri build
 ```
+<!-- vitrine:fin:sources -->
 
 Le binaire est produit dans `src-tauri/target/release/bundle/`.
 
