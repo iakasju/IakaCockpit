@@ -80,7 +80,8 @@ node scripts/mesurer-artefacts.mjs --dry-run        # le document sur STDOUT, sa
 # MESURÉ par `scripts/__tests__/canal-mesure.test.mjs`, qui exécute le script, il n'est pas relu.
 
 # Garde de CONVERGENCE avec l'application jumelle (iakaFrameGUI) — L41, défaut CONV.
-# Neuf fichiers sont byte-identiques entre les deux dépôts ; leur registre d'empreintes vit dans
+# Un jeu de fichiers est byte-identique entre les deux dépôts ; le registre d'empreintes qui en fait
+# la liste — la seule qui fasse foi, aucun compte n'est recopié ailleurs — vit dans
 # `fixtures/convergence.sha256`. La garde a DEUX faces :
 #   — LOCALE, dans `npm run test` (scripts/__tests__/forge-host-parity.test.mjs) : elle recalcule
 #     les empreintes et NOMME le fichier qui a dérivé. Elle attrape l'édition EN PLACE d'une copie.

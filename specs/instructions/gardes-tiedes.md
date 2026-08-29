@@ -546,8 +546,17 @@ l'étape 0 se modifie **dans les deux dépôts au même commit logique**, et l'�
 > aucune ligne du perimetre, des etapes ou des criteres d'acceptation n'est modifiee.
 >
 > Note : la **byte-identite** des deux copies, que le cadrage declarait honnetement **non prouvee**
-> faute de shell, a ete **mesuree** au moment de cette validation : `cmp` -> identiques, 664 lignes,
-> 49 490 octets. CA-22 reste a rejouer par l'execution apres ses propres ecritures.
+> faute de shell, a ete **mesuree** au moment de cette validation, et elle est **vraie** : `cmp` ->
+> identiques. CA-22 reste a rejouer par l'execution apres ses propres ecritures.
+>
+> **Correction (L41, execution).** La premiere redaction de cette note chiffrait la mesure — « 664
+> lignes, 49 490 octets ». Ces chiffres etaient **perimes a l'instant meme ou ils ont ete ecrits** :
+> ils avaient ete releves **avant** l'insertion du bloc d'arbitrages qui les porte, lequel a rallonge
+> le fichier. **Le constat de byte-identite, lui, tenait et tient toujours.** Aucun chiffre de taille
+> n'est re-inscrit ici : une mesure qui se cite elle-meme dans le fichier qu'elle mesure ne peut pas
+> etre exacte — l'ecrire la fausse. La grandeur qui fait foi est l'**empreinte** portee par
+> `fixtures/convergence.sha256`, hors de ce fichier, et re-verifiee a chaque gate par la face locale
+> de la garde de convergence.
 
 > **Gandalf propose, le décideur tranche.** Aucune de ces lignes n'est décidée. Si l'exécution
 > rencontre un cas qu'un arbitrage ne couvre pas, elle **s'arrête et remonte** — elle ne tranche pas
