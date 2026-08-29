@@ -112,6 +112,31 @@ IAKAGRAPH_ROOT=~/work/iakagraph TEAMS="lotr avengers starfleet" bash scripts/syn
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
+# --- L42 — LA VITRINE ------------------------------------------------------------------------------
+# La section « Installation » du README est GENEREE entre marqueurs (`<!-- vitrine:debut:<zone> -->`) :
+# elle ne s'edite plus a la main. La version annoncee est DERIVEE de `package.json` (l'autorite), les
+# noms de fichiers de `fixtures/vitrine-assets.json` (table BYTE-IDENTIQUE avec l'app jumelle), et le
+# nom du produit de `productName` (src-tauri/tauri.conf.json) — la source que le BUNDLER emploie
+# lui-meme pour nommer ses artefacts.
+npm run vitrine              # reecrit les zones du README depuis l'autorite
+npm run vitrine:check        # compare sans ecrire (code 1 si derive) — la meme chose que la garde
+npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, point de vue du visiteur
+# Codes de `vitrine:en-ligne` : 0 concorde · 1 ecart(s) · 3 NON MESURE (pas de reseau — JAMAIS un vert).
+#
+# DEUX FACES, ET IL EN FAUT DEUX :
+#   — LOCALE, dans `npm run test` (scripts/__tests__/vitrine.test.mjs) : rejoue le generateur en
+#     memoire et compare au README versionne. Deterministe, hors reseau. Elle ne voit PAS un
+#     changement de convention du bundler : elle compare deux derives de la MEME table.
+#   — EN LIGNE, ci-dessus : la SEULE a confronter la table au monde reel (l'asset existe-t-il ? un
+#     asset installable est-il tu ?). Hors gate parce qu'elle depend d'un tiers.
+#
+# ⚠️ REPUBLIER UN TAG ANCIEN VOLE LE `latest`. GitHub ne classe pas par date ni par numero de
+# version : il obeit au drapeau `make_latest`, de DEFAUT `true`, REECRIT a chaque creation ou mise a
+# jour de release. C'est ainsi que iakaFrameGUI a vu `latest` designer v0.1.6 alors que v0.1.7
+# existait — v0.1.5 et v0.1.6 republiees le 18/08 apres v0.1.7 du 13/08. LE JOB `latest` DU WORKFLOW
+# EST CE QUI L'EN EMPECHE : il pose explicitement `--latest` ou `--latest=false` selon que le tag
+# publie est, ou non, le plus haut semver du depot. Ne pas le retirer, et ne pas chercher a le
+# remplacer par une entree de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
 ```
 
 ---
@@ -171,6 +196,55 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
+- [ ] **L42** — **Installer depuis rien : la vitrine dit ce que l'étagère porte**
+      → **instruction (copie UNIQUE, AR-5 = (b))** :
+      `/Users/sjupin/work/iakaframe/specs/instructions/installer-depuis-rien.md`
+      *(**ce dépôt n'en a PAS de copie**, et c'est délibéré : le défaut vit dans une **convention de
+      portefeuille** appliquée à au moins quatre dépôts, pas dans deux implémentations jumelles ; et
+      le registre de convergence ne connaît que **deux** frères, donc une troisième copie serait la
+      seule **non gardée** — on installerait le défaut qu'on répare. Le chemin absolu ci-dessus est
+      **une étape du lot**, pas une politesse.)*
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-08-29),
+      branche `feat/L42-installer-depuis-rien`. Cadré par 🔵 Gandalf, 6 arbitrages TRANCHÉS.)*
+      **Problème** : les trois dépôts publics annonçaient dans leur README une version périmée, et
+      GitHub présentait comme « Latest » une release qui n'était pas la plus haute. Le défaut de fond
+      n'est pas l'écart de numéro : **la vitrine et l'étagère n'étaient reliées par rien** — le README
+      est de la prose recopiée, la release vient d'un CI, le `latest` est décidé par GitHub, et
+      **aucun des trois ne rougissait** quand ils divergeaient.
+      **Livré** : (V1) section *Installation* **générée** entre marqueurs, version dérivée de
+      `package.json`, noms d'artefacts dérivés de `fixtures/vitrine-assets.json` (table
+      **byte-identique** avec l'app jumelle) ; (V2) **cliquet à deux faces** — locale dans le gate
+      (`scripts/__tests__/vitrine.test.mjs`, hors réseau, déterministe) et en ligne hors gate
+      (`npm run vitrine:en-ligne`, anonyme, **`SKIP` code 3** sans réseau, jamais un vert muet) ;
+      (V3) **maîtrise du `latest`** — job `latest` du workflow, `--latest` / `--latest=false`
+      **conditionné au plus haut semver**, **sans toucher au SHA épinglé** de `tauri-action` ;
+      (V5) **inventaire honnête** — une plateforme non produite est **déclarée manquante** avec
+      motif, date et condition de levée, jamais promise.
+      **Rattachement aux gardes existantes, pas de troisième mécanisme** : le README rejoint `checkVersionAlignment`
+      (`scripts/lib/update-manifest.mjs`), avec un **cliquet d'omission** posé à l'endroit de
+      l'appel (`scripts/publish-update.mjs`) — cette garde-ci n'ayant ni registre de raisons ni
+      cliquet propre, rien n'empêcherait sinon de retirer `readme` de l'appel et de retomber en
+      silence à quatre sources. ⚠️ **Divergence préexistante, dite plutôt que masquée** : le dépôt
+      frère garde ses porteurs de version par un dispositif **plus riche** (`VERSION_CARRIERS` avec
+      raisons, `VERSION_NON_CARRIERS`, cliquet clés lues ≡ clés déclarées). Ce lot ajoute le README
+      **sans** importer ce dispositif — ce serait un autre lot, et le faire en passant le
+      trancherait par accident.
+      **Défaut H-4, le plus dur, et sa cause MESURÉE** : la release `v0.32.1` — celle que
+      GitHub présente comme « Latest » — **ne porte aucun `.dmg`**, alors que le README promettait
+      `IakaCockpit_0.31.2_aarch64.dmg` et `_x64.dmg` sous le titre « Tous les systèmes sont
+      couverts ». **Un visiteur macOS repartait les mains vides.** La cause n'est **pas** un échec de
+      build : `v0.32.1` a été publiée par **deux `workflow_dispatch` successifs** — run
+      `33209504569` (`platforms: windows`) puis run `33212446776` (`platforms: linux`) —, **aucun des
+      deux ne sélectionnant macOS**. Le dernier run à matrice complète (`31027777984`, tag `v0.31.2`)
+      avait produit les deux `.dmg` sans difficulté. **La matrice macOS n'a jamais été demandée pour
+      cette version.** Conformément au périmètre, ce lot **déclare** l'absence
+      (`fixtures/vitrine-locale.json`) et ne touche **ni la matrice du CI, ni le bundler** ; le
+      **cliquet auto-destructeur** E-5 de la face en ligne rougira dès que les `.dmg` réapparaîtront,
+      et c'est ce rouge qui commandera de retirer la déclaration.
+      **NON FAIT — actes de publication, refusés aux agents** : l'étape 7 (republier, re-mesurer)
+      et le contrefactuel **CA-5** (republier délibérément un tag ancien pour prouver que le
+      `latest` n'est plus volé) appartiennent au décideur. **V3 est donc câblé et lisible, mais non
+      prouvé en exécution réelle** — dit tel quel, jamais annoncé comme couvert.
 - [x] **L0** — Bootstrap cross-OS + socle sécurité → `specs/instructions/L0-bootstrap-securite.md`
       *(implémenté, **gate Legolas PASS** — 27/27 tests Rust, front vert ; candidate `v0.1.0-rc`).*
 - [x] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config)
