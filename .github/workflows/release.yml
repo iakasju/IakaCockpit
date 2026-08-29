@@ -126,3 +126,74 @@ jobs:
           # pour remplir le champ `signature` du manifeste.
           includeUpdaterJson: false
           args: ${{ matrix.args }}
+
+  # ┌─ L42 — LE `latest` CESSE D'ETRE SUBI ────────────────────────────────────────────────────────┐
+  # │ MECANISME REEL, verifie sur la doc REST et MESURE le 2026-08-29. GitHub ne classe PAS les     │
+  # │ releases par date de creation ni par numero de version : il obeit au drapeau `make_latest`,   │
+  # │ de DEFAUT `true`, REECRIT A CHAQUE creation ou mise a jour de release. Republier un tag       │
+  # │ ANCIEN VOLE donc le `latest`. C'est exactement ce qui est arrive a iakaFrameGUI : v0.1.7      │
+  # │ publiee le 13/08, puis v0.1.5 et v0.1.6 republiees le 18/08 — et `latest` designait v0.1.6.   │
+  # │                                                                                              │
+  # │ POURQUOI UNE ETAPE SEPAREE, ET SURTOUT PAS UNE ENTREE DE `tauri-action`. Le SHA epingle par   │
+  # │ L41 (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest` — inventaire de    │
+  # │ son `action.yml` fait au cadrage. Le desepingler pour en trouver une reviendrait a defaire    │
+  # │ l'acquis de L41 ; `fixtures/tauri-action-pin.json` et sa garde rougiraient, A RAISON.         │
+  # │                                                                                              │
+  # │ CONDITIONNE AU PLUS HAUT SEMVER, pas au tag qu'on vient de pousser : publier une version      │
+  # │ ancienne pose explicitement `--latest=false` au lieu de laisser le defaut `true` la faire     │
+  # │ gagner. C'est ce qui rend le vol MECANIQUEMENT impossible, la ou la discipline des dates      │
+  # │ n'etait qu'une regle que rien ne portait.                                                     │
+  # └──────────────────────────────────────────────────────────────────────────────────────────────┘
+  latest:
+    needs: build
+    # `always()` : les artefacts sont DEJA televerses quand ce job demarre. Ne pas designer le
+    # `latest` sur une matrice partiellement rouge laisserait le drapeau au defaut `true` — donc
+    # au hasard de l'ordre de publication, c'est-a-dire au defaut qu'on repare.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Designer explicitement le latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          DEPOT: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Le plus haut tag de VERSION du depot. Le filtre `^v[0-9]+\.[0-9]+\.[0-9]+$` n'est pas
+          # cosmetique : iakaFrameGUI porte aussi des tags `archive/feat/*`, et les compter comme
+          # des versions ferait dire n'importe quoi a « le plus haut tag ».
+          PLUS_HAUT=$(gh api "repos/$DEPOT/tags" --paginate --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          echo "tag publie      : $TAG"
+          echo "plus haut semver: $PLUS_HAUT"
+
+          if [ "$TAG" = "$PLUS_HAUT" ]; then
+            DECISION="--latest"
+            echo "DECISION : $TAG EST le plus haut semver -> il devient le latest."
+          else
+            DECISION="--latest=false"
+            echo "DECISION : $TAG n'est PAS le plus haut ($PLUS_HAUT) -> on pose explicitement"
+            echo "           --latest=false. Sans cette ligne, le defaut make_latest=true de"
+            echo "           l'API aurait VOLE le latest a $PLUS_HAUT."
+          fi
+
+          # R6 — si `gh` echoue (droit manquant sur le runner, quota), l'echec NOMME la commande
+          # de rattrapage manuelle. Les artefacts, eux, sont deja en place : rien n'est perdu.
+          if ! gh release edit "$TAG" $DECISION --repo "$DEPOT"; then
+            echo "::error::impossible de designer le latest sur $TAG."
+            echo "::error::RATTRAPAGE MANUEL : gh release edit $PLUS_HAUT --latest --repo $DEPOT"
+            exit 1
+          fi
+
+          # CA-6 — le workflow DIT ce qu'il a fait du latest, y compris quand il a decide de NE PAS
+          # le poser. Un « OK » muet ne se relit pas.
+          EFFECTIF=$(gh api "repos/$DEPOT/releases/latest" --jq '.tag_name')
+          echo "VERIFICATION : latest effectif = $EFFECTIF (attendu : $PLUS_HAUT)"
+          if [ "$EFFECTIF" != "$PLUS_HAUT" ]; then
+            echo "::error::le latest effectif ($EFFECTIF) n'est pas le plus haut semver ($PLUS_HAUT)."
+            echo "::error::RATTRAPAGE MANUEL : gh release edit $PLUS_HAUT --latest --repo $DEPOT"
+            exit 1
+          fi
+          echo "latest maitrise : $PLUS_HAUT"
