@@ -123,6 +123,13 @@ npm run vitrine:check        # compare sans ecrire (code 1 si derive) — la mem
 npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, point de vue du visiteur
 # Codes de `vitrine:en-ligne` : 0 concorde · 1 ecart(s) · 3 NON MESURE (pas de reseau — JAMAIS un vert).
 #
+# PROMIS = NOMME HORS D'UN BLOC D'ABSENCE DECLAREE — pas « ligne de tableau ». Le README promet des
+# qu'il nomme un artefact ailleurs que dans le bloc « ⚠️ Non fourni » : prose, note ou tableau, c'est
+# la meme promesse pour un visiteur. Restreindre la regle au tableau laissait passer une phrase en
+# prose annoncant un `.dmg` inexistant, VERTE sur les deux faces (angle mort mesure puis ferme). Une
+# plateforme qu'on ne livre pas se DECLARE dans `fixtures/vitrine-locale.json` ; elle ne se glisse
+# pas dans un paragraphe.
+#
 # DEUX FACES, ET IL EN FAUT DEUX :
 #   — LOCALE, dans `npm run test` (scripts/__tests__/vitrine.test.mjs) : rejoue le generateur en
 #     memoire et compare au README versionne. Deterministe, hors reseau. Elle ne voit PAS un
