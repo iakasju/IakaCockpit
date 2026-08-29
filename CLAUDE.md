@@ -73,8 +73,22 @@ node scripts/publish-update.mjs vX.Y.Z --pub-date 2026-01-01T00:00:00Z  # date f
 # (signature globale + keyid), et rejoue chaque signature sur un octet altéré (témoin négatif,
 # qui doit rendre `invalide`). Le champ `mesurePar` cite cette commande, et elle se relance :
 node scripts/mesurer-artefacts.mjs                  # mesure et ÉCRIT updater/mesures.json
-node scripts/mesurer-artefacts.mjs --dry-run        # mesure et affiche, sans écrire
+node scripts/mesurer-artefacts.mjs --dry-run        # le document sur STDOUT, sans écrire
 # Deux exécutions consécutives ne diffèrent QUE par `mesureLe` (vérifié au `git diff`).
+# L41 (D-2) — CANAUX SÉPARÉS : tout le journal part sur STDERR, stdout ne porte QUE le document
+# (et seulement en `--dry-run`). `... --dry-run > x.json` produit donc un JSON parsable — c'est
+# MESURÉ par `scripts/__tests__/canal-mesure.test.mjs`, qui exécute le script, il n'est pas relu.
+
+# Garde de CONVERGENCE avec l'application jumelle (iakaFrameGUI) — L41, défaut CONV.
+# Neuf fichiers sont byte-identiques entre les deux dépôts ; leur registre d'empreintes vit dans
+# `fixtures/convergence.sha256`. La garde a DEUX faces :
+#   — LOCALE, dans `npm run test` (scripts/__tests__/forge-host-parity.test.mjs) : elle recalcule
+#     les empreintes et NOMME le fichier qui a dérivé. Elle attrape l'édition EN PLACE d'une copie.
+#   — CROISÉE, ci-dessous : comparaison octet à octet des deux arbres de travail. HORS gate, car
+#     elle dépend du dépôt frère, et SKIP proprement (exit 0) sans lui.
+npm run test:convergence     # IAKA_CONVERGENCE_HOME=<dir> pour un frère explicite (autoritaire)
+# RÈGLE OPÉRATOIRE : tout fichier du registre se modifie DANS LES DEUX DÉPÔTS au même commit
+# logique, puis on régénère les empreintes (commande en tête de fixtures/convergence.sha256).
 
 # Le manifeste porte NEUF clés depuis L40 : les quatre génériques `{os}-{arch}` (inchangées, donc
 # aucun client existant ne change de comportement) et cinq clés d'installeur
@@ -818,6 +832,73 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       publication sont **refusés aux agents** et appartiennent au décideur. Le lot se clôt en
       **« mesuré, non recetté »** ; les deux recettes réelles (Windows MSI, Linux `.deb`) restent
       le **gate humain**.
+- [ ] **L41** — **Gardes tièdes — une garde qui ne peut pas rougir n'est pas une garde**
+      → `specs/instructions/gardes-tiedes.md` (dupliquée **verbatim** dans
+      `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-22).
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-08-29),
+      branche `feat/L41-gardes-tiedes`. Cadré par 🔵 Gandalf, 8 arbitrages TRANCHÉS.)*
+      **Le fil** : ce lot ne corrige pas des bugs, il corrige des **gardes qui ne peuvent pas
+      échouer, ou qui échouent sur la mauvaise chose** — rangées par leur **distance à un
+      mensonge qui touchera l'utilisateur**.
+      **Volet A — les prédicats qui attestaient le faux (zéro garde de distance).** (D)
+      `estPrive` découpait sur `":"` : `"[::1]:3001".split(":")[0]` vaut `"["`, donc ni `127.*`,
+      ni `localhost`, ni `.local` → **public**. `I2` (`.toBe(false)`) ne se taisait pas, elle
+      **certifiait** qu'une boucle locale est atteignable de partout. Réparé en **deux** temps :
+      extraction par `new URL(...).hostname` (crochets IPv6 retirés explicitement) **et**
+      renversement de la charge de la preuve (AR-2 = O3) — `estPublic` doit être **prouvée** par
+      la forme, tout le reste est privé par défaut. La fonction est **extraite** dans
+      `scripts/lib/verifier-mesures.mjs` (pure, testable sur les cas de bord que les fichiers
+      réels ne contiennent pas). **Fait mesuré, contraire à l'attendu du cadrage** : le
+      renversement rend à lui seul le `split` **inoffensif pour le verdict** (`"["` n'a pas de
+      point, donc privé « par accident ») — la mutation CA-2 ne rougissait pas. L'extraction a
+      donc été rendue **observable** là où § 1.4 l'exige : le refus **nomme l'hôte jugé**
+      (`hoteJuge`), et la mutation rougit alors sur `expected '[' to be '::1'`.
+      (C) `mesureLe` n'était contraint que par `if (!mesures?.mesureLe)` — `"2020-01-01"` passait
+      au vert. Borne **relative au manifeste** (AR-1 = O2) : date **parsable** ET
+      `mesureLe ≥ pub_date`. Déterministe, comparée à un **fichier versionné**, jamais calendaire
+      — pas de bombe à retardement dans le gate. Hors-couverture (vieillissement à version
+      constante, `--pub-date` reculée) **écrit dans le code**, avec sa condition de levée.
+      **Volet B — les jonctions non gardées.** (E) `I4bis` était **vacuous** : le registre
+      `HORS_COUVERTURE` est vide, l'itération portait sur zéro entrée. **Mesuré** : supprimer
+      l'appel laissait `54 passed`. Réparé par un **contrefactuel de forme** sur le modèle
+      d'`I4ter` — exception fabriquée dans le test, quatre exigences violées, quatre refus
+      attendus. Le registre versionné **n'est pas peuplé** (il est vide *parce que* 9/9 répondent
+      200 : c'est un résultat, le peupler serait une fausse réparation). Le commentaire qui
+      renvoyait ce défaut au lot successeur est retiré.
+      (CONV — **défaut ajouté au relevé par le cadrage**) la convergence des deux apps n'était
+      gardée par **rien** : les fichiers byte-identiques de L40 l'étaient par un `diff` passé une
+      fois à la main, soit l'option « discipline seule » qu'AR-6 de L40 avait écartée parce
+      qu'« elle est ce qui a déjà échoué ». Registre `fixtures/convergence.sha256` + garde à
+      **deux faces** (AR-5 = O2) : **locale** dans le gate (empreintes, nomme le fichier qui a
+      dérivé), **croisée** hors gate (`npm run test:convergence`, SKIP propre sans le frère).
+      La limite — la face locale ne voit pas une édition **coordonnée** d'un seul côté — est
+      **déclarée dans le fichier de garde**, pas seulement dans un rapport.
+      **Volet C — référentiels mouvants et canaux.** (D-6) CA-14 de L40 comparait **deux sorties
+      entre elles** : il ne prouvait donc pas ce qu'on croyait. La republication à l'identique est
+      désormais prouvée **contre le fichier versionné** — régénérer le manifeste en tirant
+      `notes` et `pub_date` de `updater/latest.json` **lui-même** le reproduit **à l'octet**
+      (AR-4 = O3 : `--notes` reste une entrée, les vraies notes du GUI ne sont pas détruites).
+      (D-5) **la prétention est corrigée, pas le script** (AR-6 = O2) : `test:all` du GUI est
+      **inchangé**, sa limite est écrite **dans le `package.json`**, `test:rust` est exposé, et
+      `cargo test` devient une **ligne de tableau obligatoire** du verdict de gate. Ce qui mentait
+      n'était pas la commande mais **CA-18 de L40** (« les suites complètes »).
+      (D-2) journal de `mesurer-artefacts.mjs` sur **stderr**, document sur stdout — **mesuré**
+      par un test qui **exécute** le script (réseau neutralisé par un `fetch` de substitution),
+      pas par un comptage de `console.log`. (D-3) les deux `console.log` du GUI.
+      **⛔ D-4 GELÉ ET REMONTÉ — l'étape 0.3 a mordu, U1 s'est matérialisée.** Le tag `v0` de
+      `tauri-apps/tauri-action` pointe le commit `84b9d35b5fc46c1e45415bdb6144030364f7ebc5`
+      (= `action-v0.6.2`). L'`action.yml` **à ce SHA** déclare **`includeUpdaterJson`** (défaut
+      `'true'`) et **ne connaît ni `uploadUpdaterJson` ni `uploadUpdaterSignatures`** — ces deux
+      entrées n'existent que sur `dev`, la branche sur laquelle L40 a lu. Le `uploadUpdaterJson:
+      false` des **deux** workflows est donc **ignoré en silence** par l'action qui s'exécute :
+      **le volet G de L40 est inopérant sur ce qui tourne**. Conformément à l'instruction
+      (« s'arrêter et remonter : c'est un défaut de L40, pas de ce lot, et il ne se corrige pas
+      en passant »), **aucune ligne de workflow n'a été touchée** — ni pin, ni cliquet. CA-13,
+      CA-14 et CA-15 sont donc **non couverts, et déclarés tels**. Décision du décideur attendue.
+      **Aucun effet utilisateur, donc aucune recette humaine** : la seule preuve est la mesure —
+      d'où le critère non négociable « toute garde touchée est éprouvée par une mutation qui la
+      fait rougir », chaque mutation portant sur le **programme** (jamais sur l'attendu) et
+      **révoquée** avec preuve.
 - [ ] **(Horizon, non planifié)** **Cible web parallèle (différé)** — UI navigateur servie par un
       **daemon local** réexposant les commandes (FS/git/PTY/SQLite/keychain) en HTTP local via la
       couture `src/api/backend.ts` (transport `fetch()` alternatif à `invoke()`). **Desktop + web
