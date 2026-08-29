@@ -11,22 +11,20 @@
 
   "depot": "iakasju/IakaCockpit",
 
-  "absents": [
-    {
-      "cle": "macos-arm64",
-      "constate_sur": "la release v0.32.1",
-      "depuis": "2026-08-29",
-      "motif_absence": "la matrice macOS n'a pas tourné pour cette version. v0.32.1 a été publiée par **deux déclenchements manuels successifs** — run 33209504569 (`platforms: windows`) puis run 33212446776 (`platforms: linux`) —, aucun des deux ne sélectionnant macOS. Ce n'est donc **pas** un échec de build : le dernier run à matrice complète (31027777984, tag v0.31.2) avait produit les deux `.dmg` sans difficulté. L'artefact n'a jamais été demandé.",
-      "condition_de_levee": "une publication de la version courante avec `platforms: toutes`. L'artefact reparaîtra, la face en ligne rougira sur cette entrée devenue fausse, et c'est ce rouge qui commande de la retirer."
-    },
-    {
-      "cle": "macos-x64",
-      "constate_sur": "la release v0.32.1",
-      "depuis": "2026-08-29",
-      "motif_absence": "même cause que la ligne ci-dessus : les deux jobs macOS (`macos-arm64` et `macos-x64`) appartiennent à la même sélection de plateformes, et cette sélection n'a pas été faite pour v0.32.1.",
-      "condition_de_levee": "identique — une publication avec `platforms: toutes`."
-    }
+  "//absents": [
+    "Liste VIDE, et vide DELIBEREMENT — ce n'est pas un champ oublie. Les deux entrees macOS",
+    "(`macos-arm64`, `macos-x64`), declarees le 2026-08-29 sur la release v0.32.1, ont ete retirees",
+    "le meme jour : le run 33273513846 (push du tag v0.32.2, matrice COMPLETE, six jobs verts) a",
+    "produit les deux `.dmg`, et E-5 — le cliquet auto-destructeur de `vitrine:en-ligne` — a rougi",
+    "sur des declarations devenues fausses. Une absence declaree ne survit pas a sa raison d'etre :",
+    "c'est ce rouge qui a commande le retrait, pas une decision de confort.",
+    "",
+    "Rouvrir cette liste demande une `cle` connue de la table PLUS les quatre champs qu'exige la",
+    "garde locale (`constate_sur`, `depuis`, `motif_absence`, `condition_de_levee`) — et la meme",
+    "E-5 rougira des que l'artefact reparaitra."
   ],
+
+  "absents": [],
 
   "gabarits": {
     "sources": [

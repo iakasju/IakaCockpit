@@ -21,27 +21,18 @@ La version scellée courante est **[v0.32.2](https://github.com/iakasju/IakaCock
 
 ### Binaires prêts à l'emploi
 
-Prenez le fichier de votre plateforme sur la
+Tous les systèmes sont couverts. Prenez le fichier de votre plateforme sur la
 [page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.32.2) :
 
 | Système | Fichier à télécharger |
 |---|---|
 | **Windows (installeur)** | `IakaCockpit_0.32.2_x64-setup.exe` |
 | **Windows (MSI)** | `IakaCockpit_0.32.2_x64_en-US.msi` |
+| **macOS Apple Silicon** | `IakaCockpit_0.32.2_aarch64.dmg` |
+| **macOS Intel** | `IakaCockpit_0.32.2_x64.dmg` |
 | **Linux (Debian/Ubuntu)** | `IakaCockpit_0.32.2_amd64.deb` |
 | **Linux (Fedora/RHEL)** | `IakaCockpit-0.32.2-1.x86_64.rpm` |
 | **Linux (portable)** | `IakaCockpit_0.32.2_amd64.AppImage` |
-
-> **⚠️ Non fourni pour v0.32.2** — les plateformes ci-dessous ne sont **pas** livrées par
-> cette version. L'absence est déclarée, datée et levable ; elle n'est pas un oubli, et
-> rien ci-dessus ne la promet.
->
-> - **macOS Apple Silicon** (`IakaCockpit_0.32.2_aarch64.dmg`)
->   — *constaté sur la release v0.32.1, le 2026-08-29.* la matrice macOS n'a pas tourné pour cette version. v0.32.1 a été publiée par **deux déclenchements manuels successifs** — run 33209504569 (`platforms: windows`) puis run 33212446776 (`platforms: linux`) —, aucun des deux ne sélectionnant macOS. Ce n'est donc **pas** un échec de build : le dernier run à matrice complète (31027777984, tag v0.31.2) avait produit les deux `.dmg` sans difficulté. L'artefact n'a jamais été demandé.
->   **Levée :** une publication de la version courante avec `platforms: toutes`. L'artefact reparaîtra, la face en ligne rougira sur cette entrée devenue fausse, et c'est ce rouge qui commande de la retirer.
-> - **macOS Intel** (`IakaCockpit_0.32.2_x64.dmg`)
->   — *constaté sur la release v0.32.1, le 2026-08-29.* même cause que la ligne ci-dessus : les deux jobs macOS (`macos-arm64` et `macos-x64`) appartiennent à la même sélection de plateformes, et cette sélection n'a pas été faite pour v0.32.1.
->   **Levée :** identique — une publication avec `platforms: toutes`.
 <!-- vitrine:fin:binaires -->
 
 > **macOS** — l'application n'est pas signée par un certificat Apple. Au premier lancement,
