@@ -3,6 +3,7 @@
 # quality.sh — chaine qualite complete L0 (D8).
 # Enchaine : typecheck TS + ESLint + vitest (front), puis fmt-check + clippy
 # (-D warnings) + cargo test (back). S'arrete au premier echec.
+# Puis, HORS GATE et sans pouvoir le bloquer, la face en ligne du cliquet de vitrine (L42).
 #
 # Usage : bash scripts/quality.sh
 set -euo pipefail
@@ -10,22 +11,42 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> [1/6] TypeScript typecheck (tsc --noEmit)"
+echo "==> [1/7] TypeScript typecheck (tsc --noEmit)"
 npm run typecheck
 
-echo "==> [2/6] ESLint"
+echo "==> [2/7] ESLint"
 npm run lint
 
-echo "==> [3/6] vitest (front)"
+echo "==> [3/7] vitest (front)"
 npm run test
 
-echo "==> [4/6] cargo fmt --check"
+echo "==> [4/7] cargo fmt --check"
 ( cd src-tauri && cargo fmt --check )
 
-echo "==> [5/6] cargo clippy -D warnings"
+echo "==> [5/7] cargo clippy -D warnings"
 ( cd src-tauri && cargo clippy --all-targets -- -D warnings )
 
-echo "==> [6/6] cargo test (back)"
+echo "==> [6/7] cargo test (back)"
 ( cd src-tauri && cargo test )
+
+# --- HORS GATE, et c'est dit -------------------------------------------------------------------
+# L42 — FACE EN LIGNE du cliquet de vitrine. Elle est jouee ICI pour etre VUE, pas pour bloquer :
+# sa mesure depend du reseau (API GitHub, en anonyme), et faire dependre le gate d'un reseau
+# rendrait la qualite du depot faillible sur une machine hors ligne. Sa rougeur INFORME — vitrine
+# qui ment, ou dette de publication — et l'instruction L42 dit expressement qu'elle ne bloque aucun
+# lot. Ce qui bloque, c'est la face LOCALE, jouee a l'etape [3/7] par vitest.
+#
+# ON N'AVALE RIEN : le code de sortie est capture et RESTITUE en clair. 0 = concorde, 1 = ecart,
+# 3 = NON MESURE (pas de reseau) — et 3 n'est jamais presente comme un succes.
+echo "==> [7/7] vitrine en ligne (HORS GATE — informe, ne bloque pas)"
+set +e
+node scripts/vitrine-en-ligne.mjs
+VITRINE=$?
+set -e
+case "$VITRINE" in
+  0) echo "    vitrine en ligne : la page publique dit vrai." ;;
+  3) echo "    vitrine en ligne : NON MESUREE (reseau indisponible). Ce n'est PAS un succes ; a rejouer connecte." ;;
+  *) echo "    vitrine en ligne : ECART(S) ci-dessus (code $VITRINE). A traiter, sans bloquer ce gate." ;;
+esac
 
 echo "==> Qualite : OK"
