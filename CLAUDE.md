@@ -252,6 +252,44 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       et le contrefactuel **CA-5** (republier délibérément un tag ancien pour prouver que le
       `latest` n'est plus volé) appartiennent au décideur. **V3 est donc câblé et lisible, mais non
       prouvé en exécution réelle** — dit tel quel, jamais annoncé comme couvert.
+      **Correctif post-gate — F-1, LE TÉMOIN ÉTAIT VIDE** *(gate 🏹 Legolas du 2026-08-29 : FAIL sur
+      ce seul point, tout le reste acquis).* Le test `scripts/__tests__/vitrine.test.mjs` « une
+      promesse en PROSE, hors tableau et hors marqueurs, est VUE par E-3 » — celui-là même que ce lot
+      désignait comme *la reproduction exacte du cas* et *le seul qui morde sans réseau* — prenait
+      `noms[TABLE.plateformes[0].cle]`, c'est-à-dire une plateforme **fournie**, donc **déjà promise
+      par sa ligne du tableau du README**. Mesuré : `deja promis SANS la prose ? = true`. L'assertion
+      était satisfaite par le tableau seul : le test serait resté **vert** même si `fichiersPromis`
+      ignorait totalement la prose. Restaurer l'ancienne règle (`if (!/^\|/.test(ligne)) return;`) le
+      laissait **✓** — **un faux vert à l'intérieur du lot dont c'est le sujet**, alors que le lot
+      écrit lui-même, dans `scripts/vitrine-en-ligne.mjs:27`, qu'« un contrôle qui rend "succès"
+      alors qu'il n'a rien mesuré est le pire des faux verts ». Le défaut d'origine, lui, portait sur
+      un nom **déclaré absent** (`<App>_<v>_aarch64.dmg`) : en le remplaçant par un nom fourni, la
+      reproduction avait été perdue. Un témoin vide est **pire qu'un témoin absent** — il invite à
+      supprimer la vraie garde, puisqu'on lit un test vert qui porte son nom.
+      **Réparé** : les deux témoins voisins partagent désormais un nom **fictif**
+      (`{APP}_{V}_fantome-de-vitrine.dmg`, dérivé d'**aucune** plateforme de la table et absent des
+      deux README), et le test porte un **verrou** — une première assertion exige que ce nom ne soit
+      **pas déjà promis AVANT la prose**, pour qu'il ne puisse pas redevenir vide en silence.
+      **Contrefactuel rejoué dans les DEUX dépôts** : l'ancienne règle restaurée fait rougir **ce
+      test-là, nommément** (`expected [ …(N) ] to include '…_fantome-de-vitrine.dmg'`) ; révocation
+      prouvée au `sha256` de `scripts/lib/vitrine.mjs` (`5be45af4…`, inchangé — **zéro ligne de
+      production touchée par ce correctif**). `fixtures/convergence.sha256` régénéré des deux côtés
+      (**seule** la ligne du test bouge), byte-identité et **18 fichiers / plancher 17** rejoués sur
+      les deux faces.
+      **Successeurs INSCRITS ICI, NON TRAITÉS** *(relevés au même gate — les inscrire est le geste,
+      les traiter serait un « tant qu'on y est »)* :
+      **(F-2)** une promesse n'est mesurable qu'**entre backticks**. Restent verts : un lien markdown
+      dont l'URL porte le nom, un `curl -LO` en bloc de code, de la prose nue. La regex `ARTEFACT`
+      est **pré-existante** (non modifiée par L42) et **aucun README actuel n'en contient** : c'est
+      un **piège futur, pas un mensonge présent**. Mais le commentaire de `fichiersPromis` **promet
+      plus que la mesure** (« lien », « quel que soit l'endroit ») — à réaligner dans un successeur.
+      **(F-3)** la **face en ligne** (`scripts/vitrine-en-ligne.mjs`) n'est exercée par **aucun
+      test** : désarmée **symétriquement dans les deux dépôts** avec régénération du registre, tout
+      reste vert. L'empreinte de convergence prouve l'**altération**, pas le **comportement**.
+      Cohérent avec l'arbitrage « hors gate », à écrire quand même.
+      **(côté `iakaframe`, inscrits là-bas et volontairement NON dupliqués ici)** le nit de
+      formulation D3 (`cli/scripts/lib/vitrine.js:49`) et l'**absence totale d'épinglage** dans
+      `.github/workflows/release.yml` → `iakaframe/BACKLOG.md`.
 - [x] **L0** — Bootstrap cross-OS + socle sécurité → `specs/instructions/L0-bootstrap-securite.md`
       *(implémenté, **gate Legolas PASS** — 27/27 tests Rust, front vert ; candidate `v0.1.0-rc`).*
 - [x] **L1** — Salvage du backend Rust iakaIDE (scan git, portfolio, PTY, services, config)

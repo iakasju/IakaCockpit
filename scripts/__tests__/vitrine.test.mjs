@@ -269,39 +269,64 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
     }
   });
 
+  // LE NOM FICTIF DES DEUX TEMOINS CI-DESSOUS, ET POURQUOI IL DOIT L'ETRE.
+  //
+  // Une premiere ecriture prenait `noms[TABLE.plateformes[0].cle]` — c'est-a-dire une plateforme
+  // FOURNIE, donc DEJA promise par sa ligne du tableau du README. L'assertion « la prose est vue »
+  // etait alors satisfaite par cette seule ligne de tableau : le test serait reste VERT meme si
+  // `fichiersPromis` ignorait totalement la prose. Il ne mesurait pas ce qu'il nommait, et un
+  // TEMOIN VIDE est pire qu'un temoin absent — il invite a supprimer la vraie garde, puisqu'on lit
+  // un test vert intitule « une promesse en PROSE est VUE ». Le defaut d'origine, lui, portait sur
+  // un nom que la release ne porte PAS ; c'est cette propriete-la qu'il fallait garder.
+  //
+  // Ce nom-ci n'est derive d'AUCUNE plateforme de la table et ne figure dans AUCUN README des deux
+  // depots : il ne peut etre promis que par la prose qu'on ajoute. Il passe quand meme par
+  // `substituer`, comme les vrais motifs, pour que la forme reste celle d'un artefact reel.
+  const FANTOME = substituer("{APP}_{V}_fantome-de-vitrine.dmg", { app: APP, version: VERSION });
+
   it("une promesse en PROSE, hors tableau et hors marqueurs, est VUE par E-3", () => {
     // ANGLE MORT MESURE PUIS FERME. « Promis = ligne de tableau » laissait passer une phrase libre
     // du README annoncant un artefact que la release ne porte pas : les DEUX faces vertes et la
     // suite entiere verte sur un fichier inexistant promis en toutes lettres au visiteur. CA-10 dit
     // « CHAQUE fichier annonce par chaque README ». Ce test est la reproduction exacte du cas.
-    const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
-    const fantome = noms[TABLE.plateformes[0].cle];
-    const prose = `Les utilisateurs prendront directement \`${fantome}\` sur la page de la release.`;
-    expect(fichiersPromis(`${README}\n\n${prose}\n`)).toContain(fantome);
+    //
+    // LA PREMIERE ASSERTION EST LE VERROU DU TEMOIN : elle exige que le nom ne soit PAS deja promis
+    // AVANT la prose. Sans elle, il suffit qu'un jour ce nom rejoigne le tableau — ou qu'on le
+    // remplace par un nom de plateforme fournie — pour que le test redevienne vide en silence.
+    expect(
+      fichiersPromis(README),
+      `temoin vide : « ${FANTOME} » est deja promis par le README SANS la prose ; ce test ` +
+        "verdirait meme si `fichiersPromis` ignorait entierement la prose",
+    ).not.toContain(FANTOME);
+
+    const prose = `Les utilisateurs prendront directement \`${FANTOME}\` sur la page de la release.`;
+    expect(
+      fichiersPromis(`${README}\n\n${prose}\n`),
+      "une phrase en prose annoncant un artefact est une PROMESSE, au meme titre qu'une ligne " +
+        "de tableau : pour un visiteur, les deux disent « ce fichier est telechargeable »",
+    ).toContain(FANTOME);
   });
 
   it("le MEME nom, ecrit dans un bloc d'absence declaree, n'est PAS une promesse", () => {
     // L'autre moitie de la regle : l'exemption existe, mais SEULEMENT la ou le generateur ecrit
     // l'absence. Sans elle, la garde rougirait sur l'honnetete (defaut n°1, deja ferme).
-    const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
-    const fantome = noms[TABLE.plateformes[0].cle];
     const declare = [
       "# fixture",
       "",
       `${SENTINELLE_ABSENTS}v${VERSION}** — cette plateforme n'est pas livrée.`,
       ">",
-      `> - **Plateforme** (\`${fantome}\`)`,
+      `> - **Plateforme** (\`${FANTOME}\`)`,
       ">   — *constaté le 2026-08-29.* motif de fixture.",
       "",
     ].join("\n");
-    expect(fichiersCites(declare), "le nom doit rester NOMME").toContain(fantome);
+    expect(fichiersCites(declare), "le nom doit rester NOMME").toContain(FANTOME);
     expect(fichiersPromis(declare), "declare absent : ce n'est pas une promesse").not.toContain(
-      fantome,
+      FANTOME,
     );
 
     // Et le bloc se REFERME : la premiere ligne non citee cesse d'etre exemptee.
-    const puisPromis = `${declare}\nEt \`${fantome}\` de nouveau, hors citation.\n`;
-    expect(fichiersPromis(puisPromis)).toContain(fantome);
+    const puisPromis = `${declare}\nEt \`${FANTOME}\` de nouveau, hors citation.\n`;
+    expect(fichiersPromis(puisPromis)).toContain(FANTOME);
   });
 
   it("les marqueurs de zone sont stables et distincts", () => {
