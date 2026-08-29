@@ -87,7 +87,10 @@ jobs:
       - name: Installer les dependances
         run: npm ci
 
-      - uses: tauri-apps/tauri-action@v0
+      # D-4 (L41) — REFERENT IMMUABLE. `@v0` etait un tag DEPLACABLE : le commentaire ci-dessous
+      # et l'entree posee decrivaient `dev`, pas ce qui s'executait. Le SHA est celui que `v0`
+      # designait au 2026-08-29 ; `fixtures/tauri-action-pin.json` en est la source et le cliquet.
+      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # L34 : signature minisign des artefacts updater. Sans ces deux secrets,
@@ -103,19 +106,23 @@ jobs:
           prerelease: false
           # DEFAUT G — le CI posait sur la release un SECOND manifeste `latest.json`, concurrent
           # du notre. Deux manifestes cote a cote, et celui du CI ne connait pas nos cles
-          # d'installeur : il n'annonce que {os}-{arch}, et prefere le MSI au NSIS
-          # (`updaterJsonPreferNsis` vaut `false` par defaut) — l'inverse exact de notre
-          # arbitrage. Le manifeste qui fait autorite est `updater/latest.json`, versionne et
-          # servi par les endpoints ; celui-ci n'etait qu'un doublon trompeur.
+          # d'installeur : il n'annonce que {os}-{arch}. Le manifeste qui fait autorite est
+          # `updater/latest.json`, versionne et servi par les endpoints ; celui-ci n'etait qu'un
+          # doublon trompeur.
           #
-          # `uploadUpdaterSignatures` reste a son defaut `true` : les `.sig` continuent d'etre
-          # televerses, et ils sont INDISPENSABLES — `publish-update.mjs` les lit sur la release
-          # pour remplir le champ `signature` du manifeste ; sans eux le manifeste serait vide.
-          # L'entree est DISTINCTE, verifie sur la source de l'action : « Does not affect the
-          # latest.json generator ».
+          # CE QUI SUIT NE DECRIT QUE LE SHA EPINGLE CI-DESSUS (action-v0.6.2), lu dans son
+          # `action.yml` et dans sa source — rien d'autre. La version precedente de ce commentaire
+          # enumerait les entrees de `dev` en pretendant les avoir verifiees, et posait
+          # `uploadUpdaterJson`, que ce SHA NE DECLARE PAS : l'entree etait ignoree en silence, et
+          # le CI reposait bel et bien son manifeste concurrent.
           #
-          # Aucune entree de RENOMMAGE n'existe (verifie sur action.yml : seules
-          # `uploadUpdaterJson`, `updaterJsonPreferNsis`, `uploadUpdaterSignatures`) — « lui
-          # faire ecrire un nom distinct » n'etait pas une option disponible.
-          uploadUpdaterJson: false
+          # A ce SHA, `includeUpdaterJson` (defaut 'true') est la SEULE entree qui gouverne le
+          # manifeste : elle garde l'unique appel a `uploadVersionJSON` (src/index.ts:223).
+          #
+          # Les `.sig` ne sont commandes par AUCUNE entree a ce SHA, et restent televerses :
+          # `uploadReleaseAssets(...artifacts...)` (src/index.ts:212) est appele sans condition et
+          # HORS du garde `includeUpdaterJson`, sur des artefacts qui incluent les `.sig`
+          # (src/utils.ts:29-46). C'est indispensable : `publish-update.mjs` les lit sur la release
+          # pour remplir le champ `signature` du manifeste.
+          includeUpdaterJson: false
           args: ${{ matrix.args }}
