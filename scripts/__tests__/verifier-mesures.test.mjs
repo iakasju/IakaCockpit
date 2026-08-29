@@ -232,8 +232,25 @@ describe("estPublic / estPrive — la publicité se PROUVE, elle ne se présume 
   });
 
   it("l'extraction d'hôte ne découpe JAMAIS sur « : » — c'est la ligne qui produisait « [ »", () => {
-    // Preuve au caractère près du défaut d'origine, figée pour qu'on ne le réintroduise pas.
-    expect("[::1]:3001".split(":")[0]).toBe("[");
+    // ┌─ CE TEST NE GARDAIT RIEN, ET C'EST MESURÉ (relevé au gate de L41) ───────────────────────┐
+    // │ Il assertait `"[::1]:3001".split(":")[0] === "["` : une TAUTOLOGIE DE JAVASCRIPT, vraie   │
+    // │ quoi qu'il advienne du dépôt, donc incapable de rougir. Sa seconde assertion ne mordait   │
+    // │ pas davantage : `estPrive("[::1]")` reste `true` sous le découpage fautif, parce que la   │
+    // │ charge de la preuve est INVERSÉE (AR-2) et que `"["` est privé « par accident ». MESURÉ : │
+    // │ rétablir `hote.split(":")[0]` dans `nomDHote` laissait ce test VERT (seul `§1.4` rougis-  │
+    // │ sait). Une garde tiède dans le lot des gardes tièdes.                                     │
+    // │ CE QUI MORD MAINTENANT : on confronte l'extracteur RÉEL au découpage fautif SUR LA MÊME   │
+    // │ ENTRÉE. Les deux doivent DIVERGER — c'est la seule formulation qui rougit si le défaut    │
+    // │ revient, et elle garde la preuve « au caractère près » du défaut d'origine.               │
+    // └──────────────────────────────────────────────────────────────────────────────────────────┘
+    const decoupageFautif = (h) => h.split(":")[0];
+    // Seules les formes IPv6 EN CROCHETS distinguent les deux : sur `"nas:3001"`, l'extraction
+    // correcte rend `"nas"` — exactement ce que le découpage fautif rend aussi. Le dire, plutôt
+    // que d'écrire une boucle qui aurait l'air plus large et serait fausse.
+    expect(decoupageFautif("[::1]:3001"), "la preuve au caractère près du défaut d'origine").toBe("[");
+    for (const h of ["[::1]:3001", "[fd00::1]:3001"]) {
+      expect(hoteJuge(h), `l'extracteur redécoupe sur « : » : ${h}`).not.toBe(decoupageFautif(h));
+    }
     // …et la preuve que le nouvel extracteur, lui, voit bien l'adresse.
     expect(estPrive("[::1]")).toBe(true);
   });
