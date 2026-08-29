@@ -13,6 +13,10 @@
     "test:coverage": "vitest run --coverage",
     "test:handoff-parity": "node scripts/test-handoff-parity.mjs",
     "test:convergence": "node scripts/test-convergence.mjs",
+    "vitrine": "node scripts/vitrine.mjs --write",
+    "vitrine:check": "node scripts/vitrine.mjs --check",
+    "//vitrine:en-ligne": "FACE EN LIGNE du cliquet de vitrine (L42) — HORS GATE, DELIBEREMENT. Elle interroge l'API GitHub en ANONYME : sa mesure depend du reseau, donc en dependre dans `test` ou `quality` rendrait le gate faillible sur une machine hors ligne (meme arbitrage ecrit que `//test:all` du depot frere, et meme posture que `test:convergence`). Sans reseau elle rend un SKIP explicite avec le code 3 — JAMAIS un vert. Sa rougeur INFORME (dette de publication, vitrine qui ment) et ne bloque aucun lot : c'est ecrit dans l'instruction L42.",
+    "vitrine:en-ligne": "node scripts/vitrine-en-ligne.mjs",
     "quality": "bash scripts/quality.sh",
     "tauri": "tauri",
     "test:reservoir-parity": "node scripts/test-reservoir-parity.mjs"
