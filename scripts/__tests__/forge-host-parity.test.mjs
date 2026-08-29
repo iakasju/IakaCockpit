@@ -248,12 +248,33 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // │ │ CONDITION DE LEVÉE : le jour où les fichiers partagés vivent dans un paquet publié    │ │
     // │ │ (option O1 d'AR-6 de L40), les deux faces deviennent inutiles d'un coup.             │ │
     // │ └──────────────────────────────────────────────────────────────────────────────────────┘ │
+    // │                                                                                          │
+    // │ ┌─ HORS-COUVERTURE nº2 — LA COMPLÉTUDE DU REGISTRE (relevé au gate) ───────────────────┐ │
+    // │ │ Les deux faces gardent le CONTENU des fichiers INSCRITS. Rien n'attestait que le     │ │
+    // │ │ registre les liste TOUS : retirer une ligne DANS LES DEUX DÉPÔTS rétrécissait la     │ │
+    // │ │ couverture sans qu'aucune face ne bronche — la garde perdait un fichier de vue en    │ │
+    // │ │ restant verte. Même classe que le trou ci-dessus, et il n'était pas écrit.           │ │
+    // │ │ CE QUI LE FERME MAINTENANT : le CLIQUET ci-dessous. Le nombre d'entrées ne descend    │ │
+    // │ │ jamais tout seul ; le faire descendre est un geste DÉLIBÉRÉ, qui touche cette ligne. │ │
+    // │ │ CE QU'IL NE FERME PAS : un ÉCHANGE (retirer une ligne, en ajouter une autre) garde le │ │
+    // │ │ compte. Aucun test ne peut dire quels fichiers DEVRAIENT converger — cette liste est  │ │
+    // │ │ une décision, pas un fait mesurable dans un seul dépôt.                               │ │
+    // │ │ CONDITION DE LEVÉE : la même que ci-dessus — un paquet publié rend la question vide.  │ │
+    // │ └──────────────────────────────────────────────────────────────────────────────────────┘ │
     // └──────────────────────────────────────────────────────────────────────────────────────────┘
     const registre = read("fixtures/convergence.sha256")
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l.length > 0 && !l.startsWith("#"));
-    expect(registre.length, "fixtures/convergence.sha256 est vide").toBeGreaterThan(0);
+    // CLIQUET DE COMPLÉTUDE — motivé, daté, et il ne descend que sur décision. Au 2026-08-29 le
+    // registre porte DOUZE entrées ; ajouter un fichier partagé le fait monter, et ce nombre monte
+    // avec lui. Le baisser signifie qu'un fichier CESSE d'être partagé : ça se décide et ça se
+    // justifie dans le commit, ça ne se constate pas.
+    expect(
+      registre.length,
+      "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
+        "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
+    ).toBeGreaterThanOrEqual(12);
 
     const derives = [];
     for (const ligne of registre) {

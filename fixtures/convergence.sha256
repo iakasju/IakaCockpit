@@ -1,12 +1,23 @@
+# REGISTRE DE CONVERGENCE — les fichiers BYTE-IDENTIQUES entre les deux applications jumelles.
+# C'est la SEULE liste qui fasse foi : aucun compte n'en est recopié ailleurs. La garde a deux
+# faces — LOCALE (`npm run test`, empreintes recalculées ici) et CROISÉE (`npm run test:conver-
+# gence`, comparaison des deux arbres). Le plancher de complétude vit dans la face locale.
+#
+# RÈGLE : tout fichier listé ici se modifie DANS LES DEUX DÉPÔTS au même commit logique. PUIS on
+# régénère les empreintes EN PLACE — ordre et commentaires préservés, aucune dépendance, cross-OS :
+#
+#   node -e "const f='fixtures/convergence.sha256',fs=require('fs'),c=require('crypto');fs.writeFileSync(f,fs.readFileSync(f,'utf8').split('\n').map(l=>{const m=l.match(/^[0-9a-f]{64}\s+(.+)$/);return m?c.createHash('sha256').update(fs.readFileSync(m[1])).digest('hex')+'  '+m[1]:l}).join('\n'))"
+#
+# …et on rejoue les deux faces. Les lignes `#` sont ignorées par les deux faces.
 f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri-action-pin.json
 8a963aa34616d53cdfe65832c3509ff45d60d88b72d11b1bd32a21d1c4ee5746  scripts/__tests__/pin-tauri-action.test.mjs
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-51873a219eec74f0c0f1f4f609d557344df14f270c6b711a2ac84c7991b64551  scripts/__tests__/forge-host-parity.test.mjs
+58a5e66dc478a68abc6d3f9483d7594c0b3f907a0c80f3f9adbfaf0008d9d34d  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
-fd88a37cb9d2d45b73b00530212a33a21b88a4f19062e837a34121e8ab104896  scripts/test-convergence.mjs
+02aecf98f2afff776f766bd664953b98a2c85c145af958627ffcac19dc44966e  scripts/test-convergence.mjs
 518f80198177d776cc6ed8e2eb96c35cb688c911567abcda0309ce11cbe7af9e  specs/instructions/cles-installeur-manifeste-updater.md
 3eed616118454073df3ba3ed389d1cf261e5da799c3c4a824c0b0b5e5289a08d  specs/instructions/gardes-tiedes.md

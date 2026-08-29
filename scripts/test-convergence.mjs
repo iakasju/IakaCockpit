@@ -55,6 +55,17 @@ const estFrere = (c) => {
 // IAKA_CONVERGENCE_HOME est AUTORITAIRE : s'il est posé et ne porte pas le registre, on ÉCHOUE au
 // lieu de se rabattre sur un voisin. Un repli silencieux mesurerait un autre dépôt que celui
 // demandé et rendrait un « OK » qui ne veut rien dire (même règle que `test:handoff-parity`).
+//
+// ┌─ HORS-COUVERTURE DÉCLARÉ — la résolution par ÉNUMÉRATION (relevé au gate) ───────────────────┐
+// │ Sans `IAKA_CONVERGENCE_HOME`, on retient LE PREMIER voisin qui porte le registre. Un          │
+// │ TROISIÈME dépôt le portant changerait donc la cible SANS RIEN DIRE, et le « OK » final        │
+// │ parlerait d'un autre dépôt que celui qu'on croit mesurer. Ce n'est pas un défaut de la        │
+// │ résolution — c'est le prix de ne nommer aucun dépôt en dur, qui est ce qui rend ce fichier    │
+// │ convergent. LE REMÈDE EXISTE ET IL EST AUTORITAIRE : poser `IAKA_CONVERGENCE_HOME`. La        │
+// │ sortie NOMME toujours le frère réellement mesuré : un « OK » se lit, il ne se suppose pas.    │
+// │ CONDITION DE LEVÉE : le jour où les fichiers partagés vivent dans un paquet publié (option    │
+// │ O1 d'AR-6 de L40), il n'y a plus de frère à résoudre.                                         │
+// └──────────────────────────────────────────────────────────────────────────────────────────────┘
 const override = process.env.IAKA_CONVERGENCE_HOME;
 let frere;
 if (override) {
