@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-29 01:55 (motif: manual).
+> Genere par iakaframe (CLI) le 2026-08-29 10:51 (motif: manual).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,104 +9,108 @@
 |---|---|
 | Version | v0.32.1 |
 | Branche | main |
-| Dernier commit | cd0849b docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog |
+| Dernier commit | 391100c docs(claude): la doc disait D-4 GELE alors que le workflow est epingle depuis deux commits |
 | Arbre | propre |
-| Fichiers (suivis + non ignores) | 1404 |
-| Note | Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA. |
+| Fichiers (suivis + non ignores) | 1412 |
+| Note | Lot L41 gardes tiedes livre : les gardes qui ne pouvaient pas rougir rougissent. Gate PASS au second passage. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `cd0849b` | 2026-08-29 | docs(claude): le geste de mesure devient une commande documentee, + le lot au backlog |
-| `d49f692` | 2026-08-29 | chore(updater): manifeste a 9 cles, et mesure regeneree par l instrument versionne |
-| `5010941` | 2026-08-29 | test(garde): les deux gardes convergent, et I4 devient un appelant mince |
-| `3608aff` | 2026-08-29 | ci(release): le CI cesse de poser un SECOND manifeste concurrent sur la release |
-| `4b0cdc9` | 2026-08-29 | fix(garde): I4 indexe par PLATEFORME, refuse les doublons, exige l URL de la plateforme |
-| `397cf86` | 2026-08-29 | test(garde): les deux exploits de I4, ECRITS ROUGES D'ABORD |
-| `b9df4bb` | 2026-08-29 | feat(mesure): instrument de mesure versionne des artefacts annonces |
-| `9833b94` | 2026-08-29 | docs(instruction): les 8 arbitrages tranches — instruction validee par le decideur |
-| `5b5713d` | 2026-08-29 | chore(iakaframe): checkpoint de pause — auto-update 4/4 telechargeable |
-| `e246812` | 2026-08-28 | fix(canal): linux-x86_64 annonce, et mesure — l AppImage, pas le .deb |
+| `391100c` | 2026-08-29 | docs(claude): la doc disait D-4 GELE alors que le workflow est epingle depuis deux commits |
+| `2fa9d82` | 2026-08-29 | docs(instruction): CA-17 disait ce que AR-4 rend impossible — rectifie, et la limite est nommee |
+| `62a22b2` | 2026-08-29 | test(convergence): le registre cesse de pouvoir MAIGRIR en silence — et ce qu il ne couvre pas est ECRIT |
+| `d71f5ec` | 2026-08-29 | test(gardes): un test qui ne pouvait pas rougir cesse d etre une garde tiede |
+| `9a2792a` | 2026-08-29 | test(updater): CA-17 dans sa forme honnete — la garde nomme ce qu elle voit, et DECLARE ce qu elle ne voit pas |
+| `2c79f6d` | 2026-08-29 | docs(instruction): la byte-identite tient, ses chiffres non — et le registre s elargit |
+| `127c752` | 2026-08-29 | ci(release): tauri-action epingle sur un SHA, et l entree que ce SHA connait |
+| `f3b54e3` | 2026-08-29 | docs(gate): une commande de gate qui dit vrai — et D-4 GELE, remonte au decideur |
+| `e6c635e` | 2026-08-29 | test(updater): la republication a l identique se prouve CONTRE le fichier versionne |
+| `db24433` | 2026-08-29 | test(gardes): les jonctions cessent d etre libres — I4bis et la convergence |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait** : le lot **L40 « cles d'installeur du manifeste updater »** est livre,
-  gate **PASS** (16/18 CA verts), fusionne dans `main` et pousse sur les deux canaux. Le manifeste
-  emet desormais **9 cles** au lieu de 4 : les 4 generiques **inchangees** + `linux-x86_64-{appimage,
-  deb,rpm}` + `windows-x86_64-{msi,nsis}`. Mesure anonyme sur ce que `main` sert : **9/9
-  telechargeables**.
-- **Le defaut repare, en une phrase** : le manifeste ne mentait pas sur *ou* telecharger, il mentait
-  sur *quoi* il sert. `tauri-plugin-updater` cherche `{os}-{arch}-{installer}` **puis**
-  `{os}-{arch}` ; n'emettre que le generique faisait qu'un client Windows installe **par MSI**
-  recevait l'exe NSIS et s'installait **a cote** de son enregistrement, et qu'un client Linux installe
-  **par .deb/.rpm** telechargeait 92 Mo pour echouer en `InvalidUpdaterFormat` **a chaque tentative**.
-- **Deux prerequis, decouverts au cadrage et traites en premier** :
-  1. **La garde qui protege tout le reste etait trouee.** `I4` indexait les mesures **par URL** sans
-     verifier la plateforme. Or emettre les cles d'installeur fait que **plusieurs plateformes
-     partagent la meme URL par construction** (`linux-x86_64` et `-appimage` = le meme octet) :
-     l'index s'effondrait **exactement au moment de s'en servir**. Repare : index **par plateforme**,
-     refus des doublons de plateforme, et assertion que la mesure porte bien l'URL de cette plateforme.
-  2. **Il n'existait aucun instrument de mesure versionne**, alors que `I4` asserte
-     `signature: "valide"`. Le script d'origine vivait dans `scratchpad/` — **le repertoire n'existe
-     meme plus**, la provenance etait irrecuperable. Cote GUI, la provenance declaree etait **fausse**
-     (`iakaframe endpoints` fait un `HEAD`, ne calcule ni sha256 ni signature). Livre :
-     `scripts/mesurer-artefacts.mjs` (telechargement anonyme, sha256, minisign Ed25519/blake2b-512,
-     signature globale, keyid, temoin negatif, zero dependance), **byte-identique dans les deux depots**.
-- **Regle de derivation** : le jeu de cles est **derive de ce qui est SIGNE**, jamais d'une liste
-  souhaitee. Prouve sur 5 fixtures adverses, les deux generateurs d'accord : AppImage sans `.sig` ->
-  `linux-x86_64` **disparait** · aucune signature -> **aucune cle** · un `.deb` seul ne prend
-  **jamais** la generique Linux.
-- **Non-regression des clients deja installes, verifiee cle par cle** : les 4 cles preexistantes
-  gardent **url ET signature identiques**, generique Windows = **NSIS**, generique Linux = **AppImage**.
-  Un client dont `bundle_type()` rend `None` retombe sur la generique : **meme octet qu'avant le lot**.
+- **Ce qui vient d'etre fait** : le lot **L41 « Gardes tiedes »** est livre, **gate PASS au second
+  passage**, fusionne dans `main` et pousse. En une phrase : **les gardes qui ne pouvaient pas rougir
+  rougissent maintenant.** Il fait suite a **L40** (cles d'installeur), livre le meme jour, qui a porte
+  les manifestes de 4 a **9 cles, 9/9 telechargeables**.
+- **Le fil du lot** : trois mecaniques distinctes, trois remedes distincts.
+  1. **Predicats qui attestaient le faux** — `estPrive` cassait sur l'IPv6 litteral
+     (`hote.split(":")[0]` rend `"["` sur `[::1]:3001`), au point de declarer **PUBLIQUE une boucle
+     locale** : l'invariant `I2` concluait **l'inverse de la verite**. Repare par
+     `new URL().hostname` + retrait des crochets, **et renversement de la charge** (prive par defaut,
+     public a prouver). Et `mesureLe` n'etait contraint par rien : `"2020-01-01"` passait au vert.
+  2. **Jonctions non gardees** — `I4bis` etait **vacuous** sur registre vide : ses assertions
+     pouvaient etre **supprimees en silence**. Et la convergence des deux apps, acquise par L40,
+     **n'etait gardee par rien** : un `diff` passe une fois a la main. C'est le defaut que le cadrage
+     a **ajoute** au releve.
+  3. **Referentiels mouvants** — le tag flottant `tauri-action@v0`.
+- **Le fait le plus lourd, decouvert en cours de lot : L40 avait livre une correction qui ne
+  s'executait pas.** `uploadUpdaterJson: false` est une entree **INCONNUE** de l'action reellement
+  epinglee — a `84b9d35b` (= `action-v0.6.2`) elle s'appelle **`includeUpdaterJson`**. GitHub Actions
+  ignore une entree inconnue **en silence**. Le volet G de L40 etait donc **inoperant**, et **CA-12
+  n'aurait jamais pu se clore** dans cette configuration. C'etait exactement le risque que le gate L40
+  avait nomme (**D-4**, *« ma preuve porte sur la branche `dev` »*) et que le tag flottant rendait
+  invérifiable. **Le gate a nomme le doute, le lot suivant l'a converti en fait.**
+- **Le remede : deux gardes, et il en fallait deux.** Le pin seul aurait **fige le referent en laissant
+  l'entree inerte**. La seconde compare les entrees **posees** aux entrees **declarees** par le SHA.
+  Preuve la plus parlante : remettre le workflow dans l'etat **exact** que L40 avait laisse fait rougir
+  **7 tests sur 13** — la garde aurait attrape le defaut le jour meme.
+- **Le critere generique du lot**, adopte du decideur : *toute garde touchee est eprouvee par une
+  mutation qui la fait rougir* — la mutation portant sur le **programme**, jamais sur l'attendu, et
+  pour une **jonction**, la mutation etant la **suppression de l'appel**.
+- **Specifique a ce depot** : il porte le generateur de manifeste (`scripts/lib/update-manifest.mjs`)
+  qui fait autorite, et le registre de convergence `fixtures/convergence.sha256` (**13 fichiers**,
+  cliquet de completude). `version` **traverse** ici la garde de reproductibilite — c'est la fermeture
+  manquee n°1 ci-dessus.
 - **Ce qui reste ouvert, et qui appartient au decideur** :
-  1. **Un bump + tag + run CI** sur chaque app. C'est la **seule** facon de clore **CA-12** (mesure
-     **ROUGE** aujourd'hui : l'asset `latest.json` concurrent est **toujours** sur les deux releases,
-     `uploadUpdaterJson: false` n'agit qu'au prochain build) et la premiere moitie de **CA-13**.
-  2. **Les deux recettes reelles** (gate humain, ecrit dans l'instruction) : un client Windows **MSI**
-     qui **remplace** son enregistrement au lieu de doubler ; un client Linux **`.deb`** qui
-     **installe** au lieu d'echouer. **Personne ne les a jamais observees** — tout le benefice repose
-     sur `bundle_type()`, lu dans la source, **jamais vu tourner**. Le lot se declare donc
-     **« mesure, non recette »**, jamais « corrige ».
-- **Prochaine etape concrete** : le successeur **« gardes tiedes »** — **C** cliquet passif sans borne
-  de fraicheur · **D** `estPrive` manque le nom d'hote nu et **casse sur l'IPv6 litteral** (`[::1]` ->
-  `split(":")[0]` rend `"["`, donc une boucle locale est declaree **publique** : I2 conclut l'inverse
-  de la verite) · **E** `I4bis` **vacuous** sur registre vide, mesure ouvert au gate. Puis le
-  successeur **« installer depuis rien »** (les 3 README annoncent une version scellee perimee, et
-  GitHub designe **v0.1.6** comme `latest` du GUI alors que **v0.1.7** existe — il classe par date de
-  publication).
-- **Specifique a ce depot** : `release.yml` est **actif** et sa cle de signature **posee**
-  (`TAURI_SIGNING_PRIVATE_KEY`, 2026-08-28) — c'etait la cause racine de l'absence de tout artefact
-  signe ; la v0.31.2 ne porte aucun `.sig`. Le generateur de manifeste (`scripts/lib/update-manifest.mjs`)
-  vit ici et fait autorite ; `HORS_COUVERTURE` + `I4bis` n'existaient qu'ici avant le lot.
-- **Sept defauts non bloquants nommes au gate** : **D-1** un commit non atomique, plus large que
-  l'auto-denonciation de l'executant · **D-2** `mesurer-artefacts.mjs` mele journal et document sur
-  stdout — le defaut meme corrige dans `publish-update.mjs` · **D-3** deux `console.log` residuels ·
-  **D-4** les workflows epinglent **`tauri-action@v0`, tag flottant** : la preuve du comportement de
-  `uploadUpdaterJson` porte sur la branche `dev`, elle peut deriver en silence · **D-5** le `test:all`
-  du GUI **ne couvre pas le Rust** alors que le CA le laisse croire · **D-6** le dry-run rend
-  `notes: ""` : le chemin « republication a l'identique » reste **non prouve de bout en bout** ·
-  **D-7** defaut E confirme ouvert.
+  1. **Etape 5.1 de L40 : bump + tag + run CI.** C'est la **seule** facon de constater que
+     `includeUpdaterJson: false` supprime reellement le `latest.json` concurrent des releases —
+     aujourd'hui c'est **prouve par lecture du bundle `dist/index.js` execute**, pas par observation.
+     Clot aussi **CA-12** et la premiere moitie de **CA-13** de L40.
+  2. **Les deux recettes reelles** : un client Windows **MSI** qui **remplace** son enregistrement au
+     lieu de doubler ; un client Linux **`.deb`** qui **installe** au lieu d'echouer en
+     `InvalidUpdaterFormat`. **Jamais observees.**
+- **Cinq defauts au registre, tous declares, aucun bloquant** :
+  1. **Fermeture manquee de `version`** cote IakaCockpit. Le motif retenu (« la seule fermeture
+     disponible est une empreinte versionnee ») est **faux sur ce champ** : deriver la version du tag
+     lu dans l'URL — ce que le generateur du GUI fait deja — la ferme **en une ligne de test**,
+     byte-identite preservee. **Mesure au gate.** `I4` l'attrape par ailleurs.
+  2. **`notes` n'est couvert par rien**, et **`pub_date` reculee** non plus. La borne est
+     **asymetrique** : avancee au-dela de `mesureLe` -> rouge ; reculee -> vert. Declares avec
+     condition de levee. Cause structurelle : **CA-16 prescrit lui-meme** de tirer `--notes` et
+     `--pub-date` du fichier — un champ tire du fichier ne peut pas rougir en y revenant.
+  3. **L'echange de lignes du registre de convergence passe au vert** — le compte est preserve, un
+     fichier quitte silencieusement la couverture. Limite **declaree et prouvee vraie** au gate.
+  4. **Resolution du depot frere par enumeration** : un 3e depot portant le registre changerait la
+     cible. Remede autoritaire `IAKA_CONVERGENCE_HOME` (dossier sans registre -> `exit 2`, aucun repli).
+  5. **Un rouge observe une fois puis perdu** (`1 failed | 1239 passed` cote GUI), non reproduit en
+     **11 passes**. Le verificateur refuse de le declarer inexistant.
+- **Prochaine etape concrete** : le successeur **« installer depuis rien »** — les 3 README annoncent
+  une version scellee perimee, et GitHub designe **v0.1.6** comme `latest` du GUI alors que **v0.1.7**
+  existe (il classe par **date de publication**, pas par numero). Autre audience, **trois** depots.
 - **Pieges connus** :
-  1. **CA-8 protege le cas LEGITIME** — deux **cles distinctes** partageant la **meme URL** doit rester
-     **vert**, alors que **CA-7** (une **plateforme** en doublon) doit rougir. Le gate a montre que
-     CA-8 etait vert avant comme apres, donc qu'il ne prouvait rien ; il a invente la mutation
-     manquante (dedupliquer par URL) et **CA-8 seul l'a tuee**. Ne jamais confondre les deux.
-  2. **Les actes de publication sont refuses aux agents** par le classifieur de permissions
-     (`gh workflow disable/run`, push de tag, `gh release create`, `gh secret set` selon le contexte).
-     Le decideur les tape lui-meme avec le prefixe `!`.
-  3. **Une garde s'ecrit ROUGE D'ABORD**, et l'etat rouge se **fige dans l'historique** pour etre
-     rejouable au gate. C'est ce qui a permis de prouver, et pas seulement d'affirmer, que les deux
-     exploits d'`I4` etaient verts a tort.
-  4. **Verifier une signature sans minisign** (absent du Mac) : format `"ED"` = Ed25519 sur
-     **blake2b-512 prehashe**. Verifier la signature **du manifeste** (celle que l'updater utilise),
-     sur **l'octet retelecharge**, et **valider l'instrument sur un temoin negatif** avant de conclure.
+  1. **Une entree inconnue d'une GitHub Action est ignoree EN SILENCE.** Ne jamais lire l'`action.yml`
+     de `dev` pour une action epinglee sur un tag : lire **au SHA**, et verifier jusque dans le bundle
+     `dist/index.js` si l'enjeu le merite.
+  2. **`tauri-action` est epingle sur `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` (`action-v0.6.2`)**,
+     avec cliquet. **Epingler n'est pas monter** : passer en `v1` change le comportement du CI et se
+     recette. La mutation du cliquet se fait **dans la fixture**, jamais dans le workflow.
+  3. **Une prose de declaration vieillit sans que rien ne le signale.** Le lot y repond par un
+     **cliquet a double sens** : la declaration rougit si le trou se referme **comme** s'il s'en ouvre
+     un nouveau. Une limite ecrite mais non mesuree est une garde tiede de plus.
+  4. **La partition des champs n'est pas la meme dans les deux depots** (le generateur du GUI derive
+     `version` du tag, celui du Cockpit non). **Ne jamais dupliquer une declaration : la mesurer des
+     deux cotes.**
+  5. **Les actes de publication sont refuses aux agents** par le classifieur de permissions. Le
+     decideur les tape lui-meme avec le prefixe `!`.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-08-29 10:51 | manual | v0.32.1 | main | Lot L41 gardes tiedes livre : les gardes qui ne pouvaient pas rougir rougissent. Gate PASS au second passage. |
 | 2026-08-29 01:55 | manual | v0.32.1 | main | Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA. |
 | 2026-08-29 00:06 | pause | v0.32.1 | main | Auto-update 4/4 : Windows et Linux ajoutes au manifeste, cle de signature posee, CI de release remis en service |
 | 2026-08-28 21:55 | pause | v0.32.1 | main | Fin du lot 0 (trois canaux synchrones) + L1 (publication des artefacts) — auto-update reellement telechargeable |

@@ -168,5 +168,15 @@
     "dirty": false,
     "files": 1404,
     "note": "Lot L40 cles d installeur livre et fusionne : 9 cles par app, 9/9 telechargeables. Gate PASS 16/18 CA."
+  },
+  {
+    "date": "2026-08-29 10:51",
+    "reason": "manual",
+    "version": "v0.32.1",
+    "branch": "main",
+    "commit": "391100c docs(claude): la doc disait D-4 GELE alors que le workflow est epingle depuis deux commits",
+    "dirty": false,
+    "files": 1412,
+    "note": "Lot L41 gardes tiedes livre : les gardes qui ne pouvaient pas rougir rougissent. Gate PASS au second passage."
   }
 ]
