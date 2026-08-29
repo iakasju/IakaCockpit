@@ -1,0 +1,82 @@
+{
+  "//": [
+    "TABLE DE MOTIFS DE LA VITRINE — ce que la page d'accueil a le DROIT d'annoncer, et sous quel nom.",
+    "",
+    "FICHIER CONVERGENT : byte-identique dans IakaCockpit et iakaFrameGUI, inscrit dans",
+    "`fixtures/convergence.sha256`. Il ne nomme AUCUNE des deux applications : `{APP}` est substitue",
+    "a partir de `productName` de `src-tauri/tauri.conf.json` — la SOURCE QUE LE BUNDLER LUI-MEME",
+    "emploie pour nommer ses artefacts. C'est ce qui le rend convergent, et c'est aussi ce qui reduit",
+    "l'ecart entre la table et le monde reel (risque R1 de l'instruction).",
+    "",
+    "LE DEFAUT QU'IL FERME. Les trois README du portefeuille recopiaient A LA MAIN un tableau de noms",
+    "de fichiers versionnes. Le 2026-08-29, mesure en anonyme : le README d'IakaCockpit promettait",
+    "`IakaCockpit_0.31.2_aarch64.dmg` et `IakaCockpit_0.31.2_x64.dmg` sous le titre « Tous les",
+    "systemes sont couverts » alors que la release presentee comme `latest` (v0.32.1) ne portait AUCUN",
+    "`.dmg` ; le README d'iakaFrameGUI annoncait `iakaFrameGUI_v0.1.4_macos-arm64.dmg`, un nom qui",
+    "n'a JAMAIS existe sous cette forme (ni le `v`, ni `macos-arm64`), et taisait le DMG Intel que sa",
+    "propre chaine produit. La vitrine et l'etagere n'etaient reliees par rien.",
+    "",
+    "CE QUE CETTE TABLE N'EST PAS. Elle n'est pas une preuve. Elle dit ce qu'on ATTEND, pas ce qui",
+    "EXISTE : un generateur qui tire ses noms d'ici et une garde locale qui les recompare ici",
+    "comparent deux derives du MEME faux. Seule la face EN LIGNE (`scripts/vitrine-en-ligne.mjs`)",
+    "confronte cette table au monde reel. Sans elle, ce fichier n'est qu'un mensonge coherent."
+  ],
+
+  "plateformes": [
+    {
+      "cle": "windows-nsis",
+      "libelle": "Windows (installeur)",
+      "motif": "{APP}_{V}_x64-setup.exe",
+      "raison": "installeur NSIS — le chemin par defaut d'un visiteur Windows, et le seul qui ne demande aucun droit d'administration"
+    },
+    {
+      "cle": "windows-msi",
+      "libelle": "Windows (MSI)",
+      "motif": "{APP}_{V}_x64_en-US.msi",
+      "raison": "paquet MSI — voie de deploiement en parc ; a sa propre ligne parce qu'un client installe par MSI ne se met pas a jour par le NSIS"
+    },
+    {
+      "cle": "macos-arm64",
+      "libelle": "macOS Apple Silicon",
+      "motif": "{APP}_{V}_aarch64.dmg",
+      "raison": "image disque arm64 — le SEUL artefact macOS qu'un visiteur puisse ouvrir ; le `.app.tar.gz` n'en est pas un (cf. hors_vitrine)"
+    },
+    {
+      "cle": "macos-x64",
+      "libelle": "macOS Intel",
+      "motif": "{APP}_{V}_x64.dmg",
+      "raison": "image disque x86_64 — produite par la matrice CI et longtemps tue par le README d'iakaFrameGUI, qui n'avait aucune ligne Intel"
+    },
+    {
+      "cle": "linux-deb",
+      "libelle": "Linux (Debian/Ubuntu)",
+      "motif": "{APP}_{V}_amd64.deb",
+      "raison": "paquet Debian — la voie d'installation attendue sur la famille Ubuntu"
+    },
+    {
+      "cle": "linux-rpm",
+      "libelle": "Linux (Fedora/RHEL)",
+      "motif": "{APP}-{V}-1.x86_64.rpm",
+      "raison": "paquet RPM — SEUL motif a separateurs `-` et a porter le suffixe de release `-1` : le recopier a la main est precisement ce qui rate"
+    },
+    {
+      "cle": "linux-appimage",
+      "libelle": "Linux (portable)",
+      "motif": "{APP}_{V}_amd64.AppImage",
+      "raison": "binaire portable — se lance sans installation apres `chmod +x`, seule voie sur une distribution hors des deux familles ci-dessus"
+    }
+  ],
+
+  "hors_vitrine": {
+    "//": [
+      "CE QUI EST SUR LA RELEASE ET N'A RIEN A FAIRE DANS LA VITRINE — enumere NOMMEMENT, parce que",
+      "la face en ligne verifie aussi l'inverse (aucun artefact installable passe sous silence) et",
+      "rougirait a tort a chaque passage sans cette liste. Un piege deja tombe deux fois au relevé :",
+      "compter les `.app.tar.gz` comme « macOS couvert ». Ils ne se double-cliquent pas."
+    ],
+    "{APP}_aarch64.app.tar.gz": "charge de l'updater arm64, PAS un installeur — sans numero de version dans le nom, lue par le plugin tauri-updater, jamais par un humain",
+    "{APP}_x64.app.tar.gz": "charge de l'updater x86_64, PAS un installeur — meme raison",
+    "*.sig": "signature minisign d'une charge d'updater — sans valeur pour un visiteur, indispensable au plugin",
+    "latest.json": "manifeste d'updater. Le notre fait autorite et vit dans `updater/latest.json` ; celui-ci est le doublon que le CI posait avant le correctif `includeUpdaterJson: false` (L41)"
+  }
+}

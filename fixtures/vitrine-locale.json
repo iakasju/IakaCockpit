@@ -1,0 +1,49 @@
+{
+  "//": [
+    "PART LOCALE DE LA VITRINE — ce qui distingue CE depot de son frere. Volontairement HORS du",
+    "registre de convergence : `fixtures/vitrine-assets.json` (la table de motifs) est byte-identique",
+    "entre les deux applications, ce fichier-ci ne peut pas l'etre.",
+    "",
+    "Le nom du produit n'est PAS ici : il est lu dans `productName` de `src-tauri/tauri.conf.json`,",
+    "la source que le bundler emploie lui-meme pour nommer ses artefacts. Le recopier ici en ferait",
+    "une seconde source de verite, donc la premiere a diverger."
+  ],
+
+  "depot": "iakasju/IakaCockpit",
+
+  "absents": [
+    {
+      "cle": "macos-arm64",
+      "constate_sur": "la release v0.32.1",
+      "depuis": "2026-08-29",
+      "motif_absence": "la matrice macOS n'a pas tourné pour cette version. v0.32.1 a été publiée par **deux déclenchements manuels successifs** — run 33209504569 (`platforms: windows`) puis run 33212446776 (`platforms: linux`) —, aucun des deux ne sélectionnant macOS. Ce n'est donc **pas** un échec de build : le dernier run à matrice complète (31027777984, tag v0.31.2) avait produit les deux `.dmg` sans difficulté. L'artefact n'a jamais été demandé.",
+      "condition_de_levee": "une publication de la version courante avec `platforms: toutes`. L'artefact reparaîtra, la face en ligne rougira sur cette entrée devenue fausse, et c'est ce rouge qui commande de la retirer."
+    },
+    {
+      "cle": "macos-x64",
+      "constate_sur": "la release v0.32.1",
+      "depuis": "2026-08-29",
+      "motif_absence": "même cause que la ligne ci-dessus : les deux jobs macOS (`macos-arm64` et `macos-x64`) appartiennent à la même sélection de plateformes, et cette sélection n'a pas été faite pour v0.32.1.",
+      "condition_de_levee": "identique — une publication avec `platforms: toutes`."
+    }
+  ],
+
+  "gabarits": {
+    "sources": [
+      "```bash",
+      "# 1. Récupérer l'archive de la version depuis la page des releases",
+      "#    (Assets > Source code), puis la décompresser",
+      "cd {APP}-{V}",
+      "",
+      "# 2. Installer les dépendances",
+      "npm ci",
+      "",
+      "# 3. Lancer en développement",
+      "npm run tauri dev",
+      "",
+      "# 4. Ou produire l'exécutable de votre plateforme",
+      "npm run tauri build",
+      "```"
+    ]
+  }
+}
