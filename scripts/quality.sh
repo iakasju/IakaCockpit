@@ -37,7 +37,9 @@ echo "==> [6/7] cargo test (back)"
 # lot. Ce qui bloque, c'est la face LOCALE, jouee a l'etape [3/7] par vitest.
 #
 # ON N'AVALE RIEN : le code de sortie est capture et RESTITUE en clair. 0 = concorde, 1 = ecart,
-# 3 = NON MESURE (pas de reseau) — et 3 n'est jamais presente comme un succes.
+# 3 = NON MESURE (reseau indisponible OU quota anonyme epuise) — et 3 n'est jamais presente comme
+# un succes. La CAUSE exacte du 3 est celle qu'imprime le script lui-meme ; ce runner ne la devine
+# pas et ne la reecrit pas.
 echo "==> [7/7] vitrine en ligne (HORS GATE — informe, ne bloque pas)"
 set +e
 node scripts/vitrine-en-ligne.mjs
@@ -45,7 +47,10 @@ VITRINE=$?
 set -e
 case "$VITRINE" in
   0) echo "    vitrine en ligne : la page publique dit vrai." ;;
-  3) echo "    vitrine en ligne : NON MESUREE (reseau indisponible). Ce n'est PAS un succes ; a rejouer connecte." ;;
+  # Le code 3 couvre DEUX causes — reseau indisponible ET quota anonyme epuise. Nommer la premiere
+  # ici affirmait une cause que ce script ne mesure pas, alors que la raison exacte est imprimee
+  # juste au-dessus par vitrine-en-ligne.mjs. On rappelle donc le statut, pas un diagnostic.
+  3) echo "    vitrine en ligne : NON MESUREE — raison exacte ci-dessus. Ce n'est PAS un succes ; a rejouer." ;;
   *) echo "    vitrine en ligne : ECART(S) ci-dessus (code $VITRINE). A traiter, sans bloquer ce gate." ;;
 esac
 
