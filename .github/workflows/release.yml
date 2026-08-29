@@ -128,21 +128,21 @@ jobs:
           args: ${{ matrix.args }}
 
   # ┌─ L42 — LE `latest` CESSE D'ETRE SUBI ────────────────────────────────────────────────────────┐
-  # │ MECANISME REEL, verifie sur la doc REST et MESURE le 2026-08-29. GitHub ne classe PAS les     │
-  # │ releases par date de creation ni par numero de version : il obeit au drapeau `make_latest`,   │
-  # │ de DEFAUT `true`, REECRIT A CHAQUE creation ou mise a jour de release. Republier un tag       │
-  # │ ANCIEN VOLE donc le `latest`. C'est exactement ce qui est arrive a iakaFrameGUI : v0.1.7      │
-  # │ publiee le 13/08, puis v0.1.5 et v0.1.6 republiees le 18/08 — et `latest` designait v0.1.6.   │
+  # │ MECANISME REEL, LU LE 2026-08-29 DANS LA SOURCE DU SHA EPINGLE ci-dessus (lot L43). Le vol du │
+  # │ `latest` vient de la CREATION d'une release : `createRelease` y est appele SANS `make_latest`,│
+  # │ donc au defaut `true`. Republier un tag dont la release EXISTE ne vole RIEN a ce SHA —        │
+  # │ `getOrCreateRelease` la renvoie telle quelle, sans aucun `updateRelease`. RECTIFICATION : ce  │
+  # │ cartouche disait, jusqu'au 2026-08-29, « republier un tag ANCIEN vole le latest » ; FAUX ICI. │
   # │                                                                                              │
-  # │ POURQUOI UNE ETAPE SEPAREE, ET SURTOUT PAS UNE ENTREE DE `tauri-action`. Le SHA epingle par   │
-  # │ L41 (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest` — inventaire de    │
-  # │ son `action.yml` fait au cadrage. Le desepingler pour en trouver une reviendrait a defaire    │
-  # │ l'acquis de L41 ; `fixtures/tauri-action-pin.json` et sa garde rougiraient, A RAISON.         │
+  # │ POURQUOI UNE ETAPE SEPAREE, PAS UNE ENTREE DE `tauri-action`. Le SHA epingle par L41          │
+  # │ (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest`. Le desepingler pour en│
+  # │ trouver une defairait L41 : `fixtures/tauri-action-pin.json` rougirait, A RAISON.             │
   # │                                                                                              │
-  # │ CONDITIONNE AU PLUS HAUT SEMVER, pas au tag qu'on vient de pousser : publier une version      │
-  # │ ancienne pose explicitement `--latest=false` au lieu de laisser le defaut `true` la faire     │
-  # │ gagner. C'est ce qui rend le vol MECANIQUEMENT impossible, la ou la discipline des dates      │
-  # │ n'etait qu'une regle que rien ne portait.                                                     │
+  # │ CE JOB N'EMPECHE PAS LE VOL, ET NE LE REPARE PAS NON PLUS. Mesure du 2026-08-29 sur banc      │
+  # │ (iakasju/latest-contrefactuel) : `make_latest=false` est un NO-OP sur `GET /releases/latest`. │
+  # │ La branche `--latest=false` ne rend donc PAS un `latest` deja vole. Ce que ce job fait : il   │
+  # │ DETECTE le vol, ROUGIT, et DICTE le seul geste qui le rende : `gh release edit <PLUS_HAUT>    │
+  # │ --latest`. Sa branche `--latest`, elle, marche.                                               │
   # └──────────────────────────────────────────────────────────────────────────────────────────────┘
   latest:
     needs: build

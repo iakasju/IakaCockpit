@@ -137,13 +137,28 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 #   — EN LIGNE, ci-dessus : la SEULE a confronter la table au monde reel (l'asset existe-t-il ? un
 #     asset installable est-il tu ?). Hors gate parce qu'elle depend d'un tiers.
 #
-# ⚠️ REPUBLIER UN TAG ANCIEN VOLE LE `latest`. GitHub ne classe pas par date ni par numero de
-# version : il obeit au drapeau `make_latest`, de DEFAUT `true`, REECRIT a chaque creation ou mise a
-# jour de release. C'est ainsi que iakaFrameGUI a vu `latest` designer v0.1.6 alors que v0.1.7
-# existait — v0.1.5 et v0.1.6 republiees le 18/08 apres v0.1.7 du 13/08. LE JOB `latest` DU WORKFLOW
-# EST CE QUI L'EN EMPECHE : il pose explicitement `--latest` ou `--latest=false` selon que le tag
-# publie est, ou non, le plus haut semver du depot. Ne pas le retirer, et ne pas chercher a le
-# remplacer par une entree de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
+# ⚠️ CREER UNE RELEASE SUR UN TAG ANCIEN VOLE LE `latest` — la REPUBLIER, non. Mesure du
+# 2026-08-29 (L43), LUE dans la source du SHA epingle par L41 : `createRelease` y est appele SANS
+# `make_latest`, donc au defaut `true` ; mais `getOrCreateRelease` renvoie une release DEJA
+# EXISTANTE telle quelle, sans aucun `updateRelease` — republier un tag dont la release existe ne
+# touche donc PAS au drapeau, A CE SHA. RECTIFICATION : ce bloc disait, jusqu'au 2026-08-29,
+# « REPUBLIER un tag ancien vole le latest » ; c'etait FAUX ici. L'incident iakaFrameGUI (v0.1.5 et
+# v0.1.6 republiees le 18/08 apres v0.1.7 du 13/08) etait une CREATION, pas une mise a jour. Sur
+# IakaCockpit, 25 tags sur 29 ne portent AUCUNE release (mesure du 2026-08-29) : les « republier »
+# revient a en CREER une, donc a voler le `latest` ; sur iakaFrameGUI les quatre tags de version
+# portent tous une release.
+#
+# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — IL NE LE REPARE MEME PAS. Mesure du
+# 2026-08-29 sur banc (`iakasju/latest-contrefactuel`, run 33277643229) : `make_latest=false` est un
+# NO-OP sur `GET /repos/.../releases/latest`. Verifie deux fois, par `gh release edit --latest=false`
+# ET par un `PATCH` REST brut, sur une release dont le `created_at` etait le plus ANCIEN et sur une
+# autre dont il etait le plus RECENT : dans les trois cas le `latest` n'a pas bouge d'un pouce. La
+# branche `--latest=false` de ce job est donc INERTE. Ce que le job fait reellement : il DETECTE le
+# vol (ligne `VERIFICATION : latest effectif = ...`), ROUGIT, et DICTE le seul geste qui rende le
+# `latest` : `gh release edit <PLUS_HAUT> --latest --repo <DEPOT>` — celui-la, mesure, fonctionne en
+# quelques secondes. Sa branche `--latest` (quand le tag publie EST le plus haut) marche, elle.
+# Ne pas retirer le job — c'est le seul detecteur — et ne pas chercher a le remplacer par une entree
+# de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
 ```
 
 ---
