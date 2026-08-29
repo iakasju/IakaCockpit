@@ -287,11 +287,18 @@ async function main(argv) {
 
   const cles = Object.keys(manifeste.platforms ?? {});
   if (cles.length === 0) throw new Error(`${MANIFEST_PATH} : aucune plateforme a mesurer`);
-  console.log(`mesure de ${cles.length} cle(s) de plateforme, en anonyme :`);
+  // ── L41 / DÉFAUT D-2 — SÉPARATION DES CANAUX ────────────────────────────────────────────────
+  // TOUT le journal part sur STDERR ; STDOUT ne porte QUE le document, et seulement en `--dry-run`.
+  // Avant : le journal sortait sur stdout ET le document aussi, si bien que
+  // `node scripts/mesurer-artefacts.mjs --dry-run > x.json` produisait un JSON INVALIDE — la
+  // sortie n'etait pas redirigeable, donc pas chainable. C'est le defaut exact deja corrige dans
+  // `publish-update.mjs` au meme lot L40 (ce dernier ne contient aucun `console.log`) : le canal
+  // n'etait pas uniforme entre deux scripts voisins du meme depot.
+  console.error(`mesure de ${cles.length} cle(s) de plateforme, en anonyme :`);
 
   const artefacts = await mesurer({ manifeste, pubkey });
   for (const a of artefacts) {
-    console.log(
+    console.error(
       `  ${a.plateforme.padEnd(26)} ${String(a.status).padEnd(4)} ${String(a.octets).padStart(9)} o  ` +
         `signature=${a.signature}  temoin=${a.temoinNegatifOctetAltere}`,
     );
@@ -304,11 +311,13 @@ async function main(argv) {
   });
   const corps = `${JSON.stringify(doc, null, 2)}\n`;
   if (dryRun) {
-    console.log(corps);
+    // LE DOCUMENT, seul sur stdout et sans retour a la ligne surnumeraire : `> x.json` doit
+    // produire un JSON parsable. C'est mesure (`npm run test:canal-mesure`), pas relu.
+    process.stdout.write(corps);
     return 0;
   }
   writeFileSync(join(ROOT, MESURES_PATH), corps, "utf8");
-  console.log(`${MESURES_PATH} ecrit — ${doc.etat}`);
+  console.error(`${MESURES_PATH} ecrit — ${doc.etat}`);
   return 0;
 }
 
