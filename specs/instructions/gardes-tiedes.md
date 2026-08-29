@@ -317,6 +317,15 @@ défaut à remonter, pas une fixture à recalibrer.
 
 6.3 **Mutation** : altérer un octet du manifeste versionné → la garde rougit en nommant le champ.
 
+> **Rectifié à l'exécution, sur relevé du gate.** Cette formulation est **fausse pour une partie des
+> champs**, et sa fausseté est **imposée par AR-4 = O3** : `--notes` reste une **entrée**, donc la
+> garde la tire du fichier même. Un champ qui est une **entrée tirée du fichier** le **traverse par
+> construction** — altéré, il ressort altéré des **deux** côtés de la comparaison, qui reste verte.
+> Mesuré : altérer `notes` laisse la suite **entièrement verte**. La limite est **légitime** ; ne pas
+> l'écrire ne l'était pas. Voir **CA-17 rectifié** ci-dessous, et le bloc `HORS-COUVERTURE DÉCLARÉ
+> nº2` en tête de `scripts/__tests__/manifeste-reproductible.test.mjs`, où elle est **mesurée** et
+> non seulement écrite.
+
 ### Étape 7 — Volet C / défaut D-5 : une commande de gate qui dit vrai
 
 7.1 **Ne pas** toucher au contenu de `test:all` (AR-6, arbitrage du dépôt non rouvert). Exposer un
@@ -503,8 +512,26 @@ l'étape 0 se modifie **dans les deux dépôts au même commit logique**, et l'�
       manifeste de la version publiée, avec `--pub-date` et `--notes` **tirés de
       `updater/latest.json`**, produit un document **identique à l'octet** à ce fichier. *Vérif* :
       la commande et le `diff` **vide** cités, dans les **deux** dépôts.
-- [ ] **CA-17 — D-6, la mutation.** Altérer un octet de `updater/latest.json` fait rougir la garde
-      **en nommant le champ**. Révoqué, `git diff` vide.
+- [ ] **CA-17 — D-6, la mutation — RECTIFIÉ À L'EXÉCUTION (relevé du gate).** *Formulation
+      d'origine, conservée pour mémoire :* « Altérer un octet de `updater/latest.json` fait rougir la
+      garde **en nommant le champ**. Révoqué, `git diff` vide. » Elle est **fausse pour une partie
+      des champs**, et sa fausseté découle de **AR-4 = O3** : `--notes` reste une **entrée**, la
+      garde la tire du fichier, et tout champ qui est une entrée **traverse par construction**.
+      *Formulation qui fait foi :*
+      **(a)** tout champ que le **générateur décide** — les neuf `url`, l'attribution des clés, le
+      rang NSIS/MSI, l'ordre, la mise en forme — fait rougir la garde quand on l'altère dans le
+      fichier versionné, et le refus **NOMME le champ** (ou une **clé sœur** : deux clés de
+      plateforme peuvent désigner un seul artefact) ;
+      **(b)** les champs qui **traversent** sont **déclarés**, avec motif, portée exacte, ce qui les
+      couvre ailleurs et leur condition de levée ; et la déclaration est **MESURÉE** par un test qui
+      rejoue la partition et rougit **dans les deux sens** — trou fermé comme trou nouveau ;
+      **(c)** la partition **n'est pas la même dans les deux dépôts** et n'est jamais recopiée de
+      l'un à l'autre : côté GUI le générateur **dérive** `version` du tag lu dans les URL, donc
+      `version` y est **couvert** ; côté Cockpit il la reçoit en entrée, donc elle y **traverse**
+      (et c'est `I4` qui l'attrape, contre `updater/mesures.json`).
+      *Vérif* : `npx vitest run scripts/__tests__/manifeste-reproductible.test.mjs` dans les deux
+      dépôts ; **aucune écriture dans `updater/`** — les mutations sont simulées en mémoire, donc
+      `git diff` sur `updater/` est vide **par construction**, pas par révocation.
 - [ ] **CA-18 — D-5, `test:all` du GUI est INCHANGÉ** et sa limite est écrite **dans le
       `package.json`**. *Vérif* : `git diff package.json` — la valeur de `test:all` n'a pas bougé ;
       `test:rust` existe et s'exécute.
