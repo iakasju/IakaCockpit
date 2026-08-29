@@ -33,9 +33,15 @@
 // └──────────────────────────────────────────────────────────────────────────────────────────────┘
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { verifierMesures, verifierHorsCouverture } from "../lib/verifier-mesures.mjs";
+import {
+  verifierMesures,
+  verifierHorsCouverture,
+  estPrive,
+  hoteJuge,
+} from "../lib/verifier-mesures.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const read = (p) => readFileSync(resolve(ROOT, p), "utf8");
@@ -103,23 +109,11 @@ function plateformesDuManifeste() {
   });
 }
 
-/**
- * Un hôte PUBLIC : ni adresse de LAN, ni boucle locale, ni nom non résolvable hors du réseau.
- * On teste la PROPRIÉTÉ (« atteignable depuis n'importe où »), jamais une valeur : demain
- * l'hébergeur peut changer, le critère ne bouge pas.
- */
-function estPrive(hote) {
-  const h = hote.split(":")[0];
-  return (
-    /^127\./.test(h) ||
-    /^10\./.test(h) ||
-    /^192\.168\./.test(h) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-    h === "localhost" ||
-    h.endsWith(".local")
-  );
-}
-
+// LE PRÉDICAT DE PUBLICITÉ N'EST PLUS ÉCRIT ICI (L41, défaut D). Il vivait dans ce fichier, où il
+// ne pouvait s'exercer que sur les hôtes RÉELS — donc jamais sur les cas de bord qu'il tranche. Il
+// découpait sur « : », ce qui rend `"["` sur `"[::1]:3001"` : `I2` CERTIFIAIT alors qu'une boucle
+// locale est publique. Il vit désormais dans `scripts/lib/verifier-mesures.mjs`, testé sur
+// fixtures (E-3/E-4/E-5), et la charge de la preuve y est INVERSÉE (`estPublic` explicite).
 /** Le REGISTRE DE MESURE : ce qui a réellement été ouvert, quand, et avec quel résultat. */
 function mesures() {
   return JSON.parse(read("updater/mesures.json"));
@@ -135,10 +129,19 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
   });
 
   it("I2 — cet hôte est PUBLIC : un manifeste unique est lu par des machines hors du LAN", () => {
+    // Le message NOMME l'hôte réellement jugé (L41, § 1.4) : sans cela, un refus est inexploitable
+    // et la réintroduction du découpage sur « : » redeviendrait indétectable.
     const base = hostFromArtefactBase();
-    expect(estPrive(base), `hôte de téléchargement privé : ${base}`).toBe(false);
+    expect(
+      estPrive(base),
+      `hôte de téléchargement non public : ${base} (hôte jugé : ${hoteJuge(base)})`,
+    ).toBe(false);
     for (const [nom, p] of plateformesDuManifeste()) {
-      expect(estPrive(hostOf(p.url)), `manifeste[${nom}] pointe une adresse privée`).toBe(false);
+      const h = hostOf(p.url);
+      expect(
+        estPrive(h),
+        `manifeste[${nom}] annonce un hôte non public : ${h} (hôte jugé : ${hoteJuge(h)})`,
+      ).toBe(false);
     }
   });
 
@@ -166,22 +169,52 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
   it("I4bis — une exception ne peut pas être ajoutée en silence : motif, date, condition", () => {
     // Ce qui distingue un hors-couverture d'un mensonge : il se lit, il se date, et il dit à
     // quelle condition il disparaît.
-    const violations = verifierHorsCouverture({
-      manifeste: manifeste(),
-      horsCouverture: HORS_COUVERTURE,
-    });
-    expect(violations.map((v) => v.motif).join("\n")).toBe("");
+    //
+    // ┌─ CE TEST ÉTAIT VACUOUS, ET IL LE DISAIT (L41 — la jonction non gardée) ─────────────────────────────────┐
+    // │ Le registre versionné est VIDE — et c'est un résultat, pas un oubli. `verifierHorsCouver-│
+    // │ ture` itérait donc sur zéro entrée : supprimer l'appel ci-dessous ne faisait tomber AUCUN │
+    // │ test (mesuré : la suite restait à 54 verts). La LOGIQUE était pourtant couverte, sur     │
+    // │ fixtures (`verifier-mesures.test.mjs`) — c'est la JONCTION aux fichiers réels qui        │
+    // │ manquait : rien ne prouvait que la garde était encore BRANCHÉE ici.                      │
+    // │                                                                                          │
+    // │ CE QUI RÉPARE, ET CE QUI NE RÉPARE PAS. Peupler le registre versionné serait une FAUSSE  │
+    // │ réparation : elle détruirait un résultat mesuré (les 9 clés répondent 200). On ajoute à   │
+    // │ la place un CONTREFACTUEL DE FORME, sur le modèle exact d'`I4ter` — une exception         │
+    // │ fabriquée ICI, volontairement mal formée, que la garde appelée DEPUIS CE FICHIER doit     │
+    // │ refuser. Le registre versionné n'est pas touché.                                         │
+    // └──────────────────────────────────────────────────────────────────────────────────────────┘
+    const m = manifeste();
+    expect(
+      verifierHorsCouverture({ manifeste: m, horsCouverture: HORS_COUVERTURE })
+        .map((v) => v.motif)
+        .join("\n"),
+      "le registre versionné lui-même est mal formé",
+    ).toBe("");
+
+    // CONTREFACTUEL DE FORME : les quatre exigences violées d'un coup — motif absent, date
+    // invalide, condition de levée absente, plateforme jamais annoncée par le manifeste.
+    const malFormee = { plateforme: "plateforme-fantome-x86_64", date: "un jour de ces jours-ci" };
+    const refus = verifierHorsCouverture({ manifeste: m, horsCouverture: [malFormee] });
+    const motifs = refus.map((v) => v.motif).join(" | ");
+    expect(refus.length, `exception mal formée acceptée : ${JSON.stringify(malFormee)}`).toBe(4);
+    expect(motifs, "le motif absent n'est pas refusé").toMatch(/sans motif/);
+    expect(motifs, "la date invalide n'est pas refusée").toMatch(/sans date valide/);
+    expect(motifs, "la condition de levée absente n'est pas refusée").toMatch(/sans condition/);
+    expect(motifs, "la plateforme fantôme n'est pas refusée").toMatch(/exception fantome/);
+    expect(
+      refus.every((v) => v.plateforme === malFormee.plateforme),
+      "les refus ne nomment pas la plateforme fautive",
+    ).toBe(true);
   });
 
   it("I4ter — CONTREFACTUEL : inscrire une plateforme TÉLÉCHARGEABLE fait rougir I4", () => {
     // CE QUE CE TEST PROUVE, EXACTEMENT : que le CLIQUET d'`I4` mord sur les fichiers RÉELS —
     // une exception ouverte pour une plateforme téléchargeable est refusée. Il porte sur une
     // exception FABRIQUÉE ICI, jamais sur le registre versionné, qui reste vide.
-    // CE QU'IL NE PROUVE PAS : que `I4bis` cesse d'être vacuous quand le registre est vide. La
-    // LOGIQUE d'`I4bis` est exercée non vacuously ailleurs, sur fixtures
-    // (`verifier-mesures.test.mjs`, describe « verifierHorsCouverture ») ; le fait que son
-    // appel ci-dessus ne teste rien tant que le registre est vide reste un défaut CONNU et
-    // NON TRAITÉ ici (défaut E du relevé, renvoyé au lot successeur « gardes tièdes »).
+    // CE QU'IL NE PROUVE PAS : la forme d'une exception — c'est le contrefactuel de forme
+    // d'`I4bis` ci-dessus qui s'en charge, et qui rend cet appel-là non vacuous à son tour.
+    // Les deux sont complémentaires : celui-ci éprouve le CLIQUET (une exception ne survit pas à
+    // sa raison d'être), celui-là éprouve la FORME (une exception ne s'ajoute pas en silence).
     const m = manifeste();
     const [premiere] = Object.keys(m.platforms);
     const violations = verifierMesures({
@@ -195,6 +228,53 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
       violations.some((v) => v.plateforme === premiere && /hors-couverture/.test(v.motif)),
       `le cliquet ne mord pas : ${premiere} est téléchargeable et l'exception survit`,
     ).toBe(true);
+  });
+
+  it("CONV — les fichiers PARTAGÉS avec l'app jumelle n'ont pas dérivé (face LOCALE)", () => {
+    // ┌─ POURQUOI CETTE GARDE EXISTE (L41, défaut CONV) ─────────────────────────────────────────┐
+    // │ L40 a rendu six fichiers byte-identiques entre les deux applications — par un `diff`      │
+    // │ passé UNE FOIS à la main au gate. Rien ne le rejouait : la convergence n'était gardée que │
+    // │ par la discipline, l'option exacte qu'AR-6 de L40 avait écartée parce qu'« elle est ce    │
+    // │ qui a déjà échoué ». C'est ainsi que le registre `HORS_COUVERTURE` et son contrôle de     │
+    // │ forme avaient disparu d'un seul côté, en silence.                                        │
+    // │                                                                                          │
+    // │ ┌─ HORS-COUVERTURE DÉCLARÉ — ce que cette face NE PEUT PAS voir ───────────────────────┐ │
+    // │ │ Elle attrape l'édition EN PLACE d'un fichier partagé (le chemin réel par lequel la   │ │
+    // │ │ divergence est arrivée). Elle NE DÉTECTE PAS une modification COORDONNÉE du fichier  │ │
+    // │ │ ET de son empreinte, faite d'un seul côté : les deux bougent ensemble, l'empreinte   │ │
+    // │ │ reste juste ici, et ce dépôt n'a aucun moyen de voir l'autre. Seule la FACE CROISÉE  │ │
+    // │ │ (`npm run test:convergence`) la voit — et elle est HORS de cette suite, parce        │ │
+    // │ │ qu'elle dépend du dépôt frère (SKIP propre sur un clone isolé).                      │ │
+    // │ │ CONDITION DE LEVÉE : le jour où les fichiers partagés vivent dans un paquet publié    │ │
+    // │ │ (option O1 d'AR-6 de L40), les deux faces deviennent inutiles d'un coup.             │ │
+    // │ └──────────────────────────────────────────────────────────────────────────────────────┘ │
+    // └──────────────────────────────────────────────────────────────────────────────────────────┘
+    const registre = read("fixtures/convergence.sha256")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith("#"));
+    expect(registre.length, "fixtures/convergence.sha256 est vide").toBeGreaterThan(0);
+
+    const derives = [];
+    for (const ligne of registre) {
+      const m = ligne.match(/^([0-9a-f]{64})\s+(.+)$/);
+      expect(m, `ligne illisible dans le registre d'empreintes : « ${ligne} »`).toBeTruthy();
+      const [, attendu, chemin] = m;
+      let obtenu;
+      try {
+        obtenu = createHash("sha256").update(readFileSync(resolve(ROOT, chemin))).digest("hex");
+      } catch {
+        derives.push(`${chemin} : ABSENT`);
+        continue;
+      }
+      if (obtenu !== attendu) derives.push(`${chemin} : ${attendu.slice(0, 12)}… → ${obtenu.slice(0, 12)}…`);
+    }
+    expect(
+      derives.join("\n"),
+      "fichier(s) PARTAGÉ(S) modifié(s) d'un seul côté. Tout fichier de ce registre se modifie " +
+        "DANS LES DEUX DÉPÔTS au même commit logique ; puis on régénère les empreintes " +
+        "(voir CLAUDE.md § convergence) et on rejoue `npm run test:convergence`.",
+    ).toBe("");
   });
 
   it("I5 — la liste de lecture porte au moins DEUX hôtes distincts, sinon rien ne bascule", () => {
