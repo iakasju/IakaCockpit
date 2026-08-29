@@ -873,12 +873,26 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **deux faces** (AR-5 = O2) : **locale** dans le gate (empreintes, nomme le fichier qui a
       dérivé), **croisée** hors gate (`npm run test:convergence`, SKIP propre sans le frère).
       La limite — la face locale ne voit pas une édition **coordonnée** d'un seul côté — est
-      **déclarée dans le fichier de garde**, pas seulement dans un rapport.
+      **déclarée dans le fichier de garde**, pas seulement dans un rapport. **Complétude** :
+      retirer une ligne du registre **dans les deux dépôts** rétrécissait la couverture sans
+      qu'aucune face ne bronche (mesuré : la face croisée rendait « OK — 12 fichier(s) »). Un
+      **cliquet de complétude** ferme ce résidu — le compte ne descend que sur décision, dans le
+      commit qui la porte. Ce qu'il ne ferme pas — un **échange** de lignes garde le compte — est
+      **déclaré** : quels fichiers *devraient* converger est une décision, pas un fait mesurable
+      depuis un seul dépôt. La **commande de régénération** des empreintes vit en tête du
+      registre (cross-OS, sans dépendance).
       **Volet C — référentiels mouvants et canaux.** (D-6) CA-14 de L40 comparait **deux sorties
       entre elles** : il ne prouvait donc pas ce qu'on croyait. La republication à l'identique est
       désormais prouvée **contre le fichier versionné** — régénérer le manifeste en tirant
       `notes` et `pub_date` de `updater/latest.json` **lui-même** le reproduit **à l'octet**
       (AR-4 = O3 : `--notes` reste une entrée, les vraies notes du GUI ne sont pas détruites).
+      **Ce que cette garde NE voit PAS est déclaré, et MESURÉ** : un champ qui est une **entrée
+      tirée du fichier** le **traverse par construction** — altéré, il ressort altéré des deux
+      côtés. Ici : `version`, `notes`, `pub_date`, et la `signature` d'un artefact désigné par
+      **une seule** clé de plateforme. `version` est rattrapé par `I4` (contre `mesures.json`),
+      `pub_date` **dans un seul sens**, `notes` **par rien**. La déclaration n'est pas de la
+      prose : un test **rejoue la partition** et rougit **dans les deux sens**. **CA-17 a été
+      rectifié en conséquence** — sa formulation d'origine promettait ce qu'AR-4 rend impossible.
       (D-5) **la prétention est corrigée, pas le script** (AR-6 = O2) : `test:all` du GUI est
       **inchangé**, sa limite est écrite **dans le `package.json`**, `test:rust` est exposé, et
       `cargo test` devient une **ligne de tableau obligatoire** du verdict de gate. Ce qui mentait
@@ -886,16 +900,34 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (D-2) journal de `mesurer-artefacts.mjs` sur **stderr**, document sur stdout — **mesuré**
       par un test qui **exécute** le script (réseau neutralisé par un `fetch` de substitution),
       pas par un comptage de `console.log`. (D-3) les deux `console.log` du GUI.
-      **⛔ D-4 GELÉ ET REMONTÉ — l'étape 0.3 a mordu, U1 s'est matérialisée.** Le tag `v0` de
-      `tauri-apps/tauri-action` pointe le commit `84b9d35b5fc46c1e45415bdb6144030364f7ebc5`
-      (= `action-v0.6.2`). L'`action.yml` **à ce SHA** déclare **`includeUpdaterJson`** (défaut
-      `'true'`) et **ne connaît ni `uploadUpdaterJson` ni `uploadUpdaterSignatures`** — ces deux
-      entrées n'existent que sur `dev`, la branche sur laquelle L40 a lu. Le `uploadUpdaterJson:
-      false` des **deux** workflows est donc **ignoré en silence** par l'action qui s'exécute :
-      **le volet G de L40 est inopérant sur ce qui tourne**. Conformément à l'instruction
-      (« s'arrêter et remonter : c'est un défaut de L40, pas de ce lot, et il ne se corrige pas
-      en passant »), **aucune ligne de workflow n'a été touchée** — ni pin, ni cliquet. CA-13,
-      CA-14 et CA-15 sont donc **non couverts, et déclarés tels**. Décision du décideur attendue.
+      **(D-4) l'étape 0.3 a mordu, U1 s'est matérialisée — et le lot a TRAITÉ ce qu'elle a
+      révélé.** Le tag `v0` de `tauri-apps/tauri-action` pointait le commit
+      `84b9d35b5fc46c1e45415bdb6144030364f7ebc5` (= `action-v0.6.2`). L'`action.yml` **à ce SHA**
+      déclare **`includeUpdaterJson`** (défaut `'true'`) et **ne connaît ni `uploadUpdaterJson`
+      ni `uploadUpdaterSignatures`** — ces deux entrées n'existent que sur `dev`, la branche sur
+      laquelle L40 a lu. Le `uploadUpdaterJson: false` des deux workflows était donc **ignoré en
+      silence** par l'action qui s'exécute : **le volet G de L40 était inopérant sur ce qui
+      tourne.** Ce qui a été fait : le workflow est **épinglé sur le SHA de 40 caractères**
+      (`# action-v0.6.2` en commentaire, plus aucune occurrence de `@v0`), l'entrée posée est
+      **`includeUpdaterJson: false`** — celle que ce SHA déclare réellement — et le **cliquet**
+      vit dans `fixtures/tauri-action-pin.json`, source unique du référent (SHA, `sha256` de
+      l'`action.yml`, jeu d'entrées déclarées, entrées **vérifiées absentes**, et l'ordre de
+      **re-lire `action.yml` au nouveau SHA** avant toute levée). **13 tests** l'éprouvent
+      (`scripts/__tests__/pin-tauri-action.test.mjs`), toute mutation se faisant **dans la
+      fixture, jamais dans le workflow**. **CA-13, CA-14 et CA-15 sont couverts.**
+      **CE QUI RESTE REMONTÉ AU DÉCIDEUR — et n'est pas de ce lot :** le volet G de L40 a
+      **cru** supprimer le `latest.json` concurrent posé par l'action, et ne l'a jamais fait sur
+      ce qui tournait. Le pin rend le référent immuable et le cliquet force à re-prouver ; **la
+      première release qui passera par ce workflow est la première où la suppression sera
+      réellement effective** — cet effet-là n'a pas de preuve hors ligne, et il n'en est pas
+      réclamé une ici.
+      **⚠️ Correction d'une déclaration fausse (relevé au gate).** Ce paragraphe a porté, jusqu'à
+      ce commit, la mention « **D-4 GELÉ ET REMONTÉ [...] aucune ligne de workflow n'a été
+      touchée — ni pin, ni cliquet. CA-13, CA-14 et CA-15 sont non couverts** ». Elle était vraie
+      quand elle a été écrite (`f3b54e3`) et **fausse dès le commit suivant** (`127c752`, qui
+      épingle et pose le cliquet) ; la dernière écriture documentaire du lot (`2c79f6d`) l'a
+      laissée en place. **La doc doit dire ce que le lot a fait** : la trace du gel est conservée
+      ici plutôt qu'effacée, mais elle ne décrit plus l'état du dépôt.
       **Aucun effet utilisateur, donc aucune recette humaine** : la seule preuve est la mesure —
       d'où le critère non négociable « toute garde touchée est éprouvée par une mutation qui la
       fait rougir », chaque mutation portant sur le **programme** (jamais sur l'attendu) et
