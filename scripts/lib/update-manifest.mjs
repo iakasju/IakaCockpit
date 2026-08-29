@@ -5,7 +5,11 @@
 // hors du script exécutable les rend testables sur des données factices, sans
 // réseau, sans dépôt et sans release — ce que ni GitHub ni Forgejo ne permettent.
 //
-// Zéro dépendance externe (esprit des scripts existants du dépôt).
+// Zéro dépendance externe (esprit des scripts existants du dépôt). Le seul import est INTERNE :
+// `vitrine.mjs`, fichier convergent partagé avec le dépôt frère, qui sait extraire d'un README la
+// version qu'il ANNONCE. Le réimplémenter ici aurait créé une seconde lecture du même format —
+// donc la première à diverger.
+import { versionAnnoncee } from "./vitrine.mjs";
 
 /**
  * LA VERSION DU PLUGIN CONTRE LAQUELLE LA CONVENTION DE CLÉS A ÉTÉ VÉRIFIÉE.
@@ -100,14 +104,30 @@ export function versionPluginUpdater(cargoLock) {
 }
 
 /**
- * GARDE D'ALIGNEMENT (§ 6b.1). `package.json`, `tauri.conf.json`, `Cargo.toml` et
+ * GARDE D'ALIGNEMENT (§ 6b.1). `package.json`, `tauri.conf.json`, `Cargo.toml`, le README et
  * le tag doivent porter la MÊME version. Une dérive ici et l'updater annonce une
  * version qui n'est pas celle du binaire : le client se croit à jour, ou boucle.
+ *
+ * L42 — LE README REJOINT LES SOURCES GARDÉES. Il est un porteur de version de plein droit : la
+ * page que voit un inconnu arrivant sur GitHub annonce un numéro et un tableau de noms de fichiers
+ * versionnés. Mesuré le 2026-08-29 : il annonçait v0.31.2 quand le dépôt portait 0.32.1, et rien ne
+ * rougissait. Le `readme` est OPTIONNEL dans la signature : les appels existants (et les tests du
+ * § 6b.1) restent valables sans lui, et n'acquièrent pas silencieusement un cinquième contrôle.
+ *
+ * ⚠️ DIVERGENCE PRÉEXISTANTE, DITE PLUTÔT QUE MASQUÉE. Le dépôt frère (iakaFrameGUI) garde ses
+ * porteurs de version par un dispositif PLUS RICHE : registre `VERSION_CARRIERS` avec la raison de
+ * chaque entrée, registre `VERSION_NON_CARRIERS` de ce qui est hors couverture, et un cliquet
+ * comparant les clés LUES aux clés DÉCLARÉES. Cette fonction-ci n'a rien de tout cela : elle
+ * énumère quatre sources en dur, sans raisons ni cliquet. L42 y ajoute le README SANS importer le
+ * dispositif du frère — ce serait un autre lot, et le faire en passant le trancherait par accident.
+ * CE QUE ÇA COÛTE : ajouter ici un porteur sans câbler sa lecture dans `publish-update.mjs` ne fait
+ * rougir personne, là où le frère mordrait. CONDITION DE LEVÉE : un lot qui aligne les deux
+ * dispositifs de garde de version, ou qui les fait converger dans le registre partagé.
  *
  * Renvoie `{ ok, version, sources, mismatches }` — jamais d'exception : c'est
  * l'appelant qui décide d'échouer (le mode `--check-only` veut le détail).
  */
-export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml }) {
+export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml, readme }) {
   const version = versionFromTag(tag);
   const sources = {
     tag: version,
@@ -115,6 +135,11 @@ export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml }
     "tauri.conf.json": tauriConf?.version ?? null,
     "Cargo.toml": cargoVersion(cargoToml ?? ""),
   };
+  // Un README non fourni n'est PAS un README aligné : on n'ajoute la source que si l'appelant l'a
+  // lue. L'inscrire à `null` par défaut ferait échouer tous les appels existants ; l'inscrire à
+  // `version` par défaut serait un faux vert. On l'omet, et le cliquet de `publish-update.mjs`
+  // (ci-dessous) est ce qui garantit qu'elle est bien fournie en publication réelle.
+  if (readme !== undefined) sources["README.md"] = versionAnnoncee(readme);
   const mismatches = Object.entries(sources)
     .filter(([, v]) => v !== version)
     .map(([source, found]) => ({ source, found, expected: version }));

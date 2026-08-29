@@ -140,13 +140,28 @@ const pubDate = pubDateArg ?? new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const conf = JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8"));
 const cargo = readFileSync(join(root, "src-tauri/Cargo.toml"), "utf8");
+// L42 — le README est un porteur de version : la page que voit un inconnu ne peut pas annoncer
+// autre chose que ce qu'on publie. Il est lu ICI, et l'omettre ferait retomber la garde à quatre
+// sources sans un mot (cf. le cliquet juste après l'appel).
+const readme = readFileSync(join(root, "README.md"), "utf8");
 
 const alignment = checkVersionAlignment({
   tag,
   packageJson: pkg,
   tauriConf: conf,
   cargoToml: cargo,
+  readme,
 });
+// CLIQUET D'OMISSION — la parade au trou déclaré dans `checkVersionAlignment` : cette garde-ci
+// n'a ni registre ni cliquet propre, donc rien n'empêcherait de retirer `readme` de l'appel
+// ci-dessus et de retomber en silence à quatre sources. On l'affirme, à l'endroit de l'appel.
+if (!Object.hasOwn(alignment.sources, "README.md")) {
+  fail(
+    "README.md ne figure pas dans les sources d'alignement : il a cessé d'être fourni à " +
+      "checkVersionAlignment. La vitrine pourrait de nouveau annoncer une version que le dépôt " +
+      "ne porte pas — c'est le défaut H-1 de L42, et il vient de se rouvrir.",
+  );
+}
 if (!alignment.ok) {
   for (const m of alignment.mismatches) {
     console.error(
@@ -155,7 +170,9 @@ if (!alignment.ok) {
   }
   fail("versions désalignées — publication refusée (l'updater mentirait sur la version).");
 }
-info(`versions alignées sur ${alignment.version} (tag, package.json, tauri.conf.json, Cargo.toml).`);
+info(
+  `versions alignées sur ${alignment.version} (${Object.keys(alignment.sources).join(", ")}).`,
+);
 // `--check-only` reste STRICTEMENT la garde d'alignement (son contrat, critère C7) :
 // il ne touche à rien, donc la garde de branche ne le concerne pas.
 if (checkOnly) process.exit(0);
