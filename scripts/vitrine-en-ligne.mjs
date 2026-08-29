@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url";
 import {
   estHorsVitrine,
   fichiersCites,
-  fichiersTelechargeables,
+  fichiersPromis,
   nomsAttendus,
   versionAnnoncee,
 } from "./lib/vitrine.mjs";
@@ -157,7 +157,12 @@ if (assets.length > 0) {
 
   // E-3 — CHAQUE fichier annonce existe. Un `200` sur une page de release ne suffit pas : on
   // verifie l'EXISTENCE DE L'ASSET PAR SON NOM (etape 4.3).
-  for (const nom of fichiersTelechargeables(README)) {
+  //
+  // « promis », et promis PARTOUT — pas seulement au tableau. Le README promet des le moment ou il
+  // nomme un artefact HORS d'un bloc d'absence declaree : prose, note ou tableau, c'est la meme
+  // promesse pour le visiteur. Restreindre E-3 aux lignes de tableau laissait passer une phrase en
+  // prose annoncant un `.dmg` inexistant — angle mort mesure, ferme dans `fichiersPromis`.
+  for (const nom of fichiersPromis(README)) {
     if (!assets.includes(nom)) {
       ecart("E-3", `le README annonce « ${nom} », qui N'EST PAS un asset de ${tagAnnonce}`);
     }

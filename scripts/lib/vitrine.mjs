@@ -31,6 +31,16 @@ export const debutZone = (nom) => `<!-- vitrine:debut:${nom} -->`;
 export const finZone = (nom) => `<!-- vitrine:fin:${nom} -->`;
 
 /**
+ * L'OUVERTURE d'un bloc d'ABSENCE DECLAREE, ecrite par le generateur ET relue par les gardes.
+ *
+ * UNE SEULE SOURCE POUR LES DEUX GESTES, deliberement : si la lecture recopiait cette phrase, elle
+ * deviendrait la deuxieme source de verite — donc la premiere a diverger, et le jour ou elle
+ * divergerait, TOUT le README redeviendrait « promesse » ou plus rien ne le serait. Modifier ce
+ * texte deplace les deux cotes ensemble.
+ */
+export const SENTINELLE_ABSENTS = "> **⚠️ Non fourni pour ";
+
+/**
  * Substitue `{APP}` et `{V}` dans un motif. Rien d'autre n'est interprete : un motif est une
  * chaine, pas un gabarit generaliste — moins il en fait, moins il peut mentir.
  */
@@ -106,7 +116,7 @@ export function rendreBinaires({ app, depot, version, plateformes, absents = [] 
     // et la premiere a diverger. Une cle inconnue de la table est un REFUS, pas une ligne muette.
     const parCle = new Map(plateformes.map((p) => [p.cle, p]));
     l.push("");
-    l.push(`> **⚠️ Non fourni pour ${tag}** — les plateformes ci-dessous ne sont **pas** livrées par`);
+    l.push(`${SENTINELLE_ABSENTS}${tag}** — les plateformes ci-dessous ne sont **pas** livrées par`);
     l.push("> cette version. L'absence est déclarée, datée et levable ; elle n'est pas un oubli, et");
     l.push("> rien ci-dessus ne la promet.");
     l.push(">");
@@ -212,20 +222,54 @@ export function fichiersCites(readme) {
 }
 
 /**
- * Les seuls fichiers que le README presente comme TELECHARGEABLES : les lignes du tableau.
+ * Les index des lignes qui appartiennent a un BLOC D'ABSENCE DECLAREE. Y citer un nom de fichier
+ * vaut « ce fichier N'EXISTE PAS » — l'exact inverse d'une promesse.
  *
- * DISTINCTION INDISPENSABLE, ET TROUVEE PAR LA FACE EN LIGNE ELLE-MEME. Une premiere version ne
- * connaissait que « cite quelque part » : E-3 reprochait alors au README d'annoncer
- * `IakaCockpit_0.32.1_aarch64.dmg`, un nom qui ne figure QUE dans le bloc des absents — c'est-a-dire
- * a l'endroit meme ou le README dit qu'il N'EXISTE PAS. La garde rougissait sur l'honnetete. Ce
- * qu'E-3 doit verifier, c'est ce qui est PROMIS, pas ce qui est mentionne.
+ * Le bloc s'ouvre sur `SENTINELLE_ABSENTS` (que le generateur ecrit lui-meme) et court tant que la
+ * citation Markdown `>` continue. Il se referme donc a la premiere ligne qui n'est plus citee : une
+ * phrase rendue au fil du texte n'herite jamais de l'exemption.
  */
-export function fichiersTelechargeables(readme) {
+export function lignesDAbsenceDeclaree(readme) {
+  const dedans = new Set();
+  let ouvert = false;
+  readme.split("\n").forEach((ligne, i) => {
+    if (ligne.startsWith(SENTINELLE_ABSENTS)) ouvert = true;
+    else if (ouvert && !ligne.startsWith(">")) ouvert = false;
+    if (ouvert) dedans.add(i);
+  });
+  return dedans;
+}
+
+/**
+ * Les fichiers que le README PROMET : tout artefact cite, SAUF ceux cites dans un bloc d'absence
+ * declaree. C'est l'entree d'E-3.
+ *
+ * DEUX DEFAUTS FERMES ICI, DANS L'ORDRE OU ILS ONT ETE TROUVES.
+ *
+ * 1. NE PAS PUNIR L'HONNETETE — trouve par la face en ligne elle-meme. Une premiere version ne
+ *    connaissait que « cite quelque part » : E-3 reprochait alors au README d'annoncer
+ *    `<app>_<v>_aarch64.dmg`, un nom qui ne figure QUE dans le bloc des absents, c'est-a-dire a
+ *    l'endroit meme ou le README dit qu'il N'EXISTE PAS. La garde rougissait sur la declaration.
+ *
+ * 2. NE PAS LAISSER D'ANGLE MORT — trouve par le gate. La deuxieme version a pris « promis » =
+ *    « ligne de tableau », et ce raccourci ouvrait un trou MESURE : une phrase en prose, hors
+ *    marqueurs et hors tableau (« Les utilisateurs macOS prendront directement
+ *    `<app>_<v>_aarch64.dmg` sur la page de la release. ») promettait un fichier inexistant et
+ *    passait les DEUX faces plus la suite entiere. CA-10 dit « CHAQUE fichier annonce par chaque
+ *    README », pas « chaque ligne de tableau » : l'implementation etait plus etroite que le
+ *    critere, et l'ecart etait muet.
+ *
+ * LA REGLE RETENUE TIENT LES DEUX : la PROMESSE est le defaut, l'ABSENCE DECLAREE est la seule
+ * exception, et elle n'est reconnue que la ou le generateur l'ecrit. Promettre ailleurs — prose,
+ * note, lien, titre — redevient mesurable, quel que soit l'endroit du README.
+ */
+export function fichiersPromis(readme) {
+  const declarees = lignesDAbsenceDeclaree(readme);
   const noms = new Set();
-  for (const ligne of readme.split("\n")) {
-    if (!/^\|/.test(ligne)) continue;
+  readme.split("\n").forEach((ligne, i) => {
+    if (declarees.has(i)) return;
     for (const m of ligne.matchAll(ARTEFACT)) noms.add(m[1]);
-  }
+  });
   return [...noms];
 }
 

@@ -33,10 +33,11 @@ import {
   estHorsVitrine,
   finZone,
   fichiersCites,
-  fichiersTelechargeables,
+  fichiersPromis,
   lireZones,
   nomsAttendus,
   rendreVitrine,
+  SENTINELLE_ABSENTS,
   substituer,
   versionAnnoncee,
 } from "../lib/vitrine.mjs";
@@ -229,13 +230,13 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
   it("E-3 ne porte QUE sur ce qui est PROMIS, pas sur ce qui est mentionne", () => {
     // Le defaut trouve par la face en ligne : un artefact nomme dans le bloc des absents n'est pas
     // annonce comme telechargeable. Confondre les deux faisait rougir la garde sur l'honnetete.
-    const telechargeables = fichiersTelechargeables(README);
+    const promis = fichiersPromis(README);
     const cites = fichiersCites(README);
     const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
     for (const a of CONTEXTE.absents) {
       expect(cites, `${noms[a.cle]} doit etre NOMME (absence declaree)`).toContain(noms[a.cle]);
       expect(
-        telechargeables,
+        promis,
         `${noms[a.cle]} est declare absent : il ne doit PAS etre presente comme telechargeable`,
       ).not.toContain(noms[a.cle]);
     }
@@ -243,8 +244,64 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
     const clesAbsentes = new Set(CONTEXTE.absents.map((a) => a.cle));
     for (const p of TABLE.plateformes) {
       if (clesAbsentes.has(p.cle)) continue;
-      expect(telechargeables).toContain(noms[p.cle]);
+      expect(promis).toContain(noms[p.cle]);
     }
+  });
+
+  it("le README ne PROMET rien que la table ne derive et que les absents n'aient retire", () => {
+    // LA FERMETURE EN GATE de l'angle mort, et la seule qui morde HORS LIGNE. La face en ligne
+    // (E-3) constate qu'un fichier promis n'existe pas ; elle est hors gate et depend du reseau.
+    // Ici, sans reseau, on interdit la SOURCE du defaut : le README n'a le droit de promettre que
+    // les noms que le generateur produit pour les plateformes REELLEMENT fournies. Une promesse
+    // ecrite ailleurs — prose libre, note, lien — n'est derivee de rien : elle est donc fausse par
+    // construction, et ce test la refuse au moment ou elle est ecrite.
+    const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
+    const clesAbsentes = new Set(CONTEXTE.absents.map((a) => a.cle));
+    const promettables = new Set(
+      TABLE.plateformes.filter((p) => !clesAbsentes.has(p.cle)).map((p) => noms[p.cle]),
+    );
+    for (const nom of fichiersPromis(README)) {
+      expect(
+        promettables,
+        `« ${nom} » est PROMIS par le README sans etre derive de la table des plateformes ` +
+          "fournies : soit il n'existe pas, soit il doit etre declare absent",
+      ).toContain(nom);
+    }
+  });
+
+  it("une promesse en PROSE, hors tableau et hors marqueurs, est VUE par E-3", () => {
+    // ANGLE MORT MESURE PUIS FERME. « Promis = ligne de tableau » laissait passer une phrase libre
+    // du README annoncant un artefact que la release ne porte pas : les DEUX faces vertes et la
+    // suite entiere verte sur un fichier inexistant promis en toutes lettres au visiteur. CA-10 dit
+    // « CHAQUE fichier annonce par chaque README ». Ce test est la reproduction exacte du cas.
+    const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
+    const fantome = noms[TABLE.plateformes[0].cle];
+    const prose = `Les utilisateurs prendront directement \`${fantome}\` sur la page de la release.`;
+    expect(fichiersPromis(`${README}\n\n${prose}\n`)).toContain(fantome);
+  });
+
+  it("le MEME nom, ecrit dans un bloc d'absence declaree, n'est PAS une promesse", () => {
+    // L'autre moitie de la regle : l'exemption existe, mais SEULEMENT la ou le generateur ecrit
+    // l'absence. Sans elle, la garde rougirait sur l'honnetete (defaut n°1, deja ferme).
+    const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
+    const fantome = noms[TABLE.plateformes[0].cle];
+    const declare = [
+      "# fixture",
+      "",
+      `${SENTINELLE_ABSENTS}v${VERSION}** — cette plateforme n'est pas livrée.`,
+      ">",
+      `> - **Plateforme** (\`${fantome}\`)`,
+      ">   — *constaté le 2026-08-29.* motif de fixture.",
+      "",
+    ].join("\n");
+    expect(fichiersCites(declare), "le nom doit rester NOMME").toContain(fantome);
+    expect(fichiersPromis(declare), "declare absent : ce n'est pas une promesse").not.toContain(
+      fantome,
+    );
+
+    // Et le bloc se REFERME : la premiere ligne non citee cesse d'etre exemptee.
+    const puisPromis = `${declare}\nEt \`${fantome}\` de nouveau, hors citation.\n`;
+    expect(fichiersPromis(puisPromis)).toContain(fantome);
   });
 
   it("les marqueurs de zone sont stables et distincts", () => {

@@ -28,7 +28,7 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 # (src-tauri/tauri.conf.json) et le reste de `fixtures/vitrine-locale.json`, qui est LOCAL a chaque
 # depot et n'a donc PAS sa place ici.
 56b0cca8b2dbada23161d6a30ffde710e03bded209d4112a67cbb57f8b84c439  fixtures/vitrine-assets.json
-6a160987968f56e188b5805f1a68a06eb559dc2ef80d0981b6c99fe9714ce145  scripts/lib/vitrine.mjs
+5be45af49541b12e29f316fb6cef9587acf6d0518749cd992bd45c649e15adb6  scripts/lib/vitrine.mjs
 8fddc688739ca8da0e038618e8c2ebd5154d2394e04687d7afe92b57353087ec  scripts/vitrine.mjs
-6369d92023d43262a00ab2ad71c2952cea8b2de0c6fa6e4bf3d112bc0aca68a2  scripts/vitrine-en-ligne.mjs
-e7d1f21c3ce0acd292843c3e06ce76ad2ad1fc982347e56e1ef33b9cbdb6d58f  scripts/__tests__/vitrine.test.mjs
+4d570b6f8b1156add6c4cef72a7aa69dbe1f9b21584422feae0de267b7b53597  scripts/vitrine-en-ligne.mjs
+00789f585541d6432bd00092234c8362f98c6c79c266d3a411c364f2bcda8e48  scripts/__tests__/vitrine.test.mjs
