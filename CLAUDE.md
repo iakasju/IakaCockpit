@@ -148,7 +148,8 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # revient a en CREER une, donc a voler le `latest` ; sur iakaFrameGUI les quatre tags de version
 # portent tous une release.
 #
-# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — ET RIEN N'ETABLIT QU'IL LE REPARE.
+# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — ET, DANS LES LIMITES
+# ENUMEREES PLUS BAS, IL NE LE REPARE PAS NON PLUS.
 #
 # CE QUI EST MESURE, et rien de plus. Banc `iakasju/latest-contrefactuel`, run `33277643229`
 # du 2026-08-29 : apres un vol REEL (creation de `v0.2.0` sans `--latest`, le `latest` passe de
@@ -159,39 +160,66 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # la plus recente par `created_at` — la branche `--latest=false` N'A PAS rendu le `latest` au
 # plus haut semver. C'est ce qui suffit a savoir qu'il ne faut pas compter dessus.
 #
-# CE N'EST PAS « la branche est inutile », et le job n'est pas « qu'un detecteur » — BORNAGE DU
-# 2026-08-30. ICI la voleuse serait une release CREEE SUR UN TAG ANCIEN, donc au `created_at` le
-# plus VIEUX : le `created_at` suit la date du COMMIT du tag, pas la publication (mesure : v0.32.1
-# porte created_at 2026-08-10 pour un published_at 2026-08-28). Sous l'hypothese « repli par
-# date » — la SEULE variante de repli qui SURVIVE au run, celle « en excluant la release
-# demarquee » etant REFUTEE par lui (elle predisait v0.9.0, on a observe v0.2.0) — le `latest`
-# retomberait sur `v0.32.2`, qui est AUSSI le plus haut semver : la ligne VERIFICATION serait
-# VERTE et le job aurait REPARE. Donc : ON NE PEUT PAS COMPTER DESSUS. Pas : « c'est inutile ».
+# BORNAGE DU 2026-08-30 — DATE, PUIS REFUTE LE MEME JOUR. Il etait ecrit ici : « ICI la voleuse
+# serait une release CREEE SUR UN TAG ANCIEN, donc au `created_at` le plus VIEUX ; sous
+# l'hypothese repli par date, le `latest` retomberait sur `v0.32.2`, qui est AUSSI le plus haut
+# semver : la ligne VERIFICATION serait VERTE et le job aurait REPARE ». 🛑 LA REGLE QUI PORTAIT
+# CET ARGUMENT EST REFUTEE (contrefactuel du decideur, plus bas) : plus AUCUNE regle survivante
+# ne regarde les dates. SOUS LA SEULE REGLE SURVIVANTE, LE JOB NE REPARE PAS — il DETECTE,
+# ROUGIT et DICTE le geste. ON NE PEUT PAS COMPTER DESSUS : vrai avant, vrai apres, et
+# desormais pour une raison PLUS FORTE.
+# Ce qui n'a pas bouge : le `created_at` suit la date du COMMIT du tag, pas la publication
+# (mesure : v0.32.1 porte created_at 2026-08-10 pour un published_at 2026-08-28).
+# Ce qui reste HORS de portee : « ce n'est pas une garde ». Non plus a cause des dates, mais
+# parce que RIEN de tout ceci n'a ete mesure SUR CE DEPOT-CI, avec son acteur et ses droits.
 #
-# CE QUI N'EST PAS MESURE — ecrit ici comme un fait jusqu'au 2026-08-30, RETROGRADE depuis :
-# le MECANISME. « `make_latest=false` est un NO-OP », « il n'y a aucun repli » : DEDUCTION, pas
-# mesure. La seule mesure existante NE DISCRIMINE RIEN — au moment ou elle a ete prise, la
-# release voleuse `v0.2.0` etait AUSSI la plus recente par `created_at` (`22:20:00Z`, contre
-# `22:10:00Z` pour `v0.9.0` et `22:01:35Z` pour `v0.10.0` ; dates forgees par les dates de
-# commit, re-verifiees le 2026-08-30). « Drapeau inamovible » et « drapeau retire, repli par
-# date » predisent donc EXACTEMENT la meme observation.
+# CE QUI ETAIT DEDUIT, ET QUI EST DESORMAIS ETABLI PAR ELIMINATION — 2026-08-30.
+# « `make_latest=false` est un NO-OP » a ete ecrit ici comme un fait MESURE jusqu'au 2026-08-30 ;
+# ca n'en etait pas un, et la retrogradation etait JUSTE : la seule mesure d'alors NE
+# DISCRIMINAIT RIEN — la release voleuse `v0.2.0` etait AUSSI la plus recente par `created_at`
+# (`22:20:00Z`, contre `22:10:00Z` pour `v0.9.0` et `22:01:35Z` pour `v0.10.0` ; dates forgees
+# par les dates de commit, re-verifiees le 2026-08-30).
 #
-# CE QUI TRANCHERAIT, a cout nul — mais c'est un ACTE DE RELEASE, refuse aux agents :
+# ⚠️ AVERTISSEMENT — IL PRECEDE LES COMMANDES, ET C'EST DELIBERE. Le geste ci-dessous ne tranche,
+# SEUL, que dans UN sens : une sortie `v0.9.0` conclut ; une sortie `v0.10.0` NE CONCLUT RIEN par
+# elle-meme. Ce qui elimine, c'est son CROISEMENT avec le run 33277643229. Et la premiere ligne
+# est un ACTE DE RELEASE, refuse aux agents — la seconde est une simple lecture.
+#
 #   gh release edit v0.10.0 --latest=false --repo iakasju/latest-contrefactuel
-#   gh api repos/iakasju/latest-contrefactuel/releases/latest --jq .tag_name
-# Le banc ne porte plus que deux releases (mesure du 2026-08-30) : `v0.10.0` (plus haut semver,
-# `created_at` le plus ANCIEN, porteuse du `latest`) et `v0.9.0` (plus recente par date). Donc :
-# drapeau inamovible ⇒ `v0.10.0` ; repli par date ⇒ `v0.9.0`. CONDITION DE LEVEE de la reserve :
-# ce geste joue par le decideur, et sa sortie citee ici. Tant qu'il ne l'est pas, on ecrit
-# « sur la topologie du banc, la branche `--latest=false` n'a pas rendu le `latest` au plus
-# haut semver » — borne a cette topologie — et RIEN sur le pourquoi.
+#   gh api  repos/iakasju/latest-contrefactuel/releases/latest --jq .tag_name
+#
+# JOUE PAR LE DECIDEUR le 2026-08-30 -> sortie `v0.10.0`, INCHANGEE. Etat du banc, six valeurs
+# relues une a une : `v0.10.0` (id 379113276, created 22:01:35Z, published 22:03:11Z, plus haut
+# semver, porteuse du `latest`) et `v0.9.0` (id 379113280, created 22:10:00Z, published
+# 22:03:13Z). `v0.9.0` est donc plus recente SUR LES DEUX DATES et porte le PLUS GRAND id.
+# CROISE AVEC LE RUN : huit des NEUF regles de repli enumerees sont REFUTEES — `created_at` et
+# `published_at` (chacune AVEC et SANS exclusion de la demarquee), semver, plus grand id, ordre
+# lexicographique du tag, et repli DIFFERE (ferme par une re-lecture tardive, la lecture du run
+# n'ayant eu lieu que 0,65 s apres l'edit). SEUL LE NO-OP SURVIT — et lui ne depend d'AUCUNE
+# topologie : la conclusion cesse d'etre bornee a l'AGENCEMENT du banc.
+#
+# 🛑 LE RESIDU, A NE JAMAIS OMETTRE. La phrase juste n'est PAS « GitHub ne replie jamais ». C'est :
+# « parmi les regles de repli ENUMEREES, huit sont refutees par mesure ; seule le NO-OP survit ».
+# (1) Une regle NON ENUMEREE reste possible — toute regle predisant `v0.2.0` au run et `v0.10.0`
+# au contrefactuel. (2) Le NO-OP survivant est OBSERVATIONNEL : il dit que `GET /releases/latest`
+# ne bouge pas, pas OU le no-op se produit (client `gh`, ecriture API, ou lecture) ; `make_latest`
+# n'est PAS RELISIBLE, donc aucune mesure ne distingue « ecriture acceptee sans effet » de
+# « ecriture ignoree ». (3) Rien de tout cela n'a ete mesure SUR CE DEPOT-CI. (4) Rien sur le
+# badge « Latest » de l'interface web. (5) Rien pour une autre version de l'API.
+# Table des neuf regles, valeurs mesurees et residu :
+# `iakaframe/specs/instructions/contrefactuel-ca5-procedure-decideur.md`, encart « LE
+# CONTREFACTUEL A ETE JOUE ». Registre des enonces de ce corpus qui parlent du repli :
+# `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md`, § Registre.
 #
 # CE QUE LE JOB FAIT est mesure, lui : il DETECTE le vol (ligne `VERIFICATION : latest
 # effectif = ...`), ROUGIT, et DICTE le rattrapage `gh release edit <PLUS_HAUT> --latest --repo
 # <DEPOT>`. ⚠️ Que ce rattrapage FONCTIONNE n'a PAS de trace non plus — aucun run, aucun log.
 # Le banc porte aujourd'hui `latest = v0.10.0`, mais la suppression de `v0.2.0` suffit a
 # l'expliquer : les deux gestes sont confondus. A RE-MESURER avant d'en refaire un fait ; le
-# « fonctionne en < 3 s » qui figurait ici est retire pour la meme raison que le NO-OP.
+# « fonctionne en < 3 s » qui figurait ici est retire. ⚠️ ET LE CONTREFACTUEL DU 2026-08-30 N'Y
+# CHANGE RIEN : il ne mesure que l'ecriture `false`. Que l'ecriture `true` — le rattrapage —
+# produise un effet reste SANS TRACE, et le NO-OP observe sur `false` ne se transpose pas
+# d'office a `true`.
 # Ne pas retirer le job — c'est le seul detecteur — et ne pas chercher a le remplacer par une
 # entree de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
 ```
@@ -255,10 +283,12 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 - [ ] **L43** — **Contrefactuel du vol de `latest` : sur la topologie du banc, la branche
       `--latest=false` n'a PAS rendu le `latest` au plus haut semver**
-      *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel NON fait, suspendu.*
-      *2026-08-30 — six points rétrogradés ou corrigés après gate : voir « CE QUI EST DÉDUIT ».*
-      *2026-08-30, second passage — la conclusion est BORNÉE à la topologie du banc : elle était*
-      *écrite comme une propriété générale de la branche, et elle ne l'est pas.)*
+      *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel sur le dépôt NON fait,*
+      *suspendu. 2026-08-30 — six points rétrogradés ou corrigés après gate. 2026-08-30, second*
+      *passage — la conclusion est BORNÉE à la topologie du banc. 2026-08-30, troisième passage —*
+      *le CONTREFACTUEL À COÛT NUL A ÉTÉ JOUÉ par le décideur : croisé avec le run, il réfute huit*
+      *des neuf règles de repli énumérées, seul le NO-OP survit, et le bornage « à la topologie »*
+      *tombe avec elles — mais PAS le résidu, qui est écrit.)*
       Instruction : `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` ; procédure du
       décideur : `…/contrefactuel-ca5-procedure-decideur.md`.
       **FAIT — prose rectifiée** : le cartouche `release.yml:130-146` et le bloc `⚠️ REPUBLIER…` de
@@ -278,35 +308,50 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **CONCLUSION SÛRE — et la seule que ce run porte** : **sur la topologie du banc**, où la
       release voleuse était **aussi** la plus récente par `created_at`, la branche `--latest=false`
       **n'a pas rendu** le `latest` au plus haut semver. **On ne peut donc pas compter dessus.**
-      **BORNAGE DU 2026-08-30 (second passage du gate) — ce que ce run NE dit PAS** : que la branche
-      soit **« inutile comme réparation »**, ni que le job ne soit **« qu'un détecteur »**. C'était
-      écrit ici, et ça **dépasse la preuve**. **Ici la topologie diffère** : la voleuse serait une
-      release **créée sur un tag ancien**, donc au `created_at` le plus **vieux** — le `created_at`
-      suit la date du **commit** du tag, pas la publication (mesuré : `v0.32.1` porte
-      `created_at 2026-08-10` pour un `published_at 2026-08-28`, cf. F4 de l'instruction). Sous
-      l'hypothèse **« repli par date »** — la **seule** variante de repli qui **survive** au run, la
-      variante « repli en **excluant** la release démarquée » étant **réfutée** par lui (elle
-      prédisait `v0.9.0` ; on a observé `v0.2.0`) — le `latest` retomberait sur `v0.32.2`, **qui est
-      aussi le plus haut semver** : la ligne `VERIFICATION` serait **verte** et le job aurait
-      **réparé**. La formule qui tient sous les **deux** hypothèses est donc **« on ne peut pas
-      compter dessus »** — jamais « elle est inutile ».
-      **CE QUI EST DÉDUIT, PAS MESURÉ — rétrogradé le 2026-08-30 (FAIL-1 du gate)** : le
-      **mécanisme**. « `make_latest=false` est un NO-OP », « ni repli par date, ni repli par
-      semver : aucun repli » était écrit ici comme un **fait mesuré** ; ça ne l'est pas. **Une
-      seule** des neuf lignes de la table de la procédure a une trace — la (c), run `33277643229` —
-      et **elle ne discrimine rien** : au moment de la mesure, la release voleuse `v0.2.0` était
-      **aussi** la plus récente par `created_at`, donc « drapeau inamovible » et « drapeau retiré +
-      repli par date » prédisent la **même** observation. Les gestes qui trancheraient (sur le
-      `created_at` le plus **ancien**, le `PATCH` REST brut) **n'ont ni run ni log**.
-      **CE QUI TRANCHERAIT — à coût nul, ACTE DE RELEASE donc refusé aux agents** :
+      **BORNAGE DU 2026-08-30 (second passage du gate) — DATÉ, PUIS RÉFUTÉ LE MÊME JOUR.** Il était
+      écrit ici : *« la voleuse serait une release créée sur un tag ancien, donc au `created_at` le
+      plus vieux ; sous l'hypothèse **repli par date**, le `latest` retomberait sur `v0.32.2`, qui
+      est aussi le plus haut semver, la ligne `VERIFICATION` serait verte et le job aurait
+      **réparé** »*. 🛑 **La règle qui portait cet argument est réfutée** par le contrefactuel joué
+      le 2026-08-30 (ci-dessous) : **plus aucune règle survivante ne regarde les dates**. **Sous la
+      seule règle survivante, le job ne répare pas** — il **détecte, rougit et dicte le geste**.
+      Ce qui **n'a pas bougé** : le `created_at` suit la date du **commit** du tag, pas la
+      publication (mesuré : `v0.32.1` porte `created_at 2026-08-10` pour un
+      `published_at 2026-08-28`, cf. F4 de l'instruction) ; et la variante « repli en **excluant**
+      la démarquée » était déjà réfutée par le run (elle prédisait `v0.9.0`, on a observé
+      `v0.2.0`). Ce qui reste **hors de portée** : « ce n'est pas une garde » — non plus à cause
+      des dates, mais parce que **rien de tout cela n'a été mesuré sur ce dépôt-ci**, avec son
+      acteur et ses droits.
+      **CE QUI ÉTAIT DÉDUIT — rétrogradé le 2026-08-30 (FAIL-1 du gate), PUIS ÉTABLI PAR
+      ÉLIMINATION le même jour.** « `make_latest=false` est un NO-OP » était écrit ici comme un
+      **fait mesuré** ; ça n'en était pas un, et la rétrogradation **était juste** : **une seule**
+      des neuf lignes de la table de la procédure avait une trace — la (c), run `33277643229` — et
+      **elle ne discriminait rien**, la release voleuse `v0.2.0` étant **aussi** la plus récente par
+      `created_at`.
+      ✅ **LE CONTREFACTUEL A ÉTÉ JOUÉ PAR LE DÉCIDEUR le 2026-08-30** :
       `gh release edit v0.10.0 --latest=false --repo iakasju/latest-contrefactuel` puis lecture de
-      `releases/latest`. Le banc ne porte plus que `v0.10.0` (plus haut semver, `created_at` le plus
-      ancien, porteuse du `latest`) et `v0.9.0` (plus récente par date) — **mesure du 2026-08-30**.
-      Donc : **drapeau inamovible ⇒ `v0.10.0`** · **repli par date ⇒ `v0.9.0`**.
-      **Condition de levée** : ce geste joué par le décideur, sa sortie citée.
-      **NON TRACÉ NON PLUS** : que `gh release edit <PLUS_HAUT> --latest` **répare** — aucun run,
-      aucun log ; l'état actuel du banc s'explique aussi bien par la **suppression** de `v0.2.0`.
-      Le « fonctionne en < 3 s » est **retiré** partout, pour la même raison que le NO-OP.
+      `releases/latest` → **`v0.10.0`, inchangé**. ⚠️ **Cette sortie ne conclut rien à elle seule**
+      (le geste n'était concluant que dans l'autre sens) : ce qui élimine, c'est son **croisement**
+      avec le run. Banc re-mesuré en lecture seule, six valeurs relevées une à une : `v0.10.0`
+      (`id 379113276`, `created 22:01:35Z`, `published 22:03:11Z`, plus haut semver) et `v0.9.0`
+      (`id 379113280`, `created 22:10:00Z`, `published 22:03:13Z`) — **`v0.9.0` est plus récente sur
+      les DEUX dates et porte le plus grand `id`**. Croisé avec le run : **huit des neuf règles de
+      repli énumérées sont réfutées** (`created_at` et `published_at`, chacune **avec et sans**
+      exclusion de la démarquée · semver · plus grand `id` · ordre lexicographique · **repli
+      différé**, fermé par une re-lecture tardive — celle du run n'ayant eu lieu que **0,65 s**
+      après l'`edit`). **Seul le NO-OP survit**, et lui **ne dépend d'aucune topologie**.
+      🛑 **LE RÉSIDU, à porter avec la conclusion** : la phrase juste n'est **pas** « GitHub ne
+      replie jamais », c'est **« parmi les règles énumérées, huit sont réfutées ; seule le NO-OP
+      survit »**. **(1)** Une règle **non énumérée** reste possible. **(2)** Le NO-OP survivant est
+      **observationnel** — il ne dit pas **où** il se produit (`gh`, écriture API, ou lecture), et
+      `make_latest` **n'est pas relisible**. **(3)** Rien sur **ce dépôt-ci**. **(4)** Rien sur le
+      badge web. **(5)** Rien pour une autre version de l'API. Le `PATCH` REST **brut** reste **sans
+      run ni log**.
+      **NON TRACÉ NON PLUS, ET LE CONTREFACTUEL N'Y CHANGE RIEN** : que
+      `gh release edit <PLUS_HAUT> --latest` **répare** — aucun run, aucun log ; l'état actuel du
+      banc s'explique aussi bien par la **suppression** de `v0.2.0`, et la mesure du 2026-08-30 ne
+      porte que sur l'écriture **`false`**, jamais sur `true`. Le « fonctionne en < 3 s » est
+      **retiré** partout.
       **FAIT — transport de preuve (CA-5.8)** : le banc télécharge `release.yml` d'`IakaCockpit@main`
       et compare le bloc `latest:` octet à octet. **Contrefactuel joué** : un octet muté
       (`publie`→`Publie`) → rouge **nommé** avec le `diff` et les deux empreintes (run
