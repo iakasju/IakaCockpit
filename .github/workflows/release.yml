@@ -138,11 +138,11 @@ jobs:
   # │ (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest`. Le desepingler pour en│
   # │ trouver une defairait L41 : `fixtures/tauri-action-pin.json` rougirait, A RAISON.             │
   # │                                                                                              │
-  # │ CE JOB N'EMPECHE PAS LE VOL (la release est creee AVANT lui). QU'IL LE REPARE OU NON N'EST    │
-  # │ PAS TRANCHE : ON NE PEUT PAS COMPTER DESSUS. CE QUI EST MESURE (run 33277643229, banc         │
-  # │ iakasju/latest-contrefactuel, topologie OU la voleuse etait AUSSI la plus recente par         │
-  # │ created_at) : `--latest=false` pose, le `latest` N'EST PAS revenu au plus haut semver. ICI,   │
-  # │ voleuse = tag ANCIEN : un repli par date REPARERAIT. Le job DETECTE, ROUGIT, DICTE le geste.  │
+  # │ CE JOB N'EMPECHE PAS LE VOL (la release est creee AVANT lui), ET IL NE LE REPARE PAS.         │
+  # │ MESURE : le contrefactuel du 2026-08-30 (`--latest=false` sur v0.10.0 -> v0.10.0 INCHANGE),   │
+  # │ croise avec le run 33277643229, REFUTE HUIT des NEUF regles de repli enumerees ; SEUL LE      │
+  # │ NO-OP SURVIT. RESIDU : une regle NON ENUMEREE reste possible, et ce NO-OP est OBSERVATIONNEL. │
+  # │ Liste, valeurs et residu : contrefactuel-du-vol-de-latest.md. Il DETECTE, ROUGIT, DICTE.      │
   # └──────────────────────────────────────────────────────────────────────────────────────────────┘
   latest:
     needs: build
