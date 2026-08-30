@@ -148,17 +148,41 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # revient a en CREER une, donc a voler le `latest` ; sur iakaFrameGUI les quatre tags de version
 # portent tous une release.
 #
-# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — IL NE LE REPARE MEME PAS. Mesure du
-# 2026-08-29 sur banc (`iakasju/latest-contrefactuel`, run 33277643229) : `make_latest=false` est un
-# NO-OP sur `GET /repos/.../releases/latest`. Verifie deux fois, par `gh release edit --latest=false`
-# ET par un `PATCH` REST brut, sur une release dont le `created_at` etait le plus ANCIEN et sur une
-# autre dont il etait le plus RECENT : dans les trois cas le `latest` n'a pas bouge d'un pouce. La
-# branche `--latest=false` de ce job est donc INERTE. Ce que le job fait reellement : il DETECTE le
-# vol (ligne `VERIFICATION : latest effectif = ...`), ROUGIT, et DICTE le seul geste qui rende le
-# `latest` : `gh release edit <PLUS_HAUT> --latest --repo <DEPOT>` — celui-la, mesure, fonctionne en
-# quelques secondes. Sa branche `--latest` (quand le tag publie EST le plus haut) marche, elle.
-# Ne pas retirer le job — c'est le seul detecteur — et ne pas chercher a le remplacer par une entree
-# de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
+# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — IL NE LE REPARE PAS NON PLUS.
+#
+# CE QUI EST MESURE, et rien de plus. Banc `iakasju/latest-contrefactuel`, run `33277643229`
+# du 2026-08-29 : apres un vol REEL (creation de `v0.2.0` sans `--latest`, le `latest` passe de
+# `v0.10.0` a `v0.2.0`), le job a pose `--latest=false` sur la release voleuse, et
+# `GET /repos/.../releases/latest` a rendu `v0.2.0` — ligne du log :
+# `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`, job ROUGE.
+# CONCLUSION SURE, et la SEULE : la branche `--latest=false` NE REND PAS le `latest` au plus
+# haut semver. C'est ce qui suffit a savoir qu'il ne faut pas compter dessus.
+#
+# CE QUI N'EST PAS MESURE — ecrit ici comme un fait jusqu'au 2026-08-30, RETROGRADE depuis :
+# le MECANISME. « `make_latest=false` est un NO-OP », « il n'y a aucun repli » : DEDUCTION, pas
+# mesure. La seule mesure existante NE DISCRIMINE RIEN — au moment ou elle a ete prise, la
+# release voleuse `v0.2.0` etait AUSSI la plus recente par `created_at` (`22:20:00Z`, contre
+# `22:10:00Z` pour `v0.9.0` et `22:01:35Z` pour `v0.10.0` ; dates forgees par les dates de
+# commit, re-verifiees le 2026-08-30). « Drapeau inamovible » et « drapeau retire, repli par
+# date » predisent donc EXACTEMENT la meme observation.
+#
+# CE QUI TRANCHERAIT, a cout nul — mais c'est un ACTE DE RELEASE, refuse aux agents :
+#   gh release edit v0.10.0 --latest=false --repo iakasju/latest-contrefactuel
+#   gh api repos/iakasju/latest-contrefactuel/releases/latest --jq .tag_name
+# Le banc ne porte plus que deux releases (mesure du 2026-08-30) : `v0.10.0` (plus haut semver,
+# `created_at` le plus ANCIEN, porteuse du `latest`) et `v0.9.0` (plus recente par date). Donc :
+# drapeau inamovible ⇒ `v0.10.0` ; repli par date ⇒ `v0.9.0`. CONDITION DE LEVEE de la reserve :
+# ce geste joue par le decideur, et sa sortie citee ici. Tant qu'il ne l'est pas, on ecrit
+# « la branche `--latest=false` ne rend pas le `latest` » et RIEN sur le pourquoi.
+#
+# CE QUE LE JOB FAIT est mesure, lui : il DETECTE le vol (ligne `VERIFICATION : latest
+# effectif = ...`), ROUGIT, et DICTE le rattrapage `gh release edit <PLUS_HAUT> --latest --repo
+# <DEPOT>`. ⚠️ Que ce rattrapage FONCTIONNE n'a PAS de trace non plus — aucun run, aucun log.
+# Le banc porte aujourd'hui `latest = v0.10.0`, mais la suppression de `v0.2.0` suffit a
+# l'expliquer : les deux gestes sont confondus. A RE-MESURER avant d'en refaire un fait ; le
+# « fonctionne en < 3 s » qui figurait ici est retire pour la meme raison que le NO-OP.
+# Ne pas retirer le job — c'est le seul detecteur — et ne pas chercher a le remplacer par une
+# entree de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
 ```
 
 ---
