@@ -242,8 +242,10 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
-- [ ] **L43** — **Contrefactuel du vol de `latest` : la branche `--latest=false` est INERTE**
-      *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel NON fait, suspendu.)*
+- [ ] **L43** — **Contrefactuel du vol de `latest` : la branche `--latest=false` NE REND PAS le
+      `latest` au plus haut semver**
+      *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel NON fait, suspendu.*
+      *2026-08-30 — six points rétrogradés ou corrigés après gate : voir « CE QUI EST DÉDUIT ».)*
       Instruction : `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` ; procédure du
       décideur : `…/contrefactuel-ca5-procedure-decideur.md`.
       **FAIT — prose rectifiée** : le cartouche `release.yml:130-146` et le bloc `⚠️ REPUBLIER…` de
@@ -254,36 +256,64 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       défaut `true`). (ii) « Le job `latest` est ce qui l'en empêche » : FAUX aussi.
       **FAIT — répétition (V-D), dépôt privé `iakasju/latest-contrefactuel`, conservé (AR-4)** :
       topologie fabriquée sur trois commits distincts (`v0.10.0` plus haut semver / `created_at` le
-      plus ancien · `v0.9.0` · `v0.2.0` le plus récent · tag `archive/feat/x`). **Mesuré** :
-      `gh release create v0.2.0` sans `--latest` → `releases/latest` passe de `v0.10.0` à `v0.2.0`
-      (**le vol est réel**) ; run `33277643229`, `plus haut semver: v0.10.0` (tri `sort -V` + filtre
-      corrects sur le cas de bord `0.9` vs `0.10`), `DECISION : v0.2.0 n'est PAS le plus haut` →
-      `--latest=false` **accepté**, et `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`.
-      **DÉCOUVERTE MAJEURE** : `make_latest=false` est un **NO-OP** sur `GET /releases/latest`.
-      Vérifié **quatre fois** — via `gh release edit --latest=false` sur la release au `created_at`
-      le plus **ancien** et sur celle au plus **récent**, et via un `PATCH` REST **brut** hors `gh`.
-      Ni repli par date, ni repli par semver : **aucun repli**. La branche `--latest=false` du job
-      **ne rend rien**. En revanche `gh release edit <PLUS_HAUT> --latest` **fonctionne en < 3 s** :
-      la procédure de restauration est **validée par la mesure**.
+      plus ancien `22:01:35Z` · `v0.9.0` `22:10:00Z` · `v0.2.0` le plus récent `22:20:00Z` · tag
+      `archive/feat/x` sans release). **Mesuré, run `33277643229`** : `gh release create v0.2.0`
+      sans `--latest` → `releases/latest` passe de `v0.10.0` à `v0.2.0` (**le vol est réel**) ;
+      `plus haut semver: v0.10.0` (tri `sort -V` + filtre corrects sur le cas de bord `0.9` vs
+      `0.10`), `DECISION : v0.2.0 n'est PAS le plus haut` → `--latest=false` **accepté**, et
+      `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`, **job rouge**.
+      **CONCLUSION SÛRE — et la seule que ce run porte** : la branche `--latest=false` **ne rend
+      pas** le `latest` au plus haut semver. Elle est donc **inutile comme réparation** ; le job est
+      un **détecteur**, pas une garde.
+      **CE QUI EST DÉDUIT, PAS MESURÉ — rétrogradé le 2026-08-30 (FAIL-1 du gate)** : le
+      **mécanisme**. « `make_latest=false` est un NO-OP », « ni repli par date, ni repli par
+      semver : aucun repli » était écrit ici comme un **fait mesuré** ; ça ne l'est pas. **Une
+      seule** des neuf lignes de la table de la procédure a une trace — la (c), run `33277643229` —
+      et **elle ne discrimine rien** : au moment de la mesure, la release voleuse `v0.2.0` était
+      **aussi** la plus récente par `created_at`, donc « drapeau inamovible » et « drapeau retiré +
+      repli par date » prédisent la **même** observation. Les gestes qui trancheraient (sur le
+      `created_at` le plus **ancien**, le `PATCH` REST brut) **n'ont ni run ni log**.
+      **CE QUI TRANCHERAIT — à coût nul, ACTE DE RELEASE donc refusé aux agents** :
+      `gh release edit v0.10.0 --latest=false --repo iakasju/latest-contrefactuel` puis lecture de
+      `releases/latest`. Le banc ne porte plus que `v0.10.0` (plus haut semver, `created_at` le plus
+      ancien, porteuse du `latest`) et `v0.9.0` (plus récente par date) — **mesure du 2026-08-30**.
+      Donc : **drapeau inamovible ⇒ `v0.10.0`** · **repli par date ⇒ `v0.9.0`**.
+      **Condition de levée** : ce geste joué par le décideur, sa sortie citée.
+      **NON TRACÉ NON PLUS** : que `gh release edit <PLUS_HAUT> --latest` **répare** — aucun run,
+      aucun log ; l'état actuel du banc s'explique aussi bien par la **suppression** de `v0.2.0`.
+      Le « fonctionne en < 3 s » est **retiré** partout, pour la même raison que le NO-OP.
       **FAIT — transport de preuve (CA-5.8)** : le banc télécharge `release.yml` d'`IakaCockpit@main`
-      et compare le bloc `latest:` octet à octet (`sha256`
-      `3547f66746fae90721879ad0115cb84764ff5a2da5c07fd251b75c2634457173`). **Contrefactuel joué** :
-      un octet muté (`publie`→`Publie`) → rouge **nommé** avec le `diff` et les deux empreintes
-      (run `33278026605`) ; **révocation par `git revert`**, `sha256` revenu à l'origine et run vert
+      et compare le bloc `latest:` octet à octet. **Contrefactuel joué** : un octet muté
+      (`publie`→`Publie`) → rouge **nommé** avec le `diff` et les deux empreintes (run
+      `33278026605`) ; **révocation par `git revert`**, `sha256` revenu à l'origine et run vert
       (`33278079380`). Le banc n'est pas décoratif.
-      **NON FAIT — AR-2 tombe, faute mesurée** : les deux `release.yml` **ne sont PAS byte-identiques**
-      (`278a3f52…` Cockpit vs `9f020e32…` GUI ; deux écarts : dépendances Linux ligne 72 —
-      `libasound2-dev cmake pkg-config` en plus côté Cockpit — et le commentaire des secrets minisign
-      lignes 96-99). AR-2 prévoyait ce cas : **(b) s'impose**, on n'inscrit rien et on **ne les aligne
-      pas en passant**. Le plancher de convergence **reste à 17** (registre à 18 entrées, inchangé).
-      Le **bloc `latest:` (147-199), lui, EST byte-identique** entre les deux dépôts
-      (`40d93359…`) — coïncidence utile mais **non gardée**.
+      **NON FAIT — AR-2 tombe, faute mesurée** : les deux `release.yml` **ne sont PAS
+      byte-identiques**. Deux écarts, **nommés** : dépendances Linux ligne 72
+      (`libasound2-dev cmake pkg-config` en plus côté Cockpit) et le commentaire des secrets
+      minisign lignes 96-99. Vérifié **aux deux commits** — sur `main`
+      (`278a3f52…` Cockpit vs `9f020e32…` GUI) **et** sur le `HEAD` de cette branche. *(Les
+      empreintes du `HEAD` ne sont pas citées : elles changent à chaque commit du lot, donc elles
+      mentiraient. Ce qui ne bouge pas, ce sont les deux écarts ci-dessus.)* AR-2 prévoyait ce cas :
+      **(b) s'impose**, on n'inscrit rien et on **ne les aligne pas en passant**. Le plancher de
+      convergence **reste à 17**, et le registre `fixtures/convergence.sha256` porte **17 entrées**
+      — *le `18` que rend `npm run test:convergence` est une **autre grandeur** : 17 entrées **plus
+      le registre lui-même**, qu'il compare aussi.*
+      Le **bloc `latest:` (147-199), lui, EST byte-identique** entre les deux dépôts :
+      `sha256 3547f66746fae90721879ad0115cb84764ff5a2da5c07fd251b75c2634457173`, mesuré sur `main`
+      **et** sur `HEAD` des deux côtés — c'est aussi l'empreinte que le banc compare (CA-5.8).
+      Coïncidence utile mais **non gardée**.
       **NON FAIT — contrefactuel réel (V-C) : SUSPENDU.** AR-3 tranchait « V-D puis V-C » avec une
       clause d'arrêt ; la répétition l'a déclenchée. La fenêtre de vol n'est **pas** de quelques
       minutes refermées par le job : elle dure **jusqu'au geste manuel du décideur**. Séquence
-      exacte, contrôles et restauration écrits § 3-4 de la procédure ; **question tranchée par le
-      décideur** au § 5 : (α) lancer V-C · (β) clore en partiellement prouvé, daté · (γ) re-cadrer
-      la garde d'abord *(recommandation de l'exécution)*.
+      exacte, contrôles et restauration écrits § 3-4 de la procédure ; **décideur : (γ)** —
+      re-cadrer la garde d'abord, **aucun geste de release sur `IakaCockpit`**, CA-5 non prouvé par
+      ce lot. **Et V-C ne trancherait rien de plus que le banc** : son tag contrefactuel pointerait
+      le commit de `v0.32.2`, donc **même `created_at`** — sous l'hypothèse « repli par date », le
+      repli serait une **égalité**, comportement indéfini *(relevé du gate, consigné)*.
+      **CONSIGNÉ, NON TRAITÉ — le `release.yml` du GUI n'est gardé par aucune face** : muter un
+      octet y laisse les deux faces **vertes** (témoin sur un fichier inscrit : les deux rouges).
+      L'inscrire au registre suppose de l'**aligner délibérément** d'abord (plancher 17 → 18), dans
+      un lot qui le décide — **pas « en passant »**.
       **HORS PÉRIMÈTRE, rappelé** : la dette de canal (NAS mort + `publish-update.mjs:418` qui ne
       pousse que vers `origin`), le bump du GUI et d'`iakaframe`, les porteurs de version non gardés,
       les cinq successeurs de L42.
