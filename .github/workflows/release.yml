@@ -138,11 +138,11 @@ jobs:
   # │ (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest`. Le desepingler pour en│
   # │ trouver une defairait L41 : `fixtures/tauri-action-pin.json` rougirait, A RAISON.             │
   # │                                                                                              │
-  # │ CE JOB N'EMPECHE PAS LE VOL, ET NE LE REPARE PAS NON PLUS. Mesure du 2026-08-29 sur banc      │
-  # │ (iakasju/latest-contrefactuel) : `make_latest=false` est un NO-OP sur `GET /releases/latest`. │
-  # │ La branche `--latest=false` ne rend donc PAS un `latest` deja vole. Ce que ce job fait : il   │
-  # │ DETECTE le vol, ROUGIT, et DICTE le seul geste qui le rende : `gh release edit <PLUS_HAUT>    │
-  # │ --latest`. Sa branche `--latest`, elle, marche.                                               │
+  # │ CE JOB N'EMPECHE PAS LE VOL, ET NE LE REPARE PAS. CE QUI EST MESURE (run 33277643229,         │
+  # │ banc iakasju/latest-contrefactuel) : le job a pose `--latest=false` sur la release voleuse,   │
+  # │ et le `latest` N'EST PAS revenu au plus haut semver. LE POURQUOI N'EST PAS MESURE : drapeau   │
+  # │ inamovible ou repli par date predisaient la MEME observation. DEDUCTION, pas fait mesure.     │
+  # │ Ce job DETECTE le vol, ROUGIT, et DICTE le rattrapage `gh release edit <PLUS_HAUT> --latest`. │
   # └──────────────────────────────────────────────────────────────────────────────────────────────┘
   latest:
     needs: build
