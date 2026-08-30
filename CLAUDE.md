@@ -148,15 +148,25 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # revient a en CREER une, donc a voler le `latest` ; sur iakaFrameGUI les quatre tags de version
 # portent tous une release.
 #
-# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — IL NE LE REPARE PAS NON PLUS.
+# ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — ET RIEN N'ETABLIT QU'IL LE REPARE.
 #
 # CE QUI EST MESURE, et rien de plus. Banc `iakasju/latest-contrefactuel`, run `33277643229`
 # du 2026-08-29 : apres un vol REEL (creation de `v0.2.0` sans `--latest`, le `latest` passe de
 # `v0.10.0` a `v0.2.0`), le job a pose `--latest=false` sur la release voleuse, et
 # `GET /repos/.../releases/latest` a rendu `v0.2.0` — ligne du log :
 # `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`, job ROUGE.
-# CONCLUSION SURE, et la SEULE : la branche `--latest=false` NE REND PAS le `latest` au plus
-# haut semver. C'est ce qui suffit a savoir qu'il ne faut pas compter dessus.
+# CONCLUSION SURE, et la SEULE : SUR LA TOPOLOGIE DU BANC — ou la release voleuse etait AUSSI
+# la plus recente par `created_at` — la branche `--latest=false` N'A PAS rendu le `latest` au
+# plus haut semver. C'est ce qui suffit a savoir qu'il ne faut pas compter dessus.
+#
+# CE N'EST PAS « la branche est inutile », et le job n'est pas « qu'un detecteur » — BORNAGE DU
+# 2026-08-30. ICI la voleuse serait une release CREEE SUR UN TAG ANCIEN, donc au `created_at` le
+# plus VIEUX : le `created_at` suit la date du COMMIT du tag, pas la publication (mesure : v0.32.1
+# porte created_at 2026-08-10 pour un published_at 2026-08-28). Sous l'hypothese « repli par
+# date » — la SEULE variante de repli qui SURVIVE au run, celle « en excluant la release
+# demarquee » etant REFUTEE par lui (elle predisait v0.9.0, on a observe v0.2.0) — le `latest`
+# retomberait sur `v0.32.2`, qui est AUSSI le plus haut semver : la ligne VERIFICATION serait
+# VERTE et le job aurait REPARE. Donc : ON NE PEUT PAS COMPTER DESSUS. Pas : « c'est inutile ».
 #
 # CE QUI N'EST PAS MESURE — ecrit ici comme un fait jusqu'au 2026-08-30, RETROGRADE depuis :
 # le MECANISME. « `make_latest=false` est un NO-OP », « il n'y a aucun repli » : DEDUCTION, pas
@@ -173,7 +183,8 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # `created_at` le plus ANCIEN, porteuse du `latest`) et `v0.9.0` (plus recente par date). Donc :
 # drapeau inamovible ⇒ `v0.10.0` ; repli par date ⇒ `v0.9.0`. CONDITION DE LEVEE de la reserve :
 # ce geste joue par le decideur, et sa sortie citee ici. Tant qu'il ne l'est pas, on ecrit
-# « la branche `--latest=false` ne rend pas le `latest` » et RIEN sur le pourquoi.
+# « sur la topologie du banc, la branche `--latest=false` n'a pas rendu le `latest` au plus
+# haut semver » — borne a cette topologie — et RIEN sur le pourquoi.
 #
 # CE QUE LE JOB FAIT est mesure, lui : il DETECTE le vol (ligne `VERIFICATION : latest
 # effectif = ...`), ROUGIT, et DICTE le rattrapage `gh release edit <PLUS_HAUT> --latest --repo
@@ -242,10 +253,12 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
-- [ ] **L43** — **Contrefactuel du vol de `latest` : la branche `--latest=false` NE REND PAS le
-      `latest` au plus haut semver**
+- [ ] **L43** — **Contrefactuel du vol de `latest` : sur la topologie du banc, la branche
+      `--latest=false` n'a PAS rendu le `latest` au plus haut semver**
       *(2026-08-29 — répétition en dépôt jetable faite ; contrefactuel réel NON fait, suspendu.*
-      *2026-08-30 — six points rétrogradés ou corrigés après gate : voir « CE QUI EST DÉDUIT ».)*
+      *2026-08-30 — six points rétrogradés ou corrigés après gate : voir « CE QUI EST DÉDUIT ».*
+      *2026-08-30, second passage — la conclusion est BORNÉE à la topologie du banc : elle était*
+      *écrite comme une propriété générale de la branche, et elle ne l'est pas.)*
       Instruction : `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` ; procédure du
       décideur : `…/contrefactuel-ca5-procedure-decideur.md`.
       **FAIT — prose rectifiée** : le cartouche `release.yml:130-146` et le bloc `⚠️ REPUBLIER…` de
@@ -262,9 +275,21 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `plus haut semver: v0.10.0` (tri `sort -V` + filtre corrects sur le cas de bord `0.9` vs
       `0.10`), `DECISION : v0.2.0 n'est PAS le plus haut` → `--latest=false` **accepté**, et
       `VERIFICATION : latest effectif = v0.2.0 (attendu : v0.10.0)`, **job rouge**.
-      **CONCLUSION SÛRE — et la seule que ce run porte** : la branche `--latest=false` **ne rend
-      pas** le `latest` au plus haut semver. Elle est donc **inutile comme réparation** ; le job est
-      un **détecteur**, pas une garde.
+      **CONCLUSION SÛRE — et la seule que ce run porte** : **sur la topologie du banc**, où la
+      release voleuse était **aussi** la plus récente par `created_at`, la branche `--latest=false`
+      **n'a pas rendu** le `latest` au plus haut semver. **On ne peut donc pas compter dessus.**
+      **BORNAGE DU 2026-08-30 (second passage du gate) — ce que ce run NE dit PAS** : que la branche
+      soit **« inutile comme réparation »**, ni que le job ne soit **« qu'un détecteur »**. C'était
+      écrit ici, et ça **dépasse la preuve**. **Ici la topologie diffère** : la voleuse serait une
+      release **créée sur un tag ancien**, donc au `created_at` le plus **vieux** — le `created_at`
+      suit la date du **commit** du tag, pas la publication (mesuré : `v0.32.1` porte
+      `created_at 2026-08-10` pour un `published_at 2026-08-28`, cf. F4 de l'instruction). Sous
+      l'hypothèse **« repli par date »** — la **seule** variante de repli qui **survive** au run, la
+      variante « repli en **excluant** la release démarquée » étant **réfutée** par lui (elle
+      prédisait `v0.9.0` ; on a observé `v0.2.0`) — le `latest` retomberait sur `v0.32.2`, **qui est
+      aussi le plus haut semver** : la ligne `VERIFICATION` serait **verte** et le job aurait
+      **réparé**. La formule qui tient sous les **deux** hypothèses est donc **« on ne peut pas
+      compter dessus »** — jamais « elle est inutile ».
       **CE QUI EST DÉDUIT, PAS MESURÉ — rétrogradé le 2026-08-30 (FAIL-1 du gate)** : le
       **mécanisme**. « `make_latest=false` est un NO-OP », « ni repli par date, ni repli par
       semver : aucun repli » était écrit ici comme un **fait mesuré** ; ça ne l'est pas. **Une
