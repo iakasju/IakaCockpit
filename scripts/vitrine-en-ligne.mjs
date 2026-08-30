@@ -114,11 +114,25 @@ constats.push(`README annonce : v${versionAnnoncee(README) ?? "(illisible)"}`);
 constats.push(`autorite (pkg) : v${VERSION}`);
 
 // E-1 — le `latest` n'est pas subi : il doit designer le plus haut tag publie.
+//
+// ⚠️ MESSAGE RECTIFIE LE 2026-08-30 (L43, entree 16 du registre des enonces). Il disait :
+// « Republier un tag ancien VOLE le latest (drapeau make_latest, defaut true). Rattrapage :
+// gh release edit <plusHaut> --latest ». DEUX inexactitudes, dans le seul endroit du corpus qui
+// s'imprime a l'operateur au moment ou il decide quoi faire :
+//   (a) republier NE VOLE RIEN au SHA epingle — `getOrCreateRelease` rend la release existante
+//       sans aucun `updateRelease` ; c'est la CREATION qui prend le drapeau (R-1) ;
+//   (b) le rattrapage etait annonce comme un fait : qu'une ecriture `true` rende le `latest` n'a
+//       NI RUN NI LOG. Sur le banc, seule l'ecriture `false` a ete mesuree, et parmi neuf regles
+//       de repli enumerees huit sont refutees, le NO-OP survit seul — ce qui ne se transpose pas
+//       d'office a `true`, ni dans un sens ni dans l'autre.
 if (latest && plusHaut && latest !== plusHaut) {
   ecart(
     "E-1",
-    `« latest » designe ${latest} alors que ${plusHaut} existe. Republier un tag ancien VOLE le ` +
-      `latest (drapeau make_latest, defaut true). Rattrapage : gh release edit ${plusHaut} --latest`,
+    `« latest » designe ${latest} alors que ${plusHaut} existe. C'est la CREATION d'une release ` +
+      "qui prend le drapeau (make_latest omis, defaut true) ; republier un tag dont la release " +
+      "EXISTE n'y touche pas au SHA epingle (R-1, L43). Rattrapage a TENTER : " +
+      `gh release edit ${plusHaut} --latest — NON EPROUVE : que cette ecriture rende le latest ` +
+      "n'a ni run ni log.",
   );
 }
 
