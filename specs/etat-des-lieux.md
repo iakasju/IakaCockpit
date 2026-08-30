@@ -50,9 +50,20 @@
     `sig = 7` n'est **pas** explicable par « rien a televerser » — le profil `v0.31.2`
     (`sig 0 / latest.json 0`) l'aurait ete.
   - **CA-5 : NON PROUVE.** Le run publie le **plus haut** tag, donc le job a pris la branche
-    `--latest` ; la branche **`--latest=false`**, *celle qui rend le vol du `latest` mecaniquement
-    impossible*, **n'a jamais ete executee**. Acquis : **E-1 nominal** seulement. L'instruction le dit
-    elle-meme : « sans ce critere, V3 n'est pas prouve, il est **espere** ».
+    `--latest` ; la branche **`--latest=false`** **n'a jamais ete executee sur ce depot**. Acquis :
+    **E-1 nominal** seulement. L'instruction le dit elle-meme : « sans ce critere, V3 n'est pas
+    prouve, il est **espere** ».
+    🛑 **CORRIGE LE 2026-08-30 (L43) — la formule d'origine est REFUTEE, et elle etait la plus forte
+    du corpus.** Il etait ecrit ici : *« la branche `--latest=false`, celle qui rend le vol du
+    `latest` MECANIQUEMENT IMPOSSIBLE »*. **Elle ne le rend pas.** (1) Elle n'**empeche** rien : la
+    release est creee — donc le vol a lieu — **avant** que le job demarre. (2) Elle ne **repare** pas
+    davantage : le contrefactuel joue par le decideur le 2026-08-30, croise avec le run
+    `33277643229`, **refute huit des neuf regles de repli enumerees** et laisse **le NO-OP seul
+    debout** ; sous cette regle, poser `--latest=false` sur la voleuse **ne rend pas** le `latest`.
+    Ce que le job fait, et c'est deja beaucoup : il **DETECTE**, **ROUGIT** et **DICTE** le
+    rattrapage. **RESIDU** : une regle **non enumeree** reste possible, et rien de ceci n'a ete
+    mesure **sur ce depot**. Liste des regles et residu :
+    `iakaframe/specs/instructions/contrefactuel-ca5-procedure-decideur.md` § 1.
 - **L'absence macOS est levee, et c'est le cliquet qui l'a commande.** Ecrit la veille, declenche le
   jour meme : `E-5 : « …_aarch64.dmg » est declare ABSENT … mais il EST present sur v0.32.2. La
   declaration a survecu a sa raison d'etre`. **Une exception qui ne survit pas a sa raison d'etre.**
@@ -72,10 +83,16 @@
   en silence** au moindre `cargo` (risque = arbre sali sans un mot), `package-lock.json` **pourrit**
   et **`npm ci` ne le voit pas non plus**. Realigne a la main ; **la garde n'a pas ete elargie** —
   arbitrage reserve a un autre lot.
-- **Prochaine etape concrete** : **le contrefactuel de CA-5**. Il exige de **republier un tag ancien**
-  en `workflow_dispatch` et de constater que le `latest` **ne bouge pas**. ⚠️ C'est exactement le
-  geste que le piege de L41 interdit sans precaution — et cette fois **il y a quelque chose a
-  proteger**, `v0.32.1` et `v0.32.2` portant leurs artefacts. **A cadrer, pas a improviser.**
+- **Prochaine etape concrete — REECRITE LE 2026-08-30 (L43).** Ce qui etait ecrit ici est **perime
+  sur les deux plans** : *« le contrefactuel de CA-5, qui exige de republier un tag ancien en
+  `workflow_dispatch` »*. (a) **Republier ne vole rien** au SHA epingle — c'est la **CREATION** qui
+  vole (R-1 de l'instruction L43) ; (b) le contrefactuel **a ete cadre, puis SUSPENDU** : le decideur
+  a tranche **(γ)** — re-cadrer la garde d'abord, **aucun geste de release sur ce depot**. La
+  repetition en depot jetable a eu lieu, et le contrefactuel a cout nul **a ete joue par le
+  decideur** sur le banc.
+  👉 **Prochaine etape reelle : re-cadrer la garde**, maintenant qu'on sait qu'elle **detecte** sans
+  **reparer**. Voir `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` et
+  `…/contrefactuel-ca5-procedure-decideur.md` § 5.
 - **Dette de canal, a deux etages** :
   1. **Le NAS `192.168.1.139` est injoignable** (code 000) depuis la fusion de L42. `main` est pousse
      sur **GitHub seulement**, en avance sur `origin`. Rattrapage : `iakaframe canaux --rattraper`,
