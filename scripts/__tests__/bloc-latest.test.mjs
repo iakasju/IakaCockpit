@@ -130,7 +130,7 @@ describe("bloc `latest:` du workflow de release — garde locale (L44)", () => {
   it("ligne d'empreinte MALFORMEE : illisible plutot que permissive", () => {
     const racine = racineAvecFixture(["pas-une-empreinte  bloc du workflow", ""].join("\n"));
     expect(() => empreinteAttendue(racine)).toThrowError(
-      /ligne d'empreinte illisible dans fixtures\/bloc-latest\.sha256 : pas-une-empreinte  bloc du workflow/,
+      /ligne d'empreinte illisible dans fixtures\/bloc-latest\.sha256 : pas-une-empreinte {2}bloc du workflow/,
     );
   });
 });

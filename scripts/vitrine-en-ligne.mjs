@@ -125,14 +125,24 @@ constats.push(`autorite (pkg) : v${VERSION}`);
 //       NI RUN NI LOG. Sur le banc, seule l'ecriture `false` a ete mesuree, et parmi neuf regles
 //       de repli enumerees huit sont refutees, le NO-OP survit seul — ce qui ne se transpose pas
 //       d'office a `true`, ni dans un sens ni dans l'autre.
+//
+// ⚠️ RECTIFIE A NOUVEAU LE 2026-09-01 (L44). Le point (b) ci-dessus est DATE, PAS EFFACE : il dit
+// l'etat de la connaissance AU 2026-08-30. DEPUIS, le geste a ete JOUE — M1, mesure du decideur
+// sur le banc prive : `gh release edit v0.9.0 --latest` a fait passer `releases/latest` de
+// `v0.10.0` a `v0.9.0`. L'ECRITURE `true` AGIT, et elle PRIME sur tout calcul, puisqu'elle a pose
+// le pointeur sur le plus BAS semver. Le message imprime ci-dessous cessait d'etre vrai le jour
+// de cette mesure : il annoncait SANS TRACE un geste desormais joue et observe, et c'est le SEUL
+// texte du corpus qui s'imprime a l'operateur AU MOMENT OU IL DECIDE QUOI FAIRE.
+// CE QUI RESTE VRAI, ET QUI EST DIT DANS LE MESSAGE : M1 a ete joue SUR LE BANC, jamais sur ce
+// depot-ci. « Mesure ailleurs » n'est pas « mesure ici », et le message ne le laisse pas croire.
 if (latest && plusHaut && latest !== plusHaut) {
   ecart(
     "E-1",
     `« latest » designe ${latest} alors que ${plusHaut} existe. C'est la CREATION d'une release ` +
       "qui prend le drapeau (make_latest omis, defaut true) ; republier un tag dont la release " +
       "EXISTE n'y touche pas au SHA epingle (R-1, L43). Rattrapage a TENTER : " +
-      `gh release edit ${plusHaut} --latest — NON EPROUVE : que cette ecriture rende le latest ` +
-      "n'a ni run ni log.",
+      `gh release edit ${plusHaut} --latest — MESURE le 2026-09-01 (M1, banc prive) : cette ` +
+      "ecriture AGIT et PRIME sur tout calcul. Jamais rejouee sur CE depot-ci.",
   );
 }
 

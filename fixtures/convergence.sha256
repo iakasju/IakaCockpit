@@ -30,7 +30,7 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 56b0cca8b2dbada23161d6a30ffde710e03bded209d4112a67cbb57f8b84c439  fixtures/vitrine-assets.json
 5be45af49541b12e29f316fb6cef9587acf6d0518749cd992bd45c649e15adb6  scripts/lib/vitrine.mjs
 8fddc688739ca8da0e038618e8c2ebd5154d2394e04687d7afe92b57353087ec  scripts/vitrine.mjs
-273b4e69deee55eb9b3630c8df65ba0ce0b727e0e8f9c8551f73657c4a33fb3f  scripts/vitrine-en-ligne.mjs
+37010747211f885e9f380a2fcdd0cf2372b114aa29240b64ab441c9043238a50  scripts/vitrine-en-ligne.mjs
 0bf9d071b74b32e944cd29d9aad4e6f8bb69e98f693a95da9f8cc035fe559cd0  scripts/__tests__/vitrine.test.mjs
 # L44 — LA GARDE DU BLOC `latest:` DU WORKFLOW DE RELEASE. Le job qui désigne le pointeur de
 # release est écrit DEUX FOIS, une par dépôt jumeau. Mesuré au 2026-08-30 (L43) : les deux copies
@@ -43,4 +43,4 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 # gate de chacun des deux dépôts.
 58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
 10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
-52f022af4786ed9a651f1bda25a587a118ed5e36144bacf66576bb9bbaaaa126  scripts/__tests__/bloc-latest.test.mjs
+f33e3dd5eb7681c8e62ab461d0f7947ffd3a3d8caee494e0351da229ef83c4ea  scripts/__tests__/bloc-latest.test.mjs
