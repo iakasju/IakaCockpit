@@ -151,6 +151,11 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # ⚠️ ET LE JOB `latest` DU WORKFLOW N'EMPECHE PAS CE VOL — ET, DANS LES LIMITES
 # ENUMEREES PLUS BAS, IL NE LE REPARE PAS NON PLUS.
 #
+# ⚠️ DEPASSE LE 2026-09-01 PAR LE LOT L44, ET DANS UN SEUL SENS. « IL NE LE REPARE PAS NON PLUS »
+# vaut pour l'etat ANTERIEUR au 2026-09-01 et est conserve a ce titre : depuis, la branche du vol
+# EXECUTE le rattrapage au lieu de l'imprimer, sur une ecriture MESUREE agissante (M1). Ce qui
+# reste vrai sans reserve : IL N'EMPECHE TOUJOURS PAS. Detail mesure au bloc L44, plus bas.
+#
 # CE QUI EST MESURE, et rien de plus. Banc `iakasju/latest-contrefactuel`, run `33277643229`
 # du 2026-08-29 : apres un vol REEL (creation de `v0.2.0` sans `--latest`, le `latest` passe de
 # `v0.10.0` a `v0.2.0`), le job a pose `--latest=false` sur la release voleuse, et
@@ -220,6 +225,80 @@ npm run vitrine:en-ligne     # FACE EN LIGNE, HORS GATE : anonyme, sans jeton, p
 # CHANGE RIEN : il ne mesure que l'ecriture `false`. Que l'ecriture `true` — le rattrapage —
 # produise un effet reste SANS TRACE, et le NO-OP observe sur `false` ne se transpose pas
 # d'office a `true`.
+# ⚠️ MESURE DEPUIS — M1, 2026-09-01, par le decideur, sur le banc prive : `gh release edit v0.9.0
+# --latest` a fait passer `releases/latest` de `v0.10.0` a `v0.9.0`. L'ECRITURE `true` AGIT, et
+# elle PRIME sur tout calcul, puisqu'elle a pose le pointeur sur le plus BAS semver. Les quatre
+# lignes qui precedent decrivent l'etat de la connaissance AU 2026-08-30 ; elles sont conservees
+# datees, et depassees. Le rattrapage dicte n'est PAS un mensonge — il fonctionne.
+#
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# L44 — CE QUE LE JOB FAIT DEPUIS LE 2026-09-01. Tout ce qui precede est CONSERVE et DATE ; trois
+# points sont depasses. On date, on n'efface pas.
+#
+# (1) IL REPARE, DESORMAIS. La branche du vol ecrivait `--latest=false` sur le tag publie —
+#     ecriture MESUREE INERTE, deux fois (voir le tableau). Elle ecrit maintenant `--latest` sur
+#     le plus haut semver PORTEUR D'UNE RELEASE : le job EXECUTE le rattrapage qu'il se
+#     contentait d'imprimer, et rend le pointeur et `PLUS_HAUT` egaux PAR CONSTRUCTION.
+#     ⚠️ Il n'EMPECHE toujours pas : la release est creee AVANT lui (F2, L43). La fenetre du vol
+#     n'est pas fermee, elle est RACCOURCIE — de « jusqu'au geste manuel du decideur » a « la
+#     duree du job ». C'est tout ce qu'il y avait a gagner.
+#
+# (2) LE REFERENT ETAIT FAUX — defaut de code R-2. `PLUS_HAUT` derivait de la population des
+#     TAGS, alors que `GET /releases/latest` ne peut rendre qu'un tag PORTEUR D'UNE RELEASE :
+#     4 tags sur 29 en portent une sur IakaCockpit (F1, L43). Consequence DOUBLE, reproduite
+#     hors ligne avant/apres : (a) FAUX ROUGE — apres un build ROUGE, le cas que `if: always()`
+#     couvre expres, un tag de version reste sans release et la ligne VERIFICATION rougissait A
+#     TORT ; (b) DICTEE IMPOSSIBLE — le rattrapage imprime s'adressait alors a une release QUI
+#     N'EXISTE PAS, donc a une commande qui NE PEUT PAS reussir. Le referent lit desormais
+#     `repos/<depot>/releases`, brouillons et preversions exclus comme les exclut l'endpoint, et
+#     le cas « aucune release » sort en SUCCES EN LE DISANT.
+#     ⚠️ Ce defaut vivait sur une ligne SANS AUCUN mot du motif du registre : aucune empreinte ne
+#     le tenait. Il a ete trouve A LA LECTURE. C'est H-1 — la completude d'un balayage est celle
+#     du MOTIF, jamais celle du SENS. La lecture reste dans la boucle.
+#
+# (3) LE TABLEAU DES CINQ ECRITURES — banc PRIVE `iakasju/latest-contrefactuel`, release
+#     `id 379113280` pour M2 et M3b. Aucun geste de release sur ce depot-ci.
+#       `--latest` (true) via `gh release edit` . . . AGIT           M1,  2026-09-01
+#       `--latest=false` via `gh release edit` . . .  inerte         mesure du 2026-08-29 (L43)
+#       `make_latest=false` via `PATCH` brut . . . .  inerte         M2,  2026-09-01
+#       `make_latest=legacy` via `PATCH` brut . . . . AGIT           M3b, 2026-09-01
+#       `--latest=legacy` via `gh release edit` . . . INATTEIGNABLE  M3a, 2026-09-01
+#     La derniere ligne n'est pas une note de bas de page : `--latest` est un drapeau BOOLEEN
+#     (`strconv.ParseBool`). Le regime `legacy` est HORS D'ATTEINTE du client `gh` — quiconque
+#     lira « il existe trois valeurs » et essaiera de les poser par `gh` heurtera le meme mur.
+#
+# LE RESIDU (2) EST REFERME. Le NO-OP ne siege ni dans le client, ni dans le transport, ni dans
+# la lecture : M2 et M3b portent sur la MEME release, le MEME endpoint, le MEME champ, et seule
+# la VALEUR les separe — or M3b, lui, a bouge le pointeur. Il siege dans la SEMANTIQUE DE LA
+# VALEUR `false` cote API : `true` promeut, `legacy` recalcule, `false` ne demande rien et rien
+# n'advient. ⚠️ UNE ECHAPPATOIRE NOMMEE subsiste : si `false` installait un etat « pas latest »
+# dont la lecture retomberait sur un calcul de repli DIFFERENT de celui de `legacy`,
+# l'observation tiendrait aussi. Aucune mesure ne la soutient ; aucune ne la refute.
+#
+# LE RESIDU (1) A CHANGE DE NATURE. Ce n'est plus « une regle non enumeree reste possible ».
+# LA REGLE DE REPLI EXISTE : elle vit sous `make_latest=legacy`, elle n'est atteignable que par
+# `PATCH`, et elle n'est PAS dirigee par la date la plus recente — ni `created_at`, ni
+# `published_at`, ni l'ordre d'enregistrement (plus grand `id`) : le plus haut semver l'a emporte
+# sur les trois. La comparaison est de surcroit SEMANTIQUE et non textuelle (`v0.10.0` a battu
+# `v0.9.0`, qui gagne en lexicographique).
+# ⚠️ SA FORMULE RESTE INCONNUE, et l'ecrire sans cette reserve serait un « OK sans chiffre »
+# deguise en conclusion : LES DEUX RELEASES MESUREES SONT DU MEME JOUR — 8 min d'ecart sur
+# `created_at`, 2 s sur `published_at`. Une regle au grain du JOUR, departagee par le semver,
+# produirait EXACTEMENT la meme sortie. Egalement NON MESURE : si `legacy` installe un ETAT ou
+# vaut un coup unique, ce qu'il fait A LA CREATION, et sa stabilite par version d'API.
+# `legacy` est une CONNAISSANCE, pas un remede : il n'entre dans AUCUNE ligne du job (AR-7=(a)).
+#
+# LA DOC DE GITHUB EST REFUTEE PAR MESURE. `GET /releases/latest` y est decrit comme rendant
+# « the most recent non-prerelease, non-draft release, sorted by the `created_at` attribute ».
+# Le banc la refute DEUX FOIS : avant M1, et apres M3b, le pointeur etait sur le `created_at`
+# le PLUS ANCIEN des deux. Et `created_at` est la date du COMMIT du tag, pas celle de la release
+# (la doc REST le dit). Une doc ne se refute pas en la relisant : elle se refute en MESURANT.
+#
+# CE QUI N'EST PAS TRANSPOSE. Tout ceci est mesure sur un BANC PRIVE du meme compte, avec
+# `gh release create` comme acteur substitut — pas `tauri-action`, pas ce depot. La transposition
+# reste l'objet de CA-5, et CA-5 RESTE DU.
+# Detail, arbitrages, bornes : `iakaframe/specs/instructions/re-cadrage-garde-latest.md` (L44).
+# ══════════════════════════════════════════════════════════════════════════════════════════════
 # Ne pas retirer le job — c'est le seul detecteur — et ne pas chercher a le remplacer par une
 # entree de `tauri-action` : le SHA epingle par L41 n'en expose aucune.
 ```
@@ -280,6 +359,34 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 ## Backlog
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
+
+- [ ] **L44** — **Re-cadrage de la garde du `latest` : le job dit ce qu'il fait, et il le fait**
+      *(2026-09-01 — code livré ; DEUX critères restent **NON MESURÉS**, ce sont des actes de
+      release refusés aux agents)*
+      Instruction (copie **unique**) :
+      `/Users/sjupin/work/iakaframe/specs/instructions/re-cadrage-garde-latest.md`.
+      **FAIT — (2a), le référent.** `PLUS_HAUT` dérivait de la population des **tags** là où
+      `GET /releases/latest` ne peut rendre qu'un tag **porteur d'une release** (4 tags sur 29,
+      F1/L43). Double conséquence, **reproduite hors ligne avant/après** : faux rouge de la ligne
+      `VERIFICATION` après un build rouge, et rattrapage dicté **sur une release inexistante**.
+      Le référent lit `repos/$DEPOT/releases`, brouillons et préversions exclus ; le cas
+      « aucune release » **sort en succès en le disant**. ⚠️ Ce défaut vivait sur une ligne
+      **sans un mot du motif** du registre : trouvé **à la lecture** (H-1).
+      **FAIT — (2b-i), la réparation.** AR-7 = (a), tranché le 2026-09-01 sur la mesure **M1** :
+      la branche du vol écrivait `--latest=false` (**inerte**, mesuré deux fois) ; elle écrit
+      désormais `--latest` sur `PLUS_HAUT`. La ligne `VERIFICATION` est **inchangée à l'octet**.
+      **FAIT — la garde du bloc.** `fixtures/bloc-latest.sha256` +
+      `scripts/lib/bloc-latest.mjs` (extraction **par marqueur**, unicité assertée) +
+      `scripts/__tests__/bloc-latest.test.mjs`, byte-identiques, **inscrits au registre de
+      convergence** (cliquet **17 → 20**). Le trou mesuré de L43 (rien ne gardait le bloc côté
+      GUI) est **fermé et éprouvé** : sous mutation d'un octet, les deux faces historiques
+      restaient **vertes**, la garde neuve **rougit**.
+      **NON MESURÉ — dû au décideur** : le contrefactuel A/B **sur le banc** (CA-6) et la preuve
+      de bout en bout du rattrapage **dans un run réel** (CA-10). L'agent a joué l'équivalent
+      **hors ligne**, sur un `gh` de banc d'essai ; ce n'est **pas** la même mesure et ce n'est
+      **pas** écrit comme telle.
+      **Reste dû, nommé** : `CONVERGENCE-RELEASE-YML-ALIGNEMENT` (les deux `release.yml`
+      diffèrent l. 72 et l. 96-99) ; **CA-5**, la transposition du banc à ce dépôt.
 
 - [ ] **L43** — **Contrefactuel du vol de `latest` : sur la topologie du banc, la branche
       `--latest=false` n'a PAS rendu le `latest` au plus haut semver**
