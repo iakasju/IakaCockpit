@@ -31,6 +31,45 @@
 
 ## Reprise du travail (a completer par Cowork)
 
+- 🆕 **2026-09-01 — LOT L44 « re-cadrage de la garde du `latest` » : le code est ecrit, remis au
+  gate.** Ce qui suit **complete** ce qui precede ; rien n'est efface, tout est date.
+  - **Le job REPARE, desormais.** La branche du vol ecrivait `--latest=false` sur le tag publie —
+    ecriture **inerte**, mesuree deux fois ; elle **execute** maintenant
+    `gh release edit "$PLUS_HAUT" --latest`. AR-7 = (a), tranche par le decideur sur la mesure
+    **M1**. ⚠️ Il n'**EMPECHE** toujours pas : la release est creee **avant** lui. La fenetre du
+    vol n'est pas fermee, elle est **raccourcie**.
+  - **Le referent est corrige (2a), et c'etait le vrai defaut de code.** `PLUS_HAUT` se derive
+    desormais de `repos/$DEPOT/releases` — brouillons et preversions exclus, comme les exclut
+    `GET /releases/latest` —, et le cas « aucune release » **sort en succes en le disant**. Le
+    **faux rouge** et la **dictee sur une release inexistante** sont **reproduits hors ligne,
+    avant/apres**, sur six scenarios.
+  - **Le trou mesure du GUI est ferme.** `fixtures/bloc-latest.sha256`,
+    `scripts/lib/bloc-latest.mjs` (extraction **par marqueur**, unicite **assertee**) et
+    `scripts/__tests__/bloc-latest.test.mjs` — byte-identiques, inscrits au registre de
+    convergence, **cliquet 17 -> 20**. **Eprouve** : sous mutation d'un octet du workflow du GUI,
+    les deux faces historiques restaient **vertes** (8/8 et 18 fichiers), la garde neuve
+    **rougit**. Revocations prouvees au `sha256`.
+  - **L'instrument cesse de mentir sur lui-meme.** L'en-tete de `registre-repli-latest.js` disait
+    « TROIS PASSAGES » et se contredisait 26 lignes plus bas ; la cle `"//"` du JSON annoncait
+    **quatre** detections pour **sept** reelles. Corriges **en datant**. **D-8** tient desormais
+    les **cles de prose** du registre par empreinte, et les **13 exclusions de fichier** sont
+    **ancrees ligne a ligne**.
+  - **Le residu, a la precision que la mesure autorise** : la regle de repli **EXISTE**, elle vit
+    sous `make_latest=legacy`, elle n'est atteignable que par `PATCH`, et elle **n'est PAS dirigee
+    par la date la plus recente** — ni `created_at`, ni `published_at`, ni l'ordre
+    d'enregistrement. ⚠️ **SA FORMULE RESTE INCONNUE : les deux releases mesurees sont DU MEME
+    JOUR** ; une regle au grain du jour departagee par le semver donnerait la meme sortie. Le
+    residu **(2) est REFERME** : le NO-OP siege dans la **semantique de la valeur `false`** cote
+    API — ni le client, ni le transport, ni la lecture.
+  - **La doc de GitHub est refutee par mesure** : `GET /releases/latest` s'y dit trie « by the
+    `created_at` attribute » ; le banc la refute **deux fois** (avant M1, apres M3b, sur le
+    `created_at` le plus **ancien**). Et `created_at` est la date du **commit** du tag.
+  - ⚠️ **NON MESURE, et du au decideur** : le contrefactuel A/B **sur le banc** (CA-6) et la preuve
+    de bout en bout **dans un run reel** (CA-10). Ce sont des **actes de release**, refuses aux
+    agents. L'agent a joue l'equivalent **hors ligne**, sur un `gh` d'essai : ce n'est **pas** la
+    meme mesure, et ce n'est pas ecrit comme telle.
+  - **Prochaine etape concrete** : **gate Legolas**, puis les deux mesures de banc par le decideur.
+
 - **Ce qui vient d'etre fait** : le lot **L43 « contrefactuel du vol de `latest` »** est livre, gate
   **PASS au SIXIEME passage**, fusionne et pousse. Puis le decideur a joue **trois mesures** sur le
   banc prive, qui ont **renverse une premisse** du re-cadrage en cours.
