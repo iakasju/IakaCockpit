@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-08-29 23:01 (motif: version).
+> Genere par iakaframe (CLI) le 2026-09-01 22:20 (motif: manual).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,116 +9,104 @@
 |---|---|
 | Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | df35940 docs(backlog): le rouge d'E-5 a eu lieu — et CA-5 n'est PAS prouve |
+| Dernier commit | da2dfa4 fix(L43): la vitrine imprimait a l'operateur la phrase refutee — aux trois depots |
 | Arbre | propre |
 | Fichiers (suivis + non ignores) | 1419 |
-| Note | v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee. |
+| Note | L43 livre au 6e passage : balayage de completude. Trois mesures du banc jouees : --latest agit, false inerte, legacy AGIT. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `df35940` | 2026-08-29 | docs(backlog): le rouge d'E-5 a eu lieu — et CA-5 n'est PAS prouve |
-| `6e72c22` | 2026-08-29 | fix(vitrine): l'absence macOS ne survit pas a sa raison d'etre — E-5 obeie |
-| `eceb498` | 2026-08-29 | chore(vitrine): le README DERIVE suit le porteur — v0.32.2, absents macOS conserves |
-| `e8b3e91` | 2026-08-29 | fix(version): package-lock.json portait 0.31.2 — un porteur que rien ne gardait |
-| `6b84d59` | 2026-08-29 | chore(version): 0.32.1 -> 0.32.2, les quatre porteurs de code alignes |
-| `eae19f9` | 2026-08-29 | chore(iakaframe): checkpoint — lot L42 installer depuis rien livre |
-| `14b8b96` | 2026-08-29 | fix(vitrine): le temoin de la promesse en PROSE mesure enfin ce qu'il nomme |
-| `6b0aea6` | 2026-08-29 | docs(claude): « promis » se lit hors bloc d'absence, pas « ligne de tableau » |
-| `04ceb0e` | 2026-08-29 | chore(quality): le code 3 rappelle un STATUT, il ne devine plus une cause |
-| `ea1cda6` | 2026-08-29 | fix(vitrine): promis, c'est promis PARTOUT — pas seulement dans un tableau |
+| `da2dfa4` | 2026-08-30 | fix(L43): la vitrine imprimait a l'operateur la phrase refutee — aux trois depots |
+| `0044a79` | 2026-08-30 | fix(L43): l'etat des lieux cesse de promettre un vol "mecaniquement impossible" |
+| `b22643e` | 2026-08-30 | fix(L43): le cartouche cesse d'annoncer une reparation par une regle refutee |
+| `a156439` | 2026-08-30 | fix(L43): le bloc latest et le backlog disent la mesure, sa liste de regles et son residu |
+| `faee550` | 2026-08-30 | fix(L43): le bloc latest et le backlog cessent de promouvoir le banc en propriete generale |
+| `0b3e21c` | 2026-08-30 | fix(L43): le cartouche borne sa conclusion a la topologie du banc |
+| `83a2ec9` | 2026-08-30 | fix(L43): l'entree de backlog cesse de citer une empreinte inventee et un compte faux |
+| `d4a9e2c` | 2026-08-30 | fix(L43): le bloc `latest` du CLAUDE.md separe ce qui est mesure de ce qui est deduit |
+| `6784b4b` | 2026-08-30 | fix(L43): le cartouche cesse d'affirmer un MECANISME qu'aucune trace n'etablit |
+| `58f4e6f` | 2026-08-30 | docs(L43): backlog — la repetition est faite, le contrefactuel reel est suspendu |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ce qui vient d'etre fait — l'etape 5.1 a enfin eu lieu.** Elle etait due depuis deux jours et
-  c'etait **la seule preuve manquante de toute la chaine**. Le decideur a pousse le tag `v0.32.2` ;
-  le run **`33273513846`** (`event: push`) a reussi sur **six jobs**, **matrice complete**. Mesure de
-  la release : `assets 16 · sig 7 · latest.json 0 · dmg 2` · `releases/latest -> v0.32.2`.
-- **La matrice complete est la reparation de H-4.** Les deux `workflow_dispatch` qui avaient garni
-  `v0.32.1` ne selectionnaient que `windows` puis `linux` — **aucun ne demandait macOS**, et c'est
-  pourquoi la release « Latest » ne portait aucun `.dmg`. Sur un **push de tag**,
-  `github.event.inputs.platforms` est vide -> `SEL='toutes'` -> les 4 plateformes. **Ne jamais publier
-  par `workflow_dispatch` sans choisir `toutes` a la main.**
-- **Ce qui est PROUVE, et ce qui ne l'est pas — la nuance a couté une correction en seance** :
-  - **CA-12 : PROUVE**, mais **par le CONTREFACTUEL** (declarer absente une plateforme reellement
-    presente doit rougir), **pas** par le couple `sig`/`latest.json`, qui n'a aucun rapport avec lui.
-  - **CA-13 : PROUVE ENTIER.** Le critere n'a **qu'une** clause ; parler de « premiere moitie » n'a
-    pas de sens. Renforce par une mesure faite au gate : **`v0.32.1` portait encore le `latest.json`
-    concurrent** (`assets 15 · sig 7 · latest.json 1`), donc le correctif a atterri **apres** elle et
-    **`v0.32.2` est bien la premiere release du workflow corrige**. Son `latest.json = 0` **avec**
-    `sig = 7` n'est **pas** explicable par « rien a televerser » — le profil `v0.31.2`
-    (`sig 0 / latest.json 0`) l'aurait ete.
-  - **CA-5 : NON PROUVE.** Le run publie le **plus haut** tag, donc le job a pris la branche
-    `--latest` ; la branche **`--latest=false`** **n'a jamais ete executee sur ce depot**. Acquis :
-    **E-1 nominal** seulement. L'instruction le dit elle-meme : « sans ce critere, V3 n'est pas
-    prouve, il est **espere** ».
-    🛑 **CORRIGE LE 2026-08-30 (L43) — la formule d'origine est REFUTEE, et elle etait la plus forte
-    du corpus.** Il etait ecrit ici : *« la branche `--latest=false`, celle qui rend le vol du
-    `latest` MECANIQUEMENT IMPOSSIBLE »*. **Elle ne le rend pas.** (1) Elle n'**empeche** rien : la
-    release est creee — donc le vol a lieu — **avant** que le job demarre. (2) Elle ne **repare** pas
-    davantage : le contrefactuel joue par le decideur le 2026-08-30, croise avec le run
-    `33277643229`, **refute huit des neuf regles de repli enumerees** et laisse **le NO-OP seul
-    debout** ; sous cette regle, poser `--latest=false` sur la voleuse **ne rend pas** le `latest`.
-    Ce que le job fait, et c'est deja beaucoup : il **DETECTE**, **ROUGIT** et **DICTE** le
-    rattrapage. **RESIDU** : une regle **non enumeree** reste possible, et rien de ceci n'a ete
-    mesure **sur ce depot**. Liste des regles et residu :
-    `iakaframe/specs/instructions/contrefactuel-ca5-procedure-decideur.md` § 1.
-- **L'absence macOS est levee, et c'est le cliquet qui l'a commande.** Ecrit la veille, declenche le
-  jour meme : `E-5 : « …_aarch64.dmg » est declare ABSENT … mais il EST present sur v0.32.2. La
-  declaration a survecu a sa raison d'etre`. **Une exception qui ne survit pas a sa raison d'etre.**
-  Retrait fonde sur mesure, pas sur l'API seule : les deux `.dmg` ont ete **telecharges** en anonyme,
-  tailles egales a l'octet, `hdiutil verify` -> **checksum VALID**. Un bloc `//absents` conserve la
-  **memoire** du retrait (date, run, motif, conditions de reouverture) — *« sans lui, une liste vide se
-  lit comme un champ oublie »* — et il est **strictement inerte**, prouve en supprimant la vraie cle.
-- **Le cliquet discrimine dans les DEUX sens**, mesure au gate : une absence **fausse** rougit ; une
-  absence **vraie** (version ramenee a 0.32.1, sans `.dmg`) fait **taire** les E-3 et **E-5 reste
-  muet**. **L'honnetete n'est pas punie ; le silence l'est.**
-- **Les `.dmg` viennent enfin du CI.** Constat du gate : les 4 assets macOS de `v0.32.1` ne venaient
-  d'**aucun run** — ils avaient ete poses **a la main**. Cette etape manuelle disparait.
-- **Un porteur de version avait derive sans que rien ne le voie** : `package-lock.json` portait
-  **0.31.2** — trois bumps de derive silencieuse. Contrefactuels : `package.json`, `tauri.conf.json`,
-  `Cargo.toml`, `README.md` **rougissent en se nommant** ; **`Cargo.lock` et `package-lock.json`
-  restent VERTS**. Et les deux verts ne le sont pas pour la meme raison : `Cargo.lock` **s'auto-repare
-  en silence** au moindre `cargo` (risque = arbre sali sans un mot), `package-lock.json` **pourrit**
-  et **`npm ci` ne le voit pas non plus**. Realigne a la main ; **la garde n'a pas ete elargie** —
-  arbitrage reserve a un autre lot.
-- **Prochaine etape concrete — REECRITE LE 2026-08-30 (L43).** Ce qui etait ecrit ici est **perime
-  sur les deux plans** : *« le contrefactuel de CA-5, qui exige de republier un tag ancien en
-  `workflow_dispatch` »*. (a) **Republier ne vole rien** au SHA epingle — c'est la **CREATION** qui
-  vole (R-1 de l'instruction L43) ; (b) le contrefactuel **a ete cadre, puis SUSPENDU** : le decideur
-  a tranche **(γ)** — re-cadrer la garde d'abord, **aucun geste de release sur ce depot**. La
-  repetition en depot jetable a eu lieu, et le contrefactuel a cout nul **a ete joue par le
-  decideur** sur le banc.
-  👉 **Prochaine etape reelle : re-cadrer la garde**, maintenant qu'on sait qu'elle **detecte** sans
-  **reparer**. Voir `iakaframe/specs/instructions/contrefactuel-du-vol-de-latest.md` et
-  `…/contrefactuel-ca5-procedure-decideur.md` § 5.
-- **Dette de canal, a deux etages** :
-  1. **Le NAS `192.168.1.139` est injoignable** (code 000) depuis la fusion de L42. `main` est pousse
-     sur **GitHub seulement**, en avance sur `origin`. Rattrapage : `iakaframe canaux --rattraper`,
-     **avance rapide seulement**.
-  2. **Et meme NAS revenu, ca ne suffira pas.** `publish-update.mjs:418` fait `git push origin HEAD`
-     **et rien d'autre**, alors que `tauri.conf.json:43-45` place le NAS en **premier** endpoint et
-     **`raw.githubusercontent.com` en second** — l'endpoint que les clients atteignent **reellement**.
-     **Rafraichir la vitrine publique de l'updater exige un `git push github main` supplementaire,
-     qu'aucun script n'execute et qu'aucune garde ne nomme.** `updater/latest.json` porte encore
-     `0.32.1` : **aucun client installe ne passera a 0.32.2** tant que ces deux etages ne sont pas
-     traites.
+- **Ce qui vient d'etre fait** : le lot **L43 « contrefactuel du vol de `latest` »** est livre, gate
+  **PASS au SIXIEME passage**, fusionne et pousse. Puis le decideur a joue **trois mesures** sur le
+  banc prive, qui ont **renverse une premisse** du re-cadrage en cours.
+- **Le fait etabli, et il a coute cher** : `make_latest=false` **est un NO-OP**. Deux mesures croisees
+  refutent **8 regles de repli sur 9** — `created_at` (avec et sans exclusion), `published_at` (idem),
+  **semver**, plus grand **`id`**, et le **repli differe** (refute par relecture ~13 h apres). Seul le
+  NO-OP survit **parmi les regles enumerees**.
+- **Les trois mesures du 2026-08-31, qui changent la lecture** :
+
+  | Ecriture | Effet | Mesure |
+  |---|---|---|
+  | `--latest` (`true`) via `gh` | **AGIT** | M1 |
+  | `--latest=false` via `gh` | **inerte** | 29/08 |
+  | `make_latest=false` via `PATCH` brut | **inerte** | M2 |
+  | **`make_latest=legacy` via `PATCH`** | **AGIT** | M3 |
+
+  **M1** sauve le lot : le rattrapage que le job imprime **fonctionne**, ce n'est pas un mensonge.
+  **M2** : le `PATCH` **brut** est accepte et sans effet -> **le NO-OP n'est PAS dans `gh`**, il siege
+  dans l'API ou la lecture. **M3** : ⚠️ **`gh` REFUSE la valeur `legacy`** (`--latest` est un drapeau
+  **booleen**, `strconv.ParseBool`) — elle n'est atteignable que par l'API ; et par l'API elle **AGIT**,
+  le `latest` passant de `v0.9.0` a `v0.10.0`.
+- **Ce que M3 etablit — et rien de plus** : `false` et `legacy` **ne sont pas equivalents**. Ecrire
+  `false` **n'abandonne pas** la designation explicite ; **seul `legacy` la rend au calcul**. Et le
+  `latest` est alle sur le **plus haut semver**, qui etait **le plus ancien sur les deux dates** :
+  **la date la plus recente NE GAGNE PAS**. ⚠️ **Avec deux releases on ne separe pas « semver domine »
+  d'une combinaison date+semver avec departage — on sait que la date ne dirige pas, pas la formule.**
+- **Le job ecrit `--latest=false` en croyant relacher la designation ; il ne la relache pas.** C'est
+  une **piste** de remede (ecrire `legacy`), **pas une conclusion** : `legacy` est inatteignable par
+  `gh`, et rien n'est mesure sur son comportement **a la creation** par `tauri-action`.
+- **Specifique a ce depot** : `v0.32.2` est publiee, `latest` mesure a `v0.32.2`, **9 cles / 9
+  telechargeables**, `.dmg` produits par le CI. C'est ici que vit `release.yml:167`, le referent
+  fautif. Le registre tient **12 lignes** de ce fichier — dont **6 du bloc `latest:` (147-199)**,
+  declarees sans que le fichier soit modifie : *« declarer n'est pas modifier »*, valide au gate.
+- **Le vrai defaut de code, trouve A LA LECTURE et non par l'outil** : `release.yml:167` derive
+  `PLUS_HAUT` de `repos/<depot>/tags`, alors que `GET /releases/latest` ne peut rendre qu'un tag
+  **PORTEUR d'une release** — **4 sur 29** au Cockpit. Sur build rouge (le cas que `if: always()`
+  couvre expres), un tag de version reste sans release, **`VERIFICATION` rougit A TORT**, et le
+  rattrapage dicte **s'adresse a une release qui n'existe pas**. Cette ligne **ne porte aucun mot du
+  motif** : aucune empreinte ne la tenait. **C'est la meilleure demonstration disponible de la borne
+  de l'instrument.**
+- **L'instrument livre par L43** : un **registre d'enonces** (442 entrees) et un **balayage de
+  completude** (D-5/D-6/D-7 + cliquet) — dans un fichier couvert, toute ligne du motif doit etre
+  **tenue par une empreinte** : inscrite, ou **declaree hors couverture avec motif ET empreinte du
+  texte exclu**. **Sa preuve** : relance sur l'etat que le gate venait de declarer `CONFORME` ->
+  **253 lignes NON TENUES**. *« C'est ca, l'ecart entre une liste et un critere. »*
+- **Sa borne, demontree et declaree — H-1** : *« la completude est celle du **MOTIF**, jamais celle du
+  **SENS** »*. **173 des 442 entrees** sont ancrees sur des lignes que le balayage **ne verrait
+  jamais** ; **7 enonces du coeur du residu ont ete trouves a la lecture** ; et on peut ajouter
+  **70 lignes affirmant le contraire de tout le lot** sans qu'aucun compteur ne bouge. **La lecture
+  reste dans la boucle.**
+- **Pourquoi six passages** : le gate a diagnostique un **front qui recule** — le mecanisme, puis la
+  portee, puis la propagation, puis la couverture de l'instrument. *« Les corrections sont pilotees
+  par le pointeur, et les pointeurs d'un gate sont des **exemples**, pas une enumeration. **On ne
+  `grep` pas une implication.** »* Le 6e passage a reussi parce que le **critere de cloture** a change :
+  un balayage auto-verifiable, pas une liste.
+- **Prochaine etape concrete** : Gandalf **amende** le re-cadrage avec M1/M2/M3 — la decision (2b)
+  etait « re-affirmer `--latest` », **M3 ouvre « ecrire `legacy` »**, qui n'etait pas sur la table. Il
+  dira aussi **s'il faut une 4e mesure** (une 3e release au banc casserait la correlation semver/date).
 - **Pieges connus** :
-  1. **Publier par `workflow_dispatch` prive de plateformes** si l'on ne choisit pas `toutes`.
-     Le **push de tag** est la voie sure.
-  2. **`latest.json = 0` ne prouve rien seul.** `tauri-action` ne pose son manifeste **que s'il a des
-     signatures a y mettre** (`upload-version-json.ts` : `if (!signatureFiles[0]) return;`). Un run
-     dont les secrets auraient saute rendrait `sig 0 / latest.json 0` — le profil `v0.31.2` — **sans
-     que le correctif y soit pour rien**. **Toujours lire `sig` en face.**
-  3. **Deux porteurs de version ne sont pas gardes** (`Cargo.lock`, `package-lock.json`), et `npm ci`
-     ne rattrape pas le second.
-  4. **Une levee d'absence se fonde sur un TELECHARGEMENT**, pas sur la presence dans l'API.
+  1. **`gh release edit --latest` est un drapeau BOOLEEN.** `legacy` — une des trois valeurs
+     documentees — est **inatteignable par le client**. Seule l'API l'ecrit.
+  2. **`false` n'est pas `legacy`.** Le premier ne relache rien, le second rend le drapeau au calcul.
+  3. **Une liste de pointeurs n'est jamais une cloture.** Cinq listes successives ont ete des
+     echantillons — y compris celles du gate, et **celle du gate omettait les cibles de sa propre
+     mutation**.
+  4. **Un registre muet est un defaut.** Le hors-couverture se declare **ligne a ligne, avec motif et
+     empreinte du texte exclu** — sinon exclure ouvre un trou neuf.
+  5. **Le banc `iakasju/latest-contrefactuel`** (prive, conserve) est la piece a conviction :
+     `v0.10.0` plus haut semver et plus **ancien**, `v0.9.0` plus recente sur les deux dates. **Cette
+     topologie adverse est ce qui rend l'elimination possible** — ne pas la casser.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-01 22:20 | manual | v0.32.2 | main | L43 livre au 6e passage : balayage de completude. Trois mesures du banc jouees : --latest agit, false inerte, legacy AGIT. |
 | 2026-08-29 23:01 | version | v0.32.2 | main | v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee. |
 | 2026-08-29 21:34 | manual | v0.32.1 | main | Lot L42 installer depuis rien livre : la vitrine ne promet plus ce qu elle n a pas. NAS injoignable, push GitHub seul. |
 | 2026-08-29 10:51 | manual | v0.32.1 | main | Lot L41 gardes tiedes livre : les gardes qui ne pouvaient pas rougir rougissent. Gate PASS au second passage. |

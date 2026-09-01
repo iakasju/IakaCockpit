@@ -198,5 +198,15 @@
     "dirty": false,
     "files": 1419,
     "note": "v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee."
+  },
+  {
+    "date": "2026-09-01 22:20",
+    "reason": "manual",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "da2dfa4 fix(L43): la vitrine imprimait a l'operateur la phrase refutee — aux trois depots",
+    "dirty": false,
+    "files": 1419,
+    "note": "L43 livre au 6e passage : balayage de completude. Trois mesures du banc jouees : --latest agit, false inerte, legacy AGIT."
   }
 ]
