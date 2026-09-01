@@ -20,7 +20,9 @@
 //
 // CE QU'ELLE NE FAIT PAS : juger le CONTENU du bloc. Elle compare des octets a une empreinte. Que
 // le job fasse ce qu'il pretend faire ne se prouve pas ici — ca se mesure sur un banc.
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -34,6 +36,33 @@ import {
 } from "../lib/bloc-latest.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+// UN TEMOIN D'ERREUR SE FABRIQUE, IL NE SE DESIGNE PAS — rectifie le 2026-09-01 (L44).
+// Ce fichier portait ici `expect(() => empreinteAttendue(resolve(ROOT, "scripts"))).toThrow()`.
+// `empreinteAttendue` LIT UN FICHIER : une racine sans fixture jette `ENOENT` AVANT les deux
+// branches que l'assertion pretendait garder, et `toThrow()` s'en satisfait. Le temoin passait
+// donc AUSSI quand on supprimait les branches — mesure : les deux branches otees, `npm run test`
+// restait vert des deux cotes. C'etait FAIL-F1 de L42, reproduit dans un fichier NEUF.
+//
+// REGLE DU LOT, desormais : TOUTE assertion `toThrow*` ANCRE LE MESSAGE de la branche qu'elle
+// nomme, et cette branche doit etre la SEULE a la satisfaire. On fabrique donc la fixture fautive
+// dans une racine jetable, pour que le `readFileSync` reussisse et que l'erreur mesuree soit bien
+// celle qu'on garde.
+const jetables = [];
+
+/** Ecrit `contenu` en `fixtures/bloc-latest.sha256` dans une racine jetable, et rend la racine. */
+function racineAvecFixture(contenu) {
+  const racine = mkdtempSync(resolve(tmpdir(), "bloc-latest-"));
+  jetables.push(racine);
+  const cible = resolve(racine, CHEMIN_FIXTURE);
+  mkdirSync(dirname(cible), { recursive: true });
+  writeFileSync(cible, contenu, "utf8");
+  return racine;
+}
+
+afterAll(() => {
+  for (const racine of jetables) rmSync(racine, { recursive: true, force: true });
+});
 
 describe("bloc `latest:` du workflow de release — garde locale (L44)", () => {
   it("CA-12 — le bloc du depot porte EXACTEMENT l'empreinte de la fixture partagee", () => {
@@ -72,7 +101,36 @@ describe("bloc `latest:` du workflow de release — garde locale (L44)", () => {
     expect(extraireBloc(texte)).toBe([MARQUEUR, "    needs: build", ""].join("\n"));
   });
 
-  it("la fixture est illisible plutot que permissive quand elle ne porte pas UNE empreinte", () => {
-    expect(() => empreinteAttendue(resolve(ROOT, "scripts"))).toThrow();
+  // LES QUATRE TEMOINS DE LA FIXTURE. Trois erreurs NOMMEES, une reussite — sans la reussite,
+  // « ca jette toujours » satisferait les trois autres. Chacun fabrique sa fixture (cf. plus haut).
+  it("une fixture BIEN FORMEE rend l'empreinte, commentaires et blancs ignores", () => {
+    const attendue = "a".repeat(64);
+    const racine = racineAvecFixture(
+      ["# un commentaire", "", `${attendue}  bloc du workflow`, ""].join("\n"),
+    );
+    expect(empreinteAttendue(racine)).toBe(attendue);
+  });
+
+  it("DEUX empreintes dans la fixture : illisible plutot que permissive", () => {
+    const racine = racineAvecFixture(
+      ["# deux lignes utiles", `${"a".repeat(64)}  bloc`, `${"b".repeat(64)}  bloc`, ""].join("\n"),
+    );
+    expect(() => empreinteAttendue(racine)).toThrowError(
+      /doit porter EXACTEMENT une empreinte, 2 trouvee\(s\)/,
+    );
+  });
+
+  it("ZERO empreinte (que des commentaires) : illisible plutot que permissive", () => {
+    const racine = racineAvecFixture(["# rien que du commentaire", "", ""].join("\n"));
+    expect(() => empreinteAttendue(racine)).toThrowError(
+      /doit porter EXACTEMENT une empreinte, 0 trouvee\(s\)/,
+    );
+  });
+
+  it("ligne d'empreinte MALFORMEE : illisible plutot que permissive", () => {
+    const racine = racineAvecFixture(["pas-une-empreinte  bloc du workflow", ""].join("\n"));
+    expect(() => empreinteAttendue(racine)).toThrowError(
+      /ligne d'empreinte illisible dans fixtures\/bloc-latest\.sha256 : pas-une-empreinte  bloc du workflow/,
+    );
   });
 });
