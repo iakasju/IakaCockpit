@@ -127,23 +127,61 @@ jobs:
           includeUpdaterJson: false
           args: ${{ matrix.args }}
 
-  # ┌─ L42 — LE `latest` CESSE D'ETRE SUBI ────────────────────────────────────────────────────────┐
-  # │ MECANISME REEL, LU LE 2026-08-29 DANS LA SOURCE DU SHA EPINGLE ci-dessus (lot L43). Le vol du │
-  # │ `latest` vient de la CREATION d'une release : `createRelease` y est appele SANS `make_latest`,│
-  # │ donc au defaut `true`. Republier un tag dont la release EXISTE ne vole RIEN a ce SHA —        │
-  # │ `getOrCreateRelease` la renvoie telle quelle, sans aucun `updateRelease`. RECTIFICATION : ce  │
-  # │ cartouche disait, jusqu'au 2026-08-29, « republier un tag ANCIEN vole le latest » ; FAUX ICI. │
-  # │                                                                                              │
-  # │ POURQUOI UNE ETAPE SEPAREE, PAS UNE ENTREE DE `tauri-action`. Le SHA epingle par L41          │
-  # │ (84b9d35b…, action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le `latest`. Le desepingler pour en│
-  # │ trouver une defairait L41 : `fixtures/tauri-action-pin.json` rougirait, A RAISON.             │
-  # │                                                                                              │
-  # │ CE JOB N'EMPECHE PAS LE VOL (la release est creee AVANT lui), ET IL NE LE REPARE PAS.         │
-  # │ MESURE : le contrefactuel du 2026-08-30 (`--latest=false` sur v0.10.0 -> v0.10.0 INCHANGE),   │
-  # │ croise avec le run 33277643229, REFUTE HUIT des NEUF regles de repli enumerees ; SEUL LE      │
-  # │ NO-OP SURVIT. RESIDU : une regle NON ENUMEREE reste possible, et ce NO-OP est OBSERVATIONNEL. │
-  # │ Liste, valeurs et residu : contrefactuel-du-vol-de-latest.md. Il DETECTE, ROUGIT, DICTE.      │
-  # └──────────────────────────────────────────────────────────────────────────────────────────────┘
+  # ┌─ L42 -> L44 — LE `latest` CESSE D'ETRE SUBI ──────────────────────────────────────────────────┐
+  # │ L44 — CE QUE CE JOB FAIT, MESURE, AU 2026-09-01. Le cartouche a dit qu'il EMPECHAIT le vol du │
+  # │ `latest`, puis qu'il le REPARAIT ; il ne faisait ni l'un ni l'autre. Ce qui suit est ce qu'il │
+  # │ fait apres le lot L44, et rien de plus. On date, on n'efface pas.                             │
+  # │                                                                                               │
+  # │ CE QU'IL NE FAIT TOUJOURS PAS : EMPECHER. La release est creee AVANT que ce job demarre (F2,  │
+  # │ L43) — au SHA epingle, `tauri-action` appelle `createRelease` SANS `make_latest`, donc au     │
+  # │ defaut `true`. La fenetre du vol n'est pas fermee, elle est RACCOURCIE : de « jusqu'au geste  │
+  # │ manuel du decideur » a « la duree de ce job ». C'est tout ce qu'il y avait a gagner.          │
+  # │                                                                                               │
+  # │ CE QU'IL FAIT MAINTENANT : IL REPARE — et c'est mesure. La branche du vol ECRIVAIT            │
+  # │ `--latest=false` sur le tag publie ; cette ecriture est INERTE (voir le tableau). Elle ecrit  │
+  # │ desormais `--latest` sur le plus haut semver PORTEUR D'UNE RELEASE, ce qui rend le pointeur   │
+  # │ et `PLUS_HAUT` egaux PAR CONSTRUCTION (AR-7 = (a), tranche le 2026-09-01).                    │
+  # │                                                                                               │
+  # │ LE TABLEAU DES CINQ ECRITURES — banc PRIVE iakasju/latest-contrefactuel, release `id`         │
+  # │ 379113280 pour M2 et M3b. Aucun geste sur ce depot-ci.                                        │
+  # │   `--latest` (true) via `gh release edit` . . . AGIT           M1,  2026-09-01                │
+  # │   `--latest=false` via `gh release edit` . . .  inerte         mesure du 2026-08-29 (L43)     │
+  # │   `make_latest=false` via `PATCH` brut . . . .  inerte         M2,  2026-09-01                │
+  # │   `make_latest=legacy` via `PATCH` brut . . . . AGIT           M3b, 2026-09-01                │
+  # │   `--latest=legacy` via `gh release edit` . . . INATTEIGNABLE  M3a, 2026-09-01                │
+  # │ Cette derniere ligne n'est pas une note de bas de page : `--latest` est un drapeau BOOLEEN    │
+  # │ (`strconv.ParseBool`), donc le regime `legacy` est HORS D'ATTEINTE du client `gh`. Quiconque  │
+  # │ lira « il existe trois valeurs » et essaiera de les poser par `gh` heurtera le meme mur.      │
+  # │                                                                                               │
+  # │ OU SIEGE LE NO-OP. Ni dans le client, ni dans le transport, ni dans la lecture : M2 et M3b    │
+  # │ portent sur la MEME release, le MEME endpoint, le MEME champ, et seule la VALEUR les separe   │
+  # │ — or M3b, lui, a bouge le pointeur. Il siege dans la SEMANTIQUE DE LA VALEUR `false` cote     │
+  # │ API : `true` promeut, `legacy` recalcule, `false` ne demande rien et rien n'advient.          │
+  # │                                                                                               │
+  # │ LE RESIDU, AU 2026-09-01. La regle de repli EXISTE : elle vit sous `make_latest=legacy`,      │
+  # │ elle n'est atteignable que par `PATCH`, et elle n'est PAS dirigee par la date la plus         │
+  # │ recente — ni sur `created_at`, ni sur `published_at`, ni sur l'ordre d'enregistrement : le    │
+  # │ plus haut semver l'a emporte sur les trois. SA FORMULE RESTE INCONNUE : les deux releases     │
+  # │ mesurees sont DU MEME JOUR, donc une regle au grain du JOUR departagee par le semver          │
+  # │ produirait exactement la meme sortie. `legacy` est une CONNAISSANCE, pas un remede — il       │
+  # │ n'entre dans AUCUNE ligne de ce job.                                                          │
+  # │                                                                                               │
+  # │ LA DOC DE GITHUB EST REFUTEE PAR MESURE. `GET /releases/latest` y est decrit comme rendant    │
+  # │ « the most recent non-prerelease, non-draft release, sorted by the `created_at` attribute ».  │
+  # │ Le banc la refute DEUX FOIS : avant M1 et apres M3b, le pointeur etait sur le `created_at`    │
+  # │ le PLUS ANCIEN des deux. A savoir aussi : `created_at` est la date du COMMIT du tag, pas      │
+  # │ celle de la release. Une doc ne se refute pas en la relisant, elle se refute en mesurant.     │
+  # │                                                                                               │
+  # │ CE QUI N'EST PAS TRANSPOSE. Tout ce qui precede est mesure sur un BANC PRIVE du meme compte,  │
+  # │ avec `gh release create` comme acteur substitut — pas `tauri-action`, pas ce depot. La        │
+  # │ transposition reste l'objet de CA-5, et CA-5 RESTE DU.                                        │
+  # │                                                                                               │
+  # │ POURQUOI UNE ETAPE SEPAREE, PAS UNE ENTREE DE `tauri-action` : le SHA epingle par L41         │
+  # │ (84b9d35b..., action-v0.6.2) N'EXPOSE AUCUNE entree pilotant le pointeur. Le desepingler      │
+  # │ pour en trouver une defairait L41 — `fixtures/tauri-action-pin.json` rougirait, A RAISON.     │
+  # │                                                                                               │
+  # │ Mesures, arbitrages et residu complets : specs/instructions/re-cadrage-garde-latest.md.       │
+  # └───────────────────────────────────────────────────────────────────────────────────────────────┘
   latest:
     needs: build
     # `always()` : les artefacts sont DEJA televerses quand ce job demarre. Ne pas designer le
