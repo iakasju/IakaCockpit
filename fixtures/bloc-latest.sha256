@@ -1,0 +1,20 @@
+# EMPREINTE DU BLOC `latest:` DE `.github/workflows/release.yml` — lot L44.
+#
+# CE FICHIER EST LE REFERENT UNIQUE du bloc, et il est BYTE-IDENTIQUE entre IakaCockpit et
+# iakaFrameGUI par construction : c'est une empreinte, elle ne peut pas differer sans que l'un des
+# deux blocs ait derive. Il est inscrit a `fixtures/convergence.sha256` (face croisee) et relu par
+# `scripts/__tests__/bloc-latest.test.mjs` dans le gate de CHACUN des deux depots (face locale).
+#
+# POURQUOI UNE FIXTURE ET PAS LE FICHIER ENTIER AU REGISTRE (AR-3 = (b), 2026-08-31) : les deux
+# `release.yml` ne sont PAS byte-identiques — dependances Linux (l. 72) et commentaire minisign
+# (l. 96-99). Les aligner trancherait EN PASSANT une question de build. Successeur nomme :
+# CONVERGENCE-RELEASE-YML-ALIGNEMENT.
+#
+# POUR REGENERER, apres une modification VOULUE du bloc DANS LES DEUX DEPOTS :
+#   node -e "import('./scripts/lib/bloc-latest.mjs').then(m=>console.log(m.empreinte(m.lireBloc('.'))))"
+# puis reporter la valeur ici DES DEUX COTES, regenerer `fixtures/convergence.sha256` et rejouer
+# les deux faces.
+#
+# Valeur du 2026-08-30 (avant le lot L44), conservee : on date, on n'efface pas.
+#   3547f66746fae90721879ad0115cb84764ff5a2da5c07fd251b75c2634457173
+a938007eba112e3aa1d60bdf22fdbcabd6876dc2961a6b1c7ae7b9d63c86a597  .github/workflows/release.yml#latest

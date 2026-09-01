@@ -14,7 +14,7 @@ f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-e124f840132f1ad0db5d6d55b5e3ede98b47dab60e2d1b5fbe99ab9e46587f6a  scripts/__tests__/forge-host-parity.test.mjs
+5a2b54fe7f828f1bf61a28ae61d49128e0128b9b4a8d4a0333296b456aecd95d  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
@@ -32,3 +32,15 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 8fddc688739ca8da0e038618e8c2ebd5154d2394e04687d7afe92b57353087ec  scripts/vitrine.mjs
 273b4e69deee55eb9b3630c8df65ba0ce0b727e0e8f9c8551f73657c4a33fb3f  scripts/vitrine-en-ligne.mjs
 0bf9d071b74b32e944cd29d9aad4e6f8bb69e98f693a95da9f8cc035fe559cd0  scripts/__tests__/vitrine.test.mjs
+# L44 — LA GARDE DU BLOC `latest:` DU WORKFLOW DE RELEASE. Le job qui désigne le pointeur de
+# release est écrit DEUX FOIS, une par dépôt jumeau. Mesuré au 2026-08-30 (L43) : les deux copies
+# étaient byte-identiques et RIEN ne gardait celle du GUI — la preuve en a été faite par mutation,
+# un octet changé laissait les deux faces vertes. CE QUI CONVERGE N'EST PAS LE FICHIER DE WORKFLOW,
+# QUI N'ENTRE PAS ICI : les deux copies diffèrent (dépendances Linux l. 72, commentaire minisign
+# l. 96-99 — successeur nommé CONVERGENCE-RELEASE-YML-ALIGNEMENT, à cadrer, pas en passant). CE QUI
+# CONVERGE, C'EST LE BLOC. D'où une fixture qui porte son empreinte, byte-identique PAR
+# CONSTRUCTION, l'extracteur par marqueur qui la produit, et la garde locale qui la relit dans le
+# gate de chacun des deux dépôts.
+58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
+10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
+7ccaf8ac7545eb05d78904497f6287f76d18f4478cfa4ea43f601f97c1722e52  scripts/__tests__/bloc-latest.test.mjs
