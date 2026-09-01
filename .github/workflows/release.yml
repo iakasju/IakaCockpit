@@ -161,28 +161,64 @@ jobs:
           DEPOT: ${{ github.repository }}
         run: |
           set -euo pipefail
-          # Le plus haut tag de VERSION du depot. Le filtre `^v[0-9]+\.[0-9]+\.[0-9]+$` n'est pas
-          # cosmetique : iakaFrameGUI porte aussi des tags `archive/feat/*`, et les compter comme
-          # des versions ferait dire n'importe quoi a « le plus haut tag ».
-          PLUS_HAUT=$(gh api "repos/$DEPOT/tags" --paginate --jq '.[].name' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          # (2a) LE REFERENT EST LA POPULATION DES RELEASES, PAS CELLE DES TAGS. Rectifie le
+          # 2026-09-01 (lot L44, defaut R-2). La ligne d'origine lisait la population des TAGS ; or
+          # `GET /releases/latest` ne peut JAMAIS rendre autre chose qu'un tag PORTEUR d'une
+          # release. Les deux populations ne coincident pas : 4 tags sur 29 portent une release
+          # sur IakaCockpit (F1, L43). CE QUE LE REFERENT FAUX PRODUISAIT, et c'est double :
+          #   - FAUX ROUGE. Apres un build ROUGE — le cas que `if: always()` couvre EXPRES, ou
+          #     `tauri-action` ne cree AUCUNE release —, un tag de version reste sans release ;
+          #     `PLUS_HAUT` designait alors ce tag, et la ligne VERIFICATION rougissait A TORT.
+          #   - DICTEE IMPOSSIBLE. Le rattrapage imprime, `gh release edit $PLUS_HAUT --latest`,
+          #     s'adressait a une release QUI N'EXISTE PAS : la commande ne pouvait pas reussir.
+          #     Un operateur qui suivait le message a la lettre bouclait.
+          # Le filtre `^v[0-9]+\.[0-9]+\.[0-9]+$` reste : iakaFrameGUI porte aussi des tags
+          # `archive/feat/*`, et les compter ferait dire n'importe quoi au « plus haut ».
+          # `select(.draft|not)` et `select(.prerelease|not)` : `GET /releases/latest` ignore les
+          # brouillons et les preversions ; le referent doit ignorer EXACTEMENT les memes, sans
+          # quoi on recreerait l'ecart qu'on vient de fermer.
+          # L'appel et le tri sont SEPARES a dessein : un echec de `gh api` doit rester un ECHEC
+          # (`set -e` abandonne), et ne surtout pas se confondre avec « aucune release ».
+          RELEASES=$(gh api "repos/$DEPOT/releases" --paginate \
+            --jq '.[] | select(.draft|not) | select(.prerelease|not) | .tag_name')
+          PLUS_HAUT=$(printf '%s\n' "$RELEASES" \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
           echo "tag publie      : $TAG"
           echo "plus haut semver: $PLUS_HAUT"
 
+          # R2 / CA-7 — AUCUNE RELEASE : il n'y a RIEN a designer. On sort en SUCCES EN LE DISANT.
+          # Jamais en silence, et jamais sur une comparaison a la chaine vide plus loin, qui serait
+          # muette. Ce chemin existe pour de vrai : premiere publication d'un depot, ou build rouge
+          # avant la toute premiere release. C'est le prix du referent correct : `/tags` rendait
+          # toujours quelque chose, `/releases` peut ne rien rendre — et c'est ce qu'on veut.
+          if [ -z "$PLUS_HAUT" ]; then
+            echo "AUCUNE release non-brouillon non-preversion portant un tag de version sur $DEPOT."
+            echo "Il n'y a donc AUCUN latest a designer, et rien a verifier. Sortie en SUCCES."
+            exit 0
+          fi
+
+          # (2b-i) LA BRANCHE DU VOL EXECUTE LE RATTRAPAGE AU LIEU DE L'IMPRIMER. Pose le
+          # 2026-09-01 (lot L44), sur la mesure M1 du decideur : `gh release edit <tag> --latest`
+          # DEPLACE le pointeur (banc iakasju/latest-contrefactuel, v0.10.0 -> v0.9.0). L'ancienne
+          # branche ecrivait `--latest=false` sur $TAG : MESUREE INERTE deux fois (banc 2026-08-29
+          # par `gh`, et M2 du 2026-09-01 par PATCH brut). Ecrire `--latest` sur $PLUS_HAUT rend
+          # `latest` et `PLUS_HAUT` egaux PAR CONSTRUCTION — donc la ligne VERIFICATION ci-dessous
+          # ne peut pas rougir apres l'ecriture du job. Sur le chemin nominal ($TAG = $PLUS_HAUT),
+          # rien ne change : c'est exactement la commande d'avant.
           if [ "$TAG" = "$PLUS_HAUT" ]; then
-            DECISION="--latest"
-            echo "DECISION : $TAG EST le plus haut semver -> il devient le latest."
+            CIBLE="$TAG"
+            echo "DECISION : $TAG EST le plus haut semver porteur d'une release -> il est latest."
           else
-            DECISION="--latest=false"
-            echo "DECISION : $TAG n'est PAS le plus haut ($PLUS_HAUT) -> on pose explicitement"
-            echo "           --latest=false. Sans cette ligne, le defaut make_latest=true de"
-            echo "           l'API aurait VOLE le latest a $PLUS_HAUT."
+            CIBLE="$PLUS_HAUT"
+            echo "DECISION : $TAG n'est PAS le plus haut ($PLUS_HAUT) -> on RE-AFFIRME --latest sur"
+            echo "           $PLUS_HAUT. Sans cette ligne, le defaut make_latest=true de l'API"
+            echo "           aurait laisse le latest a $TAG."
           fi
 
           # R6 — si `gh` echoue (droit manquant sur le runner, quota), l'echec NOMME la commande
           # de rattrapage manuelle. Les artefacts, eux, sont deja en place : rien n'est perdu.
-          if ! gh release edit "$TAG" $DECISION --repo "$DEPOT"; then
-            echo "::error::impossible de designer le latest sur $TAG."
+          if ! gh release edit "$CIBLE" --latest --repo "$DEPOT"; then
+            echo "::error::impossible de designer le latest sur $CIBLE."
             echo "::error::RATTRAPAGE MANUEL : gh release edit $PLUS_HAUT --latest --repo $DEPOT"
             exit 1
           fi
