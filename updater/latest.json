@@ -1,43 +1,43 @@
 {
-  "version": "0.32.1",
-  "notes": "IakaCockpit 0.32.1",
-  "pub_date": "2026-08-28T16:21:01Z",
+  "version": "0.32.2",
+  "notes": "IakaCockpit 0.32.2",
+  "pub_date": "2026-09-02T13:12:06Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG5zb3ZNQ0p0Q1cvQURCZUl4YUlHczRqb2hYNDBmUUdDZG5KbXZWK0ovTDg2QTlLVjI1NEx6VVAzMlVhc2xkQjZnS3hTcEdEK2NMazFPWDRQd2NBZkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTMzMjMyCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpHNGhEQURyM0FZdEJJalQzUU9ybzhsQTdNVXdOeTdYSjBiR1hyeENrWFdCWnhZVVptcTRvWkFDY0xWK1F3dFEwYkJRaWN3cUxoL3dWRUxDQmpaemlBQT09Cg==",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHZxRWhOQmJBV0xsdllUSWQ4Z2Z0cllRNnJkL0hkTklzN3dXZGVhRncxNHRxcDBpVEdYWG1JK2xyOWVUbFVlbVZ4K1hJR0tjREZla0I1eXdpd0srcHdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDgzCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpEK0pzVHhROW1EVkl1K1ZXKzdFd1cxL04zT0dTM0dyVVNZWVdIZjdvWnNtZFZjWGgxSE9Ddm01NGE2SEZzbGpEUDN1b0hoMUs1RGQxMzF2bEpXMG1Cdz09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_aarch64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGpmY29XVXZVQlVLSEM4S2VvM1lZdjAwdTNlN2JIL0I4WE9LVnQ1WFBmaVFCN0t1TUhxN2doQmVFd085b3d3THljZkg5NkhXV3B4RTFkbjNnS0ZqYWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTMzMzYzCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpyT2hQSFBGaTVHbFp2ZjBZOTdwMUFXSG1FaStCOHVaamJ6a2NEVi9RblFUc2JQbS9GM3B4RTJYUXgvT2FUYk1JaHA2NzdBUGd2dmFrUDhESjF6WVJDZz09Cg==",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_x64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGtCNVRKRXNDSTYzYVNWVWlLV3dIeW9uU1dhekJldmNjblJiUi9rSFRxblQ4MFZxTlJUYWRmdGVCY01JMS9iaStKQlJodWZGWU5NbFZTRWtZZWVXREFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NTkxCWZpbGU6SWFrYUNvY2twaXQuYXBwLnRhci5negpWTDVzc2J4QnhESEZxVXdzaEt0eXM0b2NWSmJyeFZRUUg4UXRPTmwwQ2RJMUh6bzNGVFlKSWNGZHZIVDAvWWxvRHhXNmFoK1VxTm5sN0tQNGRnaFlBQT09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_x64.app.tar.gz"
     },
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHB1NURZRGJCZUJnVkdldVc0R0RBMitaZkllNnpmUXVKS2pORm5xWHNrRG9QTFI2bmxMS0JDZ0dXN0pVNFBUM012Sjk5VzJydnE5OTg3Wk8zcndpeHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUyNzY2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX2FtZDY0LkFwcEltYWdlCjRYaE5pOElkTHdGblYzTnJqWnh0Z2wycGZHaEtvdHh0K1REc0R3TEo4TkwyYnVMbmFoYVlyWkJiSGF2cUwwSG1Rald3SFk0L3h1RVcxeFRUZ3dwQUF3PT0K",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG5naDFGcHphWVIwSWoxMkQxOVRjRWd4d1dyNCtqQ3JoYmhhd0hMd1BhNm5RVkhXVkt5a0IyVWExTFk2SjF1cER6N3lHbWk2YjJpcHNacUZWSWdrT2c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDg2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX2FtZDY0LkFwcEltYWdlCnlQYksxSFpEOFY0SXdtR0NWS1M2cmN4TTlkZzg2YzdNSzdoUUN2NCtsMGpBTG1DNCtmN3NnNHdGTlNPSnZWVUJ1TjFBOWNPNlZ6Ry9DQlpPQjVXTUJ3PT0K",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_amd64.AppImage"
     },
     "linux-x86_64-appimage": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHB1NURZRGJCZUJnVkdldVc0R0RBMitaZkllNnpmUXVKS2pORm5xWHNrRG9QTFI2bmxMS0JDZ0dXN0pVNFBUM012Sjk5VzJydnE5OTg3Wk8zcndpeHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUyNzY2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX2FtZDY0LkFwcEltYWdlCjRYaE5pOElkTHdGblYzTnJqWnh0Z2wycGZHaEtvdHh0K1REc0R3TEo4TkwyYnVMbmFoYVlyWkJiSGF2cUwwSG1Rald3SFk0L3h1RVcxeFRUZ3dwQUF3PT0K",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG5naDFGcHphWVIwSWoxMkQxOVRjRWd4d1dyNCtqQ3JoYmhhd0hMd1BhNm5RVkhXVkt5a0IyVWExTFk2SjF1cER6N3lHbWk2YjJpcHNacUZWSWdrT2c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDg2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX2FtZDY0LkFwcEltYWdlCnlQYksxSFpEOFY0SXdtR0NWS1M2cmN4TTlkZzg2YzdNSzdoUUN2NCtsMGpBTG1DNCtmN3NnNHdGTlNPSnZWVUJ1TjFBOWNPNlZ6Ry9DQlpPQjVXTUJ3PT0K",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_amd64.AppImage"
     },
     "linux-x86_64-deb": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG1mVWZJM3J1NU94S1FPUUF1YWFKeThxd0Ewa24xRG9aNXRRQ2lqSmZ1dzYzSFRpVXcrZEJHSmtzL09sTitMMGxPTWpLT2U0UXlzUmJweHlWZm01andzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUyNzY2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX2FtZDY0LmRlYgppcE9reGFLTEtINmFvaUpMN0Rra1dhTUVQMTlYMURTVm1TTjVJMG5UMnNCa2ltdE5CWXpkVXpaanBDeWpIK0svYml0ZGJheG9vN0ZsNkxxNUMxQ0ZCQT09Cg==",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_amd64.deb"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHMvZ0hHVHpNUEVHd0tRUUNpNEU5U2FERXBQRGx3S01LQVQyZFJ4Wmh6ejBTSXJ4eVRqcitnd1pRNCsvcGxIMUUwcE5KamREWFgvMy9IdC9mWXh2bXdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDg2CWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX2FtZDY0LmRlYgoyM1FITSt3dDVTelFKUFNtUkRQRkYwT21ReWpRTDBoLzFSUTBPd2sxRVV2SXFtYlhMSnZ5R2ZMcTRmZUo5bTh4YUEyZ01uSWNJT1hzUE9LRTdmZEtCQT09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_amd64.deb"
     },
     "linux-x86_64-rpm": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNG1VL2Y0NEVOOGhSMjJPd2RhMWVkOHI3Zk4vdEE2OE9LZWY1a2ZQVmJaN0ZoZ2Z6ZVdQdmFNekFoSnVoeXdva3JCclp4bXU4VWJyMW4xR2NCQWdXVlFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUyNzY2CWZpbGU6SWFrYUNvY2twaXQtMC4zMi4xLTEueDg2XzY0LnJwbQpiZnFMY21SdEcrZTBuZzFjeTF5U2RZT3BSdGk4TGtXRXFVS3pBTzdMQmtOdmZ4eFVXN3F3NUY5OVZRYXFUM0FRUmloYXF2T2MxMDFyT25lMXhSMHhCZz09Cg==",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit-0.32.1-1.x86_64.rpm"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHBGT01pSHUvdGFBcnBYVG9qQlRudGZlZEI3ME1OUE9qS2tMQjdWK3N3WE1nZW02SjUzM1NvdVVFeE5vR05XVkxwb245SDJieUtHbHFpTGNESDZJYUFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDg2CWZpbGU6SWFrYUNvY2twaXQtMC4zMi4yLTEueDg2XzY0LnJwbQo2djkzeU85MHRjSlBneXZMR0JseXBXUERVOHZzOUkxaEJJb0lkNDZxZ3hnUWhETFVWc01nT05jWGtpcFJyRkdLQUV6amM0ZS9kbjVwZVZLU2J0TzNEZz09Cg==",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit-0.32.2-1.x86_64.rpm"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGk2bW9JWFJVYm9DUGNhUDFjVnZhakN2Z3ZGczlRVXFidXFXNXM4eTNzL3M4S3FEL0hVNFJ4dExLUXlYblVuWlZMUEtFNjRDQ3JhYi9FZ1Jpb2pnZVF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUwNDIxCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX3g2NC1zZXR1cC5leGUKK3FPanE2UnV2dm9LQk91Y2NCMVNURDlBOEFPRURRcWZGVHFGT0ROVFZVVWJwYm90R3pzRWVIQUgrYzZLU3NONGE3T0ZYVzQ4MVBCbklTS0FTUC82QkE9PQo=",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHRQUHFYVkpXWGNlR2NGcmtOTmxvcGRLc1B3dTM4OW1QMEN3dkg0cnRPWHVaVmVBa0lxeXJXMWZmUWJTcXFSOTNVMWp4THFCWkRYYm52NnJJdkc2SGdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDUyCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX3g2NC1zZXR1cC5leGUKTVJRNTJHZXpVbUw3RHI4Y0thR1JMbkpUZmErbzd2TzErY1F3djJLWnpmQ0ZmSUxYS3cvc1ExZE5vWTd2bG00VmRnWmNRWnNQaHAydXF0SEhoUG9kQ1E9PQo=",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_x64-setup.exe"
     },
     "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHJ0QXp1dFo1QVNJVnMzREJaSno4Qy9ILzVRRWdvOFBqMjBuNm5nckM5amlwOS9zTFE4MFhoaTE3ak9LZ05EWDY4VDY4OUtNQkFvUUxLbzhtaWVpMEFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUwNDIxCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX3g2NF9lbi1VUy5tc2kKK3MxVFAzaEIrNkQybVBFcnVpaUVjR1d0bEFSZVZrUkRONW50ZkdUTzF3VHhPeFVkdU1BbUx6TEJlaWd1N0hOM2xnL3ZJUjNlZjAwK2d5bENsMVhXQ2c9PQo=",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHZyVGpFcktmM09wZkNvMFo0NWF0Y3NQNlFUNWNNSjBxYUtxekNFYzB5YThqUnM0WGkyQTFGV1NMblo1OTErem5oZFdBa21YZ0R5RW51U01lNFNHTGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDUyCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX3g2NF9lbi1VUy5tc2kKOHoyNVFPNHRaRFVjZE16aC9udzAxNVZ1S0hmSXZqTDlTclVOcXJIK0hjZW1MMUZrNHlDa0lzWktETWRLdGlneEtxZktKZ2E4SW1qd1RJczJueWxxQlE9PQo=",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_x64_en-US.msi"
     },
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNGk2bW9JWFJVYm9DUGNhUDFjVnZhakN2Z3ZGczlRVXFidXFXNXM4eTNzL3M4S3FEL0hVNFJ4dExLUXlYblVuWlZMUEtFNjRDQ3JhYi9FZ1Jpb2pnZVF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3OTUwNDIxCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4xX3g2NC1zZXR1cC5leGUKK3FPanE2UnV2dm9LQk91Y2NCMVNURDlBOEFPRURRcWZGVHFGT0ROVFZVVWJwYm90R3pzRWVIQUgrYzZLU3NONGE3T0ZYVzQ4MVBCbklTS0FTUC82QkE9PQo=",
-      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.1/IakaCockpit_0.32.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRemdzZEp6SEdaNHRQUHFYVkpXWGNlR2NGcmtOTmxvcGRLc1B3dTM4OW1QMEN3dkg0cnRPWHVaVmVBa0lxeXJXMWZmUWJTcXFSOTNVMWp4THFCWkRYYm52NnJJdkc2SGdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MDM1NDUyCWZpbGU6SWFrYUNvY2twaXRfMC4zMi4yX3g2NC1zZXR1cC5leGUKTVJRNTJHZXpVbUw3RHI4Y0thR1JMbkpUZmErbzd2TzErY1F3djJLWnpmQ0ZmSUxYS3cvc1ExZE5vWTd2bG00VmRnWmNRWnNQaHAydXF0SEhoUG9kQ1E9PQo=",
+      "url": "https://github.com/iakasju/IakaCockpit/releases/download/v0.32.2/IakaCockpit_0.32.2_x64-setup.exe"
     }
   }
 }
