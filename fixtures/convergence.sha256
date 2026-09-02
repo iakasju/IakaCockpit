@@ -43,4 +43,4 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 # gate de chacun des deux dépôts.
 58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
 10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
-f33e3dd5eb7681c8e62ab461d0f7947ffd3a3d8caee494e0351da229ef83c4ea  scripts/__tests__/bloc-latest.test.mjs
+addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__tests__/bloc-latest.test.mjs

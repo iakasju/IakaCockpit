@@ -77,12 +77,16 @@ describe("bloc `latest:` du workflow de release — garde locale (L44)", () => {
   });
 
   it("CA-11 — le marqueur est unique dans le workflow reel", () => {
+    // RETIRE LE 2026-09-02 (ecart 2, gate PASS de L44) : une assertion `not.toThrow()` suivait
+    // ici, commentee comme servant a « faire porter a l'echec un nom lisible dans le rapport de
+    // test ». Mutation M4 du gate REFUTE ce role : `lireBloc(ROOT)` ci-dessous appelle DEJA
+    // `extraireBloc` et JETTE la premiere si le marqueur n'est pas unique — verifie : une
+    // mutation locale (deux marqueurs dans le workflow reel) fait echouer CE TEST a la ligne
+    // ci-dessous, avec le message NOMME de `extraireBloc`, avant que la ligne retiree n'ait
+    // jamais ete atteinte. `texte` y valait d'ailleurs le bloc DEJA EXTRAIT, pas le texte du
+    // workflow : l'assertion ne pouvait pas jouer le role qu'elle s'attribuait.
     const lignes = lireBloc(ROOT).split("\n");
     expect(lignes[0], "le bloc extrait ne commence pas par le marqueur").toBe(MARQUEUR);
-    // `lireBloc` a deja asserte l'unicite ; on la re-affirme ici pour que l'echec porte un nom
-    // lisible dans le rapport de test, et pas seulement dans la pile d'une exception.
-    const texte = lireBloc(ROOT);
-    expect(() => extraireBloc(texte)).not.toThrow();
   });
 
   it("CA-11 — ZERO marqueur : la garde ROUGIT, elle ne devine pas", () => {
