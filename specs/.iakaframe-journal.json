@@ -208,5 +208,15 @@
     "dirty": false,
     "files": 1419,
     "note": "L43 livre au 6e passage : balayage de completude. Trois mesures du banc jouees : --latest agit, false inerte, legacy AGIT."
+  },
+  {
+    "date": "2026-09-02 12:33",
+    "reason": "pause",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "efbd1a2 fix(L44): le message E-1 cesse de dire NON EPROUVE d'un geste mesure (M1)",
+    "dirty": false,
+    "files": 1422,
+    "note": "L44 PASS au 8e passage, fusionne et pousse. Correctif des ecarts consignes en cours : ecart 1 fait, 2-4 restants."
   }
 ]
