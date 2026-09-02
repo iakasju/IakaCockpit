@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-09-02 12:33 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-09-02 18:06 - motif : manual - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
   <div class="k">Version</div><div>v0.32.2</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>efbd1a2 fix(L44): le message E-1 cesse de dire NON EPROUVE d'un geste mesure (M1)</code></div>
+  <div class="k">Dernier commit</div><div><code>ca8fd56 chore(release): publie le manifeste de mise a jour v0.32.2</code></div>
   <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
   <div class="k">Fichiers</div><div>1422 (suivis + non ignores)</div>
-  <div class='k'>Note</div><div>L44 PASS au 8e passage, fusionne et pousse. Correctif des ecarts consignes en cours : ecart 1 fait, 2-4 restants.</div>
+  <div class='k'>Note</div><div>L44 clos. iakaframe v0.39.0 publiee (1er run du CI). Chaine de maj reparee sur les 3 canaux. Contrefactuel du latest joue sur depot reel.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>efbd1a2</code></td><td>2026-09-02</td><td>fix(L44): le message E-1 cesse de dire NON EPROUVE d'un geste mesure (M1)</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>ca8fd56</code></td><td>2026-09-02</td><td>chore(release): publie le manifeste de mise a jour v0.32.2</td></tr>
+<tr><td><code>5880743</code></td><td>2026-09-02</td><td>merge: correctif des ecarts consignes de L44 (gate Legolas PASS)</td></tr>
+<tr><td><code>f919dd5</code></td><td>2026-09-02</td><td>fix(L44): retire l'assertion CA-11 dont le role est refute par mutation M4</td></tr>
+<tr><td><code>c0e7d33</code></td><td>2026-09-02</td><td>chore: pause — L44 PASS et fusionne, correctif des ecarts en cours (1/4 fait)</td></tr>
+<tr><td><code>efbd1a2</code></td><td>2026-09-02</td><td>fix(L44): le message E-1 cesse de dire NON EPROUVE d'un geste mesure (M1)</td></tr>
 <tr><td><code>0636c15</code></td><td>2026-09-01</td><td>fix(L44): le temoin de la fixture FABRIQUE son erreur au lieu de la designer</td></tr>
 <tr><td><code>4f275cc</code></td><td>2026-09-01</td><td>docs(L44): l'etat des lieux dit ou en est la garde du latest, date</td></tr>
 <tr><td><code>4682331</code></td><td>2026-09-01</td><td>docs(L44): le CLAUDE.md dit ce que le job fait apres L44, mesure et date</td></tr>
 <tr><td><code>8ed1e1a</code></td><td>2026-09-01</td><td>docs(L44): le cartouche du job latest dit ce que le job fait, mesure et date</td></tr>
 <tr><td><code>c13a512</code></td><td>2026-09-01</td><td>feat(L44): la garde locale du bloc `latest:`, dans le gate des DEUX depots</td></tr>
-<tr><td><code>aeab3af</code></td><td>2026-09-01</td><td>fix(L44): le job latest lit les RELEASES, et la branche du vol re-affirme --latest</td></tr>
-<tr><td><code>628d25f</code></td><td>2026-09-01</td><td>chore: checkpoint — L43 livre (6e passage) + re-cadrage amende des trois mesures du banc</td></tr>
-<tr><td><code>da2dfa4</code></td><td>2026-08-30</td><td>fix(L43): la vitrine imprimait a l'operateur la phrase refutee — aux trois depots</td></tr>
-<tr><td><code>0044a79</code></td><td>2026-08-30</td><td>fix(L43): l'etat des lieux cesse de promettre un vol "mecaniquement impossible"</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-09-02 18:06</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>L44 clos. iakaframe v0.39.0 publiee (1er run du CI). Chaine de maj reparee sur les 3 canaux. Contrefactuel du latest joue sur depot reel.</td></tr>
 <tr><td>2026-09-02 12:33</td><td><span class='r r-pause'>pause</span></td><td>v0.32.2</td><td>main</td><td>L44 PASS au 8e passage, fusionne et pousse. Correctif des ecarts consignes en cours : ecart 1 fait, 2-4 restants.</td></tr>
 <tr><td>2026-09-01 22:20</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>L43 livre au 6e passage : balayage de completude. Trois mesures du banc jouees : --latest agit, false inerte, legacy AGIT.</td></tr>
 <tr><td>2026-08-29 23:01</td><td><span class='r r-version'>version</span></td><td>v0.32.2</td><td>main</td><td>v0.32.2 publiee par le workflow corrige : matrice complete, CA-12 et CA-13 prouves, absence macOS levee.</td></tr>

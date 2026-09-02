@@ -218,5 +218,15 @@
     "dirty": false,
     "files": 1422,
     "note": "L44 PASS au 8e passage, fusionne et pousse. Correctif des ecarts consignes en cours : ecart 1 fait, 2-4 restants."
+  },
+  {
+    "date": "2026-09-02 18:06",
+    "reason": "manual",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "ca8fd56 chore(release): publie le manifeste de mise a jour v0.32.2",
+    "dirty": false,
+    "files": 1422,
+    "note": "L44 clos. iakaframe v0.39.0 publiee (1er run du CI). Chaine de maj reparee sur les 3 canaux. Contrefactuel du latest joue sur depot reel."
   }
 ]
