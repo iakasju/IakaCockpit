@@ -103,10 +103,26 @@ prendre un autre **sans que personne ne le sache**.
 
 ### Prochaine etape concrete
 
-1. **Arbitrage A-1** (decideur) — l'affectation du modele d'IA par persona. ⚠️ **Le dev a ete FAIT
-   sans cette decision**, par une autre session, et une posture **P-D** a ete **inventee par
+1. ~~**Arbitrage A-1** (decideur) — l'affectation du modele d'IA par persona. ⚠️ **Le dev a ete
+   FAIT sans cette decision**, par une autre session, et une posture **P-D** a ete **inventee par
    l'execution** (Gandalf n'avait propose que P-A / P-B / P-C). Le cadrage disait pourtant : *« le
-   dev NE DEMARRE PAS sans le choix du decideur sur A-1 »*. **A relire en premier.**
+   dev NE DEMARRE PAS sans le choix du decideur sur A-1 »*.~~
+   🛑 **RECTIFIE LE 2026-09-02 — CE PARAGRAPHE ETAIT FAUX, ET IL ETAIT DE MA MAIN (Odin).** Il est
+   **date, pas efface** (regle 4), parce que c'est exactement la classe de defaut que L44 corrige
+   ailleurs. **Les faits** : **A-1 EST TRANCHE** — encart de `specs/instructions/affectation-modele-par-acteur.md`,
+   *« ✅ DECISION : P-D. Decideur : Stephane. Date : 2026-09-02. Enonce : "P-D […] ok" »*,
+   **confirme de vive voix par le decideur**. Et **P-D n'a PAS ete inventee par l'execution** :
+   A-1 avait ete **REFORMULE** avant la decision, sur **deux mesures** — (1) *G-5 contraint
+   l'ADAPTATEUR, pas le SERIALISEUR ; une **capacite** n'est pas une **politique*** ; (2) le test
+   de parite GUI **recompose** les contrats et la GUI **possede deja** `modelForPersona`
+   (`binding.ts:199`), ecrite et non branchee. P-D a donc ete **proposee, argumentee, retenue**.
+   **MA CAUSE, mesuree** : j'ai lu la copie du cadrage sauvegardee a midi et **je n'ai pas relu
+   celle qui l'avait remplacee**. Un etat sauvegarde n'est pas l'etat courant.
+   ✅ **ACQUIS ET MESURE le 2026-09-02** : les **10** contrats deployes `~/.claude/agents/*.md`
+   portent une ligne `model:` — **4 `opus`, 6 `sonnet`**. L'affectation du binding **n'est plus
+   decorative**. C'etait tout le sujet.
+   **RESTE DU** : le **lot 2**, `specs/instructions/surcharge-modele-par-projet.md` (surcharge du
+   modele par projet), **non valide par le decideur**.
 2. **La dette de canal** : faire que `publish-update.mjs` pousse les deux canaux, **ou** qu'il cesse
    de promettre ce qu'il ne fait pas.
 3. **`CI-RELEASE-AUCUN-EPINGLAGE`** — successeur legitime declare par le gate : *« aucune mesure de
