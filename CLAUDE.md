@@ -66,6 +66,26 @@ node scripts/publish-update.mjs vX.Y.Z --pub-date 2026-01-01T00:00:00Z  # date f
 # `--pub-date` (défaut : maintenant) rend la publication REPRODUCTIBLE : deux exécutions sur le
 # même tag avec la même date produisent un `updater/latest.json` identique à l'octet. Les
 # messages de progression sortent sur STDERR — stdout ne porte que le manifeste.
+#
+# ⚠️ RECTIFICATION DATEE (2026-09-03, dette de canal) — la phrase promettait ce que le script ne
+# pouvait pas savoir. Jusqu'a ce lot, l'etape 5 (commit + push) ne poussait que `origin` (le NAS)
+# puis imprimait « la version X est visible des clients » — vraie pour le decideur sur son LAN,
+# fausse pour tout autre client, puisque le second endpoint LU par le plugin updater (`github`,
+# raw.githubusercontent.com) n'etait pousse par AUCUN script : une main humaine l'a fait, quatre
+# fois dans la journee du 2026-09-03. Le script pousse desormais CHAQUE canal declare au registre
+# local `fixtures/canaux-publication.json` (AR-3 : non partage, contenu divergent d'un depot a
+# l'autre par nature), INDEPENDAMMENT (AR-4 : un canal en echec n'interrompt pas les suivants ; le
+# code de sortie devient NON NUL des qu'un canal a echoue — un `exit 0` apres un push `origin`
+# manque aurait fabrique exactement le risque mesure dans la source du plugin : un endpoint 1
+# joignable et PERIME fait autorite sur les endpoints frais qui le suivent, et le client s'entend
+# dire « vous etes a jour », faux et en silence). La phrase finale est un COMPTE RENDU derive des
+# resultats de push — plus une promesse sur ce que les clients voient. Le geste extrait qui commit
+# + pousse est `commitAndPushManifest` (`scripts/lib/publish-push.mjs`, AR-2 bornee : SEUL ce
+# geste est extrait, pas de `parseArgs`, pas de garde de branche recopiee du GUI — ce script
+# top-level ne peut pas etre importe depuis un test sans s'executer, d'ou ce module a part). Le
+# geste qui mesure ce que les clients VOIENT reellement est NOMME, jamais appele :
+node scripts/verifier-canaux-en-ligne.mjs           # ou : npm run canaux:en-ligne (hors gate, reseau, 3 etats)
+# Instruction : iakaframe/specs/instructions/dette-de-canal-de-la-publication.md.
 
 # L40 — MESURE des artefacts annoncés. `updater/mesures.json` n'est JAMAIS écrit à la main :
 # il est produit par ce script, qui télécharge chaque clé de plateforme EN ANONYME (aucun jeton),
@@ -360,6 +380,61 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
+- [ ] **L45** — **Dette de canal de la publication — le script ne promet plus la visibilité, il
+      rend compte de ce qu'il a poussé**
+      → `iakaframe/specs/instructions/dette-de-canal-de-la-publication.md` (copie **UNIQUE** —
+      défaut de convention de portefeuille, appliqué à `IakaCockpit` et `iakaFrameGUI` ; AR-5 = (b)
+      de L42, précédent).
+      *(**implémenté côté ⚒️ Gimli — REMIS AU GATE 🏹 Legolas, non auto-validé** (2026-09-03),
+      branche `feat/dette-de-canal-publication`. Cadré par 🔵 Gandalf, 6 arbitrages TRANCHÉS le
+      2026-09-03.)*
+      **Problème** : `publish-update.mjs:419` ne poussait que `origin` (le NAS) puis annonçait
+      « la version X est visible des clients » — vraie pour le décideur sur son LAN, fausse pour
+      tout autre client, puisque le second endpoint **lu** par le plugin updater (`github`)
+      n'était poussé par **aucun script** : une main humaine l'a fait, quatre fois dans la journée
+      du 2026-09-03. **Le vrai risque, mesuré dans la source du plugin (§ 1.4 de l'instruction)** :
+      le client fait `break` au **premier** endpoint qui **répond**, pas au premier qui est
+      **frais** — un endpoint 1 joignable et **périmé** fait donc autorité sur un endpoint 2 frais,
+      masqué par lui, et le résultat n'est pas une erreur visible mais un **« vous êtes à jour »
+      faux et silencieux**.
+      **Livré** : (AR-1=b) le script pousse désormais **les deux canaux**, ET la phrase devient un
+      **compte rendu** dérivé des résultats (`rendreCompte`/`formaterCompteRendu`,
+      `scripts/lib/canaux-publication.mjs`) ; (AR-2=a bornée) le geste commit+push est **extrait**
+      dans `scripts/lib/publish-push.mjs` **et rien d'autre** (pas de `parseArgs`, pas de garde de
+      branche recopiée du GUI) — ce script étant **top-level** (lit `process.argv` dès ses
+      premières lignes), il ne pouvait pas être importé depuis un test sans s'exécuter et sortir
+      immédiatement, d'où un module à part, sans effet de bord au chargement ; (AR-3=a) registre
+      **local**, non partagé (`fixtures/canaux-publication.json`, **hors**
+      `fixtures/convergence.sha256` — le cliquet de convergence **reste à 20**) ; (AR-4=a) chaque
+      canal réussit ou échoue **indépendamment** (`pousserCanaux`, forme éprouvée de
+      `iakaframe/cli/src/lib/canaux.js:75-83`), **code de sortie non nul** dès qu'une cible a
+      échoué ; (AR-5=a) `origin`+`github` **nommés**, `iakabox` **déclaré hors couverture** avec
+      motif et condition de levée (CA-5) ; (AR-6=a) le script **NOMME** le geste de vérification
+      (`npm run canaux:en-ligne`) et **n'appelle rien**.
+      **Divergence assumée avec le GUI, écrite dans le code (§ 6)** : si le manifeste est
+      **inchangé**, ce dépôt ne pousse **rien du tout** (comportement **préexistant**, ce lot ne le
+      rouvre pas) — le GUI, lui, pousse dans les deux cas. Les deux `publish-update.mjs` restent
+      **non byte-identiques**, comme avant ce lot.
+      **Garde à deux faces (§ 4)** : face 1 **dans le gate** (`rendreCompte`,
+      `scripts/__tests__/publish-push.test.mjs`, labo git réel à deux remotes) — **quatre
+      mutations jouées et révoquées** (message inconditionnel → 3 tests rougissent nommément ;
+      couverture réduite à `["origin"]` → 2 tests rougissent nommément), révocation prouvée au
+      `sha256` (`git checkout --` puis `sha256sum` identique avant/après) ; sa limite **déclarée
+      dans le fichier de garde**. ⚠️ **Non couvert, déclaré tel** : la jonction exacte, dans
+      `publish-update.mjs`, entre `canauxDeclares()` et l'appel à `commitAndPushManifest` n'est
+      pas exercée par un test automatisé (contrainte structurelle du script top-level) — vérifiée
+      par lecture de code et par le smoke test manuel `--check-only`. Face 2 **hors gate**
+      (`scripts/verifier-canaux-en-ligne.mjs`, `npm run canaux:en-ligne`, **step [8/8] de
+      `quality.sh`**) — mesure **tous** les endpoints (jamais `--premier`), compare la version
+      servie **par chacun** au tag local, **trois états** (0 concorde / 1 écart nommé / 3 non
+      mesuré), le piège du cache CDN **nommé** dans le fichier. **Les trois états vérifiés en
+      réel**, chaque vérification temporaire **révoquée** (`sha256` identique avant/après).
+      **Chaîne qualité complète rejouée** : `bash scripts/quality.sh` **exit 0** — 344 tests Rust,
+      suite front verte, `vitrine:en-ligne` et `canaux:en-ligne` tous deux **OK (0)** en réel.
+      **Non fait, dû au décideur (M-1, M-4)** : chronométrer le coût hors LAN de l'endpoint 1, et
+      faire servir un manifeste périmé pour observer le faux « à jour ». **Aucun acte de
+      publication** : ni tag, ni release, ni push exécuté par l'agent.
+
 - [ ] **L44** — **Re-cadrage de la garde du `latest` : le job dit ce qu'il fait, et il le fait**
       *(2026-09-01 — code livré ; DEUX critères restent **NON MESURÉS**, ce sont des actes de
       release refusés aux agents)*
@@ -570,6 +645,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (`raw.githubusercontent.com/…/main/updater/latest.json`, le premier étant le NAS mort), et
       **aucun script ne pousse vers `github`** ; le message « la version est visible des clients »
       est donc, en l'état, une promesse que le script ne tient pas.
+      **⚠️ RECTIFICATION DATÉE (2026-09-03)** : ce constat (b) — la « dette de canal » — a été
+      **traité** par le lot dédié ci-dessous (« Dette de canal de la publication »). Le script
+      pousse désormais `origin` **et** `github`, indépendamment, et **ne tient plus cette
+      promesse-là** : il rend un **compte rendu** de ce qu'il a poussé. Conservé ici **daté**,
+      pas effacé, conformément à la discipline de rectification du corpus.
       **NON FAIT — actes de publication, refusés aux agents** : l'étape 7 (republier, re-mesurer)
       et le contrefactuel **CA-5** (republier délibérément un tag ancien pour prouver que le
       `latest` n'est plus volé) appartiennent au décideur. **V3 est donc câblé et lisible, mais non
