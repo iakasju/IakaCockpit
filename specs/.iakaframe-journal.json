@@ -228,5 +228,15 @@
     "dirty": false,
     "files": 1422,
     "note": "L44 clos. iakaframe v0.39.0 publiee (1er run du CI). Chaine de maj reparee sur les 3 canaux. Contrefactuel du latest joue sur depot reel."
+  },
+  {
+    "date": "2026-09-03 14:51",
+    "reason": "manual",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "70de271 docs: rectifie une affirmation FAUSSE d'Odin sur l'arbitrage A-1 (datee, non effacee)",
+    "dirty": false,
+    "files": 1422,
+    "note": "Mode guide du CLI livre (lots 0+B) : 33 commandes /iaka-*, registre unique, aide derivee. Amendement A : la garde de vocabulaire echoue. A-1 clos."
   }
 ]
