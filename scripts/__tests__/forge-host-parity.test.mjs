@@ -281,11 +281,20 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // une entrée disparaître en silence, ce qui est exactement le trou qu'il existe pour fermer.
     // (L'instruction du lot écrivait « plancher 17 → 18 » ; elle inscrivait deux lignes sur les
     // trois. L'écart est écrit dans le rapport du lot, pas résolu en silence.)
+    //
+    // 2026-09-03, lot « dette de canal de la publication » — VINGT → VINGT-TROIS. Trois fichiers
+    // neufs, byte-identiques, GÉNÉRIQUES par construction (aucun des deux dépôts n'y est nommé) :
+    // `scripts/lib/canaux-publication.mjs` (registre + fan-out des canaux d'écriture),
+    // `scripts/__tests__/canaux-publication.test.mjs` (sa garde locale) et
+    // `scripts/verifier-canaux-en-ligne.mjs` (face 2, hors gate). Mesuré au gate : inscrits au
+    // registre SANS que ce plancher ne monte laissait les trois fichiers libres de quitter le
+    // registre sans qu'aucun rouge ne le signale — un plancher SOUS le compte réel est exactement
+    // le trou que ce cliquet existe pour fermer, une couche plus haut que le registre lui-même.
     expect(
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(20);
+    ).toBeGreaterThanOrEqual(23);
 
     const derives = [];
     for (const ligne of registre) {

@@ -14,7 +14,7 @@ f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-5a2b54fe7f828f1bf61a28ae61d49128e0128b9b4a8d4a0333296b456aecd95d  scripts/__tests__/forge-host-parity.test.mjs
+6a6237665bbd3ed758df007a7d5e3c323fbc510af7396dd16b212f6d80e33a23  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
@@ -44,3 +44,14 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
 10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
 addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__tests__/bloc-latest.test.mjs
+# L45 — DETTE DE CANAL DE LA PUBLICATION. Ces trois fichiers sont GENERIQUES par construction : ils
+# ne nomment ni l'un ni l'autre depot (le registre par-repo, fixtures/canaux-publication.json, N'EST
+# PAS ici — AR-3, son contenu diverge PAR NATURE). Mesure du gate (2026-09-03) : les trois etaient
+# byte-identiques et NI la face LOCALE ni la face CROISEE ne les couvrait — une edition d'un seul
+# cote aurait derive EN SILENCE (defaut R4, reproduit sur des fichiers neufs). DECISION : inscrits
+# ici, cliquet 20 -> 23. La regle du depot vaut pour eux comme pour les autres : toute modification
+# se fait dans les DEUX depots au meme commit logique, empreintes regenerees avec la commande en
+# tete de ce fichier.
+256bd699d5f2e8cf69b6ad20648d440808b4c4c11bab6526db4eb6c9d636be57  scripts/lib/canaux-publication.mjs
+005812600310cae224372ab08c25ee7378c22c1e16f4d4750929cfb2fee80982  scripts/__tests__/canaux-publication.test.mjs
+4398174bb9c52807eba621ff30478d85cd91f05804b689a0365a966397ddc5f5  scripts/verifier-canaux-en-ligne.mjs

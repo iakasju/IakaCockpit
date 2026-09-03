@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "REGISTRE DES CANAUX D'ECRITURE DE LA PUBLICATION — dette de canal (AR-5 = a).",
+    "LOCAL A CE DEPOT, NON PARTAGE (AR-3) : le contenu diverge par nature d'un dépôt à l'autre",
+    "(les URL de remote ne sont pas les mêmes) — un fichier partagé serait faux. Ce fichier n'est",
+    "PAS inscrit à fixtures/convergence.sha256 ; le cliquet de convergence reste à 20 entrées.",
+    "",
+    "`canaux` = les remotes que le script pousse, chacun avec SA raison — jamais une liste muette.",
+    "`HORS_COUVERTURE` = les remotes présents dans .git/config que ce script NE POUSSE JAMAIS,",
+    "chacun avec un motif ET une condition de levée (CA-5) : une exception qui ne se lit pas est",
+    "un mensonge. Motif écrit dans specs/instructions/dette-de-canal-de-la-publication.md, § 1.6",
+    "et AR-5 : « une alarme qui sonne toujours finit désarmée par habitude »."
+  ],
+  "canaux": [
+    {
+      "remote": "origin",
+      "raison": "le NAS Forgejo (192.168.1.139) — endpoint de lecture n°1 de tauri.conf.json, canal historique de la forge de ce dépôt"
+    },
+    {
+      "remote": "github",
+      "raison": "miroir public (raw.githubusercontent.com) — endpoint de lecture n°2 de tauri.conf.json ; jamais poussé par aucun script avant ce lot (c'est la dette de canal réparée ici)"
+    }
+  ],
+  "HORS_COUVERTURE": [
+    {
+      "remote": "iakabox",
+      "motif": "remote git historique (192.168.2.11), en panne depuis le 2026-08-25 (sonde datée) et présent dans .git/config, mais ce n'est PLUS un endpoint de lecture depuis le retrait du 2026-09-03 (§ 1.6 de l'instruction) — le pousser produirait une cible en échec permanent et désarmerait la garde AR-4 par habitude (R5)",
+      "leveePar": "si l'iakabox revient en service ET qu'une décision explicite du décideur l'inscrit de nouveau comme endpoint de lecture — jamais un rattachement automatique de ce registre"
+    }
+  ]
+}

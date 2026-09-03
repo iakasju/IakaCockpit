@@ -33,6 +33,14 @@ import {
   classifyArtifact,
   UPDATER_PLATFORMS,
 } from "./lib/update-manifest.mjs";
+// Dette de canal — registre LOCAL des canaux d'ecriture (fixtures/canaux-publication.json) et le
+// fan-out qui les pousse, chacun independamment. Fichier NON convergent (AR-3) : voir son en-tete.
+import { lireRegistreCanaux } from "./lib/canaux-publication.mjs";
+// AR-2 bornee — LE SEUL GESTE EXTRAIT (commit+push+compte rendu), dans un module A PART pour que
+// la face 1 (§4.1) puisse l'IMPORTER sans executer ce script top-level (qui lit `process.argv` des
+// sa premiere ligne utile et sortirait immediatement sous vitest, faute de tag). Voir l'en-tete de
+// `scripts/lib/publish-push.mjs` : ce n'est pas un pas vers la convergence avec le GUI.
+import { commitAndPushManifest, rendreCompte } from "./lib/publish-push.mjs";
 
 // --- Constantes de CE projet (cf. § Annexe de l'instruction) -------------------------------------
 // HÔTE DE LA FORGE : NAS Synology. L'ancienne iakabox (192.168.2.11) est HORS SERVICE et ne
@@ -59,7 +67,7 @@ const ARTEFACT_BASE = "https://github.com/iakasju/IakaCockpit/releases/download"
 const FORGEJO_OWNER = "sjupin";
 const FORGEJO_REPO = "iakacockpit";
 const GITHUB_REPO = "iakasju/IakaCockpit";
-const MANIFEST_PATH = "updater/latest.json";
+export const MANIFEST_PATH = "updater/latest.json";
 // Seule branche depuis laquelle ce script a le droit de publier. Le feed EST un
 // fichier de `main` : publier depuis une autre branche pousserait son contenu
 // entier sur `main` — cf. `assertReleaseBranch`.
@@ -83,6 +91,14 @@ function info(message) {
 
 function git(...args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+}
+
+/** Le registre des canaux d'écriture — LOCAL à ce dépôt (AR-3), voir son en-tête. */
+const CANAUX_PUBLICATION_PATH = join(root, "fixtures", "canaux-publication.json");
+
+/** Les remotes DÉCLARÉS au registre, dans l'ordre où il les porte. */
+function canauxDeclares(chemin = CANAUX_PUBLICATION_PATH) {
+  return lireRegistreCanaux(chemin).canaux.map((c) => c.remote);
 }
 
 // --- Garde de branche ------------------------------------------------------------------------------
@@ -388,32 +404,35 @@ mkdirSync(join(root, dirname(MANIFEST_PATH)), { recursive: true });
 writeFileSync(join(root, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 info(`${MANIFEST_PATH} écrit.`);
 
-// --- 5. Commit + push : c'est CE push qui ouvre le robinet -------------------------------------------
+// --- 5. Commit + fan-out : c'est CE push qui ouvre le robinet, DÉSORMAIS SUR CHAQUE CANAL -------
 // Tant qu'il n'a pas eu lieu, rien ne bouge chez les clients — propriété utile :
 // on peut publier les binaires, vérifier, PUIS rendre la version visible.
+//
+// Dette de canal (AR-1 = b) : ce script ne pousse plus `origin` SEUL, il pousse CHAQUE canal
+// déclaré au registre local (`fixtures/canaux-publication.json`, AR-3), chacun INDÉPENDAMMENT
+// (AR-4). La phrase finale devient un COMPTE RENDU dérivé des résultats (§ 4.3) — plus une
+// promesse sur ce que les clients voient. Le geste extrait qui fait le commit+push est
+// `commitAndPushManifest` (`scripts/lib/publish-push.mjs`, AR-2 bornée), et la jonction
+// résultats→écran est `rendreCompte` — c'est CETTE jonction que la face 1 (§ 4.1) mord.
 
 // Deuxième contrôle : la ligne qui suit est la seule écriture sur `main` du lot
 // entier. Elle ne s'exécute que sur `main`, vérifié à l'instant de l'exécuter.
 assertReleaseBranch();
 
-git("add", MANIFEST_PATH);
-// Portée au SEUL manifeste : un `git diff --cached` nu verrait aussi les fichiers
-// déjà indexés par ailleurs et déclencherait un commit de release pour rien.
-const staged = git("diff", "--cached", "--name-only", "--", MANIFEST_PATH);
-if (!staged) {
+// On pousse `HEAD` — LA référence qui vient de recevoir le commit — et non le nom `main`. Mesuré
+// au labo git (héritage du geste d'origine, préservé à l'identique dans `commitAndPushManifest`) :
+// garde contournée (HEAD détachée, `main` local en avance d'un commit de travail), `git push
+// origin main` publierait le `main` LOCAL, jamais relu par ce run, avec exit 0 et en silence — le
+// manifeste tout juste commité ne partirait même pas. `git push <remote> HEAD` échoue net dans la
+// même situation (« not a full refname »), et sur le chemin nominal — sur `main` — les deux formes
+// sont équivalentes. Échouer fermé plutôt qu'ouvert : c'est la seule différence, elle décide.
+const { committed, resultats } = commitAndPushManifest(tag, canauxDeclares(), MANIFEST_PATH, {
+  cwd: root,
+});
+if (!committed) {
   info("manifeste inchangé — aucun commit, rien à ouvrir.");
   process.exit(0);
 }
-// `-- <path>` : le commit ne prend QUE le manifeste. Sans ce pathspec, tout ce qui
-// traîne dans l'index partirait dans le commit de release.
-git("commit", "-m", `chore(release): publie le manifeste de mise a jour ${tag}`, "--", MANIFEST_PATH);
-// On pousse `HEAD` — LA référence qui vient de recevoir le commit — et non le nom
-// `main`. Mesuré au labo git : garde contournée (HEAD détachée, `main` local en
-// avance d'un commit de travail), `git push origin main` publie le `main` LOCAL,
-// jamais relu par ce run, avec exit 0 et en silence : le manifeste tout juste
-// commité ne part même pas, et le contenu de la branche part à sa place.
-// `git push origin HEAD` échoue net dans la même situation (« not a full refname »),
-// et sur le chemin nominal — sur `main` — les deux formes sont équivalentes.
-// Échouer fermé plutôt qu'ouvert : c'est la seule différence, elle décide.
-git("push", "origin", "HEAD");
-info(`manifeste poussé sur main — la version ${alignment.version} est visible des clients.`);
+const { lignes, code } = rendreCompte({ version: alignment.version, resultats });
+for (const ligne of lignes) info(ligne);
+process.exit(code);

@@ -17,6 +17,8 @@
     "vitrine:check": "node scripts/vitrine.mjs --check",
     "//vitrine:en-ligne": "FACE EN LIGNE du cliquet de vitrine (L42) — HORS GATE, DELIBEREMENT. Elle interroge l'API GitHub en ANONYME : sa mesure depend du reseau, donc en dependre dans `test` ou `quality` rendrait le gate faillible sur une machine hors ligne (meme arbitrage ecrit que `//test:all` du depot frere, et meme posture que `test:convergence`). Sans reseau elle rend un SKIP explicite avec le code 3 — JAMAIS un vert. Sa rougeur INFORME (dette de publication, vitrine qui ment) et ne bloque aucun lot : c'est ecrit dans l'instruction L42.",
     "vitrine:en-ligne": "node scripts/vitrine-en-ligne.mjs",
+    "//canaux:en-ligne": "FACE 2 de la garde de publication (dette de canal, § 4.2) — HORS `test`/`quality`, DELIBEREMENT (AR-6 = a) : elle interroge chaque endpoint d'update en reseau, donc faillible hors ligne. Sans reseau elle rend un SKIP explicite avec le code 3 — JAMAIS un vert. Ce qui bloque, c'est la face LOCALE (`rendreCompte`/`pousserCanaux`, geree dans `npm run test`) : elle prouve que le message est CONDITIONNE par le push, pas que les clients voient quoi que ce soit. `publish-update.mjs` NOMME ce geste dans son compte rendu ; il ne l'appelle jamais.",
+    "canaux:en-ligne": "node scripts/verifier-canaux-en-ligne.mjs",
     "quality": "bash scripts/quality.sh",
     "tauri": "tauri",
     "test:reservoir-parity": "node scripts/test-reservoir-parity.mjs"
