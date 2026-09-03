@@ -9,9 +9,19 @@
 // ne promet plus rien : il POUSSE ce que le registre DÉCLARE, chaque cible indépendamment (AR-4),
 // et REND COMPTE de ce qui a été poussé — jamais de ce que les clients voient (§ 4.3).
 //
-// FICHIER LOCAL, NON PARTAGÉ (AR-3) : le contenu du registre (`fixtures/canaux-publication.json`)
-// diverge PAR NATURE d'un dépôt à l'autre — les URL de remote ne sont pas les mêmes. Ce module
-// n'est donc PAS inscrit à `fixtures/convergence.sha256` ; le cliquet de convergence reste à 20.
+// LE FICHIER DE DONNÉES EST LOCAL, NON PARTAGÉ (AR-3) : le contenu du registre
+// (`fixtures/canaux-publication.json`) diverge PAR NATURE d'un dépôt à l'autre — les URL de
+// remote ne sont pas les mêmes ; il n'est donc PAS inscrit à `fixtures/convergence.sha256`.
+//
+// ⚠️ RECTIFICATION DATÉE (2026-09-03, gate 🏹 Legolas) : cette section affirmait AUSSI que « ce
+// module » (au sens du présent FICHIER .mjs) n'était pas inscrit, et que « le cliquet de
+// convergence reste à 20 » — LES DEUX étaient FAUX au moment même où le lot a été fusionné : CE
+// MODULE-CI est GÉNÉRIQUE (aucun des deux dépôts n'y est nommé) et BYTE-IDENTIQUE entre
+// IakaCockpit et iakaFrameGUI, donc INSCRIT à `fixtures/convergence.sha256` avec ses deux
+// compagnons `scripts/__tests__/canaux-publication.test.mjs` et
+// `scripts/verifier-canaux-en-ligne.mjs` — et le cliquet est passé de 20 à 23 pour les couvrir.
+// Seul `fixtures/canaux-publication.json` (le FICHIER DE DONNÉES, distinct de ce module) reste
+// non inscrit. Conservé ci-dessus daté, pas effacé (règle 4 du corpus).
 //
 // Fonctions PURES autant que possible ; la seule E/S est `pousserCanaux` (elle appelle `run`,
 // injectable — c'est ce qui rend la face 1 (§ 4.1) mordante sans réseau ni dépôt réel).

@@ -405,7 +405,14 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       premières lignes), il ne pouvait pas être importé depuis un test sans s'exécuter et sortir
       immédiatement, d'où un module à part, sans effet de bord au chargement ; (AR-3=a) registre
       **local**, non partagé (`fixtures/canaux-publication.json`, **hors**
-      `fixtures/convergence.sha256` — le cliquet de convergence **reste à 20**) ; (AR-4=a) chaque
+      `fixtures/convergence.sha256` — le cliquet de convergence **reste à 20**
+      [⚠️ **RECTIFICATION DATÉE (2026-09-03, gate 🏹 Legolas)** : FAUX au moment même où le lot a
+      été fusionné — `scripts/lib/canaux-publication.mjs`,
+      `scripts/__tests__/canaux-publication.test.mjs` et `scripts/verifier-canaux-en-ligne.mjs`
+      sont GÉNÉRIQUES et BYTE-IDENTIQUES entre les deux dépôts, donc INSCRITS au registre — le
+      cliquet est passé de 20 à 23 pour les couvrir. Seul `fixtures/canaux-publication.json`
+      (le fichier de DONNÉES, distinct des trois ci-dessus) reste non inscrit. Conservé ci-dessus
+      daté, pas effacé, règle 4 du corpus.]) ; (AR-4=a) chaque
       canal réussit ou échoue **indépendamment** (`pousserCanaux`, forme éprouvée de
       `iakaframe/cli/src/lib/canaux.js:75-83`), **code de sortie non nul** dès qu'une cible a
       échoué ; (AR-5=a) `origin`+`github` **nommés**, `iakabox` **déclaré hors couverture** avec

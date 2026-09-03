@@ -52,6 +52,6 @@ addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__test
 # ici, cliquet 20 -> 23. La regle du depot vaut pour eux comme pour les autres : toute modification
 # se fait dans les DEUX depots au meme commit logique, empreintes regenerees avec la commande en
 # tete de ce fichier.
-846022dd7af8598d9925784f63a6691c029732845399a3e9197464f0ae64361e  scripts/lib/canaux-publication.mjs
+256bd699d5f2e8cf69b6ad20648d440808b4c4c11bab6526db4eb6c9d636be57  scripts/lib/canaux-publication.mjs
 005812600310cae224372ab08c25ee7378c22c1e16f4d4750929cfb2fee80982  scripts/__tests__/canaux-publication.test.mjs
 4398174bb9c52807eba621ff30478d85cd91f05804b689a0365a966397ddc5f5  scripts/verifier-canaux-en-ligne.mjs
