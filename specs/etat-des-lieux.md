@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-09-03 18:54 (motif: manual).
+> Genere par iakaframe (CLI) le 2026-09-03 21:26 (motif: manual).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,15 +9,16 @@
 |---|---|
 | Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | 910257f merge: la dette de canal de la publication (gate Legolas PASS) |
+| Dernier commit | bfa5417 chore: checkpoint — dette de canal fermee, endpoint iakabox retire |
 | Arbre | propre |
 | Fichiers (suivis + non ignores) | 1428 |
-| Note | Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20->23. |
+| Note | LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS). |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `bfa5417` | 2026-09-03 | chore: checkpoint — dette de canal fermee, endpoint iakabox retire |
 | `910257f` | 2026-09-03 | merge: la dette de canal de la publication (gate Legolas PASS) |
 | `a574046` | 2026-09-03 | fix(docs): rectifie EN DATANT les deux dernieres traces d'un cliquet a 20 |
 | `f2f8c80` | 2026-09-03 | fix(convergence): cliquet 20 -> 23 — les trois fichiers de la dette de canal etaient inscrits SOUS le plancher |
@@ -27,107 +28,96 @@
 | `4c657e4` | 2026-09-03 | fix(update): reformule le commentaire de rendreCompte — CA-1 zero occurrence stricte du fichier |
 | `a7d680a` | 2026-09-03 | docs: rectifie la promesse de visibilite (datee) et inscrit L45 (dette de canal) |
 | `fb58908` | 2026-09-03 | feat(update): face 2 hors gate — verifie ce que chaque endpoint sert reellement |
-| `fd31a56` | 2026-09-03 | fix(update): pousse les DEUX canaux d'ecriture et cesse de promettre la visibilite |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ou on en est** : la **dette de canal de la publication est FERMEE** — c'etait la plus vicieuse du
-  portefeuille, celle qui **mentait a l'operateur au moment ou il croyait avoir fini**. Les trois
-  depots sont alignes sur **les trois references** (local, NAS, GitHub), arbres propres.
+- **Ou on en est** : le **LOT A du mode guide** est livre et fusionne — c'etait le plus gros lot de
+  la serie (~5,25 j), **PASS au PREMIER passage**. Les trois depots sont alignes sur **les trois
+  references** (local, NAS, GitHub), arbres propres.
 
-### La dette de canal — ce qu'elle etait, et pourquoi elle etait vicieuse
+### Le mode guide du terminal — LIVRE (lots 0, B et A ; la serie est complete)
 
-Le script poussait vers **`origin` SEUL** puis imprimait *« la version est visible des clients »*.
-Les clients lisent **deux** endpoints : le **NAS** (= `origin`, pousse) puis **GitHub** (**jamais
-pousse par aucun script**). **La phrase etait FAUSSE pour tout client hors LAN** — et c'est **une
-main humaine** qui l'a rendue vraie, **quatre fois en une journee**.
+**Trois paliers**, cables sur **10 cibles** — le critere etant *« le parametre a-t-il une autorite
+enumerable en place ? »*, jamais « les plus utilisees » (non mesure, donc invérifiable) :
 
-**Trois faits etablis PAR LECTURE DE LA SOURCE, pas par deduction** :
-1. **Le plugin fait `break` au premier endpoint qui REPOND — pas au premier qui est FRAIS.**
-2. Le dommage est un **« vous etes a jour » FAUX ET SILENCIEUX**, pas une panne visible. **Personne
-   ne remonte un bug pour ca.**
-3. Le cout d'un endpoint injoignable n'est pas en queue de liste mais **EN TETE** — le NAS, **adresse
-   privee en position 1, sans delai configure**.
+| Palier | Contenu |
+|---|---|
+| **0** | **refus loquaces** — chaque refus sur vocabulaire ferme **LISTE les valeurs derivees de l'autorite** |
+| **1** | **listes numerotees**, patron `models` deja eprouve en production |
+| **2** | **fleches, surbrillance, filtre a la frappe** — mode brut, **MEME couture que 1** |
 
-**Livre** : fan-out sur **chaque canal du registre local, INDEPENDAMMENT**, compte rendu **DERIVE des
-resultats**, et **exit NON NUL des qu'une cible echoue**. ⚠️ **L'enjeu d'AR-4 n'etait pas
-ergonomique** : un `exit 0` apres un push manque **fabrique EXACTEMENT la configuration qu'on
-repare** — un endpoint en tete, joignable et en retard, qui **FAIT AUTORITE** et dit « a jour » a
-tout le LAN. Plus une **face 2 hors gate** qui verifie ce que chaque endpoint **SERT** reellement,
-**jamais appelee** par la publication (AR-6 : zero dependance · cache CDN · une panne reseau ne doit
-pas devenir un echec de publication).
+⚠️ **Le palier 1 n'est PAS un brouillon du 2 : il en est le REPLI AUTOMATIQUE** quand le mode brut
+n'est pas disponible (terminal exotique, Windows ancien).
 
-**L'endpoint iakabox a ete RETIRE** (decision du decideur, apres un aller-retour assume : « on
-garde » puis « on enleve »). 🛑 **Le motif n'est PAS qu'elle soit morte** — elle est en panne
-**temporaire** et sera reparee. C'est **LE PIEGE DU RETOUR** : rien ne pousse vers elle, donc elle
-**reviendrait en servant un manifeste PERIME**, et comme le plugin s'arrete au premier endpoint qui
-**REPOND**, un client du LAN recevrait **une vieille version**. **Un canal qui revient en servant du
-perime est PIRE qu'un canal absent : absent il est ignore, present et perime IL FAIT AUTORITE.**
-👤 **Le retour en grace de iakabox est un geste du decideur.**
+**Declenchement : `--guide`**, drapeau **opt-in**, **invisible des appelants existants**. Le verbe nu
+est ecarte — il **casse la classe A** (`list` rend l'inventaire, `show` sort en `exit 1`).
 
-### Quatre FAIL, AUCUN sur du code — tout etait vert et faux par endroits
+**UNE REGLE UNIQUE de non-interactivite** (`peutDemander`) remplace **les DEUX regles divergentes** :
+`models` **ne regardait PAS `CI`**, donc sur un runner avec pseudo-terminal **il prompterait et ferait
+pendre le job**. ⚠️ **Changement de comportement OBSERVABLE, signale et documente aux deux endroits,
+jamais glisse.**
 
-1. ⚠️ **LE LOT INSTALLAIT LE DEFAUT QU'IL REPARE** : trois fichiers **neufs** byte-identiques et
-   **non inscrits** au registre, donc capables de **diverger en silence**. L'instruction n'interdisait
-   d'aligner **que** `publish-update.mjs` ; l'execution a **respecte la lettre** et reproduit le
-   defaut sur des fichiers **que l'interdiction ne nommait pas**. *Encore une interdiction par
-   pointeur.*
-2. **CA-6** : la limite de la face 1 n'etait ecrite **que dans le fichier de la face 2**.
-3. **Une declaration FAUSSE** : `CLAUDE.md` citait le smoke test `--check-only` comme preuve, or
-   `--check-only` sort en `process.exit(0)` **ligne 194**, **235 lignes AVANT** l'appel qu'il
-   pretendait couvrir. **Honnete sur le trou, faux sur ce qui le comblait.**
-4. **Les trois fichiers inscrits, mais LE CLIQUET RESTE A 20** — plancher **sous** le compte reel.
-   **Prouve par contrefactuel** : regresser le registre a 20 laissait `CONV` **VERT**. Les trois
-   fichiers pouvaient **quitter le registre sans un rouge**.
+🛑 **L'INTERDIT D'A4 TIENT, verifie par le gate qui a cherche le contournement** : aucune liste de
+menu ne peut produire `--force` / `--yes` / `--cascade` / `--autoriser-creation-depot` **comme item**,
+et un **test statique** double le filet runtime. **Un guidage qui proposerait `--force` aurait annule
+la garde de l'Amendement A.** En valeur libre, **c'est `validateModelValue()` qui tranche, JAMAIS le
+moteur** — mesure, pas lecture.
 
-**Et une phrase devenue fausse dans le lot lui-meme** (« le cliquet reste a 20 ») : le balayage en a
-trouve **QUATRE**, deux par depot, la ou **un seul pointeur** etait signale.
+**Un VRAI bug trouve et corrige en route (CA-10)** : les trois points d'entree ne rendaient `'vide'`
+que si `permettreLibre` etait faux — or **les 10 cibles passent toutes `true`**. Une autorite vide
+affichait *« saisir un id »* au lieu de *« rien a guider »*. **Reproduit par le gate sur l'etat
+d'avant**, remede verifie.
 
-**Cliquet de convergence : 20 -> 23.** **AR-2 reste INCHANGE** (decision du decideur) : la jonction
-`canauxDeclares()` -> `commitAndPushManifest` reste **NON GARDEE et DECLAREE TELLE** — la garder
-aurait exige de rendre `publish-update.mjs` importable, soit **la convergence de forme qu'AR-2
-refuse**.
+### 🛑 CE QUI RESTE DU AU DECIDEUR — trois gestes, et personne ne peut les faire a sa place
+
+1. **La recette du palier 2** — `specs/recettes/mode-guide-palier-2-manuelle.md`, **8 scenarios, sur
+   macOS ET Windows**, dont **Ctrl-C et la restauration du terminal**. **CA-13 N'EST PAS COCHEE** :
+   le palier 2 est **LIVRE MAIS NON RECETTE**, et c'est ecrit tel quel partout. Le mode brut **n'est
+   pas testable de bout en bout** — Node n'a pas de pty, `node-pty` serait **une dependance donc
+   interdite**. Le gate a juge la recette **JOUABLE** : *« gestes precis, verdict binaire par ligne,
+   pas vague »*.
+2. **M-1** — sur une machine **hors LAN**, chronometrer un controle de mise a jour. Le NAS est en
+   **position 1**, adresse **privee**, **sans delai configure**.
+3. **M-4** — faire servir volontairement un **manifeste PERIME** par le NAS : **l'app dit-elle « a
+   jour » ?** C'est **« la seule preuve du risque central »**, celui que le lot de la dette de canal
+   contourne **sans l'avoir jamais vu**.
 
 ### Specifique a ce depot
 
 - `v0.32.2` publiee, **9 cles / 9**, manifeste **regenere et servi** aux clients.
-- ⚠️ **C'est ici que la jonction reste NON GARDEE** : `publish-update.mjs` est **top-level** (il lit
-  `process.argv` en portee module), donc **non importable** sans execution — la jonction
-  `canauxDeclares()` -> `commitAndPushManifest` **n'est mordue par aucun test**. **Declaree telle**
-  dans `CLAUDE.md`. **AR-2 borne la couture au seul geste de push** ; la combler exigerait la
-  convergence de forme qu'AR-2 refuse. **Divergence PREEXISTANTE avec le GUI**, qui teste
-  `commitAndPushManifest` (`publish-update.test.mjs:530-534`).
-- ⚠️ **Une declaration fausse y a ete corrigee** : `--check-only` etait cite comme preuve de
-  couverture, or il sort **ligne 194**, **235 lignes avant** l'appel vise.
+- **Non touche par le LOT A** (mode guide) : il vit dans `iakaframe` seul.
+- ⚠️ **La jonction reste NON GARDEE** : `publish-update.mjs` est **top-level**, donc **non
+  importable** sans execution — `canauxDeclares()` -> `commitAndPushManifest` **n'est mordue par
+  aucun test**, **declaree telle**. **AR-2 borne la couture au seul geste de push.** Divergence
+  **preexistante** avec le GUI, qui peut la tester.
 
 ### Prochaine etape concrete
 
-1. 👤 **LES DEUX MESURES DUES AU DECIDEUR** — elles ne sont pas symboliques :
-   - **M-1** : sur une machine **hors LAN**, chronometrer un controle de mise a jour. Le NAS est en
-     **position 1**, adresse **privee**, **sans delai configure** — combien de temps avant que GitHub
-     reponde ?
-   - **M-4** : faire servir volontairement un **manifeste PERIME** par le NAS et lancer un controle —
-     **l'app dit-elle « a jour » ?** C'est **« la seule preuve du risque central »**, celui que tout
-     ce lot contourne **sans l'avoir jamais vu**.
-2. 👤 **Retirer l'endpoint iakabox** est **FAIT** (2026-09-03) ; **son retour en grace** reste au
-   decideur.
-3. **LOT A du mode guide** — menu a fleches dans le terminal, **~5,25 j**, **NON lance** ; arbitrages
-   **A1/A2/A4** ouverts. ⚠️ Le mode brut **n'est pas testable de bout en bout** : recette **manuelle
-   sur deux OS**.
-4. **`CI-RELEASE-AUCUN-EPINGLAGE`** — successeur legitime : *« aucune mesure de ce lot ne le refute »*.
+1. 👤 **Les trois gestes ci-dessus.**
+2. **`RESERVOIR-REDECLENCHE`** *(inscrit au backlog le 2026-09-03)* — le seuil du reservoir compte
+   des **occurrences**, pas des **observations neuves**. Mesure : **8 propositions pour 2 sujets**,
+   quatre cycles, sur **les memes deux lignes du 17 juillet**. Trois pistes inscrites, **aucune
+   tranchee, aucune gratuite** — *« c'est un cadrage, pas un correctif »*.
+3. **`CI-RELEASE-AUCUN-EPINGLAGE`** — le `release.yml` d'`iakaframe` **n'epingle rien** (trois tags
+   flottants). Successeur legitime : *« aucune mesure de ce lot ne le refute »*.
+4. **Ecart doc/code signale, non bloquant** : `docs/commandes.md` **sous-declare** le nombre
+   d'exceptions a la regle A4.1 — **4 selections sur 10** n'offrent pas d'entree libre, **une seule
+   est nommee**.
 5. 🛑 **Tourner le jeton iakabox** et supprimer `feat/L0-CONTIENT-UN-JETON-NE-PAS-POUSSER`
-   (**verifie** : cette branche **n'est PAS sur GitHub**).
+   (**verifie** : cette branche **n'est PAS sur GitHub** — on ne pousse jamais `--all`).
 
 ### Pieges connus
 
-1. ⚠️ **Le plugin s'arrete au premier endpoint qui REPOND, pas au premier qui est FRAIS.** Donc **un
-   endpoint joignable et perime FAIT AUTORITE** sur un endpoint frais place apres lui. **Vaut pour le
-   NAS**, position 1 et seul canal historiquement pousse.
+1. ⚠️ **Le plugin updater s'arrete au premier endpoint qui REPOND, pas au premier qui est FRAIS.**
+   Donc **un endpoint joignable et perime FAIT AUTORITE** sur un endpoint frais place apres lui.
+   **Vaut pour le NAS**, position 1.
 2. **Une garde de FRAICHEUR compare deux derives de la meme source** : elle ne voit pas une derive de
    la source. Il faut un **controle positif independant**.
-3. **Un temoin vide est pire qu'un temoin absent.** Quatre trouves cette semaine.
-4. **Un plancher de cliquet SOUS le compte reel ne rougit jamais** — il laisse une entree disparaitre
-   en silence. **Un plancher AU-DESSUS rougit en permanence.** Se mesure, ne se suppose pas.
+3. **Un temoin vide est pire qu'un temoin absent.** Quatre trouves cette semaine. ⚠️ **Un test
+   d'interactivite est NOTOIREMENT facile a ecrire a vide** : *« pas de prompt en non-TTY » est vert
+   sur un CLI ou rien n'est branche*.
+4. **Un plancher de cliquet SOUS le compte reel ne rougit jamais** ; **AU-DESSUS il rougit en
+   permanence**. Se mesure, ne se suppose pas.
 5. **Une interdiction par POINTEUR ne ferme pas une classe** : interdire d'aligner UN fichier laisse
    creer trois fichiers neufs non gardes. *On ne `grep` pas une implication.*
 6. **Un motif sans condition de chute est une exclusion de confort** — et une condition **generique**
@@ -144,13 +134,16 @@ refuse**.
 12. ⚠️ **Un etat SAUVEGARDE n'est pas l'etat COURANT** (erreur d'Odin, 2026-09-02).
 13. **Un agent qui s'enlise deux fois au meme endroit ne se relance pas a l'identique** : **couper le
     lot en deux** l'a debloque en cinq minutes.
-14. ⚠️ **Regenerer un manifeste SANS relancer l'instrument de mesure fait rougir I4** (« la preuve est
-    datee d'AVANT la publication qu'elle pretend prouver »). Erreur d'Odin, attrapee par la garde.
+14. ⚠️ **Regenerer un manifeste SANS relancer l'instrument de mesure fait rougir I4** (erreur d'Odin,
+    attrapee par la garde).
+15. **`node-pty` est INTERDIT** (zero dependance) : tout ce qui exige un vrai pty se recette **a la
+    main**, et se declare **NON COUVERT** plutot que teste a vide.
 
 ## Journal (versions & pauses)
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-03 21:26 | manual | v0.32.2 | main | LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS). |
 | 2026-09-03 18:54 | manual | v0.32.2 | main | Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20->23. |
 | 2026-09-03 14:51 | manual | v0.32.2 | main | Mode guide du CLI livre (lots 0+B) : 33 commandes /iaka-*, registre unique, aide derivee. Amendement A : la garde de vocabulaire echoue. A-1 clos. |
 | 2026-09-02 18:06 | manual | v0.32.2 | main | L44 clos. iakaframe v0.39.0 publiee (1er run du CI). Chaine de maj reparee sur les 3 canaux. Contrefactuel du latest joue sur depot reel. |

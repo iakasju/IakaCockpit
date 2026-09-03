@@ -248,5 +248,15 @@
     "dirty": false,
     "files": 1428,
     "note": "Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20->23."
+  },
+  {
+    "date": "2026-09-03 21:26",
+    "reason": "manual",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "bfa5417 chore: checkpoint — dette de canal fermee, endpoint iakabox retire",
+    "dirty": false,
+    "files": 1428,
+    "note": "LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS)."
   }
 ]
