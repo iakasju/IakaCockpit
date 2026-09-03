@@ -61,8 +61,9 @@ export function commitAndPushManifest(tag, canaux, manifestPath, { run = gitRun,
 /**
  * LA JONCTION (§ 4.1, le couplage) — compose le message final ET le code de sortie à partir des
  * résultats de push, et RIEN D'AUTRE. Extraite pour que la face 1 puisse mordre exactement ici :
- * un pilote qui réimprimerait la phrase inconditionnelle « … est visible des clients » resterait
- * invisible à un test qui ne regarde que `formaterCompteRendu` en isolation.
+ * un pilote qui réimprimerait l'ANCIENNE phrase inconditionnelle de succès (celle que CA-1
+ * interdit désormais) resterait invisible à un test qui ne regarde que `formaterCompteRendu` en
+ * isolation.
  *
  * @returns {{ lignes: string[], code: 0|1 }} `code` = 1 dès qu'un canal a échoué (AR-4).
  */
