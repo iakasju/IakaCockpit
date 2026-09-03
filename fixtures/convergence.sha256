@@ -44,3 +44,14 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
 10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
 addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__tests__/bloc-latest.test.mjs
+# L45 — DETTE DE CANAL DE LA PUBLICATION. Ces trois fichiers sont GENERIQUES par construction : ils
+# ne nomment ni l'un ni l'autre depot (le registre par-repo, fixtures/canaux-publication.json, N'EST
+# PAS ici — AR-3, son contenu diverge PAR NATURE). Mesure du gate (2026-09-03) : les trois etaient
+# byte-identiques et NI la face LOCALE ni la face CROISEE ne les couvrait — une edition d'un seul
+# cote aurait derive EN SILENCE (defaut R4, reproduit sur des fichiers neufs). DECISION : inscrits
+# ici, cliquet 20 -> 23. La regle du depot vaut pour eux comme pour les autres : toute modification
+# se fait dans les DEUX depots au meme commit logique, empreintes regenerees avec la commande en
+# tete de ce fichier.
+846022dd7af8598d9925784f63a6691c029732845399a3e9197464f0ae64361e  scripts/lib/canaux-publication.mjs
+005812600310cae224372ab08c25ee7378c22c1e16f4d4750929cfb2fee80982  scripts/__tests__/canaux-publication.test.mjs
+4398174bb9c52807eba621ff30478d85cd91f05804b689a0365a966397ddc5f5  scripts/verifier-canaux-en-ligne.mjs
