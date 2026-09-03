@@ -238,5 +238,15 @@
     "dirty": false,
     "files": 1422,
     "note": "Mode guide du CLI livre (lots 0+B) : 33 commandes /iaka-*, registre unique, aide derivee. Amendement A : la garde de vocabulaire echoue. A-1 clos."
+  },
+  {
+    "date": "2026-09-03 18:54",
+    "reason": "manual",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "910257f merge: la dette de canal de la publication (gate Legolas PASS)",
+    "dirty": false,
+    "files": 1428,
+    "note": "Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20->23."
   }
 ]
