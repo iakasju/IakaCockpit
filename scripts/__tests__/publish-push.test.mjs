@@ -139,6 +139,12 @@ describe("commitAndPushManifest — labo git réel, DEUX remotes (dette de canal
   });
 });
 
+// ⚠️ CA-6 — LA LIMITE DE CETTE FACE, ÉCRITE ICI (dans le fichier de garde de la face 1, pas
+// seulement dans l'instruction) : ce que les tests ci-dessous prouvent est que le message et le
+// code de sortie sont CONDITIONNÉS par `resultats` — RIEN DE PLUS. Cette face NE PROUVE RIEN sur
+// ce que sert un endpoint, ni sur sa fraîcheur : les deux côtés de chaque assertion dérivent du
+// même `resultats` factice ou du même labo git. La preuve non circulaire — ce qu'un endpoint SERT
+// réellement — est la face 2, hors gate (`scripts/verifier-canaux-en-ligne.mjs`).
 describe("rendreCompte — LA JONCTION (§ 4.1) entre les résultats de push et l'écran (CA-1, CA-2, CA-3)", () => {
   it("CA-1 — aucune des lignes rendues ne promet ce que le script ignore", () => {
     const { lignes } = rendreCompte({
