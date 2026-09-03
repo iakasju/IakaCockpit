@@ -26,9 +26,19 @@ export const UPDATE_ENDPOINTS: readonly string[] = [
   //    dépôt privé répond volontiers 200 + une page de connexion, ce qu'aucun code HTTP ne trahit.
   //    La seule vérification qui vaille est la mesure : `iakaframe endpoints --app .`
   "https://raw.githubusercontent.com/iakasju/IakaCockpit/main/updater/latest.json",
-  // 3. iakabox — mesurée hors service depuis le 2026-08-25 ; gardée en DERNIER secours, au cas
-  //    où elle revienne, jamais en tête.
-  "http://192.168.2.11:3001/sjupin/iakacockpit/raw/branch/main/updater/latest.json",
+  // 3. ⚠️ RETIRÉE LE 2026-09-03 (décision du décideur) — l'iakabox `192.168.2.11` figurait ici
+  //    « en DERNIER secours, au cas où elle revienne ». Le motif du retrait n'est PAS qu'elle soit
+  //    morte — elle est en panne TEMPORAIRE et sera réparée. C'est le PIÈGE DU RETOUR : rien ne
+  //    pousse vers elle, donc elle reviendrait en servant un manifeste PÉRIMÉ ; et comme le plugin
+  //    s'arrête au PREMIER endpoint qui RÉPOND, un client du LAN recevrait une vieille version.
+  //    Un canal qui revient en servant du périmé est PIRE qu'un canal absent : absent il est
+  //    ignoré, présent et périmé IL FAIT AUTORITÉ.
+  //    ⚠️ Cette propriété vaut pour TOUT endpoint, DONC POUR LE NAS ci-dessus, qui est en position
+  //    1 et le seul que les scripts poussent : s'il répondait en retard, GitHub ne serait JAMAIS
+  //    atteint. C'est le vrai risque de la liste, et il survit à ce retrait.
+  //    CONDITION DE CHUTE : la réintégration de l'iakabox est un geste du décideur (« je gère le
+  //    retour en grâce de iakabox quand elle est réparée ») — et elle exige d'abord qu'un canal
+  //    la pousse, sans quoi le piège se rouvre à l'identique.
 ];
 
 /** Endpoint affiché à l'utilisateur (le premier de la liste), `null` si vide. */
