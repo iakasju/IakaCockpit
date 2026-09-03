@@ -422,8 +422,13 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `sha256` (`git checkout --` puis `sha256sum` identique avant/après) ; sa limite **déclarée
       dans le fichier de garde**. ⚠️ **Non couvert, déclaré tel** : la jonction exacte, dans
       `publish-update.mjs`, entre `canauxDeclares()` et l'appel à `commitAndPushManifest` n'est
-      pas exercée par un test automatisé (contrainte structurelle du script top-level) — vérifiée
-      par lecture de code et par le smoke test manuel `--check-only`. Face 2 **hors gate**
+      pas exercée par un test automatisé (contrainte structurelle du script top-level).
+      **⚠️ RECTIFICATION DATÉE (2026-09-03, gate 🏹 Legolas — défaut 3)** : cette entrée disait
+      *« vérifiée par lecture de code et par le smoke test manuel `--check-only` »* — **faux** :
+      `--check-only` sort en `process.exit(0)` bien AVANT l'appel en question (ligne 194 contre
+      429) et ne peut STRUCTURELLEMENT jamais l'exécuter. **La formule juste, qui remplace la
+      précédente (conservée ici datée, pas effacée, règle 4)** : **lecture de code seule, aucune
+      exécution automatisée ou manuelle ne l'atteint.** Face 2 **hors gate**
       (`scripts/verifier-canaux-en-ligne.mjs`, `npm run canaux:en-ligne`, **step [8/8] de
       `quality.sh`**) — mesure **tous** les endpoints (jamais `--premier`), compare la version
       servie **par chacun** au tag local, **trois états** (0 concorde / 1 écart nommé / 3 non

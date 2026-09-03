@@ -13,9 +13,15 @@
 // remotes (ci-dessous) ; (b) que `canauxDeclares()` (testé dans `canaux-publication.test.mjs` via
 // `lireRegistreCanaux` sur le VRAI fichier) rend exactement `["origin", "github"]`. La JONCTION
 // entre les deux — que le pilote appelle bien l'un avec la sortie de l'autre — est vérifiée par
-// LECTURE DE CODE (une ligne, `commitAndPushManifest(tag, canauxDeclares(), …)`) et par le smoke
-// test manuel `node scripts/publish-update.mjs vX.Y.Z --check-only` (qui exerce tout le pilote
-// jusqu'à la garde d'alignement). Dit tel quel : ce n'est PAS annoncé comme couvert par un test.
+// LECTURE DE CODE SEULE (une ligne, `commitAndPushManifest(tag, canauxDeclares(), …)`), AUCUNE
+// exécution automatisée ou manuelle ne l'atteint. Dit tel quel : ce n'est PAS annoncé comme
+// couvert par un test.
+//
+// ⚠️ RECTIFICATION DATÉE (2026-09-03, gate 🏹 Legolas — défaut 3) : ce commentaire affirmait
+// AUSSI « et par le smoke test manuel `--check-only` » — FAUX : `--check-only` sort en
+// `process.exit(0)` (ligne 194 du script) bien AVANT l'appel en question (ligne 429) ; un run
+// `--check-only` ne peut STRUCTURELLEMENT jamais l'exécuter. Corrigé ci-dessus ; conservé ici
+// daté, pas effacé (règle 4 du corpus).
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
