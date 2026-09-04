@@ -25,6 +25,16 @@ pub const KEY_EXTRA_PROJECTS: &str = "extra_projects";
 /// simple URL (self-hosted-first : Forgejo/iakabox ou endpoint contrôlé). Absente → table
 /// de prix embarquée seule. Rafraîchissement EN TÂCHE DE FOND au démarrage (`pricing::spawn_refresh`).
 pub const KEY_PRICING_URL: &str = "pricing_url";
+/// Set de Work (Table) — L37. Tableau JSON d'ids de projets **choisis par
+/// l'utilisateur** (`["alpha","beta"]`). La clé est un LITTÉRAL fixe et les ids
+/// vivent dans la **valeur**, jamais dans la clé (contrairement à un schéma
+/// `workset:<projectId>`) : `is_secret` teste la clé, et un id de projet peut
+/// contenir `key|token|secret|password` (dossier nommé par l'utilisateur) — mettre
+/// l'id dans la clé rejouerait l'incident L11 (`config.rs` § `is_secret`, corrigé
+/// par `50f410a`) : la Table ne se restaurerait alors jamais pour ces projets.
+/// La clé littérale `"workset"` ne contient aucun des quatre motifs → immunisée
+/// par construction (CA-7). Lue via `config_get` (clé unique), pas `config_all`.
+pub const KEY_WORKSET: &str = "workset";
 
 // --- Teams & agents — définition de premier rang (L11) — config NON sensible -----
 //
@@ -450,5 +460,27 @@ mod tests {
         assert!(map.contains_key(KEY_THEME));
         assert!(map.contains_key(KEY_LITELLM_ENDPOINT));
         assert!(!map.contains_key("litellm_api_key"));
+    }
+
+    // --- L37 : persistance du set de Work (Table) ---
+
+    #[test]
+    fn workset_key_n_est_pas_secrete() {
+        // Reproduction exacte de l'incident L11 (CA-7) : la clé LITTÉRALE ne doit
+        // JAMAIS être classée secrète, quel que soit le contenu de la VALEUR (ids
+        // de projets potentiellement piégés — vérifié séparément ci-dessous).
+        assert!(!is_secret(KEY_WORKSET), "workset ne doit pas être filtré");
+    }
+
+    #[test]
+    fn workset_roundtrip_avec_ids_potentiellement_pieges() {
+        // La valeur peut contenir des ids piégés (nom de dossier utilisateur) SANS
+        // jamais influer sur le classement de la clé — les ids sont dans la valeur,
+        // pas dans la clé (contrairement au schéma `workset:<projectId>` écarté).
+        let conn = mem();
+        let json = r#"["alpha","monkey-app","token-service","my-passwords"]"#;
+        set(&conn, KEY_WORKSET, json).unwrap();
+        assert_eq!(get(&conn, KEY_WORKSET).unwrap(), Some(json.to_string()));
+        assert!(!is_secret(KEY_WORKSET));
     }
 }
