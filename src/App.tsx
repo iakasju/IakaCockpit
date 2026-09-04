@@ -166,15 +166,34 @@ export default function App(): JSX.Element {
     [agentTasks, economy, effects, live],
   );
 
+  // Réf miroir des conversations (lue par `identityFor` ci-dessous ET par `resolveRunner`,
+  // défini plus bas) : lit le slot/la source courants sans mettre tout le tableau en
+  // dépendance (identité stable → pas de churn de rendu). Déclarée ICI (avant les deux
+  // usages) plutôt que dupliquée à chaque point d'appel.
+  const convListRef = useRef(conversations.conversations);
+  convListRef.current = conversations.conversations;
+
   // F2 (lot identité du runner, 2026-09-04) — indirection PAR RÉF vers `resolveRunner`
   // (défini plus bas, ligne ~4xx) : `identityFor` doit être une fonction STABLE passée à
-  // `useRunnerViews` ICI, avant que `resolveRunner` existe. Calque `convListRef` (déjà
-  // utilisé un peu plus bas pour la même raison d'ordre de déclaration). `identityFor`
-  // renvoie le PERSONA réellement injecté (F1) pour ce projet, ou `undefined` si aucune
-  // identité n'a atteint le runner (CA-8 : jamais attribuer un nom que le runner ne porte
-  // pas).
+  // `useRunnerViews` ICI, avant que `resolveRunner` existe. `identityFor` renvoie le
+  // PERSONA réellement injecté (F1) pour ce projet, ou `undefined` si aucune identité n'a
+  // atteint le runner (CA-8 : jamais attribuer un nom que le runner ne porte pas).
+  //
+  // CORRECTIF DE FAIL (gate 🏹 Legolas, 2026-09-04) — `resolveRunner` ignore la SOURCE de
+  // la conversation : il répond « identité injectée » dès qu'une team est LIÉE au projet,
+  // qu'un runner ait ou non été spawné par ce Cockpit. Or une conversation `attached`
+  // (L25) tail un transcript EXTERNE que ce Cockpit n'a JAMAIS informé de rien — aucun
+  // `--append-system-prompt` n'a jamais atteint ce process, quelle que soit la liaison de
+  // team du projet. Sans ce garde-fou, les tours `geste`/`activite`/`pensee` de ce
+  // transcript externe étaient attribués au coordinateur de la team liée : violation de
+  // CA-6 et du repli § 6 F1 de l'instruction (« … ou `source:"attached"` → `""` »). On
+  // coupe donc AVANT toute consultation de `resolveRunner` : une conversation `attached`
+  // ne reçoit jamais d'attribution, point final — indépendamment de tout ce que
+  // `resolveRunner` calculerait par ailleurs.
   const resolveRunnerRef = useRef<((projectId: string) => ResolvedRunner) | null>(null);
   const identityFor = useCallback((projectId: string): string | undefined => {
+    const conv = convListRef.current.find((c) => c.projectId === projectId);
+    if (conv?.source === "attached") return undefined;
     const r = resolveRunnerRef.current?.(projectId);
     return r?.identityInjected ? r.coordinator : undefined;
   }, []);
@@ -415,12 +434,6 @@ export default function App(): JSX.Element {
     }
     return out;
   }, [conversations.conversations, live.lastEventAt, now]);
-
-  // Réf miroir des conversations pour `resolveRunner` : lit le slot courant sans mettre
-  // tout le tableau en dépendance (identité stable → pas de churn de rendu). Le slot est
-  // figé à la création → aucune lecture périmée qui compte.
-  const convListRef = useRef(conversations.conversations);
-  convListRef.current = conversations.conversations;
 
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).

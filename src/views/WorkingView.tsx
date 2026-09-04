@@ -626,8 +626,14 @@ export function WorkingView({
             {/* Bandeau « Arbre des délégations » CENTRAL (L28) : coordinateur → agents
                 délégués, coloré par avancement (ambre = en cours, vert = terminé).
                 REMPLACE le Gantt. Alimenté par les délégations de la conversation
-                active (`tasks` / useAgentTasks) ; coordinateur = activeRunner. */}
-            {showTree && activeRunner && (
+                active (`tasks` / useAgentTasks) ; coordinateur = activeRunner.
+                JUMEAU du correctif d'identité (2026-09-04, trouvé en cherchant les
+                jumeaux du défaut App.tsx `identityFor`) : `activeRunner.coordinator`
+                est le coordinateur de la TEAM LIÉE, jamais une identité que le
+                transcript `attached` porterait réellement — `active.source === "owned"`
+                exclut donc l'affichage de cette racine pour une session externe (L25),
+                même quand cette session contient de vraies délégations. */}
+            {showTree && activeRunner && active.source === "owned" && (
               <div className="treeband">
                 {delegView === "swim" ? (
                   <AgentSwimlanes
