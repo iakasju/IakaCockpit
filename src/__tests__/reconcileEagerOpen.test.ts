@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { projectsToEagerOpen } from "../app/reconcileEagerOpen";
+import {
+  projectsToEagerOpen,
+  decideEagerOpenFocus,
+} from "../app/reconcileEagerOpen";
 import type { Project } from "../api/backend";
 
 function project(over: Partial<Project> = {}): Project {
@@ -75,5 +78,38 @@ describe("projectsToEagerOpen — réconciliation workset → conversations (L24
         hasBinding: () => true,
       }),
     ).toEqual([]);
+  });
+});
+
+describe("decideEagerOpenFocus — L37 F2 (AR-1 = (c) : le démarrage ne vole pas la navigation)", () => {
+  it("CA-6 — le PREMIER passage après la fin de la restauration ne donne PAS le focus", () => {
+    const { focus, nextState } = decideEagerOpenFocus(true, {
+      restorationConsumed: false,
+    });
+    expect(focus).toBe(false);
+    expect(nextState).toEqual({ restorationConsumed: true });
+  });
+
+  it("CA-6 — une pose utilisateur (restauration déjà consommée) donne le focus", () => {
+    const { focus, nextState } = decideEagerOpenFocus(true, {
+      restorationConsumed: true,
+    });
+    expect(focus).toBe(true);
+    expect(nextState).toEqual({ restorationConsumed: true });
+  });
+
+  it("avant la fin de la restauration (workset pas encore chargé), le focus est donné (geste utilisateur possible)", () => {
+    const { focus, nextState } = decideEagerOpenFocus(false, {
+      restorationConsumed: false,
+    });
+    expect(focus).toBe(true);
+    expect(nextState).toEqual({ restorationConsumed: false });
+  });
+
+  it("la restauration se consomme même si ce passage n'ouvre rien (Table vide au boot)", () => {
+    const { nextState } = decideEagerOpenFocus(true, {
+      restorationConsumed: false,
+    });
+    expect(nextState.restorationConsumed).toBe(true);
   });
 });
