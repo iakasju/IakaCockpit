@@ -1,5 +1,6 @@
 /**
- * Identité du runner (2026-09-04) — CA-2, LA JONCTION qui compte.
+ * Identité du runner (2026-09-04) — CA-2 (lot L46), puis CA-3 (lot « Pastille du badge
+ * du runner », 2026-09-04) : LES JONCTIONS qui comptent.
  *
  * Le défaut cadré (`specs/instructions/identite-du-runner-badge-et-team.md`) : une team
  * liée pilote TOUT ce que le Cockpit AFFICHE, mais ne dit RIEN au runner lui-même — le
@@ -14,6 +15,11 @@
  * xterm est stubbé (canvas/mesure absents en jsdom, calque `termFontSize.test.tsx`) mais
  * `PtyTerminal` N'EST PAS mocké : c'est lui qui appelle `usePty.openRunner`, donc le
  * mocker masquerait précisément la jonction qu'on veut éprouver.
+ *
+ * **CA-3 (`specs/instructions/pastille-du-badge-runner.md`)** reprend EXACTEMENT le même
+ * dispositif pour prouver que la pastille de phase atteint elle aussi l'argument réel du
+ * spawn — la même leçon (L37-CA6, L42-F1) : une garde de fonction pure ne voit pas ce
+ * défaut, seule la jonction mord.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act, cleanup } from "@testing-library/react";
@@ -198,6 +204,66 @@ describe("Identité du runner — CA-2 (jonction team liée → arguments du spa
       // (ici "coordination", qui produirait un royaume faux `[COORDINATION][…]`).
       expect(extra).toContain("[ROBOTIMMO][Boromir]");
       expect(extra).not.toContain("COORDINATION");
+    },
+  );
+});
+
+/**
+ * Lot « Pastille du badge du runner » (2026-09-04) — CA-3, LE CA QUI COMPTE.
+ *
+ * Ce test-ci est SÉPARÉ du précédent (au lieu d'y ajouter des assertions) pour que le CA-2
+ * du lot L46 (ci-dessus) reste, à la lettre, INCHANGÉ (CA-7 : « passent SANS MODIFICATION
+ * DE LEUR ATTENDU »).
+ */
+describe("Identité du runner — CA-3 (jonction, LE VERROU anti-témoin-vide)", () => {
+  it(
+    "un projet lié à une team dont le coordinateur porte royaume:coordination spawne le " +
+      "runner avec le BADGE ASSEMBLÉ (pastille incluse) dans systemPromptExtra",
+    async () => {
+      const { invoke, runnerOpenCalls } = makeInvokeMock();
+      currentInvoke = invoke;
+
+      const { default: App } = await import("../App");
+      const { identityPreamble } = await import("../frame/identity");
+
+      // --- VERROU ANTI-TÉMOIN-VIDE (§ 6 F5 / CA-3 de l'instruction) --------------------
+      // Sans ce verrou, ce test serait satisfait par le badge nom+royaume SEUL, que le lot
+      // précédent produit DÉJÀ (cf. describe ci-dessus) — et resterait vert quoi qu'il
+      // arrive, même si `resolveRunner` n'injectait jamais de pastille. On prouve d'abord,
+      // sur la fonction PURE, que la chaîne assemblée attendue n'apparaît PAS quand aucune
+      // pastille n'est résolue — c'est cette même absence qui SERAIT observée dans `extra`
+      // si le branchement F3 était retiré de `App.tsx` (le contrefactuel de ce CA).
+      const badgeSansPastille = identityPreamble({
+        persona: "Boromir",
+        royaume: "ROBOTIMMO",
+      });
+      expect(badgeSansPastille).not.toContain("🟠 [ROBOTIMMO][Boromir]");
+      // Le nom+royaume SEULS, eux, y sont déjà — c'est précisément ce qui rendrait un test
+      // sans verrou vert à tort.
+      expect(badgeSansPastille).toContain("[ROBOTIMMO][Boromir]");
+
+      render(<App />);
+      await flushMicrotasks(8);
+
+      const putBtn = await screen.findByRole("button", {
+        name: "↗ Poser sur la table",
+      });
+      fireEvent.click(putBtn);
+
+      await waitFor(() => {
+        expect(runnerOpenCalls.length).toBeGreaterThan(0);
+      });
+
+      // CA-8 — la pastille est présente dans le PREMIER appel, jamais un appel ultérieur
+      // (le spawn ne rejoue pas : § 2.7 de l'instruction).
+      const args = runnerOpenCalls[0];
+      const extra = String(args.systemPromptExtra ?? "");
+
+      // --- L'ASSERTION QUI COMPTE ------------------------------------------------------
+      // Boromir porte `royaume:"coordination"` dans FELLOWSHIP_TEAM (§ haut de fichier) →
+      // `phasePastilleFor("coordination", 1)` = 🟠. Chaîne EXACTE, ouverture ET clôture.
+      expect(extra).toContain("🟠 [ROBOTIMMO][Boromir]");
+      expect(extra).toContain("[ROBOTIMMO][Boromir] 🟠");
     },
   );
 });
