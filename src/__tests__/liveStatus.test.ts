@@ -3,6 +3,7 @@ import {
   deriveLiveStatus,
   deriveRosterLiveStatus,
   slotProjectIdForAgent,
+  ownedConversationIds,
   RUNNING_WINDOW_MS,
 } from "../hooks/useLiveStatus";
 
@@ -58,6 +59,26 @@ describe("slotProjectIdForAgent — résolution du slot d'un agent", () => {
     );
   });
 });
+
+describe(
+  "ownedConversationIds — F1 (lot « Statut vivant et session attachée ») : le prédicat " +
+    "« slot RÉELLEMENT possédé » ne retient QUE source:owned",
+  () => {
+    it("liste mêlant owned et attached → ne retient QUE les owned", () => {
+      const result = ownedConversationIds([
+        { projectId: "a", source: "owned" },
+        { projectId: "b", source: "attached" },
+        { projectId: "c", source: "owned" },
+      ]);
+      expect(result).toEqual(new Set(["a", "c"]));
+      expect(result.has("b")).toBe(false);
+    });
+
+    it("liste vide → ensemble vide (non vacuous : pas de valeur par défaut cachée)", () => {
+      expect(ownedConversationIds([])).toEqual(new Set());
+    });
+  },
+);
 
 describe("deriveRosterLiveStatus — statut par agent (none/running/idle)", () => {
   const now = 1_000_000;

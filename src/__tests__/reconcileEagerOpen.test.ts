@@ -81,6 +81,48 @@ describe("projectsToEagerOpen — réconciliation workset → conversations (L24
   });
 });
 
+describe(
+  "CA-7 (lot « Statut vivant et session attachée », 2026-09-05) — `openConversationIds` " +
+    "DOIT porter TOUTES les sources (owned + attached), jamais seulement les owned",
+  () => {
+    it(
+      "comportement CORRECT (F1) : un projet déjà ouvert, quelle que soit sa source, " +
+        "reste exclu — `openConversationIds` ne distingue PAS owned/attached ici",
+      () => {
+        const p = project({ id: "alpha" });
+        const out = projectsToEagerOpen({
+          worksetProjects: [p],
+          // Toutes sources confondues (calque `liveProjectIds` d'App.tsx) : "alpha" a
+          // DÉJÀ une conversation, attached ou owned, peu importe.
+          openConversationIds: new Set(["alpha"]),
+          hasBinding: () => true,
+        });
+        expect(out).toEqual([]);
+      },
+    );
+
+    it(
+      "CONTREFACTUEL — restreindre l'ensemble aux OWNED (excluant une conversation " +
+        "ATTACHED déjà ouverte) fait RÉAPPARAÎTRE le projet dans `toOpen` : c'est " +
+        "exactement la réouverture en boucle que F1 interdit d'introduire au point " +
+        "d'appel de `App.tsx` (`liveProjectIds` ne doit JAMAIS être remplacé par " +
+        "`ownedProjectIds` ici)",
+      () => {
+        const p = project({ id: "alpha" });
+        // Simule la mutation interdite : "alpha" a une conversation ATTACHED (donc
+        // absente d'un ensemble restreint aux OWNED) mais une fenêtre est déjà ouverte.
+        const ownedOnly = new Set<string>(); // aucune owned ; "alpha" est attached
+        const out = projectsToEagerOpen({
+          worksetProjects: [p],
+          openConversationIds: ownedOnly,
+          hasBinding: () => true,
+        });
+        expect(out.map((x) => x.id)).toContain("alpha"); // réouverture indue, NOMMÉE
+      },
+    );
+  },
+);
+
 describe("decideEagerOpenFocus — L37 F2 (AR-1 = (c) : le démarrage ne vole pas la navigation)", () => {
   it("CA-6 — le PREMIER passage après la fin de la restauration ne donne PAS le focus", () => {
     const { focus, nextState } = decideEagerOpenFocus(true, {

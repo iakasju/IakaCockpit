@@ -20,6 +20,26 @@
  * xterm est stubbé (canvas/mesure absents en jsdom, calque `termFontSize.test.tsx`) mais
  * `PtyTerminal` N'EST PAS mocké — inutile ici : une conversation `attached` ne monte de
  * toute façon AUCUN `PtyTerminal` (L25, garde vérifiée en negatif par `runnerOpenCalls`).
+ *
+ * --- Lot « Statut vivant et session attachée » (2026-09-05) --------------------------------
+ * S-1 (gate 🏹 Legolas de L46) : un geste RÉEL d'une conversation `attached` allumait le point
+ * de statut « travaille » du COORDINATEUR de la team liée dans le roster (`useLiveStatus.ts`),
+ * et les bulles assistant (`Chat.tsx`) portaient son nom + sa vignette — deux canaux distincts
+ * de la MÊME fabrication que celle réparée ci-dessus pour `.evagent`/le bandeau des
+ * délégations. CA-2/CA-3/CA-4/CA-9 vivent dans CE fichier (calque `identityJunction.test.tsx`,
+ * AR-6).
+ *
+ * PIÈGE D'HORLOGE (§ 2.8 de l'instruction) : `useNow` ne pousse `Date.now()` qu'à intervalle
+ * de 1 000 ms (+ tick immédiat au montage/retour de visibilité). Un event marqué APRÈS le
+ * montage est donc invisible tant qu'aucun tick n'a eu lieu (`now` figé < `lastEventTs` →
+ * `deriveLiveStatus` rend `idle` par la branche défensive). AUCUN sleep réel, AUCUN faux
+ * timer vitest (`waitFor`/`@testing-library/dom` ne détectent PAS les faux timers de vitest,
+ * cf. § 2.8 (1) de l'instruction — la détection est gardée par `typeof jest !== 'undefined'`,
+ * absent sous vitest) : `forceNowTick()` force un tick DÉTERMINISTE via deux
+ * `visibilitychange` (masqué puis visible), idiome DÉJÀ testé dans `useNow.test.ts`. Ce
+ * couplage à `useNow` est assumé : si `useNow` cesse de ticker au retour de visibilité, ces
+ * tests deviennent vacuous — d'où le VERROU positif de CA-3 (un cas `owned` qui, avec le
+ * MÊME tick, doit afficher « travaille »).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
@@ -187,6 +207,51 @@ function makeInvokeMock(): {
   return { invoke, runnerOpenCalls, tailStartCalls };
 }
 
+/**
+ * Calque `identityJunction.test.tsx` (`latest_transcript` → `null` ⇒ ouverture `owned`,
+ * PAS `attached`) — le VERROU positif de CA-3/CA-9 : le MÊME harnais doit pouvoir produire
+ * un statut « travaille » et un `.bwho` quand le Cockpit possède RÉELLEMENT le runner.
+ */
+function makeOwnedInvokeMock(): {
+  invoke: InvokeFn;
+  runnerOpenCalls: Record<string, unknown>[];
+} {
+  const runnerOpenCalls: Record<string, unknown>[] = [];
+  const invoke = vi.fn((cmd: string, args?: Record<string, unknown>) => {
+    switch (cmd) {
+      case "get_root":
+        return Promise.resolve("/work");
+      case "config_get":
+        return Promise.resolve(args?.key === "workset" ? "[]" : null);
+      case "config_all":
+        return Promise.resolve({
+          teams: JSON.stringify(FELLOWSHIP_TEAM),
+          "project_team:robotimmo": "fellowship",
+        });
+      case "config_set":
+        return Promise.resolve();
+      case "scan_portfolio":
+        return Promise.resolve([project()]);
+      case "list_extra_projects":
+        return Promise.resolve([]);
+      case "latest_transcript":
+        return Promise.resolve(null); // pas de session vivante → ouverture `owned`
+      case "pty_runner_open":
+        runnerOpenCalls.push(args ?? {});
+        return Promise.resolve({
+          session_id: "sid-1",
+          transcript_path: "/tmp/sid-1.jsonl",
+          started_at_ms: 0,
+        });
+      case "transcript_tail_start":
+        return Promise.resolve();
+      default:
+        return new Promise(() => {}); // en attente (frame_load, seed_demo…) — inoffensif
+    }
+  });
+  return { invoke, runnerOpenCalls };
+}
+
 let currentInvoke: InvokeFn;
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (cmd: string, args?: Record<string, unknown>) => currentInvoke(cmd, args),
@@ -198,6 +263,29 @@ async function flushMicrotasks(times = 6): Promise<void> {
       await Promise.resolve();
     });
   }
+}
+
+/**
+ * Tick DÉTERMINISTE de `useNow` (§ 2.8 (2) de l'instruction) : force le hook à recalculer
+ * `now = Date.now()` SANS attente réelle ni faux timer. `useNow.ts` appelle `tick()`
+ * immédiatement à chaque `start()` (montage ET retour de visibilité) — deux
+ * `visibilitychange` (masqué puis visible) suffisent, et le second a lieu APRÈS l'événement
+ * marqué par le test, garantissant `dt = now - lastEventTs ≥ 0`. Idiome déjà éprouvé dans
+ * `src/__tests__/useNow.test.ts`.
+ */
+async function forceNowTick(): Promise<void> {
+  await act(async () => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => false,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
 }
 
 beforeEach(() => {
@@ -330,6 +418,260 @@ describe(
         expect(document.querySelector(".treeband")).toBeNull();
         expect(document.querySelector(".dtree")).toBeNull();
         expect(document.querySelector(".swim")).toBeNull();
+      },
+    );
+  },
+);
+
+/** Cherche l'item roster (`.rosteritem`) portant `name` dans son texte. */
+function findRosterItem(name: string): Element | undefined {
+  const rosterEl = document.querySelector(".roster");
+  return Array.from(rosterEl?.querySelectorAll(".rosteritem") ?? []).find((el) =>
+    el.textContent?.includes(name),
+  );
+}
+
+describe(
+  "Statut vivant et session attachée (lot 2026-09-05) — CA-2/CA-4/CA-7 : un geste " +
+    "ATTACHÉ n'allume AUCUN agent du roster, sans casser le signal honnête",
+  () => {
+    it(
+      "CA-2 — après un tick déterministe, le coordinateur de la team liée reste " +
+        "« non lancé » et AUCUNE ligne du roster ne porte « travaille » ; " +
+        "CA-4 — le point d'onglet reste `running` et le badge attaché reste affiché ; " +
+        "CA-7 — aucune réouverture répétée (un seul démarrage de tailer)",
+      async () => {
+        const { invoke, tailStartCalls } = makeInvokeMock();
+        currentInvoke = invoke;
+
+        const { default: App } = await import("../App");
+        render(<App />);
+        await flushMicrotasks(8);
+
+        const putBtn = await screen.findByRole("button", {
+          name: "↗ Poser sur la table",
+        });
+        fireEvent.click(putBtn);
+        await screen.findByText("session vivante · lecture seule");
+        await waitFor(() => expect(tailStartCalls.length).toBeGreaterThan(0));
+
+        await act(async () => {
+          emitTauriEvent("runner://event/ext-session-1", {
+            kind: "geste",
+            role: "assistant",
+            is_sidechain: false,
+            tool_name: "Bash",
+            tool_input: "git status",
+          });
+        });
+        await waitFor(() => {
+          screen.getByText(/git status/);
+        });
+
+        // Piège d'horloge (§ 2.8) : SANS ce tick déterministe, l'assertion « idle/none »
+        // serait satisfaite trivialement (le tick n'a jamais eu lieu) — c'est précisément
+        // ce que le VERROU positif de CA-3 (describe suivant) existe pour attraper.
+        await forceNowTick();
+
+        // --- CA-2 : LE CA QUI COMPTE ---------------------------------------------------
+        const boromirItem = findRosterItem("Boromir");
+        expect(boromirItem).toBeTruthy();
+        expect(
+          boromirItem?.querySelector(".rstatus")?.classList.contains("none"),
+        ).toBe(true);
+        expect(boromirItem?.querySelector(".rstate")?.textContent).toBe("non lancé");
+        expect(document.querySelectorAll(".rstatus.working").length).toBe(0);
+        expect(screen.queryAllByText("travaille").length).toBe(0);
+
+        // --- CA-4 : on n'a PAS réparé en supprimant une information vraie --------------
+        expect(document.querySelector(".pt-status.running")).not.toBeNull();
+        expect(screen.getByText("session vivante · lecture seule")).toBeTruthy();
+
+        // --- CA-7 : l'ouverture eager L24-F1 n'a pas rouvert la conversation attachée ---
+        // en boucle (un seul démarrage de tailer malgré le tick + le geste + les
+        // multiples re-renders).
+        expect(tailStartCalls.length).toBe(1);
+      },
+    );
+  },
+);
+
+describe(
+  "Statut vivant et session attachée (lot 2026-09-05) — CA-3, LE VERROU " +
+    "(anti-témoin-vide) : le harnais peut produire un « travaille »",
+  () => {
+    it(
+      "le MÊME geste et la MÊME procédure de tick, en mode OWNED, affichent bien " +
+        "« travaille » pour le coordinateur",
+      async () => {
+        const { invoke, runnerOpenCalls } = makeOwnedInvokeMock();
+        currentInvoke = invoke;
+
+        const { default: App } = await import("../App");
+        render(<App />);
+        await flushMicrotasks(8);
+
+        const putBtn = await screen.findByRole("button", {
+          name: "↗ Poser sur la table",
+        });
+        fireEvent.click(putBtn);
+
+        await waitFor(() => expect(runnerOpenCalls.length).toBeGreaterThan(0));
+        // Laisse le temps à `usePty`/`useRunnerViews` de brancher le listener sur le
+        // `sid` renvoyé par `pty_runner_open` avant d'émettre l'event.
+        await flushMicrotasks(6);
+
+        await act(async () => {
+          emitTauriEvent("runner://event/sid-1", {
+            kind: "geste",
+            role: "assistant",
+            is_sidechain: false,
+            tool_name: "Bash",
+            tool_input: "git status",
+          });
+        });
+        await waitFor(() => {
+          screen.getByText(/git status/);
+        });
+
+        await forceNowTick();
+
+        const boromirItem = findRosterItem("Boromir");
+        expect(boromirItem).toBeTruthy();
+        expect(
+          boromirItem?.querySelector(".rstatus")?.classList.contains("working"),
+        ).toBe(true);
+        expect(boromirItem?.querySelector(".rstate")?.textContent).toBe("travaille");
+      },
+    );
+  },
+);
+
+describe(
+  "Statut vivant et session attachée (lot 2026-09-05) — CA-9 : la parole ATTACHÉE ne " +
+    "porte aucun nom d'emprunt (verrou positif inclus)",
+  () => {
+    it("un tour `parole` assistant d'une session ATTACHÉE ne porte ni nom ni avatar", async () => {
+      const { invoke, tailStartCalls } = makeInvokeMock();
+      currentInvoke = invoke;
+
+      const { default: App } = await import("../App");
+      render(<App />);
+      await flushMicrotasks(8);
+
+      const putBtn = await screen.findByRole("button", {
+        name: "↗ Poser sur la table",
+      });
+      fireEvent.click(putBtn);
+      await screen.findByText("session vivante · lecture seule");
+      await waitFor(() => expect(tailStartCalls.length).toBeGreaterThan(0));
+
+      await act(async () => {
+        emitTauriEvent("runner://event/ext-session-1", {
+          kind: "parole",
+          role: "assistant",
+          is_sidechain: false,
+          text: "Bonjour depuis la session externe",
+        });
+      });
+      await screen.findByText("Bonjour depuis la session externe");
+
+      // --- L'ASSERTION QUI COMPTE : aucun repli sur la persona de la conversation -----
+      expect(document.querySelector(".bwho")).toBeNull();
+      expect(document.querySelector(".bavatar")).toBeNull();
+    });
+
+    it(
+      "VERROU — le MÊME tour `parole`, en mode OWNED, affiche bien le nom du " +
+        "coordinateur (`.bwho`)",
+      async () => {
+        const { invoke, runnerOpenCalls } = makeOwnedInvokeMock();
+        currentInvoke = invoke;
+
+        const { default: App } = await import("../App");
+        render(<App />);
+        await flushMicrotasks(8);
+
+        const putBtn = await screen.findByRole("button", {
+          name: "↗ Poser sur la table",
+        });
+        fireEvent.click(putBtn);
+        await waitFor(() => expect(runnerOpenCalls.length).toBeGreaterThan(0));
+        await flushMicrotasks(6);
+
+        await act(async () => {
+          emitTauriEvent("runner://event/sid-1", {
+            kind: "parole",
+            role: "assistant",
+            is_sidechain: false,
+            text: "Bonjour depuis le runner du cockpit",
+          });
+        });
+        await screen.findByText("Bonjour depuis le runner du cockpit");
+
+        const bwho = document.querySelector(".bwho");
+        expect(bwho).not.toBeNull();
+        expect(bwho?.textContent).toBe("Boromir");
+      },
+    );
+  },
+);
+
+describe(
+  "Statut vivant et session attachée (lot 2026-09-05) — CA-6 : la bascule " +
+    "attached → owned ne récupère PAS la fraîcheur héritée de la session externe",
+  () => {
+    it(
+      "après un geste attaché puis « démarrer un runner », le coordinateur ne porte PAS " +
+        "« travaille » tant que le runner neuf n'a rien émis",
+      async () => {
+        const { invoke, tailStartCalls } = makeInvokeMock();
+        currentInvoke = invoke;
+
+        const { default: App } = await import("../App");
+        render(<App />);
+        await flushMicrotasks(8);
+
+        const putBtn = await screen.findByRole("button", {
+          name: "↗ Poser sur la table",
+        });
+        fireEvent.click(putBtn);
+        await screen.findByText("session vivante · lecture seule");
+        await waitFor(() => expect(tailStartCalls.length).toBeGreaterThan(0));
+
+        // Le geste attaché marque la fraîcheur SOUS L'ID RÉEL DU PROJET (§ 2.1 étape 3
+        // de l'instruction) — c'est ce résidu que la bascule doit purger (§ 2.7).
+        await act(async () => {
+          emitTauriEvent("runner://event/ext-session-1", {
+            kind: "geste",
+            role: "assistant",
+            is_sidechain: false,
+            tool_name: "Bash",
+            tool_input: "git status",
+          });
+        });
+        await waitFor(() => {
+          screen.getByText(/git status/);
+        });
+
+        // « Démarrer un runner du cockpit » — bascule attached → owned (F4/AR-4).
+        const startBtn = await screen.findByRole("button", {
+          name: "Démarrer un runner du cockpit",
+        });
+        fireEvent.click(startBtn);
+        await flushMicrotasks(6);
+
+        await forceNowTick();
+
+        // Le slot est désormais POSSÉDÉ (source owned) → le repli n'est plus `none`,
+        // mais AUCUN event du runner neuf n'est encore arrivé → `idle`, jamais
+        // `travaille` sur la foi de l'ancien geste externe.
+        const boromirItem = findRosterItem("Boromir");
+        expect(boromirItem).toBeTruthy();
+        expect(boromirItem?.querySelector(".rstate")?.textContent).not.toBe("travaille");
+        expect(
+          boromirItem?.querySelector(".rstatus")?.classList.contains("working"),
+        ).toBe(false);
       },
     );
   },
