@@ -24,29 +24,30 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-09-03 21:26 - motif : manual - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-09-04 22:59 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
   <div class="k">Version</div><div>v0.32.2</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>bfa5417 chore: checkpoint — dette de canal fermee, endpoint iakabox retire</code></div>
-  <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
-  <div class="k">Fichiers</div><div>1428 (suivis + non ignores)</div>
-  <div class='k'>Note</div><div>LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS).</div>
+  <div class="k">Dernier commit</div><div><code>2a6e346 docs(backlog): L46 livre — identite du runner, gate FAIL puis PASS</code></div>
+  <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
+  <div class="k">Fichiers</div><div>1435 (suivis + non ignores)</div>
+  <div class='k'>Note</div><div>L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant).</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>bfa5417</code></td><td>2026-09-03</td><td>chore: checkpoint — dette de canal fermee, endpoint iakabox retire</td></tr>
-<tr><td><code>910257f</code></td><td>2026-09-03</td><td>merge: la dette de canal de la publication (gate Legolas PASS)</td></tr>
-<tr><td><code>a574046</code></td><td>2026-09-03</td><td>fix(docs): rectifie EN DATANT les deux dernieres traces d'un cliquet a 20</td></tr>
-<tr><td><code>f2f8c80</code></td><td>2026-09-03</td><td>fix(convergence): cliquet 20 -&gt; 23 — les trois fichiers de la dette de canal etaient inscrits SOUS le plancher</td></tr>
-<tr><td><code>3fefba8</code></td><td>2026-09-03</td><td>fix(convergence): inscrit les 3 fichiers generiques de la dette de canal (cliquet 20 -&gt; 23)</td></tr>
-<tr><td><code>69a8c1b</code></td><td>2026-09-03</td><td>docs(tests): CA-6 — ecrit la limite de la face 1 DANS le fichier de garde</td></tr>
-<tr><td><code>f48819d</code></td><td>2026-09-03</td><td>fix(docs): rectifie une declaration de couverture impossible sur la jonction (defaut 3, gate)</td></tr>
-<tr><td><code>4c657e4</code></td><td>2026-09-03</td><td>fix(update): reformule le commentaire de rendreCompte — CA-1 zero occurrence stricte du fichier</td></tr>
-<tr><td><code>a7d680a</code></td><td>2026-09-03</td><td>docs: rectifie la promesse de visibilite (datee) et inscrit L45 (dette de canal)</td></tr>
-<tr><td><code>fb58908</code></td><td>2026-09-03</td><td>feat(update): face 2 hors gate — verifie ce que chaque endpoint sert reellement</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>2a6e346</code></td><td>2026-09-04</td><td>docs(backlog): L46 livre — identite du runner, gate FAIL puis PASS</td></tr>
+<tr><td><code>f227002</code></td><td>2026-09-04</td><td>merge: identite du runner — le Cockpit dit enfin au runner qui il est (gate PASS)</td></tr>
+<tr><td><code>e4a877f</code></td><td>2026-09-04</td><td>test(identity): junction guard — attached conversation attributes nothing (CA-6/§6 F1)</td></tr>
+<tr><td><code>f382516</code></td><td>2026-09-04</td><td>fix(identity): never attribute the linked team's coordinator to an attached (external) session</td></tr>
+<tr><td><code>6087e9c</code></td><td>2026-09-04</td><td>feat(working): delay PtyTerminal mount until teams load (AR-8) + honest identity display (F3/AR-7)</td></tr>
+<tr><td><code>0ee7d49</code></td><td>2026-09-04</td><td>feat(chat): attribute top-level geste/activite/pensee turns to the injected persona (F2)</td></tr>
+<tr><td><code>1f1de00</code></td><td>2026-09-04</td><td>feat(app): inject team-derived identity into the runner's system-prompt</td></tr>
+<tr><td><code>b917e4a</code></td><td>2026-09-04</td><td>feat(frame): compose a pure runner identity preamble (F1 core)</td></tr>
+<tr><td><code>e956e00</code></td><td>2026-09-04</td><td>docs(specs): cadrage identite du runner — 8 arbitrages tranches (reco)</td></tr>
+<tr><td><code>1da102d</code></td><td>2026-09-04</td><td>docs(backlog): L37 — CA-11 rejoue apres correctif et VERT (recette du decideur)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-09-04 22:59</td><td><span class='r r-pause'>pause</span></td><td>v0.32.2</td><td>main</td><td>L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant).</td></tr>
 <tr><td>2026-09-03 21:26</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS).</td></tr>
 <tr><td>2026-09-03 18:54</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20-&gt;23.</td></tr>
 <tr><td>2026-09-03 14:51</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>Mode guide du CLI livre (lots 0+B) : 33 commandes /iaka-*, registre unique, aide derivee. Amendement A : la garde de vocabulaire echoue. A-1 clos.</td></tr>

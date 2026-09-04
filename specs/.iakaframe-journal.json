@@ -258,5 +258,15 @@
     "dirty": false,
     "files": 1428,
     "note": "LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS)."
+  },
+  {
+    "date": "2026-09-04 22:59",
+    "reason": "pause",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "2a6e346 docs(backlog): L46 livre — identite du runner, gate FAIL puis PASS",
+    "dirty": true,
+    "files": 1435,
+    "note": "L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant)."
   }
 ]
