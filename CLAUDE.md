@@ -1320,7 +1320,43 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       *permis* la dérive. Réécrits pour **dériver** du modèle au lieu d'en recopier une image.
       Différés : le Cockpit ne consomme pas encore `readReservoir()` à l'exécution (la team par défaut
       reste embarquée, la garde de parité tient l'alignement) ; vignettes iakagraph des 3 rôles.
-- [ ] **L37** — **Persistance de la Table (le « set de Work » survit au redémarrage)**
+- [x] **L37** — **Persistance de la Table (le « set de Work » survit au redémarrage)**
+      → `specs/instructions/L37-persistance-table-workset.md`
+      *(**LIVRÉ, gate 🏹 Legolas PASS ×2** (2026-09-04), fusionné dans `main` (`66c7649`), branche
+      `feat/L37-persistance-table-workset`. Cadré par 🔵 Gandalf, **6 arbitrages TRANCHÉS** par
+      Stéphane le 2026-09-04 (« tout reco ») : AR-1 = **(c)** ouvrir sans focaliser · AR-2 = **(a)**
+      ids seuls · AR-3 = **(a)** seed sans exception, restauration qui **fusionne** · AR-4 = **(a)**
+      id fantôme inerte, **jamais purgé** · AR-5 = **(a)** I/O dans `useWorkset`, écriture **dans les
+      mutateurs** jamais dans un effet · AR-6 = **(a)** une clé `workset` à valeur tableau JSON.)*
+      **Livré** : `useWorkset` cesse d'être front pur — restauration **fusionnante** au montage via
+      `configGet`, écriture dans `commit()` appelé par `toggle`/`add`, garde `loadedRef` ; paramètre
+      `focus` sur `openConversationFor` + fonction pure `decideEagerOpenFocus`
+      (`src/app/reconcileEagerOpen.ts`) pour que le démarrage **n'ouvre pas de fenêtre à la place de
+      l'utilisateur** ; `KEY_WORKSET` documentée côté Rust (`config.rs`) avec ses 2 tests.
+      **Trois faits de LECTURE qui ont corrigé le périmètre pressenti ci-dessous** (conservé daté,
+      pas effacé, règle 4 du corpus) : (1) « projets disparus à ignorer » était **déjà acquis** par
+      l'intersection `portfolio.projects ∩ workset.ids` (`App.tsx:209`) — la vraie question était
+      « purger ou non », et purger est un **piège** (au boot et sur scan en erreur, `projects` vaut
+      `[]`, purger **viderait la Table**) ; (2) « poser N projets = spawner N runners » est
+      **inexact** — `WorkingView` est monté conditionnellement, aucun runner ne démarre tant qu'on
+      n'ouvre pas Travail ; le vrai risque était que la restauration fasse **sauter l'app sur
+      Travail** au lancement ; (3) le danger n'est pas la lecture mais **l'écriture** — un
+      `useEffect([ids])` naïf écrit le set vide initial **avant** la fin de la lecture asynchrone et
+      **détruit la Table** (StrictMode rejoue les effets).
+      **Gardes éprouvées, jamais tièdes** : 9 contrefactuels joués par l'exécution + **4 rejoués
+      indépendamment par le gate**, chacun muté sur le **programme** (jamais sur l'attendu) et
+      **révoqué au `sha256`**. Le central est CA-4 : le `useEffect` naïf fait rougir nommément
+      (`configSet("workset","[]")` avant restauration).
+      **Correctif post-gate S-1, re-gaté PASS** (`0adca42`) : la fusion de restauration n'était
+      **persistée par personne** — un ajout survenu pendant la lecture vivait en mémoire et mourait
+      au redémarrage suivant, alors que l'en-tête du hook promettait le contraire. La fusion est
+      désormais écrite **si et seulement si** elle diffère du persisté (garde éprouvée dans les deux
+      sens : la retirer fait rougir S-1, la rendre inconditionnelle fait rougir CA-4 et CA-5), et
+      l'en-tête dit le vrai. Sonde StrictMode réelle du gate : **un seul** `configSet`.
+      **Chaîne qualité re-mesurée par le gate** : 930 front / 93 fichiers · **346 Rust** (0 ignored) ·
+      `bash scripts/quality.sh` **exit 0** · grep D7 **vide**.
+      **NON MESURÉ, déclaré tel — CA-11** : la recette terrain (poser 3 projets, quitter, relancer
+      l'app **installée**) appartient au décideur ; aucun agent ne peut relancer l'app packagée.
       *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
       chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
       **Ce n'est pas une régression** : `src/hooks/useWorkset.ts` est un état **front pur** (un `Set`
@@ -1329,7 +1365,9 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       rester MVP ». Vérifié : **aucune clé `workset` côté Rust** (`config.rs`). Le comportement est
       donc conforme au cadrage L2 d'origine ; c'est le confort d'usage qui a changé d'avis, une fois
       la Table devenue le lieu de travail quotidien (L24 onglets, L25 session vivante, L26 focus).
-      **Portée pressentie** (à cadrer) : persister le set d'ids sous une clé de config **non
+      ⚠️ **PORTÉE PRESSENTIE, CONSERVÉE DATÉE ET DÉPASSÉE** (écrite le 2026-08-23, **corrigée sur
+      trois points par le cadrage du 2026-09-04** — voir les trois faits de lecture ci-dessus) :
+      persister le set d'ids sous une clé de config **non
       sensible** (`workset`, ne matche pas `token|key|secret|password`), relu au montage comme le
       fait déjà `useSettings` ; **projets disparus** du chapeau à ignorer silencieusement au
       rechargement (jamais d'onglet mort) ; interaction à trancher avec l'**ouverture eager** L24-F1
