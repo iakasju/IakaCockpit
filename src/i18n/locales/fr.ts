@@ -349,6 +349,14 @@ export const fr = {
     attachedShellBody:
       "Cette conversation est attachée à une session en cours (vue live, lecture seule). Le terminal réel de cette session vit ailleurs.",
     startRunner: "Démarrer un runner du cockpit",
+    // Identité du runner (lot 2026-09-04, F3/AR-7) : honnêteté d'affichage quand F1 n'a
+    // rien pu injecter — jamais laisser croire que le persona affiché est bien celui que
+    // porte le runner.
+    identityNotGuaranteed: "identité non garantie (session externe)",
+    identityNotInjected: "identité non injectée",
+    identityNotInjectedTitle:
+      "Ce runner n'a reçu aucune identité (pas de team liée, ou runner codex — le CLI n'accepte pas de system-prompt). Le badge qu'il écrit peut ne pas correspondre au persona affiché.",
+    teamsLoading: "Chargement de l'équipe…",
     emptyConv: "Aucune conversation ouverte.",
     emptyConvHint:
       "Choisis un projet sur la table pour ouvrir sa conversation.",

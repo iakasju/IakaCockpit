@@ -350,6 +350,13 @@ export const en: Resources = {
     attachedShellBody:
       "This conversation is attached to an in-progress session (live view, read-only). The real terminal for this session lives elsewhere.",
     startRunner: "Start a cockpit runner",
+    // Runner identity (2026-09-04 lot, F3/AR-7): honest display when F1 could not inject
+    // anything — never let the displayed persona look like what the runner actually is.
+    identityNotGuaranteed: "identity not guaranteed (external session)",
+    identityNotInjected: "identity not injected",
+    identityNotInjectedTitle:
+      "This runner received no identity (no team bound, or codex runner — its CLI does not accept a system prompt). The badge it writes may not match the displayed persona.",
+    teamsLoading: "Loading team…",
     emptyConv: "No conversation open.",
     emptyConvHint: "Pick a project on the table to open its conversation.",
     openAria: "Open project {{project}}",
