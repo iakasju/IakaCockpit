@@ -5,10 +5,23 @@
  * que rien ne le signale — `charon`, `helm` et `feanor` y figuraient depuis longtemps et
  * manquaient côté Cockpit. Une divergence silencieuse est le défaut qu'on ferme ici.
  *
+ * ÉTENDUE (lot « Pastille du badge du runner », AR-6 = (a)) : au-delà des NOMS, on
+ * compare désormais les VALEURS de pastille — `PHASE_PASTILLE_BY_ROLE`
+ * (`src/theme/roles.ts`) est une COPIE du frontmatter `pastille:` des personas du
+ * réservoir ; sans cette extension, elle dériverait en silence, exactement la dérive que
+ * ce script ferme déjà pour les noms.
+ *
  * SKIP PROPRE si le réservoir est absent (clone isolé) : ce contrôle dépend d'un dépôt
  * frère, il ne doit pas rougir chez qui ne l'a pas. `IAKAFRAME_HOME` est AUTORITAIRE —
  * posé mais faux, on ÉCHOUE plutôt que de mesurer un autre dépôt (même règle que
  * `test-handoff-parity.mjs`).
+ *
+ * LIMITES DÉCLARÉES (AR-6, à ne pas oublier en le lisant vert) :
+ *   - ce script n'est PAS dans `scripts/quality.sh` (8 étapes, aucune ne l'appelle) —
+ *     c'est une commande À PART, volontairement (§ 2.9 de l'instruction) ;
+ *   - une ÉDITION COORDONNÉE des deux côtés (réservoir et table Cockpit changés
+ *     ensemble, à la même valeur fautive) échapperait à cette garde comme à toute garde
+ *     de parité par comparaison de deux copies.
  *
  * Usage : npm run test:reservoir-parity
  */
@@ -64,6 +77,19 @@ function fmList(fm, key) {
   }
   return [];
 }
+/** Valeur scalaire d'une clé de frontmatter — même contrat que `fm_scalar` de
+ * `reservoir.rs` : guillemets retirés, `""` si absente ou si c'est une liste. */
+function fmScalar(fm, key) {
+  for (const line of fm.split("\n")) {
+    const l = line.trim();
+    if (l.startsWith(`${key}:`)) {
+      const v = l.slice(key.length + 1).trim();
+      if (v.startsWith("[")) return "";
+      return v.replace(/^["']|["']$/g, "");
+    }
+  }
+  return "";
+}
 
 const teamFile = join(root, "teams", "iakaframe-8.md");
 if (!existsSync(teamFile)) {
@@ -91,8 +117,58 @@ if (manquants.length) {
   );
   process.exit(1);
 }
+
+// --- Extension AR-6 : parité des VALEURS de pastille (pas seulement des noms). ---------
+// On lit la table + l'alias EMBARQUÉS côté Cockpit par regex sur le SOURCE (même geste
+// que la lecture de `demoTeam.ts` plus haut : pas de build pour un script).
+const rolesSrc = readFileSync(join(cockpitRoot, "src", "theme", "roles.ts"), "utf8");
+function extractTable(src, constName) {
+  const m = src.match(
+    new RegExp(`${constName}[^{]*=\\s*{([\\s\\S]*?)^};`, "m"),
+  );
+  if (!m) {
+    throw new Error(`${NAME} : impossible de lire ${constName} dans src/theme/roles.ts`);
+  }
+  const out = {};
+  for (const line of m[1].split("\n")) {
+    const kv = line.match(/^\s*([a-zA-Z]+):\s*"([^"]*)"/);
+    if (kv) out[kv[1]] = kv[2];
+  }
+  return out;
+}
+const cockpitPastilleByRole = extractTable(rolesSrc, "PHASE_PASTILLE_BY_ROLE");
+const reservoirAliasToCockpit = extractTable(rolesSrc, "RESERVOIR_ROLE_ALIAS");
+const personasDir = join(root, "library", "personas");
+
+const divergences = [];
+for (const id of roster) {
+  const file = join(personasDir, `${id}.md`);
+  if (!existsSync(file)) continue; // absence déjà signalée par la vérif des noms.
+  const fm = frontmatter(readFileSync(file, "utf8"));
+  const reservoirRoleKey = fmScalar(fm, "roleKey");
+  const reservoirPastille = fmScalar(fm, "pastille");
+  if (!reservoirRoleKey || !reservoirPastille) continue; // frontmatter incomplet : rien à comparer.
+  const cockpitRoleKey = reservoirAliasToCockpit[reservoirRoleKey] ?? reservoirRoleKey;
+  const cockpitPastille = cockpitPastilleByRole[cockpitRoleKey];
+  if (cockpitPastille !== reservoirPastille) {
+    divergences.push(
+      `${id} (roleKey réservoir « ${reservoirRoleKey} » → clé Cockpit « ${cockpitRoleKey} ») : ` +
+        `réservoir « ${reservoirPastille} », table Cockpit « ${cockpitPastille ?? "(absente)"} »`,
+    );
+  }
+}
+if (divergences.length) {
+  console.error(
+    `${NAME} : ÉCHEC — ${divergences.length} pastille(s) divergente(s) entre le réservoir ` +
+      `et PHASE_PASTILLE_BY_ROLE (src/theme/roles.ts) :\n` +
+      divergences.map((d) => `  - ${d}`).join("\n") +
+      "\n  → aligner src/theme/roles.ts sur le frontmatter du réservoir (jamais l'inverse).",
+  );
+  process.exit(1);
+}
+
 console.log(
   `${NAME} : OK — ${roster.length} personas du réservoir tous présents` +
     (enTrop.length ? ` (+${enTrop.length} propre(s) au Cockpit : ${enTrop.join(", ")})` : "") +
-    ".",
+    `, pastilles alignées.`,
 );
