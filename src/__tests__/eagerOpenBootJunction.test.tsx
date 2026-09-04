@@ -57,13 +57,15 @@ function project(over: Partial<Project> = {}): Project {
   };
 }
 
+type InvokeFn = (cmd: string, args?: Record<string, unknown>) => Promise<unknown>;
+
 /**
  * Deferred contrôlé : `scan_portfolio` ne répond que quand le test le décide,
  * pour forcer l'ordre `config_get` (workset) AVANT `scan_portfolio` (portfolio) —
  * exactement le déroulé mesuré en recette réelle.
  */
 function makeInvokeMock(): {
-  invoke: ReturnType<typeof vi.fn>;
+  invoke: InvokeFn;
   resolveScan: (projects: Project[]) => void;
 } {
   let resolveScan!: (projects: Project[]) => void;
@@ -99,14 +101,14 @@ function makeInvokeMock(): {
   return { invoke, resolveScan };
 }
 
-let currentInvoke: ReturnType<typeof vi.fn>;
+let currentInvoke: InvokeFn;
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (...args: Parameters<typeof currentInvoke>) => currentInvoke(...args),
+  invoke: (cmd: string, args?: Record<string, unknown>) => currentInvoke(cmd, args),
 }));
 
 async function flushMicrotasks(times = 5): Promise<void> {
   for (let i = 0; i < times; i++) {
-    // eslint-disable-next-line no-await-in-loop
+    // Flush séquentiel voulu (pas parallèle) : chaque tour laisse React committer.
     await act(async () => {
       await Promise.resolve();
     });
@@ -114,7 +116,7 @@ async function flushMicrotasks(times = 5): Promise<void> {
 }
 
 beforeEach(() => {
-  currentInvoke = vi.fn();
+  currentInvoke = () => new Promise(() => {});
 });
 
 afterEach(() => {
@@ -161,7 +163,7 @@ describe("App — jonction workset↔portfolio au boot (L37-CA6)", () => {
     async () => {
       // Boot : workset restauré VIDE (rien à ouvrir) ; portfolio arrive avec un
       // projet NON posé sur la table — le boot doit se terminer sans naviguer.
-      currentInvoke = vi.fn((cmd: string, args?: Record<string, unknown>) => {
+      currentInvoke = (cmd: string, args?: Record<string, unknown>) => {
         switch (cmd) {
           case "get_root":
             return Promise.resolve("/work");
@@ -180,7 +182,7 @@ describe("App — jonction workset↔portfolio au boot (L37-CA6)", () => {
           default:
             return new Promise(() => {});
         }
-      });
+      };
 
       const { default: App } = await import("../App");
       render(<App />);
