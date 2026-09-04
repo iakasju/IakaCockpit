@@ -1471,6 +1471,60 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **Successeur NOMMÉ, non traité** : le schéma des sous-agents a changé en claude 2.1.260 (ils
       vivent sous `<session>/subagents/`), ce qui concerne Analytics ; `name:"Agent"`,
       `subagent_type` et `outputFile` restent valides, L10 et L30 ne sont pas cassés.
+- [x] **L47** — **Pastille du badge du runner : la source existait, le Cockpit ne la lisait pas**
+      → `specs/instructions/pastille-du-badge-runner.md`
+      *(**LIVRÉ, gate 🏹 Legolas PASS** (2026-09-05), fusionné dans `main` (`901ef51`), branche
+      `feat/pastille-badge-runner`. Successeur DIRECT de **L46**, ouvert sur la recette réelle du
+      décideur. Cadré par 🔵 Gandalf, **7 arbitrages TRANCHÉS** (« reco ») : AR-1 = **(a)** table
+      embarquée indexée par **RÔLE** + garde de parité · AR-2 = (a) défaut explicite · AR-3 = **(a)**
+      pastille du rôle, **(b) RIEN** si le rôle est inconnu · AR-4 = **(a)** badge **assemblé** ·
+      AR-5 = **(a)** corriger, pas se taire · AR-6 = **(a)** étendre la garde de parité ·
+      AR-7 = (a) `phasePastille`.)*
+      **Le constat, verbatim** : « le badge affiche bien [ROBOTIMMO][Aragorn] mais la pastille est
+      remplaxcéée par un icone de deux épées ».
+      ⚠️ **LE FAIT QUI COMMANDE LE LOT — L46 avait réussi sur TROIS éléments sur QUATRE.** Mesuré
+      dans le transcript : nom ✅, royaume ✅, **et la POSITION** ✅ (`⚔️ [ROBOTIMMO][Aragorn] — …`
+      à l'ouverture, `[ROBOTIMMO][Aragorn] ⚔️` à la clôture). **Seul le symbole a échoué — et c'était
+      le seul élément passé au runner comme DONNÉE À RECOPIER (`•`) plutôt que formulé en CONSIGNE.**
+      Le runner a suivi tout ce qui était dit en consigne, et rien de ce qui ne l'était pas. D'où
+      AR-4 : on montre le badge **assemblé**, on ne fournit plus un symbole à remplir.
+      **Les deux épées sont une INVENTION, pas une lecture erronée** : zéro occurrence dans le
+      projet, dans `~/.claude/**/*.md`, dans le réservoir. Le seul emblème du corpus pour Aragorn
+      est 🛡️.
+      ⚠️ **RECTIFICATION DATÉE d'une conclusion de L46** — portée aussi **dans le code**
+      (`src/frame/identity.ts`, conservée et datée, jamais effacée) : L46 avait posé la pastille
+      neutre `•` « **faute de source établie** ». **C'était FAUX.** Les personas de la bibliothèque
+      du réservoir portent **tous** une `pastille:` en frontmatter — **35 exploitables sur 36
+      fichiers** (`_TEMPLATE.md` exclu par le parseur). Et le Cockpit savait déjà lire le réservoir
+      depuis **L39** ; il ne lisait simplement pas ce champ.
+      **Deux faits de lecture qui ont façonné la solution** : (1) les 35 personas portent **35
+      `roleKey` deux à deux distincts** — `roleKey → pastille` est donc une **fonction**, pas une
+      heuristique, et indexer par **rôle** couvre **12 teams sur 12** au lieu d'une seule ; (2) la
+      palette n'est **pas fermée** — `⚫` et `🟤` existent dans la bibliothèque, une palette codée en
+      dur serait fausse.
+      **Pourquoi une table embarquée plutôt qu'une lecture du réservoir** (AR-1, motif dominant) :
+      le chemin du spawn **NE REJOUE PAS**. Une pastille arrivant après le lancement serait perdue
+      **en silence pour toute la session** — d'où une résolution **strictement synchrone**, gardée
+      par CA-8 (présente dans le **premier** appel d'ouverture, jamais après). La table est une
+      copie, donc la **garde de parité du réservoir** (L39) est **étendue aux valeurs** : elle nomme
+      le persona, sa clé, et les deux valeurs divergentes. Sans elle, on installait la dérive que
+      L39 avait fermée pour les noms.
+      **Gardes** : verrou **anti-témoin-vide** sur CA-3, **prouvé mordant par le gate lui-même** —
+      sans lui, le test aurait été satisfait par le badge nom+royaume que L46 produit **déjà**, et
+      serait resté vert quoi qu'il arrive (défaut F-1 de L42, payé **trois fois** par ce dépôt).
+      Le gate a **vérifié les 10 valeurs de la table UNE À UNE** contre la source (10/10 exactes) et
+      rejoué **5 contrefactuels**, dont la non-régression de la garde `attached` qui avait valu le
+      FAIL de L46. Mesures : **977 front / 98 fichiers** · **346 Rust** (Rust **non touché**) ·
+      `quality.sh` **exit 0** · parité réservoir OK.
+      🛑 **CA-9 EST DÉCLARÉ NON COUVERT, ET IL NE LE SERA JAMAIS.** On ne **contraint** pas un modèle
+      par une phrase, on l'**oriente** — la preuve est le constat qui a ouvert ce lot. Toute garde
+      automatisable porte sur ce que le Cockpit **ENVOIE**, jamais sur ce que le runner **REND**.
+      La fidélité du rendu est une **recette humaine**, celle du décideur. Une garde qui prétendrait
+      le vérifier serait exactement le faux vert que ce dépôt refuse.
+      **S-1 / S-2 du gate, non bloquants, non traités** : l'extraction de la table par expression
+      régulière suppose des clés purement alphabétiques (vrai pour les 10 actuelles, à surveiller si
+      la table s'étend) ; un contrefactuel de `frameIdentity` est **déclaratif** plutôt qu'exécuté,
+      idiome préexistant, couvert par ailleurs.
 - [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
       → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
       `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
