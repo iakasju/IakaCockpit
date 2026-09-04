@@ -24,6 +24,7 @@ import {
   useLiveStatus,
   deriveRosterLiveStatus,
   deriveLiveStatus,
+  ownedConversationIds,
 } from "./hooks/useLiveStatus";
 import { usePortfolioEconomy } from "./hooks/usePortfolioEconomy";
 import { usePortfolioActivity } from "./hooks/usePortfolioActivity";
@@ -249,8 +250,22 @@ export default function App(): JSX.Element {
   );
 
   // L21/A — chip statut « ● en cours » : projets ayant une conversation VIVANTE (AR-2).
+  // Volontairement TOUTES les conversations (owned + attached) : cet ensemble alimente aussi
+  // la réconciliation d'ouverture eager L24-F1 (`worksetProjects`/effet ci-dessous) — le
+  // restreindre aux `owned` rouvrirait en boucle les conversations attachées (CA-7, lot
+  // « Statut vivant et session attachée »). Pour l'attribution nommée du roster, voir
+  // `ownedProjectIds` ci-dessous, un ensemble DISTINCT et volontairement plus restreint.
   const liveProjectIds = useMemo(
     () => new Set(conversations.conversations.map((c) => c.projectId)),
+    [conversations.conversations],
+  );
+
+  // F1 (lot « Statut vivant et session attachée ») — slots RÉELLEMENT possédés par ce
+  // Cockpit (`source === "owned"`), seul ensemble légitime pour IMPUTER un statut « travaille »
+  // à un persona nommé du roster. Une conversation `attached` (session externe jamais
+  // informée) reste visible via `liveProjectIds`/le point d'onglet, mais n'entre jamais ici.
+  const ownedProjectIds = useMemo(
+    () => ownedConversationIds(conversations.conversations),
     [conversations.conversations],
   );
 
@@ -413,7 +428,7 @@ export default function App(): JSX.Element {
         rosterMembers,
         activeRealProjectId,
         activeCoordinatorName,
-        liveProjectIds,
+        ownedProjectIds,
         live.lastEventAt,
         now,
       ),
@@ -421,7 +436,7 @@ export default function App(): JSX.Element {
       rosterMembers,
       activeRealProjectId,
       activeCoordinatorName,
-      liveProjectIds,
+      ownedProjectIds,
       live.lastEventAt,
       now,
     ],
@@ -693,6 +708,10 @@ export default function App(): JSX.Element {
     if (conv.attachedSessionId) {
       void backend.transcriptTailStop(conv.attachedSessionId);
     }
+    // F4 (AR-4, lot « Statut vivant et session attachée ») — purge la fraîcheur héritée de
+    // la session EXTERNE avant bascule : sans quoi le coordinateur porterait « travaille »
+    // jusqu'à `RUNNING_WINDOW_MS` sur la foi d'events qui ne sont pas ceux du runner neuf.
+    live.forget(projectId);
     conversations.convertToOwned(projectId);
   };
 

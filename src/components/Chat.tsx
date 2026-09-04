@@ -93,6 +93,16 @@ export interface ChatProps {
    * ailleurs). L'historique reste rendu en direct (vue live). Défaut `false`.
    */
   readOnly?: boolean;
+  /**
+   * F3 (lot « Statut vivant et session attachée », AR-3) — DISTINCTE de `readOnly` : l'une
+   * dit « on ne peut pas écrire », l'autre dit « on ne sait pas qui parle ». `false`
+   * (conversation `attached`, session EXTERNE jamais informée par ce Cockpit) coupe le
+   * REPLI sur `agent` pour les bulles assistant qui ne portent pas de `turn.agent` explicite
+   * — ni nom (`.bwho`), ni vignette de gouttière. Un `turn.agent` explicitement porté par le
+   * tour (délégations, historique de démo) n'est JAMAIS effacé : seul le repli sur la
+   * persona de la conversation l'est. Défaut `true` (comportement historique, rétro-compat).
+   */
+  identityKnown?: boolean;
 }
 
 /** Avatar d'une bulle assistant + fallback (masqué si absent / chargement KO). */
@@ -124,6 +134,7 @@ export function Chat({
   voiceStatus,
   onDictate,
   readOnly = false,
+  identityKnown = true,
 }: ChatProps): JSX.Element {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -293,17 +304,23 @@ export function Chat({
 
           // Bulle ASSISTANT : gouttière d'avatar (attribution variante C) + corps.
           // L9 fix avatar par-tour : l'émetteur est FIGÉ sur le tour (`turn.agent`) ;
-          // fallback persona courante si absent. Avatar + nom seulement en TÊTE de run.
-          const turnAgent = turn.agent ?? agent;
+          // fallback persona courante si absent — SAUF si `identityKnown` est `false` (F3,
+          // conversation `attached`) : dans ce cas, le repli sur `agent` est coupé, un
+          // `turn.agent` explicitement porté par le tour reste, lui, intact. Avatar + nom
+          // seulement en TÊTE de run, et seulement si un émetteur est CONNU.
+          const turnAgent = turn.agent ?? (identityKnown ? agent : undefined);
           const head = firstOfRun[i];
-          const avatarUrl = head ? (resolveAvatar?.(turnAgent) ?? null) : null;
+          const avatarUrl =
+            head && turnAgent ? (resolveAvatar?.(turnAgent) ?? null) : null;
           return (
             <div key={i} className={`turnrow them${head ? " runstart" : ""}`}>
               <span className="bgutter">
-                {avatarUrl && <BubbleAvatar url={avatarUrl} alt={turnAgent} />}
+                {avatarUrl && turnAgent && (
+                  <BubbleAvatar url={avatarUrl} alt={turnAgent} />
+                )}
               </span>
               <div className="bubble them">
-                {head && <span className="bwho">{turnAgent}</span>}
+                {head && turnAgent && <span className="bwho">{turnAgent}</span>}
                 <span className="btext">{turn.content}</span>
               </div>
             </div>

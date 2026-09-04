@@ -813,6 +813,12 @@ export function WorkingView({
                   // L25 — attaché = LECTURE SEULE : saisie/mic désactivés (aucun write vers
                   // la session externe). L'interaction passe par « démarrer un runner ».
                   readOnly={active.source === "attached"}
+                  // F3 (lot « Statut vivant et session attachée », AR-3) — une conversation
+                  // `attached` (session EXTERNE jamais informée) ne porte AUCUNE identité
+                  // connue : pas de nom d'emprunt, pas de vignette d'emprunt sur les bulles
+                  // assistant. DISTINCT de `readOnly` ci-dessus (l'un dit « on ne peut pas
+                  // écrire », l'autre « on ne sait pas qui parle »).
+                  identityKnown={active.source !== "attached"}
                   // Affordance esc côté chat (L10b/#4) : envoie `esc` au PTY du
                   // chef-runner (EN PLUS de l'esc natif de la TUI). Owned uniquement.
                   onInterrupt={
