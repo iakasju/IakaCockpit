@@ -1521,6 +1521,13 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       automatisable porte sur ce que le Cockpit **ENVOIE**, jamais sur ce que le runner **REND**.
       La fidélité du rendu est une **recette humaine**, celle du décideur. Une garde qui prétendrait
       le vérifier serait exactement le faux vert que ce dépôt refuse.
+      **➜ CA-9 JOUÉ PAR LE DÉCIDEUR ET VERT** *(2026-09-05, `npm run tauri dev` sur `main` fusionné,
+      projet `robotimmo` lié à une team)* : « **le badge affiche bien 🟠 [ROBOTIMMO][Aragorn]** ».
+      Les **quatre** éléments sont donc corrects en conditions réelles — pastille, position, nom,
+      royaume — là où la recette précédente en donnait trois sur quatre. ⚠️ **Ce vert ne change RIEN
+      au statut du critère** : il reste **hors de portée d'une garde automatisée**, et le rester est
+      la conclusion, pas une dette. Une observation réussie n'est pas une garantie ; c'est une
+      **orientation qui a été suivie ce jour-là, sur ce modèle-là**.
       **S-1 / S-2 du gate, non bloquants, non traités** : l'extraction de la table par expression
       régulière suppose des clés purement alphabétiques (vrai pour les 10 actuelles, à surveiller si
       la table s'étend) ; un contrefactuel de `frameIdentity` est **déclaratif** plutôt qu'exécuté,
