@@ -1355,8 +1355,39 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       l'en-tête dit le vrai. Sonde StrictMode réelle du gate : **un seul** `configSet`.
       **Chaîne qualité re-mesurée par le gate** : 930 front / 93 fichiers · **346 Rust** (0 ignored) ·
       `bash scripts/quality.sh` **exit 0** · grep D7 **vide**.
-      **NON MESURÉ, déclaré tel — CA-11** : la recette terrain (poser 3 projets, quitter, relancer
-      l'app **installée**) appartient au décideur ; aucun agent ne peut relancer l'app packagée.
+      **➜ LA RECETTE A EU LIEU LE MÊME JOUR, ET ELLE A FAIT ÉCHOUER CA-6** *(2026-09-04, décideur,
+      `npm run tauri dev` — lot correctif `fix/L37-CA6-course-boot`, gate 🏹 Legolas PASS, fusionné
+      `e28a1dc`)*. **Ce qui a marché** : les 3 projets sont revenus sur la Table, teams conservées —
+      la persistance, le cœur du lot, est **mesurée en réel**. **Ce qui a échoué** : l'app s'est
+      ouverte **sur Travail**, pas sur Portefeuille.
+      **Cause — une COURSE ENTRE DEUX SOURCES ASYNCHRONES, dont la décision n'en regardait qu'une.**
+      `useWorkset.loaded` (lecture d'une clé SQLite) répond **avant** `usePortfolio` (scan disque) ;
+      `worksetProjects` étant l'**intersection** des deux, le passage de restauration se consommait
+      **à vide** (`reconcileEagerOpen.ts`, qui consomme « que ce passage ait ouvert des projets ou
+      non »), et l'ouverture **réelle** survenait au passage suivant avec `focus = true`.
+      **Corrigé** : `usePortfolio` expose un signal `loaded` posé dans le `finally` de son
+      rafraîchissement (**succès ET erreur** confondus — un scan en échec termine le boot), et
+      `App.tsx` compose `bootReady = workset.loaded && portfolio.loaded`. La fonction pure est
+      **inchangée à l'octet** hormis sa documentation : elle reste agnostique de la provenance du
+      booléen, c'est l'appelant qui compose.
+      ⚠️ **CE QUE CE DÉFAUT ENSEIGNE — H-1, une fois de plus, et c'est le point du lot.** Ni la
+      fonction pure ni ses tests n'étaient faux : ils étaient **corrects et verts**. Le défaut vivait
+      à la **JONCTION**, dans `App.tsx`, là où les deux sources se rencontrent — et cette jonction
+      n'était exercée par **aucun test**, l'en-tête du module déclarant que l'App entière « n'est pas
+      montable ». Elle l'était : le précédent existait depuis L34 (jonction C4,
+      `src/__tests__/updateJunction.test.tsx`). La garde neuve
+      (`src/__tests__/eagerOpenBootJunction.test.tsx`) **monte l'App réelle** avec un backend de
+      substitution où la config répond **avant** le scan ; **elle rougit sur le code de `main`** —
+      prouvé **par le gate lui-même**, fichiers de production restaurés à `main`, rouge nommé
+      (`expected 'page' not to be 'page'`), restauration au `sha256`. Ce n'est pas un témoin vide au
+      sens de F-1/L42.
+      **S-1 du gate, NON BLOQUANT, non traité** : le cas d'**erreur** de `usePortfolio.loaded` est
+      correct en code mais **gardé par aucun test** — mutation B du gate : déplacer `setLoaded` du
+      `finally` vers le `try` laisse **932/932 verts**. La propriété tient par lecture, pas par
+      preuve. À fermer dans un successeur.
+      **NON MESURÉ, déclaré tel — CA-11 sur l'app INSTALLÉE** : la recette ci-dessus a eu lieu en
+      `tauri dev`. Le rejeu **après** le correctif, sur un lancement propre, appartient au décideur ;
+      aucun agent ne peut relancer l'app packagée.
       *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
       chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
       **Ce n'est pas une régression** : `src/hooks/useWorkset.ts` est un état **front pur** (un `Set`
