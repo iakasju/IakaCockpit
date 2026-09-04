@@ -1417,6 +1417,60 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       (poser N projets au démarrage = spawner N runners — cf. le différé « garde perf N runners »
       déjà tracé en L24) et avec le **seed démo** L7/L9 qui ajoute `iaka-demo` au set. Front +
       1 clé de config ; aucune commande Rust nouvelle.*
+- [x] **L46** — **Identité du runner : le Cockpit dit enfin au runner QUI il est**
+      → `specs/instructions/identite-du-runner-badge-et-team.md`
+      *(**LIVRÉ, gate 🏹 Legolas — UN FAIL puis PASS** (2026-09-04), fusionné dans `main`
+      (`f227002`), branche `feat/identite-runner-badge-team`. Cadré par 🔵 Gandalf sur un constat de
+      **recette réelle** du décideur, **8 arbitrages TRANCHÉS** (« reco ») : AR-1 = **(b)** injection
+      d'identité **avec** le volet d'honnêteté de (a) · AR-2 = (a) · AR-3 = **(a) PAS de roster
+      injecté** · AR-4 = (a) · AR-5 = **(a) PAS d'`iakastart`** · AR-6 = **(a)** royaume = id projet
+      en MAJUSCULES · AR-7 = (a) · AR-8 = **(b)** attendre `teams.loaded`.)*
+      **Le constat, verbatim** : « une equipe est affectée à robotimmo mais le badge dis "claude". et
+      aucune trace de work de aragorn ou de delegztion. »
+      ⚠️ **LA LIGNE FAUTIVE N'ÉTAIT PAS DANS LE DÉPÔT — et c'est tout le lot.** Balayage complet de
+      `src/` : aucun des sept points de rendu du nom d'agent ne peut produire « claude ». Le badge
+      est écrit **PAR LE RUNNER**, et le Cockpit le reproduit **verbatim** (contrat
+      `src/hooks/runnerView.ts`). Gandalf est allé lire le transcript de `robotimmo` : le **Stop hook**
+      `~/.claude/identity-guard.mjs` a **exigé** un badge, le runner n'avait **aucun moyen de savoir
+      qui il était**, il en a **fabriqué un** — nom **et** royaume faux (`[PROJET][Claude]`). Le tuyau
+      `--append-system-prompt` existait depuis **L22-P3** ; il ne portait qu'une **FONCTION**
+      (`COORDINATOR_OBLIGATION`), **jamais une IDENTITÉ**. Défaut d'**omission**, coût de plomberie
+      **nul**.
+      **UN défaut, UNE conséquence, UN comportement CORRECT** — le cadrage a refusé d'en faire trois
+      lots : (1) le défaut de fond, ci-dessus ; (2) « aucune délégation » est **CORRECT et mesuré** —
+      `subagent_type` = **0 occurrence** dans le transcript, rien ne s'est passé, rien ne s'affiche,
+      et sa cause **est** le défaut (un chef nu ne délègue à personne) ; (3) « aucune trace de work »
+      était un vrai petit défaut d'attribution — **3 `tool_use`** dans la session, le travail a eu
+      lieu, l'app ne l'attribuait à personne.
+      ⚠️ **UNE CROYANCE DU PROJET CORRIGÉE** : `--allowedTools` **ne restreint pas, il pré-approuve**
+      (vérifié en source externe). L'allowlist sans `Agent` **n'explique donc PAS** l'absence de
+      délégation — l'explication est plus rude, et elle est le sujet du lot.
+      **LE GATE A RENDU FAIL, ET SUR EXACTEMENT LE RISQUE QUE L'INSTRUCTION DÉSIGNAIT COMME LE PIRE.**
+      L'attribution ignorait `conv.source` : une conversation **`attached`** (L25 — une session
+      externe que le Cockpit **n'a jamais informée de rien**) sur un projet lié voyait ses gestes
+      attribués au coordinateur de la team. **Une attribution mensongère est pire que l'absence
+      d'attribution** que ce lot venait corriger. Trouvé par une **sonde du gate**, pas par la
+      campagne de l'exécution. Corrigé, **plus un jumeau** (le bandeau des délégations affichait le
+      coordinateur comme racine en mode `attached`). Le re-gate a **rejoué sa propre sonde**
+      indépendante (team et coordinateur distincts de la fixture) et **vérifié les trois jumeaux
+      écartés** au lieu de les croire.
+      **Gardes** : la garde neuve est une garde de **JONCTION** conservée dans le dépôt
+      (`src/__tests__/identityAttachedJunction.test.tsx`), **rouge prouvé avant correctif par le gate
+      lui-même** sur ses deux cas. Mesures re-faites : **961 front / 97 fichiers** · **346 Rust**
+      (0 ignored, **Rust non touché**, diff vide) · `quality.sh` **exit 0** · grep D7 vide · parité
+      i18n fr/en.
+      **S-1, NON BLOQUANT, PRÉEXISTANT — et mesuré tel** : le **statut vivant du roster** (L31-P2)
+      fabrique la **même** attribution sur un **autre canal** — un geste d'une session `attached`
+      fait passer le coordinateur de la team liée à « travaille ». Le gate l'a **reproduit à
+      l'identique sur `main`** (worktree jeté après usage) : **ni introduit ni aggravé** par ce lot.
+      À traiter dans un lot séparé.
+      **HORS COUVERTURE, déclaré dans le code** : `codex` ne peut recevoir aucune identité (ses
+      arguments n'exposent pas de system-prompt) ; une conversation `attached` non plus, par nature.
+      **NON MESURÉ — CA-10** : la recette réelle (poser une question sur un projet lié, relire le
+      transcript sur disque et y constater `[<PROJET>][<Persona>]`) appartient au décideur.
+      **Successeur NOMMÉ, non traité** : le schéma des sous-agents a changé en claude 2.1.260 (ils
+      vivent sous `<session>/subagents/`), ce qui concerne Analytics ; `name:"Agent"`,
+      `subagent_type` et `outputFile` restent valides, L10 et L30 ne sont pas cassés.
 - [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
       → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
       `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
