@@ -7,7 +7,10 @@
  *     jamais un échec, CA-8/CA-9) ;
  *   - la restauration FUSIONNE avec l'état courant (union, jamais un remplacement,
  *     AR-3/CA-3) — un geste utilisateur ou le seed démo (asynchrone) survenu avant la
- *     fin de la lecture ne doit pas être perdu ;
+ *     fin de la lecture ne doit pas être perdu, NI EN MÉMOIRE NI SUR DISQUE : si la
+ *     fusion diffère de la valeur lue, l'effet de restauration écrit lui-même le
+ *     résultat fusionné (S-1) — sans quoi l'ajout ne survivrait qu'en mémoire jusqu'au
+ *     prochain `toggle`/`add` explicite, et serait perdu si l'app se ferme avant ;
  *   - écriture DANS LES MUTATEURS (`toggle`, `add`), JAMAIS dans un effet sur `ids` :
  *     un tel effet écrirait le set vide initial avant la fin de la lecture asynchrone
  *     et EFFACERAIT la valeur persistée (R-1/CA-4 — c'est le défaut central du lot) ;
@@ -75,12 +78,27 @@ export function useWorkset(api: Backend = backend): UseWorkset {
       }
       if (cancelled) return;
       const persisted = parsePersistedIds(raw);
+      const persistedSet = new Set(persisted);
       const merged = new Set(idsRef.current);
       for (const id of persisted) merged.add(id);
       idsRef.current = merged;
       setIds(merged);
       loadedRef.current = true;
       setLoaded(true);
+      // Un id ajouté EN MÉMOIRE pendant la fenêtre de lecture (course avec un geste,
+      // ex. le seed démo asynchrone) n'était pas dans la valeur lue : sans cette
+      // écriture, il ne survivrait qu'en mémoire jusqu'au prochain toggle/add
+      // explicite — et serait perdu si l'app se ferme avant (S-1). N'écrit QUE si la
+      // fusion diffère réellement de la valeur persistée (merged ⊇ persistedSet par
+      // construction, donc « diffère » ⇔ tailles différentes) — jamais d'écriture du
+      // set initial quand rien n'a été ajouté (CA-4/CA-5 restent verts).
+      if (merged.size !== persistedSet.size) {
+        void api
+          .configSet(WORKSET_KEY, JSON.stringify(Array.from(merged)))
+          .catch(() => {
+            /* backend indisponible / hors Tauri : erreur avalée, jamais un crash */
+          });
+      }
     })();
     return () => {
       cancelled = true;

@@ -111,6 +111,35 @@ describe("useWorkset — persistance (L37)", () => {
     expect(result.current.has("alpha")).toBe(true);
   });
 
+  it("S-1 — un ajout en course avec la restauration est persisté (pas seulement en mémoire)", async () => {
+    let resolveGet: (v: string | null) => void = () => {};
+    const pending = new Promise<string | null>((resolve) => {
+      resolveGet = resolve;
+    });
+    const api = mockApi({ configGet: vi.fn().mockReturnValue(pending) });
+    const { result } = renderHook(() => useWorkset(api));
+
+    // Geste (ex. seed démo) survenu AVANT la résolution de configGet.
+    act(() => result.current.add("seed"));
+    expect(api.configSet).not.toHaveBeenCalled(); // pas avant la fin de la restauration (CA-4)
+
+    await act(async () => {
+      resolveGet(JSON.stringify(["alpha"]));
+      await pending;
+    });
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    // La fusion (alpha + seed) doit avoir été écrite EXACTEMENT UNE FOIS par l'effet
+    // de restauration lui-même — sinon "seed" ne survit qu'en mémoire (S-1).
+    expect(api.configSet).toHaveBeenCalledTimes(1);
+    const [key, value] = (api.configSet as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [string, string];
+    expect(key).toBe(WORKSET_KEY);
+    expect(new Set(JSON.parse(value) as string[])).toEqual(
+      new Set(["alpha", "seed"]),
+    );
+  });
+
   it("CA-4 — aucune écriture avant la fin de la restauration", async () => {
     let resolveGet: (v: string | null) => void = () => {};
     const pending = new Promise<string | null>((resolve) => {
