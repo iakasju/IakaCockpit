@@ -36,13 +36,21 @@ export function projectsToEagerOpen(p: EagerOpenParams): Project[] {
  * ultérieure (pose utilisateur sur la Table, après ce premier passage) le vole comme
  * avant (comportement L24 inchangé).
  *
- * Pure : reçoit l'état de restauration (le hook `useWorkset().loaded`) et un booléen
+ * L37-CA6 (correctif) : le boot dépend de DEUX sources asynchrones indépendantes —
+ * `useWorkset().loaded` (lecture `config_get`, rapide) ET `usePortfolio().loaded`
+ * (parcours disque, plus lent). Regarder la seule première laissait fermer la
+ * fenêtre de restauration alors que `worksetProjects` (l'intersection des deux)
+ * était encore vide, faute du portefeuille : le lot ouvert ensuite par le scan
+ * tardif volait le focus. `bootReady` est donc désormais le ET logique des deux
+ * signaux — cette fonction reste agnostique de leur provenance, l'appelant compose.
+ *
+ * Pure : reçoit `bootReady` (les DEUX restaurations ont abouti) et un booléen
  * mémorisé par l'appelant (ex. une réf) indiquant si le PREMIER passage qui suit la
- * fin de la restauration a déjà eu lieu. Renvoie la décision de focus ET le nouvel
- * état à mémoriser — aucune mutation ici, l'appelant applique les deux.
+ * fin du boot a déjà eu lieu. Renvoie la décision de focus ET le nouvel état à
+ * mémoriser — aucune mutation ici, l'appelant applique les deux.
  */
 export interface EagerFocusState {
-  /** Le passage de restauration (premier après `worksetLoaded`) a-t-il déjà eu lieu ? */
+  /** Le passage de restauration (premier après `bootReady`) a-t-il déjà eu lieu ? */
   restorationConsumed: boolean;
 }
 
@@ -54,15 +62,15 @@ export interface EagerFocusDecision {
 }
 
 export function decideEagerOpenFocus(
-  worksetLoaded: boolean,
+  bootReady: boolean,
   state: EagerFocusState,
 ): EagerFocusDecision {
-  const isRestorationPass = worksetLoaded && !state.restorationConsumed;
+  const isRestorationPass = bootReady && !state.restorationConsumed;
   return {
     focus: !isRestorationPass,
-    // Consommé dès que la restauration est terminée, que ce passage ait ouvert
-    // des projets ou non (une Table vide au boot ne doit pas rouvrir la fenêtre
-    // à un passage ultérieur qui n'a plus rien à voir avec le démarrage).
-    nextState: { restorationConsumed: state.restorationConsumed || worksetLoaded },
+    // Consommé dès que le boot est terminé, que ce passage ait ouvert des
+    // projets ou non (une Table vide au boot ne doit pas rouvrir la fenêtre à
+    // un passage ultérieur qui n'a plus rien à voir avec le démarrage).
+    nextState: { restorationConsumed: state.restorationConsumed || bootReady },
   };
 }
