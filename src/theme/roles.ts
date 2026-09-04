@@ -79,6 +79,60 @@ export function roleKeyFromReservoir(reservoirKey: string): string {
 /** Clés des rôles canoniques (ordre `roleIndex`). */
 export const AGENT_ROLE_KEYS: readonly string[] = AGENT_ROLES.map((r) => r.key);
 
+/**
+ * Pastille de PHASE par rôle canonique — lot « Pastille du badge du runner »
+ * (`specs/instructions/pastille-du-badge-runner.md`, AR-1 = (a)).
+ *
+ * Table EMBARQUÉE, recopiée VERBATIM du frontmatter `pastille:` des 10 personas
+ * iakaframe du réservoir (`~/work/iakaframe/library/personas/*.md`), indexée par leur
+ * `roleKey` (traduit ici en clé de rôle du Cockpit via `RESERVOIR_ROLE_ALIAS`). Une copie,
+ * donc gardée par PARITÉ (`scripts/test-reservoir-parity.mjs`, AR-6) plutôt que lue à
+ * l'exécution (§ 2.7 de l'instruction : une lecture async du réservoir dans le chemin du
+ * spawn ne rejouerait jamais — cf. `App.tsx` `resolveRunner`, CA-8).
+ *
+ * `surveillance` et `frame` n'ont AUCUNE vignette au casting iakagraph (8 emplacements,
+ * 0..7) mais ONT une pastille : les deux notions sont indépendantes (roles.ts:33-36).
+ *
+ * Un rôle ABSENT de cette table (royaume libre, rôle hors réservoir) rend `undefined` —
+ * ZÉRO fabrication (AR-3 repli (b), CA-5) : jamais de valeur de secours.
+ */
+export const PHASE_PASTILLE_BY_ROLE: Readonly<Record<string, string>> = {
+  portefeuille: "🟡",
+  coordination: "🟠",
+  architecture: "🔵",
+  fabrication: "🔴",
+  tests: "🔴",
+  graphisme: "🟠",
+  doc: "🟠",
+  deploiement: "🟣",
+  surveillance: "🟣",
+  frame: "🟠",
+};
+
+/**
+ * Résout la pastille de phase d'un agent, ZÉRO fabrication (CA-5).
+ *
+ * `royaume` d'abord : c'est la donnée PERSISTÉE dans `agent.royaume` — pour une team
+ * éditée dans `TeamsEditor`, c'est déjà une clé de rôle canonique (§ AR-1 de
+ * l'instruction). `roleIndex` en repli : c'est ce que portent les teams du CATALOGUE
+ * (`useTeams.ts:233`), dont `royaume` est un slug de PERSONNAGE en MAJUSCULES
+ * (« ARAGORN », « CAPTAIN AMERICA »…) et ne matche donc jamais une clé de rôle — mais
+ * `roleIndex` y porte le même sens que dans `AGENT_ROLES` (§ 2.6 de l'instruction).
+ *
+ * `roleIndex` hors table, ou aucune des deux entrées ne résolvant un rôle connu →
+ * `undefined`, jamais un symbole de remplissage.
+ */
+export function phasePastilleFor(
+  royaume: string | undefined | null,
+  roleIndex: number | undefined | null,
+): string | undefined {
+  const key = roleKeyFromReservoir((royaume ?? "").trim());
+  const direct = PHASE_PASTILLE_BY_ROLE[key];
+  if (direct) return direct;
+  const byIndex = AGENT_ROLES.find((r) => r.roleIndex === roleIndex);
+  return byIndex ? PHASE_PASTILLE_BY_ROLE[byIndex.key] : undefined;
+}
+
 /** Un royaume correspond-il à un rôle canonique ? (insensible à la casse). */
 export function isCanonicalRole(royaume: string): boolean {
   const k = royaume.toLowerCase();
