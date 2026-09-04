@@ -51,6 +51,15 @@ export interface UseRunnerViewsDeps {
    * besoin du `tool_use_id` (perdu dans `ChatTurn`). N'altère PAS le chat-vue. Optionnel.
    */
   onEvent?: (projectId: string, ev: RunnerEvent) => void;
+  /**
+   * F2 (lot identité du runner, 2026-09-04) : persona RÉELLEMENT injecté (F1) pour ce
+   * `projectId`, ou `undefined` si aucune identité n'a atteint le runner (pas de team
+   * liée, runner codex…). Sert à attribuer les tours `geste`/`activite`/`pensee` du fil
+   * top-level (§ CA-8, second contrefactuel : sans identité injectée, aucune attribution
+   * — jamais un nom que le runner ne porte pas). Optionnel : absent → comportement
+   * historique (aucune attribution, rétro-compat).
+   */
+  identityFor?: (projectId: string) => string | undefined;
 }
 
 export function useRunnerViews({
@@ -59,6 +68,7 @@ export function useRunnerViews({
   ptySessions,
   appendTurn,
   onEvent,
+  identityFor,
 }: UseRunnerViewsDeps): void {
   // Réfs miroir : lire les valeurs courantes sans réabonner (callbacks stables).
   const convRef = useRef(conversations);
@@ -67,6 +77,8 @@ export function useRunnerViews({
   appendRef.current = appendTurn;
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
+  const identityForRef = useRef(identityFor);
+  identityForRef.current = identityFor;
 
   // Tailers démarrés (par runnerSessionId) + leurs désabonnements (anti-doublon/fuite).
   const startedRef = useRef<Set<string>>(new Set());
@@ -125,7 +137,9 @@ export function useRunnerViews({
         .onRunnerEvent(sid, (ev) => {
           // Observateur additif (tâches) AVANT projection chat — garde le tool_use_id.
           onEventRef.current?.(projectId, ev);
-          const turn = runnerEventToTurn(ev);
+          // F2 : persona RÉELLEMENT injecté pour CE projet — undefined = repli historique
+          // (aucune attribution), jamais une invention (CA-8, second contrefactuel).
+          const turn = runnerEventToTurn(ev, identityForRef.current?.(projectId));
           if (turn) appendRef.current(projectId, turn);
         })
         .then((unlisten) => {
