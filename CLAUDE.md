@@ -1532,6 +1532,68 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       régulière suppose des clés purement alphabétiques (vrai pour les 10 actuelles, à surveiller si
       la table s'étend) ; un contrefactuel de `frameIdentity` est **déclaratif** plutôt qu'exécuté,
       idiome préexistant, couvert par ailleurs.
+- [x] **L48** — **Statut vivant et session attachée : une activité réelle ne devient pas le travail
+      d'un persona**
+      → `specs/instructions/statut-vivant-et-session-attachee.md`
+      *(**LIVRÉ, gate 🏹 Legolas PASS** (2026-09-05), fusionné dans `main` (`5b665f0`), branche
+      `fix/statut-vivant-session-attachee`. Ouvert sur le **S-1 du gate de L46**, mesuré par le gate
+      **et reproduit par lui sur `main`** — préexistant, ni introduit ni aggravé par L46. Cadré par
+      🔵 Gandalf, **6 arbitrages TRANCHÉS** (« reco ») : AR-1 = **(a)** « non lancé » · AR-2 = **(a)**
+      correction **au point d'appel** · AR-3 = **(a)** aucun nom sur la parole attachée, prop
+      `identityKnown` · AR-4 = **(a)** purger le résidu à la bascule · AR-5 = **(a)** ajouter une
+      **SECONDE** limite · AR-6 = **(c)** témoin positif conservé **et** contrefactuel.)*
+      **Le défaut** : une session **externe** que le Cockpit n'a jamais lancée ni informée faisait
+      passer un persona de la team liée à « travaille » dans le roster. **L'activité est RÉELLE** —
+      ce qui était faux, c'est de **l'ATTRIBUER**. Même fabrication que le défaut bloquant de L46,
+      sur un **canal différent** (le statut d'activité L31-P2 au lieu de l'attribution de geste).
+      ⚠️ **UN SECOND CANAL QUE PERSONNE N'AVAIT VU** — ni le gate qui a signalé le premier, ni L46,
+      ni L47 : `src/components/Chat.tsx` faisait retomber le **nom en tête des bulles** sur le
+      coordinateur de la team liée, **avec sa vignette**, pour une parole issue d'un transcript
+      externe. **Plus visible** que le canal signalé. Le retirer ne fait perdre **aucune donnée
+      vraie** : le badge que le runner s'est donné reste verbatim dans le texte. Les **deux** sont
+      fermés ; le gate a re-vérifié les **sept** autres points de rendu déclarés honnêtes.
+      ⚠️ **LE POINT DE MÉTHODE — pourquoi on n'a PAS étendu la limite existante.** Le hook de statut
+      portait déjà, depuis L31-P2, une limite déclarée ; elle parle de **« est-ce que ça tourne »**,
+      ce lot parle de **« à qui l'imputer »**. Sur une session attachée, la première est
+      **satisfaite** (quelque chose tourne bel et bien) pendant que la seconde est **violée** :
+      l'étendre aurait été **écrire une chose fausse**. Une **seconde** limite est ajoutée, distincte,
+      au point de décision ; l'existante est **intacte À L'OCTET** (vérifié par le gate au `diff`).
+      Corollaire : le hook n'était pas fautif, il faisait ce qu'il annonçait — le défaut vivait à la
+      **jonction**.
+      ⚠️ **LE TEMPS ENTRAIT DANS LA GARDE — seul lot de la série dans ce cas, et le piège est
+      double.** Une attente réelle rend la garde **flaky** (leçon L33). Et la parade réflexe **PEND
+      dans ce dépôt** : le cadrage l'a **lu sur le disque**, la détection de `@testing-library/dom`
+      cherche l'ancien outil de test, donc l'attente continue de scruter un temps falsifié. Troisième
+      voie retenue, **déterministe** et déjà employée ici : forcer le tick par le retour de
+      visibilité. **Zéro attente réelle, zéro temps falsifié.** Le gate a compté **5 exécutions sur 5
+      vertes**.
+      **Deux gardes d'ampleur, toutes deux prouvées mordantes PAR LE GATE** : le **verrou** CA-3 (un
+      témoin positif conservé dans le dépôt qui doit, lui, afficher « travaille » avec le même tick —
+      sans lui le test serait vert **parce que le tick n'a jamais eu lieu**, le témoin vide transposé
+      au temps, défaut payé **quatre fois** par ce dépôt) ; et **CA-4**, qui attrape la
+      **sur-correction** écartée par AR-2 — ne plus marquer les sessions attachées aurait réparé une
+      attribution fausse **en supprimant une information vraie**, et serait passé avec le critère
+      principal vert.
+      **Mesures re-faites par le gate** : **986 front / 98 fichiers** · **346 Rust** (Rust **non
+      touché**, diff vide) · `quality.sh` **exit 0** · **6 contrefactuels rejoués** par le gate
+      lui-même, dont la non-régression **croisée** de L46 (casser un canal ne fait rougir que lui —
+      les deux sont **structurellement indépendants**).
+      **Écart CA-7, DÉCLARÉ par l'exécution et TRANCHÉ acceptable par le gate après re-mesure** :
+      l'assertion prévue au niveau de l'écran ne discrimine pas, un garde-fou indépendant absorbant
+      l'effet avant elle. Une garde de substitution **à la frontière exacte** couvre le même
+      mécanisme, et l'instruction anticipait ce repli.
+      **S-n du gate, non bloquants, NON traités** : **S-1** deux bornes hors-couverture sur quatre
+      ne sont pas écrites dans le code (traçabilité, aucun risque fonctionnel) ; **S-3** le résidu de
+      l'écart CA-7 n'est couvert par aucun test (invisible en harnais mono-projet, à reprendre si le
+      sujet revient).
+      **Successeur NOMMÉ, hors d'atteinte structurellement** : Analytics impute le coût d'un projet
+      au coordinateur de sa team liée, sur des transcripts **scannés sur disque** où la distinction
+      possédé/attaché **n'existe pas et n'existera jamais rétroactivement**. Même famille, arbitrage
+      produit distinct. **Ne pas fondre ce lot-ci dans un lot Analytics.**
+      **NON MESURÉ — recette réelle** : constater en `tauri dev`, avec une session externe vivante,
+      que le roster dit « non lancé » et que les bulles ne portent aucun nom. Appartient au décideur.
+      **➜ Clôture datée du S-1 de L46** : le signalement ouvert au gate du 2026-09-04 est **FERMÉ**
+      par ce lot, sur les deux canaux.
 - [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
       → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
       `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
