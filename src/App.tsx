@@ -57,6 +57,7 @@ import { CadreView } from "./views/CadreView";
 import { SettingsView } from "./views/SettingsView";
 import { useFrame } from "./hooks/useFrame";
 import { deriveEnforcement } from "./frame/enforcement";
+import { phasePastilleFor } from "./theme/roles";
 import {
   composeSystemPromptExtra,
   resolveRunnerIdentity,
@@ -466,12 +467,17 @@ export default function App(): JSX.Element {
           allowedTools = enf.allowedTools ?? undefined;
           cadreExtra = enf.systemPromptExtra || undefined;
         }
-        // F1 — identité DE L'AGENT du slot (pas du coordinateur, CA-4).
+        // F1 — identité DE L'AGENT du slot (pas du coordinateur, CA-4). Pastille (lot
+        // « Pastille du badge du runner », F3) : dérivée du rôle de CET agent, retrouvé
+        // dans la team par son nom — CA-5, agent introuvable ⇒ `undefined`, jamais celle
+        // du coordinateur.
+        const slotAgent = team ? teams.agentInTeam(team, slot.agent) : null;
         const { identity, identityInjected } = resolveRunnerIdentity({
           hasBinding: teams.hasBinding(slot.realProjectId),
           persona: slot.agent,
           projectId: slot.realProjectId,
           runnerKind: slot.runner,
+          pastille: phasePastilleFor(slotAgent?.royaume, slotAgent?.roleIndex),
         });
         const systemPromptExtra =
           composeSystemPromptExtra(identity, cadreExtra) || undefined;
@@ -503,11 +509,13 @@ export default function App(): JSX.Element {
       const runnerKind = coord?.runner ?? "claude-code";
       // F1/AR-4 — pas de liaison EXPLICITE → aucune identité (zéro fabrication), même si
       // `teamForProject`/`coordinatorOf` retombent silencieusement sur la team par défaut.
+      // Pastille (F3) : `coord` porte déjà `royaume`/`roleIndex`, aucun `agentInTeam` requis.
       const { identity, identityInjected } = resolveRunnerIdentity({
         hasBinding: teams.hasBinding(projectId),
         persona: coord?.name,
         projectId,
         runnerKind,
+        pastille: phasePastilleFor(coord?.royaume, coord?.roleIndex),
       });
       const systemPromptExtra =
         composeSystemPromptExtra(identity, cadreExtra) || undefined;

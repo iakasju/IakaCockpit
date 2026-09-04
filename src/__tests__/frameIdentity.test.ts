@@ -1,17 +1,64 @@
 /**
  * frame/identity.ts — carte d'identité du runner (F1, CA-1/CA-5/CA-6/CA-7).
  *
- * CA-2 (la JONCTION, le critère qui compte) vit dans `identityJunction.test.tsx` : ce
+ * CA-3 (la JONCTION, le critère qui compte) vit dans `identityJunction.test.tsx` : ce
  * fichier ne teste QUE la fonction pure, un témoin insuffisant à lui seul (§ 6 F4 de
  * l'instruction — leçon L42-F1).
+ *
+ * Lot « Pastille du badge du runner » (2026-09-04) : CA-1 (résolution de pastille pure)
+ * et CA-2 (badge ASSEMBLÉ) ci-dessous. Le second contrefactuel de CA-5 (aucune occurrence
+ * de l'ancienne constante de secours dans `src/`) exige `fs`/`child_process`, indisponibles
+ * sous le `tsconfig` strict de ce dépôt (pas d'`@types/node`) : il vit donc à part, en
+ * `.mjs` non typechecké, calque des autres gardes transverses — voir
+ * `scripts/__tests__/pastille-badge-runner.test.mjs`.
  */
 import { describe, it, expect } from "vitest";
 import {
   identityPreamble,
   composeSystemPromptExtra,
   resolveRunnerIdentity,
-  DEFAULT_IDENTITY_PASTILLE,
 } from "../frame/identity";
+import { phasePastilleFor } from "../theme/roles";
+
+describe("phasePastilleFor — CA-1 (résolution pure et déterministe, table par rôle)", () => {
+  it("mêmes entrées → même valeur, à chaque appel", () => {
+    expect(phasePastilleFor("coordination", 1)).toBe(phasePastilleFor("coordination", 1));
+  });
+
+  it.each([
+    ["coordination", 1, "🟠"],
+    ["cadrage", 2, "🔵"], // vocabulaire réservoir : traduit via RESERVOIR_ROLE_ALIAS
+    ["architecture", 2, "🔵"], // vocabulaire Cockpit déjà canonique
+    ["dev", 3, "🔴"],
+    ["fabrication", 3, "🔴"],
+    ["deploiement", 7, "🟣"],
+    ["surveillance", 8, "🟣"],
+    ["frame", 9, "🟠"],
+  ] as const)("rôle « %s » → pastille « %s »", (royaume, roleIndex, attendu) => {
+    expect(phasePastilleFor(royaume, roleIndex)).toBe(attendu);
+  });
+
+  it(
+    "CONTREFACTUEL — muter une valeur de la table (`coordination` 🟠 → 🟢) fait rougir " +
+      "CE test, EN NOMMANT le rôle (joué manuellement sur src/theme/roles.ts, révoqué au " +
+      "sha256 — cf. rapport de livraison ; ce test-ci fige l'assertion qui a mordu)",
+    () => {
+      expect(phasePastilleFor("coordination", 1)).toBe("🟠");
+    },
+  );
+
+  it("CA-4 — team du CATALOGUE (royaume = slug de personnage) : la pastille vient du RÔLE, via roleIndex", () => {
+    // `royaume` = "ARAGORN" (nom de personnage lotr), PAS une clé de rôle : le lookup
+    // direct échoue, et c'est le repli sur `roleIndex` qui doit porter le résultat.
+    expect(phasePastilleFor("ARAGORN", 1)).toBe("🟠");
+  });
+
+  it("CA-5 — rôle inconnu (royaume libre, roleIndex hors table) → `undefined`, jamais de secours", () => {
+    expect(phasePastilleFor("un-royaume-invente", 42)).toBeUndefined();
+    expect(phasePastilleFor(undefined, undefined)).toBeUndefined();
+    expect(phasePastilleFor("", -1)).toBeUndefined();
+  });
+});
 
 describe("identityPreamble — CA-1 pure et déterministe", () => {
   it("mêmes entrées → même chaîne, à l'octet", () => {
@@ -64,16 +111,44 @@ describe("identityPreamble — CA-1 pure et déterministe", () => {
     expect(identityPreamble({ persona: "Aragorn", royaume: "" })).toBe("");
   });
 
-  it("pastille par défaut, et personnalisable (position AVANT/APRÈS toujours décrite)", () => {
-    const def = identityPreamble({ persona: "Aragorn", royaume: "X" });
-    expect(def).toContain(DEFAULT_IDENTITY_PASTILLE);
-    const custom = identityPreamble({
+  it("CA-2 — pastille DÉFINIE → le préambule montre le badge ASSEMBLÉ, à l'octet", () => {
+    const text = identityPreamble({
       persona: "Aragorn",
-      royaume: "X",
-      pastille: "🟢",
+      royaume: "ROBOTIMMO",
+      pastille: "🟠",
     });
-    expect(custom).toContain("🟢");
-    expect(custom).not.toContain(DEFAULT_IDENTITY_PASTILLE);
+    // Chaîne EXACTE, ouverture ET clôture — c'est le critère d'acceptation CA-2 verbatim.
+    expect(text).toContain("🟠 [ROBOTIMMO][Aragorn]");
+    expect(text).toContain("[ROBOTIMMO][Aragorn] 🟠");
+    // AR-2 : présentée comme un DÉFAUT, jamais comme une valeur fixe.
+    expect(text).toMatch(/défaut/i);
+  });
+
+  it(
+    "CONTREFACTUEL CA-2 — revenir à la formulation « la pastille X porte le sens par sa " +
+      "position » (badge et pastille DISJOINTS, comme avant ce lot) fait disparaître la " +
+      "chaîne assemblée",
+    () => {
+      const disjoint = (pastille: string, r: string, p: string) =>
+        `La pastille ${pastille} porte le sens par sa POSITION, jamais par un mot : ` +
+        `${pastille} AVANT le bloc à l'OUVERTURE. Le badge attendu est [${r}][${p}].`;
+      const text = disjoint("🟠", "ROBOTIMMO", "Aragorn");
+      // La forme ASSEMBLÉE `🟠 [ROBOTIMMO][Aragorn]` n'existe PAS dans ce texte disjoint —
+      // exactement ce que CA-2 exige de la vraie sortie et que l'ancienne formulation
+      // ne produisait pas.
+      expect(text).not.toContain("🟠 [ROBOTIMMO][Aragorn]");
+    },
+  );
+
+  it("CA-5 — pastille ABSENTE (rôle inconnu) → la phrase est omise, AUCUN symbole n'apparaît", () => {
+    const text = identityPreamble({ persona: "Aragorn", royaume: "ROBOTIMMO" });
+    // Ni le point médian historique, ni aucune des pastilles de la palette réelle.
+    for (const symbole of ["•", "🟡", "🟠", "🔵", "🔴", "🟣", "🟢", "⚫", "🟤"]) {
+      expect(text).not.toContain(symbole);
+    }
+    // Nom, royaume et RÈGLE DE POSITION restent énoncés (§ 2.1 : le seul élément mesuré
+    // comme suivi par le runner) — on ne retire pas ce qui marche (AR-5).
+    expect(text).toContain("[ROBOTIMMO][Aragorn]");
   });
 
   it("CONTREFACTUEL (déclaratif) — une horloge dans le texte romprait le déterminisme", () => {
