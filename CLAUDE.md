@@ -1385,9 +1385,21 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       correct en code mais **gardé par aucun test** — mutation B du gate : déplacer `setLoaded` du
       `finally` vers le `try` laisse **932/932 verts**. La propriété tient par lecture, pas par
       preuve. À fermer dans un successeur.
-      **NON MESURÉ, déclaré tel — CA-11 sur l'app INSTALLÉE** : la recette ci-dessus a eu lieu en
-      `tauri dev`. Le rejeu **après** le correctif, sur un lancement propre, appartient au décideur ;
-      aucun agent ne peut relancer l'app packagée.
+      **➜ CA-11 REJOUÉ APRÈS LE CORRECTIF, ET VERT** *(2026-09-04, décideur, `npm run tauri dev`,
+      démarrage **propre** sur `main` fusionné)* : ouverture sur **Portefeuille**, **4 projets** sur
+      la Table — les 3 du décideur **plus `iaka-demo`**, ce qui est exactement le comportement voulu
+      par AR-3 (le seed dev entre dans le set persisté sans exception, et la restauration
+      **fusionne**). **CA-6 et CA-11 sont donc mesurés verts en conditions réelles.**
+      ⚠️ **UNE MESURE A ÉTÉ ÉCARTÉE, ET IL FAUT DIRE POURQUOI.** Un premier « ça ouvre bien sur
+      Portefeuille » avait été observé **pendant** que la branche corrective était montée puis
+      démontée sous un serveur de développement à rechargement à chaud : **on ne savait pas quel code
+      tournait**, donc l'observation n'a **pas** été comptée. Une seconde relance a de plus échoué en
+      silence (port du serveur encore tenu par l'instance précédente) — la fenêtre visible n'était
+      alors pas celle qu'on croyait avoir lancée. **Une recette ne vaut que si l'on sait ce qui
+      s'exécute** : les deux observations douteuses ont été jetées et la mesure refaite depuis un
+      démarrage propre.
+      **RESTE NON MESURÉ, déclaré tel** : la même recette sur l'app **packagée** (`tauri build`), qui
+      demande les variables de signature. Tout ce qui précède est mesuré en `tauri dev`.
       *(constaté au terrain le 2026-08-23, pendant la recette du réglage de taille du terminal : après
       chaque relance de l'app, la Table revient **vide** et il faut re-poser ses projets à la main.)*
       **Ce n'est pas une régression** : `src/hooks/useWorkset.ts` est un état **front pur** (un `Set`
