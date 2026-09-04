@@ -30,8 +30,21 @@ function gesteLabel(ev: RunnerEvent): string {
  * Traduit un `RunnerEvent` en `ChatTurn`, ou `null` si l'event ne doit PAS apparaître
  * dans le chat (parole utilisateur déjà échoée / fil interne). Aucune reformulation :
  * le texte est repris VERBATIM.
+ *
+ * `attributedAgent` (F2, lot identité du runner 2026-09-04) : attribue les tours
+ * `geste`/`activite`/`pensee` du fil TOP-LEVEL (le fil propre du coordinateur — jamais
+ * un sous-agent, qui vit dans un fichier séparé depuis claude 2.1.260, § 2.8 de
+ * l'instruction) au PERSONA effectivement injecté par F1. **CONDITIONNÉ à F1** (CA-8,
+ * second contrefactuel) : absent/vide → ces tours restent NON attribués, exactement le
+ * comportement historique — attribuer un nom que le runner ne porte PAS serait fabriquer
+ * une donnée. `delegation` porte déjà SON propre `agent` (le sous-agent visé) : jamais
+ * réécrit ici. `parole` retombe déjà sur la persona courante côté rendu (Chat.tsx) : pas
+ * besoin d'attribution ici non plus.
  */
-export function runnerEventToTurn(ev: RunnerEvent): ChatTurn | null {
+export function runnerEventToTurn(
+  ev: RunnerEvent,
+  attributedAgent?: string,
+): ChatTurn | null {
   switch (ev.kind) {
     case "parole": {
       // L'utilisateur est déjà échoé (entrée partagée) → on n'affiche que l'assistant.
@@ -56,6 +69,7 @@ export function runnerEventToTurn(ev: RunnerEvent): ChatTurn | null {
         role: "assistant",
         content: gesteLabel(ev),
         kind: "geste",
+        agent: attributedAgent,
       };
     case "activite": {
       const txt = (ev.text ?? "").trim();
@@ -63,12 +77,13 @@ export function runnerEventToTurn(ev: RunnerEvent): ChatTurn | null {
         role: "assistant",
         content: txt.length > 0 ? `Résultat : ${txt}` : "Résultat d'outil",
         kind: "activite",
+        agent: attributedAgent,
       };
     }
     case "pensee": {
       const content = (ev.text ?? "").trim();
       if (content.length === 0) return null;
-      return { role: "assistant", content, kind: "pensee" };
+      return { role: "assistant", content, kind: "pensee", agent: attributedAgent };
     }
     default:
       return null;

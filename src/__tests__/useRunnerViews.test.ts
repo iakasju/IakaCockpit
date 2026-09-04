@@ -322,3 +322,101 @@ describe("useRunnerViews — branchement tailer → conversation (L10b)", () => 
     });
   });
 });
+
+describe("useRunnerViews — F2 attribution (CA-8, lot identité du runner 2026-09-04)", () => {
+  it("`identityFor` fourni → un event `geste` du fil top-level porte le PERSONA", () => {
+    const holder: { emit: ((e: RunnerEvent) => void) | null } = { emit: null };
+    const api = makeApi((_sid, cb) => {
+      holder.emit = cb;
+    });
+    const appendTurn = vi.fn();
+    renderHook(() =>
+      useRunnerViews({
+        api,
+        conversations: [conv("p1", "pty-1")],
+        ptySessions: {
+          "pty-1": ptySession("pty-1", "sid-1", "/t/sid-1.jsonl"),
+        },
+        appendTurn,
+        identityFor: (projectId) => (projectId === "p1" ? "Aragorn" : undefined),
+      }),
+    );
+    holder.emit?.({
+      kind: "geste",
+      role: "assistant",
+      is_sidechain: false,
+      tool_name: "Bash",
+      tool_use_id: "t1",
+    });
+    expect(appendTurn).toHaveBeenCalledWith(
+      "p1",
+      expect.objectContaining({ kind: "geste", agent: "Aragorn" }),
+    );
+  });
+
+  it(
+    "CONTREFACTUEL (second, CA-8) — SANS `identityFor` (F1 n'a rien injecté), " +
+      "AUCUNE attribution : l'event reste sans `agent` (zéro fabrication)",
+    () => {
+      const holder: { emit: ((e: RunnerEvent) => void) | null } = { emit: null };
+      const api = makeApi((_sid, cb) => {
+        holder.emit = cb;
+      });
+      const appendTurn = vi.fn();
+      renderHook(() =>
+        useRunnerViews({
+          api,
+          conversations: [conv("p1", "pty-1")],
+          ptySessions: {
+            "pty-1": ptySession("pty-1", "sid-1", "/t/sid-1.jsonl"),
+          },
+          appendTurn,
+          // identityFor ABSENT — repli historique (comme si F1 n'avait rien injecté).
+        }),
+      );
+      holder.emit?.({
+        kind: "geste",
+        role: "assistant",
+        is_sidechain: false,
+        tool_name: "Bash",
+        tool_use_id: "t1",
+      });
+      expect(appendTurn).toHaveBeenCalledWith(
+        "p1",
+        expect.objectContaining({ kind: "geste" }),
+      );
+      const [, turn] = appendTurn.mock.calls[0] as [string, { agent?: string }];
+      expect(turn.agent).toBeUndefined();
+    },
+  );
+
+  it("une DÉLÉGATION garde SON propre agent (sous-agent), jamais réécrit par `identityFor`", () => {
+    const holder: { emit: ((e: RunnerEvent) => void) | null } = { emit: null };
+    const api = makeApi((_sid, cb) => {
+      holder.emit = cb;
+    });
+    const appendTurn = vi.fn();
+    renderHook(() =>
+      useRunnerViews({
+        api,
+        conversations: [conv("p1", "pty-1")],
+        ptySessions: {
+          "pty-1": ptySession("pty-1", "sid-1", "/t/sid-1.jsonl"),
+        },
+        appendTurn,
+        identityFor: () => "Aragorn",
+      }),
+    );
+    holder.emit?.({
+      kind: "delegation",
+      role: "assistant",
+      is_sidechain: false,
+      agent: "gandalf",
+      text: "cadrer",
+    });
+    expect(appendTurn).toHaveBeenCalledWith(
+      "p1",
+      expect.objectContaining({ kind: "delegation", agent: "gandalf" }),
+    );
+  });
+});

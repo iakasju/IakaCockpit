@@ -57,6 +57,10 @@ import { CadreView } from "./views/CadreView";
 import { SettingsView } from "./views/SettingsView";
 import { useFrame } from "./hooks/useFrame";
 import { deriveEnforcement } from "./frame/enforcement";
+import {
+  composeSystemPromptExtra,
+  resolveRunnerIdentity,
+} from "./frame/identity";
 import { TeamPicker } from "./components/TeamPicker";
 import { makeAvatarResolver } from "./theme/teamAvatar";
 import type { AvatarMember } from "./components/ProjectCard";
@@ -162,6 +166,38 @@ export default function App(): JSX.Element {
     [agentTasks, economy, effects, live],
   );
 
+  // Réf miroir des conversations (lue par `identityFor` ci-dessous ET par `resolveRunner`,
+  // défini plus bas) : lit le slot/la source courants sans mettre tout le tableau en
+  // dépendance (identité stable → pas de churn de rendu). Déclarée ICI (avant les deux
+  // usages) plutôt que dupliquée à chaque point d'appel.
+  const convListRef = useRef(conversations.conversations);
+  convListRef.current = conversations.conversations;
+
+  // F2 (lot identité du runner, 2026-09-04) — indirection PAR RÉF vers `resolveRunner`
+  // (défini plus bas, ligne ~4xx) : `identityFor` doit être une fonction STABLE passée à
+  // `useRunnerViews` ICI, avant que `resolveRunner` existe. `identityFor` renvoie le
+  // PERSONA réellement injecté (F1) pour ce projet, ou `undefined` si aucune identité n'a
+  // atteint le runner (CA-8 : jamais attribuer un nom que le runner ne porte pas).
+  //
+  // CORRECTIF DE FAIL (gate 🏹 Legolas, 2026-09-04) — `resolveRunner` ignore la SOURCE de
+  // la conversation : il répond « identité injectée » dès qu'une team est LIÉE au projet,
+  // qu'un runner ait ou non été spawné par ce Cockpit. Or une conversation `attached`
+  // (L25) tail un transcript EXTERNE que ce Cockpit n'a JAMAIS informé de rien — aucun
+  // `--append-system-prompt` n'a jamais atteint ce process, quelle que soit la liaison de
+  // team du projet. Sans ce garde-fou, les tours `geste`/`activite`/`pensee` de ce
+  // transcript externe étaient attribués au coordinateur de la team liée : violation de
+  // CA-6 et du repli § 6 F1 de l'instruction (« … ou `source:"attached"` → `""` »). On
+  // coupe donc AVANT toute consultation de `resolveRunner` : une conversation `attached`
+  // ne reçoit jamais d'attribution, point final — indépendamment de tout ce que
+  // `resolveRunner` calculerait par ailleurs.
+  const resolveRunnerRef = useRef<((projectId: string) => ResolvedRunner) | null>(null);
+  const identityFor = useCallback((projectId: string): string | undefined => {
+    const conv = convListRef.current.find((c) => c.projectId === projectId);
+    if (conv?.source === "attached") return undefined;
+    const r = resolveRunnerRef.current?.(projectId);
+    return r?.identityInjected ? r.coordinator : undefined;
+  }, []);
+
   // Vue filtrée L10b : le tailer du transcript du chef-runner alimente les
   // conversations (runner://event → ChatTurn). Démarré dès qu'un runnerSessionId
   // apparaît dans une session PTY. Le parse vit côté Rust (CSP) ; ici on ne route que
@@ -172,6 +208,7 @@ export default function App(): JSX.Element {
     ptySessions: pty.sessions,
     appendTurn: conversations.appendTurn,
     onEvent: ingestRunnerEvent,
+    identityFor,
   });
 
   // Bootstrap démo dev (L7, réconcilié L8/D7) : seede dossier+config côté Rust
@@ -398,16 +435,23 @@ export default function App(): JSX.Element {
     return out;
   }, [conversations.conversations, live.lastEventAt, now]);
 
-  // Réf miroir des conversations pour `resolveRunner` : lit le slot courant sans mettre
-  // tout le tableau en dépendance (identité stable → pas de churn de rendu). Le slot est
-  // figé à la création → aucune lecture périmée qui compte.
-  const convListRef = useRef(conversations.conversations);
-  convListRef.current = conversations.conversations;
-
   // Runner+modèle+coordinateur d'une conversation (L11/P3) : résolus depuis SA team.
   // C'est le COORDINATEUR qui porte le runner/modèle (plus de `claude-code` en dur).
   // L31-P1 — pour un SLOT D'AGENT (conversation avec `slot`), le runner/modèle = ceux de
   // l'agent lui-même, et l'enforcement du Cadre est dérivé pour CET agent (pas le coord).
+  //
+  // Identité du runner (lot 2026-09-04, `identite-du-runner-badge-et-team.md`) — AR-1=(b) :
+  // la team liée pilotait déjà TOUT ce que le Cockpit AFFICHE, mais ne disait RIEN au
+  // runner : `systemPromptExtra` ne portait que l'extra du Cadre (souvent vide). Le
+  // process `claude` sommé de produire un badge en inventait un (« claude »). On préfixe
+  // désormais un préambule d'identité PUR (`identityPreamble`) — persona = coordinateur
+  // (ou agent du slot), royaume = **id du projet en MAJUSCULES** (AR-6, jamais
+  // `agent.royaume`, qui porte la clé de RÔLE — cf. § AR-6 de l'instruction). AR-4 :
+  // **zéro injection sans liaison explicite** (`teams.hasBinding`) — un projet non lié
+  // retombe SILENCIEUSEMENT sur la team par défaut côté affichage (comportement L11
+  // inchangé), mais ne reçoit AUCUNE identité fabriquée. `identityInjected` (F3) reflète
+  // ce qui a RÉELLEMENT atteint `systemPromptExtra` — codex exclu structurellement
+  // (`codex_args` ne porte pas de system-prompt, cf. `frame/identity.ts` § hors couverture).
   const resolveRunner = useCallback(
     (slotId: string): ResolvedRunner => {
       const slot = convListRef.current.find(
@@ -416,18 +460,28 @@ export default function App(): JSX.Element {
       if (slot) {
         const team = teams.teamForProject(slot.realProjectId);
         let allowedTools: string | undefined;
-        let systemPromptExtra: string | undefined;
+        let cadreExtra: string | undefined;
         if (team && frame.frame.teamId === team.id) {
           const enf = deriveEnforcement(frame.frame, slot.agent);
           allowedTools = enf.allowedTools ?? undefined;
-          systemPromptExtra = enf.systemPromptExtra || undefined;
+          cadreExtra = enf.systemPromptExtra || undefined;
         }
+        // F1 — identité DE L'AGENT du slot (pas du coordinateur, CA-4).
+        const { identity, identityInjected } = resolveRunnerIdentity({
+          hasBinding: teams.hasBinding(slot.realProjectId),
+          persona: slot.agent,
+          projectId: slot.realProjectId,
+          runnerKind: slot.runner,
+        });
+        const systemPromptExtra =
+          composeSystemPromptExtra(identity, cadreExtra) || undefined;
         return {
           kind: slot.runner,
           model: slot.model,
           coordinator: slot.agent,
           allowedTools,
           systemPromptExtra,
+          identityInjected,
         };
       }
       const projectId = slotId;
@@ -440,22 +494,36 @@ export default function App(): JSX.Element {
       // Cadre se charge en asynchrone : si le runner a déjà spawné avant, le repli global
       // tient (spawn idempotent, cf. PtyTerminal) — limitation documentée (différé).
       let allowedTools: string | undefined;
-      let systemPromptExtra: string | undefined;
+      let cadreExtra: string | undefined;
       if (team && coord?.name && frame.frame.teamId === team.id) {
         const enf = deriveEnforcement(frame.frame, coord.name);
         allowedTools = enf.allowedTools ?? undefined;
-        systemPromptExtra = enf.systemPromptExtra || undefined;
+        cadreExtra = enf.systemPromptExtra || undefined;
       }
+      const runnerKind = coord?.runner ?? "claude-code";
+      // F1/AR-4 — pas de liaison EXPLICITE → aucune identité (zéro fabrication), même si
+      // `teamForProject`/`coordinatorOf` retombent silencieusement sur la team par défaut.
+      const { identity, identityInjected } = resolveRunnerIdentity({
+        hasBinding: teams.hasBinding(projectId),
+        persona: coord?.name,
+        projectId,
+        runnerKind,
+      });
+      const systemPromptExtra =
+        composeSystemPromptExtra(identity, cadreExtra) || undefined;
       return {
-        kind: coord?.runner ?? "claude-code",
+        kind: runnerKind,
         model: coord?.model ?? "",
         coordinator: coord?.name ?? "—",
         allowedTools,
         systemPromptExtra,
+        identityInjected,
       };
     },
     [teams, frame.frame],
   );
+  // Referme l'indirection F2 posée plus haut (`identityFor`) : réf à jour à CHAQUE render.
+  resolveRunnerRef.current = resolveRunner;
 
   // Ouvre la conversation d'un projet en routant vers le COORDINATEUR de sa team.
   // L25 — AVANT d'ouvrir, on détecte la SESSION VIVANTE du projet (`latest_transcript`) :
@@ -848,6 +916,7 @@ export default function App(): JSX.Element {
             fileEffectsTotal={effectsTotalView}
             timeline={timelineView}
             resolveRunner={resolveRunner}
+            teamsLoaded={teams.loaded}
             hidePensee={settings.hidePensee}
             onToggleHidePensee={() =>
               void settings.setHidePensee(!settings.hidePensee)

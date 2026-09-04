@@ -80,6 +80,16 @@ export interface ResolvedRunner {
    * ajouté après l'obligation L19 côté Rust. Absent → seule L19 s'applique.
    */
   systemPromptExtra?: string;
+  /**
+   * Identité du runner (lot 2026-09-04, F1/F3) : `true` ⇔ `systemPromptExtra` porte
+   * RÉELLEMENT un préambule d'identité (persona + royaume) qui ATTEINDRA le processus.
+   * `false` si aucune identité n'a pu être injectée — sans team liée (AR-4), OU parce que
+   * le runner est `codex` (hors couverture STRUCTURELLE : `codex_args` ne passe aucun
+   * system-prompt, cf. `frame/identity.ts`). Pilote F3 (mention honnête en convhead).
+   * Optionnel (repli `false`) : rétro-compat des sites de test qui construisent un
+   * `ResolvedRunner` littéral sans ce champ.
+   */
+  identityInjected?: boolean;
 }
 
 export interface WorkingViewProps {
@@ -175,6 +185,15 @@ export interface WorkingViewProps {
    * porte. Si le runner n'est pas exécutable → bannière honnête, pas de spawn.
    */
   resolveRunner: (projectId: string) => ResolvedRunner;
+  /**
+   * AR-8=(b) (lot identité du runner, 2026-09-04) : `teams.loaded`. Tant que `false`, le
+   * montage de `PtyTerminal` est RETARDÉ (garde de rendu) — le spawn `pty_runner_open` est
+   * IDEMPOTENT (`usePty.spawnRef`) : un premier appel AVANT que les bindings de team soient
+   * lus enverrait un `systemPromptExtra` figé (identité manquante ou fausse) qui ne serait
+   * PLUS JAMAIS corrigé pour la durée de vie de la session (un futur rejeu de l'effet ne
+   * respawne pas, cf. `PtyTerminal`). Absent → traité comme `true` (rétro-compat tests).
+   */
+  teamsLoaded?: boolean;
   /** Canal pensée masqué ? (L10b/P3, réglage global persisté). */
   hidePensee?: boolean;
   /** Bascule + persiste l'état du canal pensée (L10b/P3). */
@@ -242,6 +261,7 @@ export function WorkingView({
   fileEffectsTotal,
   timeline,
   resolveRunner,
+  teamsLoaded = true,
   hidePensee,
   onToggleHidePensee,
   focus = false,
@@ -480,15 +500,36 @@ export function WorkingView({
                       : `${activeRunner.kind} · ${activeRunner.model || t("working.runnerModelDefault")}`}
                   </span>
                 )}
-                {/* L25 — badge « session vivante · lecture seule » (attaché). */}
+                {/* L25 — badge « session vivante · lecture seule » (attaché). AR-7
+                    (lot identité, 2026-09-04) : + mention explicite « identité non
+                    garantie » — une session EXTERNE n'a reçu AUCUN préambule d'identité
+                    de ce Cockpit (elle n'a pas été lancée par lui). */}
                 {active.source === "attached" && (
                   <span
                     className="ct-live"
-                    title={t("working.attachedBadgeTitle")}
+                    title={`${t("working.attachedBadgeTitle")} — ${t(
+                      "working.identityNotGuaranteed",
+                    )}`}
                   >
                     {t("working.attachedBadge")}
                   </span>
                 )}
+                {/* F3 (lot identité, 2026-09-04) : quand le runner est EXÉCUTABLE et la
+                    conversation possédée mais qu'AUCUNE identité n'a pu être injectée
+                    (pas de team liée, OU runner `codex` — hors couverture structurelle),
+                    le dire EXPLICITEMENT plutôt que de laisser croire que le persona
+                    affiché en `.ct-agent` est bien celui que porte le runner. */}
+                {activeRunner &&
+                  active.source === "owned" &&
+                  isExecutableRunner(activeRunner.kind) &&
+                  !activeRunner.identityInjected && (
+                    <span
+                      className="ct-identity-note"
+                      title={t("working.identityNotInjectedTitle")}
+                    >
+                      {t("working.identityNotInjected")}
+                    </span>
+                  )}
               </div>
               {/* Ligne 2 : tous les contrôles regroupés (2 lignes → fin du chevauchement). */}
               <div className="convctrls">
@@ -585,8 +626,14 @@ export function WorkingView({
             {/* Bandeau « Arbre des délégations » CENTRAL (L28) : coordinateur → agents
                 délégués, coloré par avancement (ambre = en cours, vert = terminé).
                 REMPLACE le Gantt. Alimenté par les délégations de la conversation
-                active (`tasks` / useAgentTasks) ; coordinateur = activeRunner. */}
-            {showTree && activeRunner && (
+                active (`tasks` / useAgentTasks) ; coordinateur = activeRunner.
+                JUMEAU du correctif d'identité (2026-09-04, trouvé en cherchant les
+                jumeaux du défaut App.tsx `identityFor`) : `activeRunner.coordinator`
+                est le coordinateur de la TEAM LIÉE, jamais une identité que le
+                transcript `attached` porterait réellement — `active.source === "owned"`
+                exclut donc l'affichage de cette racine pour une session externe (L25),
+                même quand cette session contient de vraies délégations. */}
+            {showTree && activeRunner && active.source === "owned" && (
               <div className="treeband">
                 {delegView === "swim" ? (
                   <AgentSwimlanes
@@ -649,6 +696,25 @@ export function WorkingView({
                         >
                           {t("working.startRunner")}
                         </button>
+                      </div>
+                    </div>
+                  );
+                }
+                // AR-8=(b) : tant que les teams ne sont pas chargées, on RETARDE le
+                // montage du `PtyTerminal` — spawner avant que `teams.hasBinding`/
+                // `teamForProject` reflètent la config PERSISTÉE enverrait une identité
+                // absente/fausse, figée pour toute la vie de la session (spawn idempotent,
+                // cf. prop `teamsLoaded`). Bannière discrète, PAS d'erreur.
+                if (!teamsLoaded) {
+                  return (
+                    <div
+                      key={c.ptySessionId}
+                      className="termwrap runner-banner-wrap"
+                      style={{ display: visible ? "block" : "none" }}
+                      aria-hidden={!visible}
+                    >
+                      <div className="runner-banner" role="status">
+                        {t("working.teamsLoading")}
                       </div>
                     </div>
                   );

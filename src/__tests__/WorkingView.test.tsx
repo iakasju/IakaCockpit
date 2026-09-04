@@ -49,7 +49,11 @@ function conv(over: Partial<Conversation> = {}): Conversation {
   };
 }
 
-function renderView(resolveRunner: (projectId: string) => ResolvedRunner, c = conv()) {
+function renderView(
+  resolveRunner: (projectId: string) => ResolvedRunner,
+  c = conv(),
+  extra: Partial<{ teamsLoaded: boolean }> = {},
+) {
   return render(
     <WorkingView
       worksetProjects={[]}
@@ -69,6 +73,7 @@ function renderView(resolveRunner: (projectId: string) => ResolvedRunner, c = co
       onStartRunner={() => {}}
       onRequestNextStep={() => {}}
       resolveRunner={resolveRunner}
+      {...extra}
     />,
   );
 }
@@ -681,4 +686,95 @@ describe("WorkingView — mode focus L26", () => {
     );
     expect(onToggleFocus).toHaveBeenCalledTimes(1);
   });
+});
+
+// --- Lot identité du runner (2026-09-04) — AR-8=(b), garde L10 ---
+
+describe("WorkingView — AR-8 : retarde le montage de PtyTerminal tant que teamsLoaded=false", () => {
+  it("teamsLoaded=false → AUCUN PtyTerminal monté (bannière de chargement à la place)", () => {
+    renderView(
+      () => ({ kind: "claude-code", model: "", coordinator: "Aragorn" }),
+      undefined,
+      { teamsLoaded: false },
+    );
+    expect(screen.queryByTestId("pty")).toBeNull();
+    expect(screen.getByText(/Chargement de l.équipe/)).toBeTruthy();
+  });
+
+  it(
+    "teamsLoaded absent (rétro-compat) → comportement historique : PtyTerminal monté " +
+      "(les sites d'appel qui ne passent pas ce prop, ex. tests existants, ne régressent pas)",
+    () => {
+      renderView(() => ({
+        kind: "claude-code",
+        model: "",
+        coordinator: "Aragorn",
+      }));
+      expect(screen.getByTestId("pty")).toBeTruthy();
+    },
+  );
+
+  it(
+    "teamsLoaded false→true : PtyTerminal apparaît APRÈS coup, et ne spawne " +
+      "qu'UNE SEULE FOIS (garde L10 — vérifiée ici au niveau du montage du composant : " +
+      "passer de false à true ne DÉMONTE ni ne remonte deux fois la surface, il y a UN " +
+      "SEUL noeud `pty` après transition, jamais deux)",
+    () => {
+      const { rerender } = render(
+        <WorkingView
+          worksetProjects={[]}
+          conversations={[conv()]}
+          active={conv()}
+          pty={PTY_STUB}
+          nextStepResult={null}
+          nextStepLoading={false}
+          nextStepError={null}
+          onOpenProject={() => {}}
+          onAddProject={() => {}}
+          onRemoveFromWork={() => {}}
+          onSelectConversation={() => {}}
+          onSetMode={() => {}}
+          onSetAgent={() => {}}
+          onSend={() => {}}
+          onStartRunner={() => {}}
+          onRequestNextStep={() => {}}
+          resolveRunner={() => ({
+            kind: "claude-code",
+            model: "",
+            coordinator: "Aragorn",
+          })}
+          teamsLoaded={false}
+        />,
+      );
+      expect(screen.queryByTestId("pty")).toBeNull();
+
+      rerender(
+        <WorkingView
+          worksetProjects={[]}
+          conversations={[conv()]}
+          active={conv()}
+          pty={PTY_STUB}
+          nextStepResult={null}
+          nextStepLoading={false}
+          nextStepError={null}
+          onOpenProject={() => {}}
+          onAddProject={() => {}}
+          onRemoveFromWork={() => {}}
+          onSelectConversation={() => {}}
+          onSetMode={() => {}}
+          onSetAgent={() => {}}
+          onSend={() => {}}
+          onStartRunner={() => {}}
+          onRequestNextStep={() => {}}
+          resolveRunner={() => ({
+            kind: "claude-code",
+            model: "",
+            coordinator: "Aragorn",
+          })}
+          teamsLoaded
+        />,
+      );
+      expect(screen.getAllByTestId("pty").length).toBe(1);
+    },
+  );
 });

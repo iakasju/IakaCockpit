@@ -112,6 +112,62 @@ describe("runnerEventToTurn — projection RunnerEvent → ChatTurn (L10b)", () 
   });
 });
 
+describe("runnerEventToTurn — F2 attribution (lot identité du runner, 2026-09-04)", () => {
+  it("geste/activite/pensee reçoivent `attributedAgent` quand fourni", () => {
+    const geste: RunnerEvent = {
+      ...base,
+      kind: "geste",
+      role: "assistant",
+      tool_name: "Bash",
+      tool_use_id: "t1",
+    };
+    expect(runnerEventToTurn(geste, "Aragorn")?.agent).toBe("Aragorn");
+
+    const activite: RunnerEvent = {
+      ...base,
+      kind: "activite",
+      role: "user",
+      tool_use_id: "t1",
+      text: "ok",
+    };
+    expect(runnerEventToTurn(activite, "Aragorn")?.agent).toBe("Aragorn");
+
+    const pensee: RunnerEvent = {
+      ...base,
+      kind: "pensee",
+      role: "assistant",
+      text: "je réfléchis",
+    };
+    expect(runnerEventToTurn(pensee, "Aragorn")?.agent).toBe("Aragorn");
+  });
+
+  it(
+    "CONTREFACTUEL (CA-8, second) — sans `attributedAgent`, AUCUNE attribution " +
+      "(comportement historique, zéro fabrication)",
+    () => {
+      const geste: RunnerEvent = {
+        ...base,
+        kind: "geste",
+        role: "assistant",
+        tool_name: "Bash",
+        tool_use_id: "t1",
+      };
+      expect(runnerEventToTurn(geste)?.agent).toBeUndefined();
+    },
+  );
+
+  it("délégation IGNORE `attributedAgent` (garde SON propre agent, le sous-agent)", () => {
+    const ev: RunnerEvent = {
+      ...base,
+      kind: "delegation",
+      role: "assistant",
+      agent: "gandalf",
+      text: "cadrer",
+    };
+    expect(runnerEventToTurn(ev, "Aragorn")?.agent).toBe("gandalf");
+  });
+});
+
 describe("deriveWorkingAgents — statut roster vivant (L10b/P3)", () => {
   it("une délégation met le sous-agent au travail (nom minuscule)", () => {
     const history: ChatTurn[] = [
