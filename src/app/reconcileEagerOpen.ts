@@ -28,3 +28,41 @@ export function projectsToEagerOpen(p: EagerOpenParams): Project[] {
     (proj) => p.hasBinding(proj.id) && !p.openConversationIds.has(proj.id),
   );
 }
+
+/**
+ * decideEagerOpenFocus — L37 F2 : le démarrage n'ouvre pas de fenêtre à la place de
+ * l'utilisateur (AR-1 = (c)). L'ouverture EAGER d'un lot de projets restaurés au boot
+ * ne doit PAS voler le focus (rester sur Portefeuille) ; toute ouverture EAGER
+ * ultérieure (pose utilisateur sur la Table, après ce premier passage) le vole comme
+ * avant (comportement L24 inchangé).
+ *
+ * Pure : reçoit l'état de restauration (le hook `useWorkset().loaded`) et un booléen
+ * mémorisé par l'appelant (ex. une réf) indiquant si le PREMIER passage qui suit la
+ * fin de la restauration a déjà eu lieu. Renvoie la décision de focus ET le nouvel
+ * état à mémoriser — aucune mutation ici, l'appelant applique les deux.
+ */
+export interface EagerFocusState {
+  /** Le passage de restauration (premier après `worksetLoaded`) a-t-il déjà eu lieu ? */
+  restorationConsumed: boolean;
+}
+
+export interface EagerFocusDecision {
+  /** `false` uniquement pendant la fenêtre de restauration ; `true` sinon. */
+  focus: boolean;
+  /** Nouvel état à mémoriser (ref) pour le passage suivant. */
+  nextState: EagerFocusState;
+}
+
+export function decideEagerOpenFocus(
+  worksetLoaded: boolean,
+  state: EagerFocusState,
+): EagerFocusDecision {
+  const isRestorationPass = worksetLoaded && !state.restorationConsumed;
+  return {
+    focus: !isRestorationPass,
+    // Consommé dès que la restauration est terminée, que ce passage ait ouvert
+    // des projets ou non (une Table vide au boot ne doit pas rouvrir la fenêtre
+    // à un passage ultérieur qui n'a plus rien à voir avec le démarrage).
+    nextState: { restorationConsumed: state.restorationConsumed || worksetLoaded },
+  };
+}
