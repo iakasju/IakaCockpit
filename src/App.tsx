@@ -526,14 +526,23 @@ export default function App(): JSX.Element {
   //     créée retombe dans `liveProjectIds` au tour suivant → toOpen se vide (convergence) ;
   //   - un retrait (removeFromWorkAndPrepare) sort le projet de `worksetProjects` AVANT que
   //     l'effet ne rejoue → aucune réouverture dans le même tour.
-  // L37 F2 — le PREMIER passage qui suit la fin de la restauration du workset
-  // (`workset.loaded`) n'a pas le droit de voler le focus (AR-1 = (c)) : la Table se
-  // repeuple, mais l'app reste sur la vue courante (Portefeuille au boot). Tout passage
-  // ultérieur (pose utilisateur) navigue comme avant — décision extraite en fonction
-  // PURE (`decideEagerOpenFocus`), mémorisée par une réf (l'effet n'est pas rejoué pour
-  // ça). `openConversationFor` est appelé directement (pas `openProject`) : les projets
-  // de ce lot sont déjà LIÉS par construction (filtrés par `projectsToEagerOpen`), donc
-  // le chemin `TeamPicker` d'`openProject` ne s'applique pas ici.
+  // L37 F2 — le PREMIER passage qui suit la fin du BOOT n'a pas le droit de voler le
+  // focus (AR-1 = (c)) : la Table se repeuple, mais l'app reste sur la vue courante
+  // (Portefeuille au boot). Tout passage ultérieur (pose utilisateur) navigue comme
+  // avant — décision extraite en fonction PURE (`decideEagerOpenFocus`), mémorisée par
+  // une réf (l'effet n'est pas rejoué pour ça). `openConversationFor` est appelé
+  // directement (pas `openProject`) : les projets de ce lot sont déjà LIÉS par
+  // construction (filtrés par `projectsToEagerOpen`), donc le chemin `TeamPicker`
+  // d'`openProject` ne s'applique pas ici.
+  // L37-CA6 (correctif, recette réelle du 2026-09-04) — le boot dépend de DEUX
+  // sources asynchrones indépendantes, pas d'une seule : `workset.loaded` (lecture
+  // config, rapide) ET `portfolio.loaded` (parcours disque, plus lent). Ne regarder
+  // que la première fermait la fenêtre de restauration alors que `worksetProjects`
+  // (l'intersection des deux) était encore vide faute du portefeuille — le lot ouvert
+  // par le scan arrivé plus tard volait alors le focus. `bootReady` = ET logique des
+  // deux ; un scan en ERREUR clôt aussi le boot (`usePortfolio.loaded` posé dans son
+  // `finally`, succès et erreur confondus) — une Table qui ne se peuplera jamais ne
+  // doit pas laisser la fenêtre ouverte indéfiniment.
   // Lu via ref pour ne pas être mis en dépendance (sinon l'effet se ré-abonnerait à
   // chaque render). Réconcilie `useDemoSeed` : `iaka-demo` est ouvert par le seed AVANT
   // d'entrer dans le workset → déjà dans `liveProjectIds` → jamais rouvert ici (pas de
@@ -541,6 +550,7 @@ export default function App(): JSX.Element {
   const openConversationForRef = useRef(openConversationFor);
   openConversationForRef.current = openConversationFor;
   const eagerFocusStateRef = useRef({ restorationConsumed: false });
+  const bootReady = workset.loaded && portfolio.loaded;
   useEffect(() => {
     const toOpen = projectsToEagerOpen({
       worksetProjects,
@@ -548,12 +558,12 @@ export default function App(): JSX.Element {
       hasBinding: teams.hasBinding,
     });
     const { focus, nextState } = decideEagerOpenFocus(
-      workset.loaded,
+      bootReady,
       eagerFocusStateRef.current,
     );
     eagerFocusStateRef.current = nextState;
     for (const p of toOpen) void openConversationForRef.current(p, undefined, focus);
-  }, [worksetProjects, liveProjectIds, teams.hasBinding, workset.loaded]);
+  }, [worksetProjects, liveProjectIds, teams.hasBinding, bootReady]);
 
   // L16-F2 — double-clic sur une cellule de la treemap Économie (Portefeuille) : bascule sur
   // Travail avec le projet au premier plan. Navigation + focus SEULEMENT (la treemap est

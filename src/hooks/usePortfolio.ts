@@ -26,6 +26,14 @@ export interface UsePortfolio {
    * a annulé (ou en cas d'erreur, remontée via `error`).
    */
   importProject: () => Promise<Project | null>;
+  /**
+   * Le PREMIER scan a-t-il abouti (succès OU erreur) ? — L37-CA6 : le boot n'est
+   * réellement terminé que lorsque CE signal ET `useWorkset().loaded` sont vrais
+   * tous les deux ; un scan qui échoue (`error` posé, `projects` remis à `[]`)
+   * termine le boot comme un scan réussi (calque `useWorkset.loaded`, jamais
+   * réinitialisé — les rafraîchissements manuels ultérieurs le laissent `true`).
+   */
+  loaded: boolean;
 }
 
 /** Injection de la façade pour les tests (défaut = vraie façade). */
@@ -34,6 +42,11 @@ export function usePortfolio(api: Backend = backend): UsePortfolio {
   const [root, setRoot] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  // L37-CA6 : distinct de `loading` (qui vaut `false` aussi AVANT le tout premier
+  // scan, le temps que l'effet de montage démarre — `!loading` ne peut donc pas
+  // servir de signal « premier scan terminé »). Posé dans `finally`, succès ET
+  // erreur confondus (cf. JSDoc `UsePortfolio.loaded`).
+  const [loaded, setLoaded] = useState<boolean>(false);
 
   const refresh = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -57,6 +70,7 @@ export function usePortfolio(api: Backend = backend): UsePortfolio {
       setProjects([]);
     } finally {
       setLoading(false);
+      setLoaded(true);
     }
   }, [api]);
 
@@ -78,5 +92,5 @@ export function usePortfolio(api: Backend = backend): UsePortfolio {
     void refresh();
   }, [refresh]);
 
-  return { projects, loading, error, root, refresh, importProject };
+  return { projects, loading, error, root, refresh, importProject, loaded };
 }
