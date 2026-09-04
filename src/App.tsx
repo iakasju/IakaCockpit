@@ -63,7 +63,7 @@ import type { AvatarMember } from "./components/ProjectCard";
 import type { DemoTeamMember } from "./mock/demoTeam";
 import { backend, type Project, type RunnerEvent } from "./api/backend";
 import { removeFromWork } from "./app/removeFromWork";
-import { projectsToEagerOpen } from "./app/reconcileEagerOpen";
+import { projectsToEagerOpen, decideEagerOpenFocus } from "./app/reconcileEagerOpen";
 import { makeDemoFrame } from "./mock/demoFrame";
 import "./theme/tokens.css";
 // Polices BUNDLÉES (direction A) : Space Grotesk (display) + Inter (texte), woff2
@@ -465,14 +465,17 @@ export default function App(): JSX.Element {
   // Idempotent : si la conversation existe déjà, on la ré-active sans re-détecter (évite un
   // appel façade inutile + préserve l'ouverture eager L24). Async ; hors Tauri, la façade
   // retombe en erreur → capturée → ouverture `owned` (aucune régression front pur/tests).
+  // L37 F2 — `focus` (défaut `true`) : le chemin de RESTAURATION de la Table au boot
+  // ouvre les conversations SANS naviguer (AR-1 = (c)) ; tout appel utilisateur (clic,
+  // pose sur la table, treemap L16-F2) garde le comportement historique inchangé.
   const openConversationFor = useCallback(
-    async (project: Project, teamId?: string): Promise<void> => {
+    async (project: Project, teamId?: string, focus = true): Promise<void> => {
       const already = conversations.conversations.some(
         (c) => c.projectId === project.id,
       );
       if (already) {
         conversations.setActive(project.id);
-        grid.setActiveView("working");
+        if (focus) grid.setActiveView("working");
         return;
       }
       const team = teamId
@@ -499,7 +502,7 @@ export default function App(): JSX.Element {
         undefined,
         attach,
       );
-      grid.setActiveView("working");
+      if (focus) grid.setActiveView("working");
     },
     [teams, conversations, grid],
   );
@@ -523,20 +526,34 @@ export default function App(): JSX.Element {
   //     créée retombe dans `liveProjectIds` au tour suivant → toOpen se vide (convergence) ;
   //   - un retrait (removeFromWorkAndPrepare) sort le projet de `worksetProjects` AVANT que
   //     l'effet ne rejoue → aucune réouverture dans le même tour.
-  // `openProject` n'est pas mémoïsé : on le lit via ref pour ne pas le mettre en dépendance
-  // (sinon l'effet se ré-abonnerait à chaque render). Réconcilie `useDemoSeed` : `iaka-demo`
-  // est ouvert par le seed AVANT d'entrer dans le workset → déjà dans `liveProjectIds` →
-  // jamais rouvert ici (pas de double ouverture, reste sur Portfolio — AR-4 préservé).
-  const openProjectRef = useRef(openProject);
-  openProjectRef.current = openProject;
+  // L37 F2 — le PREMIER passage qui suit la fin de la restauration du workset
+  // (`workset.loaded`) n'a pas le droit de voler le focus (AR-1 = (c)) : la Table se
+  // repeuple, mais l'app reste sur la vue courante (Portefeuille au boot). Tout passage
+  // ultérieur (pose utilisateur) navigue comme avant — décision extraite en fonction
+  // PURE (`decideEagerOpenFocus`), mémorisée par une réf (l'effet n'est pas rejoué pour
+  // ça). `openConversationFor` est appelé directement (pas `openProject`) : les projets
+  // de ce lot sont déjà LIÉS par construction (filtrés par `projectsToEagerOpen`), donc
+  // le chemin `TeamPicker` d'`openProject` ne s'applique pas ici.
+  // Lu via ref pour ne pas être mis en dépendance (sinon l'effet se ré-abonnerait à
+  // chaque render). Réconcilie `useDemoSeed` : `iaka-demo` est ouvert par le seed AVANT
+  // d'entrer dans le workset → déjà dans `liveProjectIds` → jamais rouvert ici (pas de
+  // double ouverture, reste sur Portfolio — AR-4 préservé).
+  const openConversationForRef = useRef(openConversationFor);
+  openConversationForRef.current = openConversationFor;
+  const eagerFocusStateRef = useRef({ restorationConsumed: false });
   useEffect(() => {
     const toOpen = projectsToEagerOpen({
       worksetProjects,
       openConversationIds: liveProjectIds,
       hasBinding: teams.hasBinding,
     });
-    for (const p of toOpen) openProjectRef.current(p);
-  }, [worksetProjects, liveProjectIds, teams.hasBinding]);
+    const { focus, nextState } = decideEagerOpenFocus(
+      workset.loaded,
+      eagerFocusStateRef.current,
+    );
+    eagerFocusStateRef.current = nextState;
+    for (const p of toOpen) void openConversationForRef.current(p, undefined, focus);
+  }, [worksetProjects, liveProjectIds, teams.hasBinding, workset.loaded]);
 
   // L16-F2 — double-clic sur une cellule de la treemap Économie (Portefeuille) : bascule sur
   // Travail avec le projet au premier plan. Navigation + focus SEULEMENT (la treemap est
