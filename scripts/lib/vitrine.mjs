@@ -261,7 +261,18 @@ export function lignesDAbsenceDeclaree(readme) {
  *
  * LA REGLE RETENUE TIENT LES DEUX : la PROMESSE est le defaut, l'ABSENCE DECLAREE est la seule
  * exception, et elle n'est reconnue que la ou le generateur l'ecrit. Promettre ailleurs — prose,
- * note, lien, titre — redevient mesurable, quel que soit l'endroit du README.
+ * note, titre — redevient mesurable, quel que soit l'endroit du README (aucun filtre de forme sur
+ * les LIGNES : `readme.split("\n")` les balaie toutes, sans distinguer tableau/prose/note).
+ *
+ * ⚠️ LIMITE, EPINGLEE PLUTOT QUE DECOUVERTE PLUS TARD (F-2, gardes de la vitrine, 2026-09-05).
+ * « quel que soit l'endroit » est vrai ; ce n'est PAS « quelle que soit la FORME ». `ARTEFACT`
+ * (juste au-dessus) n'aere qu'UNE forme : un nom ECRIT ENTRE BACKTICKS. Un lien markdown dont
+ * l'URL porte le nom, une ligne de bloc de code, ou une prose SANS backticks ne sont PAS vus. Au
+ * 2026-09-05, mesure : zero mensonge present dans les deux README (ils ne citent un artefact
+ * qu'entre backticks) et le seul mode de defaillance jamais observe — le `.dmg` fantome de
+ * L42-F1 — etait deja ecrit AVEC des backticks. La limite est donc un piege FUTUR, pas un
+ * mensonge present ; elle est GARDEE par un pin bidirectionnel (`scripts/__tests__/vitrine.
+ * test.mjs`, describe « CA-2 »), pas seulement dite ici.
  */
 export function fichiersPromis(readme) {
   const declarees = lignesDAbsenceDeclaree(readme);
