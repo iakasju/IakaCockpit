@@ -160,6 +160,10 @@ const cargo = readFileSync(join(root, "src-tauri/Cargo.toml"), "utf8");
 // autre chose que ce qu'on publie. Il est lu ICI, et l'omettre ferait retomber la garde à quatre
 // sources sans un mot (cf. le cliquet juste après l'appel).
 const readme = readFileSync(join(root, "README.md"), "utf8");
+// 2026-09-05 — `package-lock.json` est le CINQUIÈME porteur, et il a dérivé DEUX FOIS avant d'être
+// gardé (cf. le commentaire de `checkVersionAlignment`). Il est lu ICI, et l'omettre ferait
+// retomber la garde à cinq sources sans un mot (cf. le cliquet ci-dessous, étendu en conséquence).
+const packageLock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
 
 const alignment = checkVersionAlignment({
   tag,
@@ -167,6 +171,7 @@ const alignment = checkVersionAlignment({
   tauriConf: conf,
   cargoToml: cargo,
   readme,
+  packageLock,
 });
 // CLIQUET D'OMISSION — la parade au trou déclaré dans `checkVersionAlignment` : cette garde-ci
 // n'a ni registre ni cliquet propre, donc rien n'empêcherait de retirer `readme` de l'appel
@@ -176,6 +181,13 @@ if (!Object.hasOwn(alignment.sources, "README.md")) {
     "README.md ne figure pas dans les sources d'alignement : il a cessé d'être fourni à " +
       "checkVersionAlignment. La vitrine pourrait de nouveau annoncer une version que le dépôt " +
       "ne porte pas — c'est le défaut H-1 de L42, et il vient de se rouvrir.",
+  );
+}
+if (!Object.hasOwn(alignment.sources, "package-lock.json")) {
+  fail(
+    "package-lock.json ne figure pas dans les sources d'alignement : il a cessé d'être fourni à " +
+      "checkVersionAlignment. Ce porteur a DÉJÀ dérivé deux fois (v0.31.2, puis v0.33.0) faute " +
+      "d'être gardé — le retirer de l'appel rouvrirait exactement ce trou.",
   );
 }
 if (!alignment.ok) {

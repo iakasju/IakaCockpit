@@ -127,7 +127,7 @@ export function versionPluginUpdater(cargoLock) {
  * Renvoie `{ ok, version, sources, mismatches }` — jamais d'exception : c'est
  * l'appelant qui décide d'échouer (le mode `--check-only` veut le détail).
  */
-export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml, readme }) {
+export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml, readme, packageLock }) {
   const version = versionFromTag(tag);
   const sources = {
     tag: version,
@@ -140,6 +140,14 @@ export function checkVersionAlignment({ tag, packageJson, tauriConf, cargoToml, 
   // `version` par défaut serait un faux vert. On l'omet, et le cliquet de `publish-update.mjs`
   // (ci-dessous) est ce qui garantit qu'elle est bien fournie en publication réelle.
   if (readme !== undefined) sources["README.md"] = versionAnnoncee(readme);
+  // RÉCIDIVE MESURÉE (2026-09-05, revue de version v0.33.0) — `package-lock.json` est un CINQUIÈME
+  // porteur, et il a dérivé DEUX FOIS : `e8b3e91` l'avait corrigé À LA MAIN au bump v0.31.2 sans
+  // étendre cette garde, donc le trou est resté ouvert et il a re-mordu au bump v0.33.0. Rien
+  // d'autre ne l'attrape : `npm ci` ne bronche pas sur ce champ, ce n'est pas un défaut de
+  // résolution de dépendances. Même contrat que `readme` : un lockfile NON FOURNI n'est pas un
+  // lockfile aligné — on omet la source plutôt que d'inventer un vert, et le cliquet d'omission
+  // de `publish-update.mjs` est ce qui garantit qu'il est bien fourni en publication réelle.
+  if (packageLock !== undefined) sources["package-lock.json"] = packageLock?.version ?? null;
   const mismatches = Object.entries(sources)
     .filter(([, v]) => v !== version)
     .map(([source, found]) => ({ source, found, expected: version }));

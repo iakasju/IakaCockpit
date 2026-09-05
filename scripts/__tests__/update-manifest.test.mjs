@@ -291,6 +291,48 @@ describe("CA-15 — cliquet sur la version du plugin updater", () => {
 });
 
 describe("checkVersionAlignment — garde du § 6b.1 (critère C7)", () => {
+  // RÉCIDIVE (2026-09-05, revue de version v0.33.0) — `package-lock.json` est le CINQUIÈME porteur.
+  // Il a dérivé DEUX FOIS avant d'être gardé : corrigé à la main au bump v0.31.2 (`e8b3e91`) sans
+  // que la garde soit étendue, il a re-dérivé au bump v0.33.0 et c'est le gate qui l'a trouvé, pas
+  // la chaîne. Ces deux tests éprouvent les DEUX SENS : fourni et désaligné, il est NOMMÉ ; fourni
+  // et aligné, il entre dans les sources. Le troisième éprouve le contrat d'omission, identique à
+  // celui de `readme` : non fourni n'est PAS aligné, la source est ABSENTE plutôt qu'inventée —
+  // c'est le cliquet d'omission de `publish-update.mjs` qui interdit de l'omettre en publication.
+  it("package-lock.json désaligné est NOMMÉ dans les écarts", () => {
+    const r = checkVersionAlignment({
+      tag: "v1.2.3",
+      packageJson: { version: "1.2.3" },
+      tauriConf: { version: "1.2.3" },
+      cargoToml: '[package]\nname = "iakacockpit"\nversion = "1.2.3"\n',
+      packageLock: { version: "1.2.2" },
+    });
+    expect(r.ok).toBe(false);
+    expect(r.mismatches.map((m) => m.source)).toContain("package-lock.json");
+    expect(r.mismatches.find((m) => m.source === "package-lock.json").found).toBe("1.2.2");
+  });
+
+  it("package-lock.json aligné entre dans les sources", () => {
+    const r = checkVersionAlignment({
+      tag: "v1.2.3",
+      packageJson: { version: "1.2.3" },
+      tauriConf: { version: "1.2.3" },
+      cargoToml: '[package]\nname = "iakacockpit"\nversion = "1.2.3"\n',
+      packageLock: { version: "1.2.3" },
+    });
+    expect(r.ok).toBe(true);
+    expect(Object.keys(r.sources)).toContain("package-lock.json");
+  });
+
+  it("package-lock.json NON fourni est ABSENT des sources, jamais inventé aligné", () => {
+    const r = checkVersionAlignment({
+      tag: "v1.2.3",
+      packageJson: { version: "1.2.3" },
+      tauriConf: { version: "1.2.3" },
+      cargoToml: '[package]\nname = "iakacockpit"\nversion = "1.2.3"\n',
+    });
+    expect(Object.keys(r.sources)).not.toContain("package-lock.json");
+  });
+
   const cargoOk = '[package]\nname = "iakacockpit"\nversion = "0.31.3"\n';
 
   it("passe quand les quatre sources portent la même version", () => {
