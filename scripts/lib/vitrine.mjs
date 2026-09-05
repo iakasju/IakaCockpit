@@ -306,3 +306,206 @@ export function ecartsDeVitrine(luës, attendues) {
   }
   return ecarts;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+// F-3 — LA LOGIQUE DE VERDICT DE `scripts/vitrine-en-ligne.mjs`, EXTRAITE (gardes de la vitrine,
+// 2026-09-05, AR-2 = O3 BORNEE, AR-5 = (a)).
+//
+// POURQUOI ICI, ET PAS AUTREMENT. `vitrine-en-ligne.mjs` est TOP-LEVEL INTEGRAL (§ 1.5 du
+// cadrage) : il lit ses fichiers en constantes de module puis execute son `fetch` AU NIVEAU DU
+// MODULE, sans `main()` ni garde `import.meta.url`. L'IMPORTER DEPUIS UN TEST L'EXECUTERAIT — le
+// mur exact que L45 a heurte sur `publish-update.mjs`. « BORNEE » signifie : on extrait la
+// LOGIQUE DE VERDICT et RIEN D'AUTRE — pas de refonte du script en `main()`, pas de garde neuve,
+// pas de reecriture des messages, qui portent des rectifications DATEES de L43/L44 qu'on ne remue
+// pas. Le script garde sa forme top-level ; il perd seulement le CALCUL au profit d'un appel.
+//
+// CE QUE CETTE FONCTION PROUVE, ET CE QU'ELLE NE PROUVE PAS — a lire AVEC le meme avertissement
+// dans `scripts/__tests__/vitrine-en-ligne.test.mjs` (la regle du depot : une limite se declare
+// LA OU ELLE VIT, cf. les deux hors-couverture de `forge-host-parity.test.mjs`).
+//   PROUVE : que le script TRAITE CORRECTEMENT ce qu'il recoit — les cinq egalites rendent le bon
+//   verdict sur des entrees connues, le chemin SKIP (release/tag absents) ne casse rien.
+//   NE PROUVE PAS : que la FORME des entrees corresponde a l'API REELLE de GitHub, ni que la
+//   vitrine dise vrai — cela reste le travail de `scripts/vitrine-en-ligne.mjs` execute en vrai,
+//   HORS gate, reseau requis, inchange par ce lot.
+//
+// E-5 EST TESTABLE SANS ETRE VACUOUS (AR-4) : `absentsLocaux` est un PARAMETRE, jamais lu depuis
+// `fixtures/vitrine-locale.json`. Le registre reel est VIDE des deux cotes (§ 1.6 du cadrage) —
+// piloter ce test par le fichier reel itererait sur RIEN, le defaut I4bis de L41 rejoue dans le
+// lot dont c'est le sujet. Les tests de `verifierMesures` pilotent `E-5` par des entrees FABRIQUEES.
+
+/** Motif d'un tag de VERSION. `iakaFrameGUI` porte aussi des tags `archive/feat/*` : les compter
+ *  comme des versions ferait dire n'importe quoi a « le plus haut tag ». */
+const TAG_VERSION = /^v(\d+)\.(\d+)\.(\d+)$/;
+const rangSemver = (tag) => {
+  const m = TAG_VERSION.exec(tag);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+};
+const compareSemver = (a, b) => {
+  const x = rangSemver(a);
+  const y = rangSemver(b);
+  for (let i = 0; i < 3; i += 1) if (x[i] !== y[i]) return x[i] - y[i];
+  return 0;
+};
+
+/**
+ * Le tag que le README ANNONCE, ou a defaut celui que GitHub presente comme `latest`. Pure : ne
+ * lit ni fichier ni reseau. Sert au SCRIPT pour construire l'URL a interroger (avant tout fetch)
+ * ET a `evaluerCanalEnLigne` pour le meme calcul — une seule mecanique, jamais recopiee deux fois.
+ *
+ * @param {string} readme
+ * @param {string|null} latest
+ * @returns {string|null}
+ */
+export function tagAnnonceDe(readme, latest) {
+  const annoncee = versionAnnoncee(readme);
+  return annoncee ? `v${annoncee}` : latest;
+}
+
+/**
+ * Les CINQ EGALITES de `scripts/vitrine-en-ligne.mjs` (E-1..E-5), evaluees sur des donnees DEJA
+ * LUES — aucune I/O, aucun reseau. Le script reste seul responsable des lectures de fichiers, du
+ * `fetch`, des codes de sortie et de l'impression : cette fonction ne fait QUE comparer.
+ *
+ * Les MESSAGES sont VERBATIM ceux que le script imprimait avant l'extraction (rectifies a L43 et
+ * L44, non reecrits ici).
+ *
+ * @param {object} input
+ * @param {string} input.depot
+ * @param {string} input.app
+ * @param {string} input.version            version d'AUTORITE (package.json)
+ * @param {{plateformes: object[], hors_vitrine: object}} input.table
+ * @param {Array} input.absentsLocaux       LOCALE.absents — jamais lu ici depuis un fichier (AR-4)
+ * @param {string} input.readme
+ * @param {string|null} input.latest        rLatest.corps?.tag_name
+ * @param {boolean} input.latestAbsent      rLatest.absent === true (404 sur /releases/latest)
+ * @param {string[]} input.tagsBruts        noms de tags, AVANT filtre semver
+ * @param {{absent:true}|{corps:{assets:Array<{name:string}>}}|null|undefined} input.releaseAnnoncee
+ *        le resultat de l'appel a `/releases/tags/{tagAnnonceDe(readme, latest)}`, ou `null` si ce
+ *        tag est vide (aucun appel n'a lieu dans ce cas, cote script comme cote test).
+ * @returns {{ecarts: string[], constats: string[]}}
+ */
+export function evaluerCanalEnLigne({
+  depot,
+  app,
+  version,
+  table,
+  absentsLocaux,
+  readme,
+  latest,
+  latestAbsent,
+  tagsBruts,
+  releaseAnnoncee,
+}) {
+  const ecarts = [];
+  const constats = [];
+  const ecart = (code, texte) => ecarts.push(`${code} : ${texte}`);
+
+  // E-1 (premiere moitie) — le depot n'expose AUCUNE release « latest » a un visiteur anonyme.
+  if (latestAbsent) {
+    ecart("E-1", `le depot ${depot} n'expose AUCUNE release « latest » a un visiteur anonyme`);
+  }
+  const tags = (tagsBruts ?? []).filter((t) => TAG_VERSION.test(t));
+  const plusHaut = tags.length > 0 ? tags.slice().sort(compareSemver).at(-1) : null;
+
+  constats.push(`depot          : ${depot}`);
+  constats.push(`latest (anon)  : ${latest ?? "(aucune)"}`);
+  constats.push(`plus haut tag  : ${plusHaut ?? "(aucun tag de version)"}`);
+  constats.push(`README annonce : v${versionAnnoncee(readme) ?? "(illisible)"}`);
+  constats.push(`autorite (pkg) : v${version}`);
+
+  // E-1 (seconde moitie) — le `latest` n'est pas subi : il doit designer le plus haut tag publie.
+  //
+  // ⚠️ MESSAGE RECTIFIE LE 2026-08-30 (L43) PUIS LE 2026-09-01 (L44) — voir
+  // `scripts/vitrine-en-ligne.mjs` pour l'historique complet de ces deux rectifications. Ce texte
+  // n'est PAS reecrit par cette extraction : le deplacer eut ete l'occasion de le paraphraser, ce
+  // que ce lot s'interdit (§ 4 « Exclu » du cadrage).
+  if (latest && plusHaut && latest !== plusHaut) {
+    ecart(
+      "E-1",
+      `« latest » designe ${latest} alors que ${plusHaut} existe. C'est la CREATION d'une release ` +
+        "qui prend le drapeau (make_latest omis, defaut true) ; republier un tag dont la release " +
+        "EXISTE n'y touche pas au SHA epingle (R-1, L43). Rattrapage a TENTER : " +
+        `gh release edit ${plusHaut} --latest — MESURE le 2026-09-01 (M1, banc prive) : cette ` +
+        "ecriture AGIT et PRIME sur tout calcul. Jamais rejouee sur CE depot-ci.",
+    );
+  }
+
+  // E-2 — la version annoncee par le README = celle que GitHub presente.
+  const annoncee = versionAnnoncee(readme);
+  if (latest && annoncee && `v${annoncee}` !== latest) {
+    ecart(
+      "E-2",
+      `le README annonce v${annoncee}, GitHub presente ${latest}. Si l'autorite du depot (v${version}) ` +
+        "est en avance, c'est une DETTE DE PUBLICATION : le depot a bumpe sans publier. Ce rouge est " +
+        "voulu, il informe et ne bloque aucun lot (il est HORS gate).",
+    );
+  }
+
+  // Les assets de la release que le README DESIGNE — pas de `latest`, sinon on mesurerait autre
+  // chose que ce qu'un visiteur telecharge en suivant la page.
+  const tagAnnonce = tagAnnonceDe(readme, latest);
+  let assets = [];
+  if (tagAnnonce) {
+    if (releaseAnnoncee?.absent) {
+      ecart(
+        "E-3",
+        `la release ${tagAnnonce}, que le README pointe, N'EXISTE PAS pour un visiteur anonyme : le ` +
+          "lien de la page d'accueil mene a une 404",
+      );
+    } else if (releaseAnnoncee) {
+      assets = (releaseAnnoncee.corps.assets ?? []).map((a) => a.name);
+      constats.push(`assets sur ${tagAnnonce} : ${assets.length}`);
+    }
+  }
+
+  if (assets.length > 0) {
+    const versionAnnoncees = annoncee ?? version;
+    const sub = { app, version: versionAnnoncees };
+
+    // E-3 — CHAQUE fichier annonce existe. Un `200` sur une page de release ne suffit pas : on
+    // verifie l'EXISTENCE DE L'ASSET PAR SON NOM.
+    for (const nom of fichiersPromis(readme)) {
+      if (!assets.includes(nom)) {
+        ecart("E-3", `le README annonce « ${nom} », qui N'EST PAS un asset de ${tagAnnonce}`);
+      }
+    }
+
+    // E-4 — aucun asset installable passe sous silence. L'exclusion est NOMMEE (hors_vitrine).
+    const annonces = new Set(fichiersCites(readme));
+    for (const nom of assets) {
+      if (estHorsVitrine(nom, table.hors_vitrine, sub)) continue;
+      if (annonces.has(nom)) continue;
+      ecart(
+        "E-4",
+        `l'asset installable « ${nom} » de ${tagAnnonce} n'est annonce NULLE PART dans le README ` +
+          "(ni au tableau, ni en absent declare) : la release livre plus que la vitrine ne montre",
+      );
+    }
+
+    // E-5 — CLIQUET AUTO-DESTRUCTEUR (CA-12). Une absence declaree qui redevient fausse doit
+    // ROUGIR, sinon la declaration survivrait a sa raison d'etre.
+    const noms = nomsAttendus(table.plateformes, sub);
+    for (const a of absentsLocaux ?? []) {
+      const attendu = noms[a.cle];
+      if (attendu && assets.includes(attendu)) {
+        ecart(
+          "E-5",
+          `« ${attendu} » est declare ABSENT dans fixtures/vitrine-locale.json (depuis ${a.depuis}) ` +
+            `mais il EST present sur ${tagAnnonce}. La declaration a survecu a sa raison d'etre : ` +
+            `retirer l'entree « ${a.cle} » et rejouer node scripts/vitrine.mjs --write`,
+        );
+      }
+    }
+
+    // CA-13 — CONSTAT, pas correctif : le manifeste concurrent que le CI posait avant L41.
+    const concurrents = assets.filter((n) => n === "latest.json").length;
+    constats.push(
+      `latest.json concurrent sur ${tagAnnonce} : ${concurrents} ` +
+        (concurrents === 0
+          ? "(conforme au correctif includeUpdaterJson: false de L41)"
+          : "(release ANTERIEURE au correctif L41 ; un resultat non nul sur une release POSTERIEURE remonte a L41, il ne se corrige pas ici)"),
+    );
+  }
+
+  return { ecarts, constats };
+}
