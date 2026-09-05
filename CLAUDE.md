@@ -1656,6 +1656,40 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `scripts/__tests__/forge-host-parity.test.mjs`), **aucun test ne l'exécute**. La désarmer
       laisserait tout vert. Même défaut, même remède, même forme de garde (sous-processus, réseau
       neutralisé) ; ≈ 1 j-homme. **Il est écrit ici pour ne pas devenir le F-4 de la prochaine fois.**
+- [x] **L50** — **Garde de la face en ligne des canaux — et un défaut de classement corrigé**
+      → `specs/instructions/garde-de-la-face-en-ligne-des-canaux.md`
+      *(**LIVRÉ, gate 🏹 Legolas — UN FAIL puis PASS** (2026-09-05), fusionné dans les **deux**
+      dépôts (`4adfcdc` ici, `07b1ffe` chez le frère), branche `feat/garde-face-en-ligne-canaux`.
+      ⚠️ **Cette entrée a été écrite APRÈS COUP** : la revue de version du 2026-09-05 a relevé que ce
+      lot, pourtant livré et gaté, **n'avait aucune ligne de backlog à son nom** — le miroir exact du
+      principe qu'il énonçait lui-même. Conservé daté, pas effacé.)*
+      **Le lot devait donner une garde à la dernière face en ligne non exercée. Il a trouvé mieux :
+      un DÉFAUT DE CLASSEMENT.** La fonction rangeait **quatre situations** sous le même verdict
+      « pas d'écart », dont **deux à tort**. Un endpoint qui répond **2XX avec un contenu illisible**
+      (corps non-JSON, ou sans le champ de version) fait **S'ARRÊTER** le client — il ne bascule
+      **pas** vers le suivant. Le script rendait alors **sortie 0** si l'autre endpoint concordait :
+      **le masquage silencieux que ce script existe pour détecter, laissé passer par son propre
+      classificateur.** Le fait a été vérifié sur la documentation de l'outil par le cadrage, **puis
+      re-téléchargée et re-extraite par le gate** — pas cru sur parole.
+      **Corrigé** : un drapeau posé dans la **seule** fonction qui connaît le statut partitionne
+      non-2XX (bascule, pas d'écart) et 2XX-inutilisable (arrêt, **écart nommé**). Les **deux sens**
+      sont épinglés **indépendamment**, aux deux niveaux — unitaire et bout en bout par
+      sous-processus. Le gate a joué **six mutations** dont les deux sens et la jonction.
+      **Le non-tranchement du cache est épinglé sur LES DEUX MOITIÉS de la formule** : un endpoint en
+      retard n'est pas nécessairement menteur, il peut être **en propagation**, et le script **nomme**
+      l'ambiguïté au lieu de trancher. Quiconque « simplifiera » un jour en « périmé » fera rougir la
+      garde.
+      **Convergence** : module neuf, cliquet **24 → 26**, **27 fichiers byte-identiques**. Le travail
+      a vécu sur une **branche des deux côtés** — correction de l'asymétrie du lot précédent, où le
+      frère avait été commité directement sur sa ligne principale.
+      **Mesures du gate** : **1027 front / 100 fichiers** · **1330 chez le frère** · **346 Rust**
+      (non touché) · `quality.sh` **exit 0** · réseau bloqué **au niveau des sockets ET du DNS,
+      sous-processus compris**.
+      **Le FAIL portait sur CA-10** : le successeur nommé n'était inscrit dans aucun backlog —
+      **récidive du défaut qui avait fait échouer le gate du lot précédent**. ⚠️ **Ma part, écrite
+      ici** : mon ordre de mission interdisait à l'exécution de toucher au backlog **alors que
+      l'instruction l'exigeait**. La consigne du coordinateur contredisait le critère. Les deux
+      successeurs ci-dessous sont le résultat de la correction.
 - [ ] **`ENDPOINT-PERIME-FAIT-AUTORITE`** — **la fenêtre de propagation du CDN n'est pas mesurée,
       donc « périmé » et « en propagation » ne sont pas départageables**
       *(successeur **nommé** par le lot « Garde de la face en ligne des canaux » (2026-09-05,
