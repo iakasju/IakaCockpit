@@ -1,23 +1,25 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-09-05 17:14 (motif: version).
+> Genere par iakaframe (CLI) le 2026-09-05 21:59 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.33.0 |
+| Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | 5487457 docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
-| Arbre | MODIFICATIONS NON COMMITEES |
+| Dernier commit | 74cc99a chore(claude): autorise WebFetch sur testing-library.com et docs.github.com |
+| Arbre | propre |
 | Fichiers (suivis + non ignores) | 1444 |
-| Note | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
+| Note | Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `74cc99a` | 2026-09-05 | chore(claude): autorise WebFetch sur testing-library.com et docs.github.com |
+| `e0d1104` | 2026-09-05 | docs(version): scelle v0.33.0 — note de qualite + etat des lieux |
 | `5487457` | 2026-09-05 | docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
 | `f3bcac0` | 2026-09-05 | fix(version): package-lock.json etait un CINQUIEME porteur que rien ne gardait |
 | `b57bac3` | 2026-09-05 | chore(version): 0.32.2 -> 0.33.0 sur les quatre porteurs |
@@ -26,100 +28,101 @@
 | `2179370` | 2026-09-05 | fix(quality): rectifie la ligne canaux en ligne — chaque endpoint INTERROGE (AR-3) |
 | `556a5d5` | 2026-09-05 | chore(convergence): inscrit canaux-en-ligne au registre, cliquet 24 -> 26 |
 | `adf81df` | 2026-09-05 | test(canaux-en-ligne): garde la face en ligne des canaux (20 tests, unitaires + sous-processus) |
-| `afee867` | 2026-09-05 | refactor(canaux-en-ligne): extrait le classement de verifier-canaux-en-ligne.mjs et corrige le 2XX-inutilisable |
-| `b258bee` | 2026-09-05 | docs(specs): cadrage garde de la face en ligne des canaux — 3 arbitrages tranches (reco) |
 
 ## Reprise du travail (a completer par Cowork)
 
-- **Ou on en est** : le **LOT A du mode guide** est livre et fusionne — c'etait le plus gros lot de
-  la serie (~5,25 j), **PASS au PREMIER passage**. Les trois depots sont alignes sur **les trois
-  references** (local, NAS, GitHub), arbres propres.
+> Recit reecrit a la **pause du 2026-09-05**, apres le scellement de **v0.33.0**. Le recit
+> precedent portait sur le mode guide du terminal et **n'avait plus rien a voir** avec l'etat
+> courant : il est remplace, pas complete. Les lecons generales qu'il portait restent valables et
+> sont conservees plus bas.
 
-### Le mode guide du terminal — LIVRE (lots 0, B et A ; la serie est complete)
+- **Ou on en est** : **v0.33.0 est SCELLEE et POUSSEE** (`e0d1104`), plus un dernier commit
+  d'outillage (`74cc99a`). **96 commits depuis v0.32.2**, **sept lots gates**. Arbre propre.
+  Note de qualite : `docs/qualite/v0.33.0.md` — elle porte le detail et les lecons.
+- ⚠️ **AUCUN ACTE DE PUBLICATION N'A ETE FAIT** : ni tag, ni release, ni manifeste regenere. Le
+  canal public sert donc encore **v0.32.2**, et la face en ligne le DIT (ecart nomme, hors gate).
+  **C'est voulu** : ces gestes appartiennent au decideur.
+- **Canaux** : **GitHub a tout recu**, dans les DEUX depots. **Le NAS (`192.168.1.139`) et iakabox
+  (`192.168.2.11`) n'ont pas repondu au ping de toute la journee** — ce n'est ni un refus
+  d'authentification ni un desaccord de depot, ce sont deux machines injoignables. Elles se
+  rattraperont d'un `iakaframe update`, sans rien a reparer.
 
-**Trois paliers**, cables sur **10 cibles** — le critere etant *« le parametre a-t-il une autorite
-enumerable en place ? »*, jamais « les plus utilisees » (non mesure, donc invérifiable) :
+### Les sept lots de v0.33.0
 
-| Palier | Contenu |
-|---|---|
-| **0** | **refus loquaces** — chaque refus sur vocabulaire ferme **LISTE les valeurs derivees de l'autorite** |
-| **1** | **listes numerotees**, patron `models` deja eprouve en production |
-| **2** | **fleches, surbrillance, filtre a la frappe** — mode brut, **MEME couture que 1** |
+Dette de canal de la publication · persistance de la Table (+ correctif de course au boot) ·
+identite du runner · pastille du badge · statut vivant en session attachee · gardes de la vitrine ·
+garde de la face en ligne des canaux (+ un defaut de classement corrige).
 
-⚠️ **Le palier 1 n'est PAS un brouillon du 2 : il en est le REPLI AUTOMATIQUE** quand le mode brut
-n'est pas disponible (terminal exotique, Windows ancien).
+### Ce que cette serie a enseigne — le coeur du recit
 
-**Declenchement : `--guide`**, drapeau **opt-in**, **invisible des appelants existants**. Le verbe nu
-est ecarte — il **casse la classe A** (`list` rend l'inventaire, `show` sort en `exit 1`).
+1. **LA RECETTE DU DECIDEUR A TROUVE CE QUE LES GATES AVAIENT LAISSE PASSER**, trois fois :
+   l'ouverture sur la mauvaise vue, le badge invente, la pastille aux deux epees. **Aucune n'aurait
+   ete vue sans lancer l'app.**
+2. ⚠️ **LE DEFAUT VIT A LA JONCTION** — quatre fois cette version. A chaque fois les **fonctions
+   pures etaient correctes et leurs tests verts** : le defaut vivait ENTRE les fonctions, dans un
+   ecran qu'un module declarait « non montable ». Il l'etait. **Une garde de fonction pure ne suffit
+   pas quand le defaut vit a la jonction.**
+3. **Un temoin satisfiable par autre chose doit porter un VERROU**, conserve dans le depot. Defaut
+   paye **cinq fois**. Deux verrous poses cette version : celui de la pastille, celui du temps.
+4. **On ne CONTRAINT pas un modele par une phrase, on l'ORIENTE.** Les gardes portent sur ce que le
+   Cockpit **ENVOIE**, jamais sur ce que le runner **REND**. Critere declare **non couvert,
+   definitivement** — c'est une conclusion, pas une dette.
+5. **Elargir une mesure n'est pas toujours l'ameliorer** : cela aurait transforme « le README ne
+   peut pas mentir » en « le README ne peut pas expliquer ».
+6. **On n'etend pas une limite declaree qui parle d'AUTRE CHOSE.** « Est-ce que ca tourne » et « a
+   qui l'imputer » sont deux axes : sur une session attachee, le premier est satisfait pendant que
+   le second est viole. L'etendre aurait ete ecrire une chose fausse.
+7. **Un lot qui corrige des successeurs oublies ne peut pas repartir en oubliant le sien** — dit par
+   le gate **deux fois**. La seconde, la cause etait **une consigne du coordinateur qui contredisait
+   le critere de l'instruction**.
+8. **Un porteur de version corrige A LA MAIN sans etendre sa garde re-derive** : `package-lock.json`
+   l'a fait deux fois. Garde etendue et cliquet pose.
 
-**UNE REGLE UNIQUE de non-interactivite** (`peutDemander`) remplace **les DEUX regles divergentes** :
-`models` **ne regardait PAS `CI`**, donc sur un runner avec pseudo-terminal **il prompterait et ferait
-pendre le job**. ⚠️ **Changement de comportement OBSERVABLE, signale et documente aux deux endroits,
-jamais glisse.**
+### Prochaine etape concrete, dans l'ordre
 
-🛑 **L'INTERDIT D'A4 TIENT, verifie par le gate qui a cherche le contournement** : aucune liste de
-menu ne peut produire `--force` / `--yes` / `--cascade` / `--autoriser-creation-depot` **comme item**,
-et un **test statique** double le filet runtime. **Un guidage qui proposerait `--force` aurait annule
-la garde de l'Amendement A.** En valeur libre, **c'est `validateModelValue()` qui tranche, JAMAIS le
-moteur** — mesure, pas lecture.
+1. **Publier v0.33.0** si les clients doivent la voir : tag, workflow, puis
+   `node scripts/publish-update.mjs v0.33.0`. **C'est aussi l'occasion des recettes dues** :
+   installeurs Windows MSI et Linux `.deb`, contrefactuel du vol de `latest` (CA-5/CA-6/CA-10).
+2. **Successeur pret a cadrer, petit et hors ligne** : `ENDPOINT-404-COMPTE-COMME-INTERROGE` — la
+   ligne de sortie affirme « chaque endpoint **interroge** sert la version » alors qu'un endpoint en
+   404 **est** interroge et ne sert rien. Mesure et reproduit par le gate. ⚠️ **Le cadrage de ce lot
+   a ete REFUSE par le decideur le 2026-09-05** : ne pas le relancer sans son feu vert.
+3. **Deux decisions qui appartiennent au decideur** : la base Postgres du homelab (bloque L32 depuis
+   fin juillet), et `CONVERGENCE-RELEASE-YML-ALIGNEMENT` (un des deux ecarts est FONCTIONNEL, donc
+   l'aligner est une decision, pas un nettoyage).
+4. **Dette documentaire tranchee a moitie** : `docs/qualite/` reprend a v0.33.0, mais **quatre
+   versions restent sans note** (v0.31.2, v0.32.0, v0.32.1, v0.32.2). A combler ou a declarer
+   abandonne.
 
-**Un VRAI bug trouve et corrige en route (CA-10)** : les trois points d'entree ne rendaient `'vide'`
-que si `permettreLibre` etait faux — or **les 10 cibles passent toutes `true`**. Une autorite vide
-affichait *« saisir un id »* au lieu de *« rien a guider »*. **Reproduit par le gate sur l'etat
-d'avant**, remede verifie.
+### Signalements ouverts, non traites
 
-### 🛑 CE QUI RESTE DU AU DECIDEUR — trois gestes, et personne ne peut les faire a sa place
+Le cas d'erreur du scan du portefeuille (correct en code, garde par aucun test) · deux bornes de
+hors-couverture non ecrites dans le code · le residu d'un critere non teste · un contrefactuel
+declaratif plutot qu'execute · une extraction par regex qui suppose des cles alphabetiques ·
+**un flake rapporte puis NON REPRODUIT** sur les gardes d'identite (~23 executions par fichier,
+zero rouge) — ni confirme ni infirme, **a surveiller**.
 
-1. **La recette du palier 2** — `specs/recettes/mode-guide-palier-2-manuelle.md`, **8 scenarios, sur
-   macOS ET Windows**, dont **Ctrl-C et la restauration du terminal**. **CA-13 N'EST PAS COCHEE** :
-   le palier 2 est **LIVRE MAIS NON RECETTE**, et c'est ecrit tel quel partout. Le mode brut **n'est
-   pas testable de bout en bout** — Node n'a pas de pty, `node-pty` serait **une dependance donc
-   interdite**. Le gate a juge la recette **JOUABLE** : *« gestes precis, verdict binaire par ligne,
-   pas vague »*.
+⚠️ **Deux gates de scellement n'ont rendu AUCUN rapport** (badge seul, apres avoir travaille). Les
+mesures de la note de qualite sont donc **celles du coordinateur**, et elles le disent. **Un verdict
+sans rapport ne vaut rien.**
+
+### Recettes RESTEES DUES des series precedentes (conservees, non traitees)
+
+1. **Recette du palier 2 du mode guide** — `specs/recettes/mode-guide-palier-2-manuelle.md`,
+   **8 scenarios, macOS ET Windows**, dont **Ctrl-C et la restauration du terminal**. Le palier 2 est
+   **LIVRE MAIS NON RECETTE**, et c'est ecrit tel quel partout. *(Vit dans `iakaframe`, pas ici.)*
 2. **M-1** — sur une machine **hors LAN**, chronometrer un controle de mise a jour. Le NAS est en
    **position 1**, adresse **privee**, **sans delai configure**.
 3. **M-4** — faire servir volontairement un **manifeste PERIME** par le NAS : **l'app dit-elle « a
-   jour » ?** C'est **« la seule preuve du risque central »**, celui que le lot de la dette de canal
+   jour » ?** C'est **la seule preuve du risque central**, celui que le lot de la dette de canal
    contourne **sans l'avoir jamais vu**.
 
-### Specifique a ce depot
+⚠️ **La jonction reste NON GARDEE** : `publish-update.mjs` est **top-level**, donc non importable
+sans execution — `canauxDeclares()` vers `commitAndPushManifest` n'est mordue par **aucun test**,
+**declaree telle**. Divergence **preexistante** avec le GUI, qui peut la tester.
 
-- `v0.32.2` publiee, **9 cles / 9**, manifeste **regenere et servi** aux clients.
-- **Non touche par le LOT A** (mode guide) : il vit dans `iakaframe` seul.
-- ⚠️ **La jonction reste NON GARDEE** : `publish-update.mjs` est **top-level**, donc **non
-  importable** sans execution — `canauxDeclares()` -> `commitAndPushManifest` **n'est mordue par
-  aucun test**, **declaree telle**. **AR-2 borne la couture au seul geste de push.** Divergence
-  **preexistante** avec le GUI, qui peut la tester.
+### Lecons generales conservees des recits precedents
 
-### Prochaine etape concrete
-
-1. 👤 **Les trois gestes ci-dessus.**
-2. **`RESERVOIR-REDECLENCHE`** *(inscrit au backlog le 2026-09-03)* — le seuil du reservoir compte
-   des **occurrences**, pas des **observations neuves**. Mesure : **8 propositions pour 2 sujets**,
-   quatre cycles, sur **les memes deux lignes du 17 juillet**. Trois pistes inscrites, **aucune
-   tranchee, aucune gratuite** — *« c'est un cadrage, pas un correctif »*.
-3. **`CI-RELEASE-AUCUN-EPINGLAGE`** — le `release.yml` d'`iakaframe` **n'epingle rien** (trois tags
-   flottants). Successeur legitime : *« aucune mesure de ce lot ne le refute »*.
-4. **Ecart doc/code signale, non bloquant** : `docs/commandes.md` **sous-declare** le nombre
-   d'exceptions a la regle A4.1 — **4 selections sur 10** n'offrent pas d'entree libre, **une seule
-   est nommee**.
-5. 🛑 **Tourner le jeton iakabox** et supprimer `feat/L0-CONTIENT-UN-JETON-NE-PAS-POUSSER`
-   (**verifie** : cette branche **n'est PAS sur GitHub** — on ne pousse jamais `--all`).
-
-### Pieges connus
-
-1. ⚠️ **Le plugin updater s'arrete au premier endpoint qui REPOND, pas au premier qui est FRAIS.**
-   Donc **un endpoint joignable et perime FAIT AUTORITE** sur un endpoint frais place apres lui.
-   **Vaut pour le NAS**, position 1.
-2. **Une garde de FRAICHEUR compare deux derives de la meme source** : elle ne voit pas une derive de
-   la source. Il faut un **controle positif independant**.
-3. **Un temoin vide est pire qu'un temoin absent.** Quatre trouves cette semaine. ⚠️ **Un test
-   d'interactivite est NOTOIREMENT facile a ecrire a vide** : *« pas de prompt en non-TTY » est vert
-   sur un CLI ou rien n'est branche*.
-4. **Un plancher de cliquet SOUS le compte reel ne rougit jamais** ; **AU-DESSUS il rougit en
-   permanence**. Se mesure, ne se suppose pas.
-5. **Une interdiction par POINTEUR ne ferme pas une classe** : interdire d'aligner UN fichier laisse
-   creer trois fichiers neufs non gardes. *On ne `grep` pas une implication.*
 6. **Un motif sans condition de chute est une exclusion de confort** — et une condition **generique**
    en est une deguisee.
 7. **`gh release edit --latest` est un drapeau BOOLEEN** ; `legacy` n'est atteignable que par l'API,
@@ -143,6 +146,7 @@ d'avant**, remede verifie.
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-05 21:59 | pause | v0.32.2 | main | Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous. |
 | 2026-09-05 17:14 | version | v0.33.0 | main | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
 | 2026-09-04 22:59 | pause | v0.32.2 | main | L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant). |
 | 2026-09-03 21:26 | manual | v0.32.2 | main | LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS). |

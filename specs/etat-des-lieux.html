@@ -24,17 +24,19 @@ code{font-family:'SF Mono',Consolas,monospace;background:rgba(200,164,78,.1);col
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#555;font-size:.78rem;}
 </style></head><body>
 <h1>Etat des lieux - <span class="accent">IakaCockpit</span></h1>
-<div class="sub">Genere le 2026-09-05 17:14 - motif : version - a regenerer a chaque version et a chaque pause/reprise.</div>
+<div class="sub">Genere le 2026-09-05 21:59 - motif : pause - a regenerer a chaque version et a chaque pause/reprise.</div>
 <h2>Etat courant</h2>
 <div class="kv">
-  <div class="k">Version</div><div>v0.33.0</div>
+  <div class="k">Version</div><div>v0.32.2</div>
   <div class="k">Branche</div><div>main</div>
-  <div class="k">Dernier commit</div><div><code>5487457 docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom</code></div>
-  <div class="k">Arbre</div><div><span class='bad'>modifications non commitees</span></div>
+  <div class="k">Dernier commit</div><div><code>74cc99a chore(claude): autorise WebFetch sur testing-library.com et docs.github.com</code></div>
+  <div class="k">Arbre</div><div><span class='ok'>propre</span></div>
   <div class="k">Fichiers</div><div>1444 (suivis + non ignores)</div>
-  <div class='k'>Note</div><div>Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur.</div>
+  <div class='k'>Note</div><div>Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous.</div>
 </div>
-<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>5487457</code></td><td>2026-09-05</td><td>docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom</td></tr>
+<h2>Commits recents</h2><table><tr><th>Hash</th><th>Date</th><th>Sujet</th></tr><tr><td><code>74cc99a</code></td><td>2026-09-05</td><td>chore(claude): autorise WebFetch sur testing-library.com et docs.github.com</td></tr>
+<tr><td><code>e0d1104</code></td><td>2026-09-05</td><td>docs(version): scelle v0.33.0 — note de qualite + etat des lieux</td></tr>
+<tr><td><code>5487457</code></td><td>2026-09-05</td><td>docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom</td></tr>
 <tr><td><code>f3bcac0</code></td><td>2026-09-05</td><td>fix(version): package-lock.json etait un CINQUIEME porteur que rien ne gardait</td></tr>
 <tr><td><code>b57bac3</code></td><td>2026-09-05</td><td>chore(version): 0.32.2 -&gt; 0.33.0 sur les quatre porteurs</td></tr>
 <tr><td><code>4adfcdc</code></td><td>2026-09-05</td><td>merge: garde de la face en ligne des canaux — et un defaut de classement corrige (gate PASS)</td></tr>
@@ -42,11 +44,10 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #1f1f1f;color:#55
 <tr><td><code>2179370</code></td><td>2026-09-05</td><td>fix(quality): rectifie la ligne canaux en ligne — chaque endpoint INTERROGE (AR-3)</td></tr>
 <tr><td><code>556a5d5</code></td><td>2026-09-05</td><td>chore(convergence): inscrit canaux-en-ligne au registre, cliquet 24 -&gt; 26</td></tr>
 <tr><td><code>adf81df</code></td><td>2026-09-05</td><td>test(canaux-en-ligne): garde la face en ligne des canaux (20 tests, unitaires + sous-processus)</td></tr>
-<tr><td><code>afee867</code></td><td>2026-09-05</td><td>refactor(canaux-en-ligne): extrait le classement de verifier-canaux-en-ligne.mjs et corrige le 2XX-inutilisable</td></tr>
-<tr><td><code>b258bee</code></td><td>2026-09-05</td><td>docs(specs): cadrage garde de la face en ligne des canaux — 3 arbitrages tranches (reco)</td></tr>
 </table>
 <h2>Journal (versions &amp; pauses)</h2>
 <table><tr><th>Date</th><th>Motif</th><th>Version</th><th>Branche</th><th>Note</th></tr>
+<tr><td>2026-09-05 21:59</td><td><span class='r r-pause'>pause</span></td><td>v0.32.2</td><td>main</td><td>Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous.</td></tr>
 <tr><td>2026-09-05 17:14</td><td><span class='r r-version'>version</span></td><td>v0.33.0</td><td>main</td><td>Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur.</td></tr>
 <tr><td>2026-09-04 22:59</td><td><span class='r r-pause'>pause</span></td><td>v0.32.2</td><td>main</td><td>L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant).</td></tr>
 <tr><td>2026-09-03 21:26</td><td><span class='r r-manual'>manual</span></td><td>v0.32.2</td><td>main</td><td>LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS).</td></tr>

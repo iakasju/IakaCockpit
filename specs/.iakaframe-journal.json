@@ -278,5 +278,15 @@
     "dirty": true,
     "files": 1444,
     "note": "Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur."
+  },
+  {
+    "date": "2026-09-05 21:59",
+    "reason": "pause",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "74cc99a chore(claude): autorise WebFetch sur testing-library.com et docs.github.com",
+    "dirty": false,
+    "files": 1444,
+    "note": "Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous."
   }
 ]
