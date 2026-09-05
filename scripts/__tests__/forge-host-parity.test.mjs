@@ -300,11 +300,20 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // `scripts/__tests__/vitrine.test.mjs`, lignes 30-34) ont eux aussi été modifiés — F-2, la
     // prose de `fichiersPromis` ne promet plus que ce qu'elle mesure — mais restent inscrits SANS
     // faire monter ce plancher, puisqu'ils l'étaient déjà.
+    //
+    // 2026-09-05, lot « garde de la face en ligne des canaux » — VINGT-QUATRE → VINGT-SIX. DEUX
+    // fichiers NEUFS, byte-identiques : `scripts/lib/canaux-en-ligne.mjs` (la logique de verdict,
+    // extraite du script déjà inscrit ci-dessus, ligne 57) et
+    // `scripts/__tests__/canaux-en-ligne.test.mjs`, qui exerce enfin
+    // `scripts/verifier-canaux-en-ligne.mjs` (jusque-là dans le MÊME cas que `vitrine-en-ligne.mjs`
+    // avant son propre lot — aucun test ne l'exécutait). `scripts/verifier-canaux-en-ligne.mjs`
+    // lui-même (déjà inscrit ligne 57) est aussi modifié, sans faire monter ce plancher puisqu'il
+    // l'était déjà.
     expect(
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(24);
+    ).toBeGreaterThanOrEqual(26);
 
     const derives = [];
     for (const ligne of registre) {
