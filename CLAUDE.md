@@ -1594,6 +1594,68 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       que le roster dit « non lancé » et que les bulles ne portent aucun nom. Appartient au décideur.
       **➜ Clôture datée du S-1 de L46** : le signalement ouvert au gate du 2026-09-04 est **FERMÉ**
       par ce lot, sur les deux canaux.
+- [x] **L49** — **Gardes de la vitrine : la prose dit ce que la mesure mesure, et la face en ligne
+      est exercée**
+      → `specs/instructions/gardes-de-la-vitrine.md`
+      *(Successeurs **F-2** et **F-3**, inscrits au gate de **L42** le 2026-08-29 et **restés six
+      jours sans traitement** — c'est précisément la maladie que ce lot soigne. Cadré par
+      🔵 Gandalf, **5 arbitrages TRANCHÉS** (« reco ») : AR-1 = **O3** corriger la prose **ET**
+      épingler la limite · AR-2 = **O3 bornée** extraction + sous-processus · AR-3 = **non**,
+      les canaux hors lot · AR-4 = **entrées fabriquées** · AR-5 = la fonction extraite dans
+      `scripts/lib/vitrine.mjs`. Convergence tenue : mêmes fichiers byte-identiques dans les deux
+      dépôts, cliquet **23 → 24**.)*
+      **F-2 — la prose affirmait ce que rien n'assert.** Le commentaire écrivait « prose, note,
+      **lien**, titre — quel que soit l'endroit » alors que la mesure n'attrape un nom **qu'entre
+      accents graves**. ⚠️ **Le cadrage a corrigé l'énoncé du défaut** : « quel que soit l'endroit »
+      est **VRAI** et devait rester — c'est la conquête de L42-F1 ; le mot faux était **« lien »**,
+      une adresse de lien n'étant pas entre accents graves. Et la prose fautive vivait dans **DEUX**
+      fichiers, pas un.
+      ⚠️ **POURQUOI ON N'A PAS ÉLARGI LA MESURE** — l'option a été examinée et **écartée sur un fait
+      mesuré** : la garde est une **liste blanche dure**, donc élargir aurait fait **échouer le gate**
+      sur une commande d'installation citée en exemple dans un guide. On transformait « le README ne
+      peut pas mentir » en « le README ne peut pas expliquer ». De plus, le seul mode de défaillance
+      **jamais observé** (le défaut historique de L42-F1) était écrit **avec** des accents graves,
+      donc déjà couvert. La limite est désormais **épinglée dans les deux sens** : un nom entre
+      accents graves est vu, le même sans ne l'est pas — le jour où quelqu'un élargit la règle sans
+      mettre la déclaration à jour, le pin rougit.
+      **F-3 — la seule face non circulaire du dispositif était la seule sans garde.** La face locale
+      compare **deux dérivés de la même table** : elle reste verte sur un README qui ment si la
+      convention du bundler change. La face **en ligne** est la seule à confronter la table au monde
+      réel, et **aucun test ne l'exerçait** — la désarmer symétriquement dans les deux dépôts laissait
+      tout vert. La logique de verdict est **extraite** et exercée, le script étant **top-level
+      intégral** (l'importer l'exécuterait, mur déjà heurté par L45) : le test le lance en **vrai
+      sous-processus**, avec un compteur d'appels sur disque comme verrou contre un script qui
+      sortirait avant toute mesure.
+      🛑 **CE QUE CETTE GARDE PROUVE, ET CE QU'ELLE NE PROUVE PAS — écrit DANS le fichier de garde,
+      pas seulement ici.** Elle prouve que le script s'exécute et **traite correctement ce qu'il
+      reçoit**. Elle **ne prouve pas** que la forme simulée corresponde à l'API réelle : si celle-ci
+      changeait de forme, tous les tests resteraient verts sur un verdict faux. Le dispositif garde
+      **trois** niveaux dont aucun ne subsume les autres.
+      **Piège évité, nommé par le cadrage** : le critère des plateformes déclarées absentes tourne
+      **À VIDE** dans les deux dépôts (aucune absence déclarée). Un test qui l'aurait piloté par le
+      fichier **réel** aurait itéré sur **rien** — le défaut d'un lot précédent rejoué dans le lot
+      censé le corriger. D'où des **entrées fabriquées**, jamais le fichier réel.
+      **Gate — UN FAIL puis PASS.** Le FAIL portait sur **CA-10** : le successeur nommé par AR-3
+      n'était inscrit dans **aucun** backlog. Défaut **d'Aragorn**, pas de l'exécution — l'ordre de
+      mission interdisait de toucher au backlog. Le gate a eu raison de bloquer : **un lot qui corrige
+      des successeurs oubliés ne peut pas repartir en oubliant le sien.**
+      **Mesures re-faites par le gate** : **1007 front / 99 fichiers** · **346 Rust** (non touché) ·
+      `quality.sh` **exit 0** · convergence **25 fichiers byte-identiques** des deux côtés ·
+      **4 contrefactuels rejoués** dont le pin **dans les deux sens** et la non-régression de L46.
+      **CA-8 mesuré PAR LE GATE, mieux que demandé** : l'exécution n'avait pas pu couper le réseau et
+      l'avait **déclaré**. Le gate a bloqué les connexions **au niveau des sockets** — donc DNS, TCP
+      et TLS — et rejoué la suite : **1007 verts, aucune connexion réelle tentée**. Preuve plus forte
+      qu'une coupure de câble.
+      **S-n du gate, non bloquants** : un **flake** rapporté par l'exécution sur les gardes de L46 et
+      L48 est resté **non reproduit** par le gate (≈23 exécutions par fichier, zéro rouge) — ni
+      confirmé ni infirmé, **à surveiller**.
+      **➜ SUCCESSEUR INSCRIT ICI, NON TRAITÉ (AR-3 = non, et l'inscrire EST le geste)** :
+      `scripts/verifier-canaux-en-ligne.mjs`, la face en ligne des **canaux** livrée par L45, est
+      **dans le même cas que F-3** — mesuré par le cadrage : son nom n'apparaît que dans **deux
+      commentaires** (`scripts/__tests__/publish-push.test.mjs`,
+      `scripts/__tests__/forge-host-parity.test.mjs`), **aucun test ne l'exécute**. La désarmer
+      laisserait tout vert. Même défaut, même remède, même forme de garde (sous-processus, réseau
+      neutralisé) ; ≈ 1 j-homme. **Il est écrit ici pour ne pas devenir le F-4 de la prochaine fois.**
 - [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
       → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
       `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
