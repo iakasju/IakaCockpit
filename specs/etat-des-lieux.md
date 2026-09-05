@@ -1,33 +1,33 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-09-04 22:59 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-09-05 17:14 (motif: version).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
 
 | Champ | Valeur |
 |---|---|
-| Version | v0.32.2 |
+| Version | v0.33.0 |
 | Branche | main |
-| Dernier commit | 2a6e346 docs(backlog): L46 livre — identite du runner, gate FAIL puis PASS |
+| Dernier commit | 5487457 docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
 | Arbre | MODIFICATIONS NON COMMITEES |
-| Fichiers (suivis + non ignores) | 1435 |
-| Note | L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant). |
+| Fichiers (suivis + non ignores) | 1444 |
+| Note | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
-| `2a6e346` | 2026-09-04 | docs(backlog): L46 livre — identite du runner, gate FAIL puis PASS |
-| `f227002` | 2026-09-04 | merge: identite du runner — le Cockpit dit enfin au runner qui il est (gate PASS) |
-| `e4a877f` | 2026-09-04 | test(identity): junction guard — attached conversation attributes nothing (CA-6/§6 F1) |
-| `f382516` | 2026-09-04 | fix(identity): never attribute the linked team's coordinator to an attached (external) session |
-| `6087e9c` | 2026-09-04 | feat(working): delay PtyTerminal mount until teams load (AR-8) + honest identity display (F3/AR-7) |
-| `0ee7d49` | 2026-09-04 | feat(chat): attribute top-level geste/activite/pensee turns to the injected persona (F2) |
-| `1f1de00` | 2026-09-04 | feat(app): inject team-derived identity into the runner's system-prompt |
-| `b917e4a` | 2026-09-04 | feat(frame): compose a pure runner identity preamble (F1 core) |
-| `e956e00` | 2026-09-04 | docs(specs): cadrage identite du runner — 8 arbitrages tranches (reco) |
-| `1da102d` | 2026-09-04 | docs(backlog): L37 — CA-11 rejoue apres correctif et VERT (recette du decideur) |
+| `5487457` | 2026-09-05 | docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
+| `f3bcac0` | 2026-09-05 | fix(version): package-lock.json etait un CINQUIEME porteur que rien ne gardait |
+| `b57bac3` | 2026-09-05 | chore(version): 0.32.2 -> 0.33.0 sur les quatre porteurs |
+| `4adfcdc` | 2026-09-05 | merge: garde de la face en ligne des canaux — et un defaut de classement corrige (gate PASS) |
+| `6c43818` | 2026-09-05 | docs(backlog): inscrit les deux successeurs de la face en ligne des canaux (CA-10) |
+| `2179370` | 2026-09-05 | fix(quality): rectifie la ligne canaux en ligne — chaque endpoint INTERROGE (AR-3) |
+| `556a5d5` | 2026-09-05 | chore(convergence): inscrit canaux-en-ligne au registre, cliquet 24 -> 26 |
+| `adf81df` | 2026-09-05 | test(canaux-en-ligne): garde la face en ligne des canaux (20 tests, unitaires + sous-processus) |
+| `afee867` | 2026-09-05 | refactor(canaux-en-ligne): extrait le classement de verifier-canaux-en-ligne.mjs et corrige le 2XX-inutilisable |
+| `b258bee` | 2026-09-05 | docs(specs): cadrage garde de la face en ligne des canaux — 3 arbitrages tranches (reco) |
 
 ## Reprise du travail (a completer par Cowork)
 
@@ -143,6 +143,7 @@ d'avant**, remede verifie.
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-05 17:14 | version | v0.33.0 | main | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
 | 2026-09-04 22:59 | pause | v0.32.2 | main | L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant). |
 | 2026-09-03 21:26 | manual | v0.32.2 | main | LOT A livre : mode guide du terminal, 3 paliers, --guide sur 10 cibles, regle unique de non-interactivite. Palier 2 NON RECETTE (geste humain, 2 OS). |
 | 2026-09-03 18:54 | manual | v0.32.2 | main | Dette de canal fermee : fan-out sur les deux canaux, exit non nul si une cible echoue, face 2 hors gate. Endpoint iakabox retire. Cliquet 20->23. |

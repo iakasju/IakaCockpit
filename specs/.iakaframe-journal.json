@@ -268,5 +268,15 @@
     "dirty": true,
     "files": 1435,
     "note": "L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant)."
+  },
+  {
+    "date": "2026-09-05 17:14",
+    "reason": "version",
+    "version": "v0.33.0",
+    "branch": "main",
+    "commit": "5487457 docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom",
+    "dirty": true,
+    "files": 1444,
+    "note": "Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur."
   }
 ]
