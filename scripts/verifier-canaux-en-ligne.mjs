@@ -37,9 +37,22 @@
 // l'instruction). Un endpoint dont la version est PLUS RÉCENTE que le local (cas impossible en
 // publication normale, mais mesuré tel quel) est nommé séparément — pas confondu avec le cas
 // périmé.
+//
+// RECTIFICATION DATEE (2026-09-05, garde de la face en ligne des canaux) : le classement rendait
+// `ecart: false` pour QUATRE cas de nature differente (§ 1.7 de l'instruction) — dont un endpoint
+// qui repond en 2XX avec un corps INUTILISABLE (non-JSON, ou sans champ `version`). Or un tel
+// endpoint fait S'ARRETER le client LA (doc Tauri updater v2 : « Tauri ne continue vers l'URL
+// suivante que si un code de statut non-2XX est retourne », confirmee par la lecture de source de
+// L45) — masquage EXACT que ce script existe pour detecter, laisse passer par son propre
+// classifieur. Le classement (`classer`) est desormais EXTRAIT dans `scripts/lib/canaux-en-ligne.mjs`
+// (module NEUF, AR-1 = b : `canaux-publication.mjs` porte le contrat DECLARE « canaux d'ECRITURE »,
+// ce classement porte sur des canaux de LECTURE, nature differente), exerce par
+// `scripts/__tests__/canaux-en-ligne.test.mjs`, et PARTITIONNE : non-2XX (le client bascule) != 2XX
+// inutilisable (le client s'arrete, ecart nomme). Voir l'en-tete de ce module pour le detail.
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hoteDe, composerVerdict } from "./lib/canaux-en-ligne.mjs";
 
 const NOM = "verifier-canaux-en-ligne";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -54,27 +67,6 @@ function lireEndpoints() {
   return Array.isArray(eps) ? eps.filter((u) => typeof u === "string" && u.length > 0) : [];
 }
 
-function hoteDe(url) {
-  try {
-    return new URL(url).host;
-  } catch {
-    return String(url);
-  }
-}
-
-/** Comparaison semver simple (aucune dépendance) : -1 si a<b, 0 si égal, 1 si a>b, null si illisible. */
-function compareSemver(a, b) {
-  const ra = /^(\d+)\.(\d+)\.(\d+)/.exec(String(a ?? ""));
-  const rb = /^(\d+)\.(\d+)\.(\d+)/.exec(String(b ?? ""));
-  if (!ra || !rb) return null;
-  for (let i = 1; i <= 3; i += 1) {
-    const x = Number(ra[i]);
-    const y = Number(rb[i]);
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return 0;
-}
-
 /** Mesure UN endpoint. N'échoue jamais : un échec réseau est un état, pas une exception. */
 async function mesurerEndpoint(url, { timeoutMs = 8000 } = {}) {
   const ctrl = new AbortController();
@@ -83,16 +75,19 @@ async function mesurerEndpoint(url, { timeoutMs = 8000 } = {}) {
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) {
+      // Non-2XX : le CLIENT BASCULE vers l'endpoint suivant (§ 1.7) — PAS un `echec2xx`,
+      // `classer` n'en fait donc pas un ecart.
       return { ...base, mesure: true, motif: res.status === 404 ? "absent (404)" : `HTTP ${res.status}`, version: null };
     }
     let body = null;
     try {
       body = await res.json();
     } catch {
-      return { ...base, mesure: true, motif: "reponse non-JSON", version: null };
+      // 2XX mais corps INUTILISABLE : le client S'ARRETE ici, rien ne le rachete (§ 1.7).
+      return { ...base, mesure: true, motif: "reponse non-JSON", version: null, echec2xx: true };
     }
     if (typeof body?.version !== "string" || !body.version) {
-      return { ...base, mesure: true, motif: "manifeste sans champ version", version: null };
+      return { ...base, mesure: true, motif: "manifeste sans champ version", version: null, echec2xx: true };
     }
     return { ...base, mesure: true, motif: "sert", version: body.version };
   } catch (e) {
@@ -100,23 +95,6 @@ async function mesurerEndpoint(url, { timeoutMs = 8000 } = {}) {
   } finally {
     clearTimeout(t);
   }
-}
-
-/** Classe le VERDICT d'un endpoint contre le tag publié. Jamais tranché sur le cas ambigu. */
-function classer(mesure, tag) {
-  if (!mesure.mesure) return { etat: "injoignable", ecart: false };
-  if (mesure.version === null) return { etat: mesure.motif, ecart: false };
-  const cmp = compareSemver(mesure.version, tag);
-  if (cmp === null) return { etat: `version illisible (« ${mesure.version} »)`, ecart: true };
-  if (cmp === 0) return { etat: "concorde", ecart: false };
-  if (cmp < 0) {
-    // ⚠️ LE PIÈGE DU CACHE : on NOMME l'ambiguïté, on ne la tranche pas (cf. en-tête du fichier).
-    return {
-      etat: `PERIME OU EN PROPAGATION (sert v${mesure.version}, tag v${tag}) — fenetre de propagation NON MESUREE`,
-      ecart: true,
-    };
-  }
-  return { etat: `EN AVANCE SUR LE TAG (sert v${mesure.version}, tag v${tag})`, ecart: true };
 }
 
 function nonMesure(raison) {
@@ -142,18 +120,14 @@ for (const url of endpoints) {
   mesures.push(await mesurerEndpoint(url));
 }
 
-const reussis = mesures.filter((m) => m.mesure);
-if (reussis.length === 0) {
+// CA-5 — LA JONCTION : la logique de verdict est EXTRAITE (`scripts/lib/canaux-en-ligne.mjs`),
+// ce script ne fait plus que la BRANCHER sur ce qu'il a mesuré.
+const { lignes, ecarts, mesuresReussies } = composerVerdict(mesures, PKG_VERSION);
+if (mesuresReussies.length === 0) {
   nonMesure("tous les endpoints sont injoignables — reseau indisponible, ou tous hors service");
 }
 
-const ecarts = [];
-for (const m of mesures) {
-  const v = classer(m, PKG_VERSION);
-  const ligne = `  ${m.hote.padEnd(30)} ${v.etat}`;
-  console.log(ligne);
-  if (v.ecart) ecarts.push(`${m.hote} : ${v.etat}`);
-}
+for (const ligne of lignes) console.log(ligne);
 
 console.log("");
 if (ecarts.length === 0) {

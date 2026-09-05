@@ -67,7 +67,7 @@ node scripts/verifier-canaux-en-ligne.mjs
 CANAUX=$?
 set -e
 case "$CANAUX" in
-  0) echo "    canaux en ligne : chaque endpoint sert la version publiee." ;;
+  0) echo "    canaux en ligne : chaque endpoint INTERROGE sert la version publiee." ;;
   3) echo "    canaux en ligne : NON MESURE — raison exacte ci-dessus. Ce n'est PAS un succes ; a rejouer." ;;
   *) echo "    canaux en ligne : ECART(S) ci-dessus (code $CANAUX). A traiter, sans bloquer ce gate." ;;
 esac
