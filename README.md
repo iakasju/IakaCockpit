@@ -16,23 +16,23 @@ Frontière avec [iakaFrameGUI](https://github.com/iakasju/iakaFrameGUI) : la for
 ## Installation
 
 <!-- vitrine:debut:binaires -->
-La version scellée courante est **[v0.32.2](https://github.com/iakasju/IakaCockpit/releases/tag/v0.32.2)** — voir
+La version scellée courante est **[v0.33.0](https://github.com/iakasju/IakaCockpit/releases/tag/v0.33.0)** — voir
 [toutes les versions](https://github.com/iakasju/IakaCockpit/releases).
 
 ### Binaires prêts à l'emploi
 
 Tous les systèmes sont couverts. Prenez le fichier de votre plateforme sur la
-[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.32.2) :
+[page de la release](https://github.com/iakasju/IakaCockpit/releases/tag/v0.33.0) :
 
 | Système | Fichier à télécharger |
 |---|---|
-| **Windows (installeur)** | `IakaCockpit_0.32.2_x64-setup.exe` |
-| **Windows (MSI)** | `IakaCockpit_0.32.2_x64_en-US.msi` |
-| **macOS Apple Silicon** | `IakaCockpit_0.32.2_aarch64.dmg` |
-| **macOS Intel** | `IakaCockpit_0.32.2_x64.dmg` |
-| **Linux (Debian/Ubuntu)** | `IakaCockpit_0.32.2_amd64.deb` |
-| **Linux (Fedora/RHEL)** | `IakaCockpit-0.32.2-1.x86_64.rpm` |
-| **Linux (portable)** | `IakaCockpit_0.32.2_amd64.AppImage` |
+| **Windows (installeur)** | `IakaCockpit_0.33.0_x64-setup.exe` |
+| **Windows (MSI)** | `IakaCockpit_0.33.0_x64_en-US.msi` |
+| **macOS Apple Silicon** | `IakaCockpit_0.33.0_aarch64.dmg` |
+| **macOS Intel** | `IakaCockpit_0.33.0_x64.dmg` |
+| **Linux (Debian/Ubuntu)** | `IakaCockpit_0.33.0_amd64.deb` |
+| **Linux (Fedora/RHEL)** | `IakaCockpit-0.33.0-1.x86_64.rpm` |
+| **Linux (portable)** | `IakaCockpit_0.33.0_amd64.AppImage` |
 <!-- vitrine:fin:binaires -->
 
 > **macOS** — l'application n'est pas signée par un certificat Apple. Au premier lancement,
@@ -51,7 +51,7 @@ plateforme (Xcode CLT sur macOS, WebView2 + Build Tools sur Windows, `webkit2gtk
 ```bash
 # 1. Récupérer l'archive de la version depuis la page des releases
 #    (Assets > Source code), puis la décompresser
-cd IakaCockpit-0.32.2
+cd IakaCockpit-0.33.0
 
 # 2. Installer les dépendances
 npm ci
