@@ -1656,6 +1656,34 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       `scripts/__tests__/forge-host-parity.test.mjs`), **aucun test ne l'exécute**. La désarmer
       laisserait tout vert. Même défaut, même remède, même forme de garde (sous-processus, réseau
       neutralisé) ; ≈ 1 j-homme. **Il est écrit ici pour ne pas devenir le F-4 de la prochaine fois.**
+- [ ] **`ENDPOINT-PERIME-FAIT-AUTORITE`** — **la fenêtre de propagation du CDN n'est pas mesurée,
+      donc « périmé » et « en propagation » ne sont pas départageables**
+      *(successeur **nommé** par le lot « Garde de la face en ligne des canaux » (2026-09-05,
+      `specs/instructions/garde-de-la-face-en-ligne-des-canaux.md`) et écrit dans le code
+      (`scripts/verifier-canaux-en-ligne.mjs`). **Non traité, et l'inscrire EST le geste.**)*
+      **Le fait** : l'un des deux endpoints est servi derrière un **CDN**. Une mesure lancée juste
+      après une publication peut rendre l'**ancien** contenu. Un endpoint qui sert une version
+      antérieure au tag local **n'est donc pas nécessairement menteur** — il peut être **en cours de
+      propagation**. Le script **NOMME** cette ambiguïté (`PERIME OU EN PROPAGATION`) **plutôt que de
+      trancher à sa place**, et ce non-tranchement est désormais **épinglé sur les deux moitiés de la
+      formule** par un test : quiconque « simplifiera » un jour en « PERIME » fera rougir la garde.
+      **Ce qui manque pour trancher** : la **fenêtre de propagation réelle**, qui exige du réseau et
+      du temps réel — donc **hors de portée d'un test de gate**, par nature. Ce n'est pas une dette
+      de code, c'est une **mesure à faire**, et elle appartient au décideur.
+- [ ] **`ENDPOINT-404-COMPTE-COMME-INTERROGE`** — **la ligne de sortie affirme plus que la mesure
+      quand un endpoint répond 404 à côté d'un endpoint concordant**
+      *(successeur **trouvé par le gate 🏹 Legolas** du 2026-09-05, **reproduit en direct par lui**,
+      jamais nommé par aucune instruction. Explicitement **hors périmètre** du lot qui l'a révélé —
+      son § 5 exclut de remuer les messages de sortie.)*
+      **Mesuré** : avec un endpoint rendant `404` et un autre concordant, le script sort **0** en
+      affirmant « chaque endpoint **interrogé** sert la même version que le tag local ». Or
+      l'endpoint en `404` **est** « interrogé » au sens que le code emploie ailleurs (`mesure:true`),
+      et il **ne sert rien**. La qualification « interrogé » n'a été définie que **par opposition à
+      injoignable** ; le cas d'un endpoint joignable mais sans contenu **n'est couvert par aucune des
+      deux définitions**.
+      **C'est le même défaut de famille que F-2** — une prose qui affirme plus que ce que la mesure
+      porte — sur le script même que le lot venait d'exercer. Coût pressenti : faible (une ligne de
+      sortie et sa garde). **À ne pas traiter « en passant »** : c'est ce qui a produit F-2 et F-3.
 - [ ] **L40** — **Clés d'installeur du manifeste updater — le manifeste dit enfin quel paquet il sert**
       → `specs/instructions/cles-installeur-manifeste-updater.md` (dupliquée **verbatim** dans
       `iakaFrameGUI/specs/instructions/`, byte-identique — une divergence est un défaut, CA-16).
