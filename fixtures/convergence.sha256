@@ -14,7 +14,7 @@ f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-6a6237665bbd3ed758df007a7d5e3c323fbc510af7396dd16b212f6d80e33a23  scripts/__tests__/forge-host-parity.test.mjs
+3bb692b56a9940257f224ab5a8577a74a03452c1430e713df2b49dbdcedd958b  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
@@ -28,10 +28,10 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 # (src-tauri/tauri.conf.json) et le reste de `fixtures/vitrine-locale.json`, qui est LOCAL a chaque
 # depot et n'a donc PAS sa place ici.
 56b0cca8b2dbada23161d6a30ffde710e03bded209d4112a67cbb57f8b84c439  fixtures/vitrine-assets.json
-5be45af49541b12e29f316fb6cef9587acf6d0518749cd992bd45c649e15adb6  scripts/lib/vitrine.mjs
+f3942d89d5d5559c30ec9aa4becfbe0409450ef7595f71847b1d0c8202a73a5d  scripts/lib/vitrine.mjs
 8fddc688739ca8da0e038618e8c2ebd5154d2394e04687d7afe92b57353087ec  scripts/vitrine.mjs
-37010747211f885e9f380a2fcdd0cf2372b114aa29240b64ab441c9043238a50  scripts/vitrine-en-ligne.mjs
-0bf9d071b74b32e944cd29d9aad4e6f8bb69e98f693a95da9f8cc035fe559cd0  scripts/__tests__/vitrine.test.mjs
+f1e736302421141f6cd7cc086fb53e36f915f6dccd56c5d9943b457ab9fbdbb4  scripts/vitrine-en-ligne.mjs
+c37bba4ea23994c4c329fbd7c965608074834ef790d1e37d6282c15a8e60a3b6  scripts/__tests__/vitrine.test.mjs
 # L44 — LA GARDE DU BLOC `latest:` DU WORKFLOW DE RELEASE. Le job qui désigne le pointeur de
 # release est écrit DEUX FOIS, une par dépôt jumeau. Mesuré au 2026-08-30 (L43) : les deux copies
 # étaient byte-identiques et RIEN ne gardait celle du GUI — la preuve en a été faite par mutation,
@@ -55,3 +55,18 @@ addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__test
 256bd699d5f2e8cf69b6ad20648d440808b4c4c11bab6526db4eb6c9d636be57  scripts/lib/canaux-publication.mjs
 005812600310cae224372ab08c25ee7378c22c1e16f4d4750929cfb2fee80982  scripts/__tests__/canaux-publication.test.mjs
 4398174bb9c52807eba621ff30478d85cd91f05804b689a0365a966397ddc5f5  scripts/verifier-canaux-en-ligne.mjs
+# GARDES DE LA VITRINE (2026-09-05). `scripts/vitrine-en-ligne.mjs` etait la SEULE face du
+# dispositif de vitrine (L42) qu'AUCUN test n'executait — desarmable dans les deux depots avec
+# regeneration du registre sans qu'aucune face ne bronge. Sa logique de verdict (les cinq
+# egalites E-1..E-5) est desormais EXTRAITE dans `scripts/lib/vitrine.mjs` (`evaluerCanalEnLigne`,
+# `tagAnnonceDe`), et ce fichier neuf l'exerce en DEUX temps : unitaire sur entrees FABRIQUEES
+# (E-5 comprise, le registre reel etant vide des deux cotes) et en SOUS-PROCESSUS (reseau
+# neutralise par un `fetch` de substitution, precedent `canal-mesure.test.mjs`) — le script
+# `vitrine-en-ligne.mjs` etant TOP-LEVEL INTEGRAL, l'importer l'aurait execute. Il ne nomme aucun
+# des deux depots : tout vient des fichiers REELS de celui ou il s'execute. Les TROIS fichiers
+# deja inscrits ci-dessus (`scripts/lib/vitrine.mjs`, `scripts/vitrine-en-ligne.mjs`,
+# `scripts/__tests__/vitrine.test.mjs`, lignes 31/33/34) ont aussi ete rectifies (F-2 : la prose de
+# `fichiersPromis` ne promettait plus que ce qu'elle mesure — le mot « lien » retire, la forme
+# « entre backticks » epinglee par un pin bidirectionnel et un hors-couverture declare) : cliquet
+# 23 -> 24 pour le seul fichier NEUF.
+f72c55e60ae1df9eb35b6f150d3084f0ca1d648907929c3aa5297e7ea10ea8fb  scripts/__tests__/vitrine-en-ligne.test.mjs

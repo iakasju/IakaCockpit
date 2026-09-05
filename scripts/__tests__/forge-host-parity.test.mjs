@@ -290,11 +290,21 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // registre SANS que ce plancher ne monte laissait les trois fichiers libres de quitter le
     // registre sans qu'aucun rouge ne le signale — un plancher SOUS le compte réel est exactement
     // le trou que ce cliquet existe pour fermer, une couche plus haut que le registre lui-même.
+    //
+    // 2026-09-05, lot « gardes de la vitrine » (F-2/F-3) — VINGT-TROIS → VINGT-QUATRE. UN seul
+    // fichier NEUF, byte-identique : `scripts/__tests__/vitrine-en-ligne.test.mjs`, qui exerce
+    // enfin `scripts/vitrine-en-ligne.mjs` (jusque-là la SEULE face du dispositif de vitrine que
+    // rien n'exécutait — désarmable dans les deux dépôts avec régénération du registre sans
+    // qu'aucune face ne bronge). Les trois fichiers déjà inscrits ci-dessus
+    // (`fixtures/vitrine-assets.json`, `scripts/lib/vitrine.mjs`, `scripts/vitrine-en-ligne.mjs`,
+    // `scripts/__tests__/vitrine.test.mjs`, lignes 30-34) ont eux aussi été modifiés — F-2, la
+    // prose de `fichiersPromis` ne promet plus que ce qu'elle mesure — mais restent inscrits SANS
+    // faire monter ce plancher, puisqu'ils l'étaient déjà.
     expect(
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(23);
+    ).toBeGreaterThanOrEqual(24);
 
     const derives = [];
     for (const ligne of registre) {

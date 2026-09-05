@@ -61,6 +61,14 @@ const CONTEXTE = {
   gabarits: LOCALE.gabarits ?? {},
 };
 
+// LE NOM FICTIF PARTAGE PAR LES TEMOINS CI-DESSOUS, ET POURQUOI IL EST HISSE ICI (F-2, gardes de la
+// vitrine). Il vivait auparavant DANS un seul `describe`, invisible aux autres. Deux temoins
+// distants dans ce fichier (l'angle mort de la prose ci-dessous, ET le pin bidirectionnel de CA-2)
+// ont besoin du MEME nom : il n'est derive d'AUCUNE plateforme de la table et ne figure dans AUCUN
+// README des deux depots, donc il ne peut etre promis QUE par ce que le test ajoute lui-meme. Une
+// seule constante, jamais deux temoins fictifs qui divergeraient en silence.
+const FANTOME = substituer("{APP}_{V}_fantome-de-vitrine.dmg", { app: APP, version: VERSION });
+
 describe("CA-1 — la vitrine est DERIVEE, jamais recopiee", () => {
   it("le README versionne est EXACTEMENT ce que le generateur produit", () => {
     const attendues = rendreVitrine(CONTEXTE);
@@ -251,10 +259,12 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
   it("le README ne PROMET rien que la table ne derive et que les absents n'aient retire", () => {
     // LA FERMETURE EN GATE de l'angle mort, et la seule qui morde HORS LIGNE. La face en ligne
     // (E-3) constate qu'un fichier promis n'existe pas ; elle est hors gate et depend du reseau.
-    // Ici, sans reseau, on interdit la SOURCE du defaut : le README n'a le droit de promettre que
-    // les noms que le generateur produit pour les plateformes REELLEMENT fournies. Une promesse
-    // ecrite ailleurs — prose libre, note, lien — n'est derivee de rien : elle est donc fausse par
-    // construction, et ce test la refuse au moment ou elle est ecrite.
+    // Ici, sans reseau, on interdit la SOURCE du defaut : le README n'a le droit de promettre —
+    // ENTRE BACKTICKS, la seule forme mesuree par `ARTEFACT` (cf. le hors-couverture declare et
+    // le pin « CA-2 » plus bas dans ce fichier) — que les noms que le generateur produit pour les
+    // plateformes REELLEMENT fournies. Une promesse ecrite ailleurs, SOUS CETTE FORME — prose
+    // libre, note — n'est derivee de rien : elle est donc fausse par construction, et ce test la
+    // refuse au moment ou elle est ecrite.
     const noms = nomsAttendus(TABLE.plateformes, { app: APP, version: VERSION });
     const clesAbsentes = new Set(CONTEXTE.absents.map((a) => a.cle));
     const promettables = new Set(
@@ -279,10 +289,8 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
   // un test vert intitule « une promesse en PROSE est VUE ». Le defaut d'origine, lui, portait sur
   // un nom que la release ne porte PAS ; c'est cette propriete-la qu'il fallait garder.
   //
-  // Ce nom-ci n'est derive d'AUCUNE plateforme de la table et ne figure dans AUCUN README des deux
-  // depots : il ne peut etre promis que par la prose qu'on ajoute. Il passe quand meme par
-  // `substituer`, comme les vrais motifs, pour que la forme reste celle d'un artefact reel.
-  const FANTOME = substituer("{APP}_{V}_fantome-de-vitrine.dmg", { app: APP, version: VERSION });
+  // `FANTOME` est defini au niveau du module (juste apres `CONTEXTE`) : le pin bidirectionnel de
+  // CA-2, plus bas dans ce fichier, en a besoin lui aussi et ne doit pas fabriquer un second nom.
 
   it("une promesse en PROSE, hors tableau et hors marqueurs, est VUE par E-3", () => {
     // ANGLE MORT MESURE PUIS FERME. « Promis = ligne de tableau » laissait passer une phrase libre
@@ -335,5 +343,57 @@ describe("le generateur est PUR — meme entree, meme sortie", () => {
       expect(README).toContain(finZone(nom));
       expect(debutZone(nom)).not.toBe(finZone(nom));
     }
+  });
+});
+
+// ┌─ HORS-COUVERTURE DECLARE — la FORME que `fichiersPromis` ne voit PAS (F-2, successeur de L42, ─┐
+// │ cadre le 2026-09-05, « gardes de la vitrine »).                                                │
+// │                                                                                                  │
+// │ `fichiersPromis` (et `ARTEFACT` qui la sous-tend, `scripts/lib/vitrine.mjs:209`) ne mesure       │
+// │ qu'UNE forme de promesse : un nom d'artefact ECRIT ENTRE BACKTICKS, hors bloc d'absence          │
+// │ declaree. « quel que soit l'endroit du README » RESTE VRAI — la boucle balaie TOUTES les lignes │
+// │ sans filtre de forme, c'est la conquete de L42-F1 — mais l'ancien commentaire laissait entendre │
+// │ « quelle que soit la FORME », qui est FAUX : un lien markdown dont l'URL porte le nom            │
+// │ (`[texte](.../nom.dmg)`), une ligne de bloc de code (`curl -LO .../nom.deb`), ou une prose SANS  │
+// │ backticks ne sont PAS vus par ce qui suit.                                                       │
+// │                                                                                                  │
+// │ MESURE (2026-09-05, § 1.3 du cadrage) : ZERO mensonge present — les deux README du portefeuille  │
+// │ ne citent aujourd'hui un artefact QU'entre backticks, en ligne de tableau genere. Et le seul     │
+// │ mode de defaillance jamais OBSERVE (le `.dmg` fantome de L42-F1) etait deja ecrit AVEC des       │
+// │ backticks : il est deja couvert. Les trois formes ci-dessus sont un piege FUTUR, pas un mensonge │
+// │ present — les elargir acheterait un faux positif CERTAIN sur un geste legitime (un guide         │
+// │ d'installation qui `curl` un `.deb` ferait rougir le gate), contre un risque hypothetique.       │
+// │                                                                                                  │
+// │ CONDITION DE LEVEE : le jour ou l'une des trois formes non couvertes est CONSTATEE dans un des   │
+// │ deux README — la mesure s'elargit alors, et ce bloc se retire.                                   │
+// └──────────────────────────────────────────────────────────────────────────────────────────────────┘
+describe("CA-2 — la limite de `fichiersPromis` est EPINGLEE, et le pin mord dans les DEUX sens", () => {
+  it("verrou du temoin : le fantome n'est PROMIS par AUCUN README AVANT qu'on l'ajoute", () => {
+    // Sans cette assertion, le jour ou ce nom rejoindrait la table des plateformes (ou un README),
+    // les temoins ci-dessous redeviendraient vides en silence — le defaut EXACT de L42-F1.
+    expect(fichiersPromis(README), `temoin vide : « ${FANTOME} » est deja promis`).not.toContain(
+      FANTOME,
+    );
+  });
+
+  it("ENTRE BACKTICKS, hors bloc d'absence, le nom EST vu — c'est la forme mesuree", () => {
+    const promis = fichiersPromis(`${README}\n\nVoir \`${FANTOME}\` sur la page de la release.\n`);
+    expect(promis).toContain(FANTOME);
+  });
+
+  it("le MEME nom, en PROSE NUE (sans backticks), N'EST PAS vu — LIMITE DECLAREE ci-dessus", () => {
+    const promis = fichiersPromis(`${README}\n\nVoir ${FANTOME} sur la page de la release.\n`);
+    expect(promis).not.toContain(FANTOME);
+  });
+
+  it("le MEME nom, dans l'URL d'un LIEN MARKDOWN, N'EST PAS vu — LIMITE DECLAREE ci-dessus", () => {
+    const promis = fichiersPromis(`${README}\n\n[Télécharger](https://exemple.test/${FANTOME}).\n`);
+    expect(promis).not.toContain(FANTOME);
+  });
+
+  it("le MEME nom, en ligne de BLOC DE CODE, N'EST PAS vu — LIMITE DECLAREE ci-dessus", () => {
+    const bloc = ["```bash", `curl -LO https://exemple.test/${FANTOME}`, "```"].join("\n");
+    const promis = fichiersPromis(`${README}\n\n${bloc}\n`);
+    expect(promis).not.toContain(FANTOME);
   });
 });
