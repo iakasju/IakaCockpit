@@ -8,7 +8,9 @@
       "Write(*)",
       "Glob(*)",
       "Grep(*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:testing-library.com)",
+      "WebFetch(domain:docs.github.com)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
