@@ -428,6 +428,33 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       déjà, l. 72 et l. 96-99 — pas touché en passant). **Aucun tag, aucune release, aucun push**
       exécuté par l'agent.
 
+- [x] `CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME` — **soldé** (2026-09-08, ⚒️ Gimli, ordre de mission
+      portefeuille 🔷 Odin, branche `fix/convergence-registre-exclu` depuis `main`, **REMIS AU GATE
+      🏹 Legolas, non auto-validé**, commit logique unique sur `IakaCockpit` + `iakaFrameGUI` +
+      `iakaInstall`). Défaut découvert au passage par le lot 2 de `CONVERGENCE-TROIS-FRERES` côté
+      `iakaInstall` (registre à 7 entrées, délibérément plus petit que les 29 d'ici, AR-C3=b) :
+      `scripts/test-convergence.mjs` incluait INCONDITIONNELLEMENT `fixtures/convergence.sha256`
+      dans l'ensemble des chemins comparés — un écart nommé GARANTI dès que le troisième dépôt
+      était mesuré, quelle que soit la conformité réelle de l'intersection.
+      **Test rouge d'abord** (`scripts/__tests__/convergence-croisee.test.mjs`, byte-identique aux
+      deux autres dépôts) : un frère synthétique au registre SOUS-ENSEMBLE STRICT, intersection
+      byte-identique, capturé ROUGE côté `iakaInstall` — `fixtures/convergence.sha256 : DIVERGENT`,
+      exit 1 — puis rejoué ici, également rouge avant correctif. **Correctif** : le registre est
+      exclu de l'intersection ET du hors comparaison (instrument de la mesure, pas objet qu'elle
+      compare), la sortie le déclare explicitement. Script byte-identique sur les trois dépôts
+      (`diff` vide, `shasum`
+      `f93d5f0771ba8281388a6f00b63d8cd230e2717f36e0500d415f438f05dbab56`). **Registre refixé** :
+      `fixtures/convergence.sha256` régénéré à la commande canonique, **29 entrées, inchangé**,
+      seule l'empreinte de `test-convergence.mjs` a bougé (`31a520498326… → f93d5f0771ba…`).
+      **Mesure finale** — `npm run test:convergence` : **OK — 2 frère(s) mesuré(s) [iakaFrameGUI,
+      iakaInstall], 36 chemin(s) comparé(s), 22 hors comparaison, 0 SKIP**, exit 0 (hors
+      comparaison = le sous-ensemble AR-C3=b non porté par `iakaInstall`, déclaré, jamais un
+      écart). **Contrefactuel joué et révoqué** : octet muté dans `fixtures/vitrine-assets.json`
+      (intersection) ⇒ `DIVERGENT` nommé, exit 1 ; révoqué, retour au vert vérifié. **Preuve
+      mesurée** : `npm run typecheck` `0` ; `npm run lint` `0` ; `npm run test` `0`, **1064 passed
+      (1064)** (avant : 1063 — +1, le test croisé ci-dessus, aucun supprimé). `main` **intact**
+      (aucun commit dessus, branche non fusionnée, aucun push, aucun tag).
+
 - [ ] **L45** — **Dette de canal de la publication — le script ne promet plus la visibilité, il
       rend compte de ce qu'il a poussé**
       → `iakaframe/specs/instructions/dette-de-canal-de-la-publication.md` (copie **UNIQUE** —
