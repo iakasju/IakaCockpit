@@ -38,11 +38,22 @@
 //
 // CE QUI NE BOUGE PAS D'UN OCTET : les deux faces et leur répartition (locale dans le gate,
 // croisée hors gate) ; `IAKA_CONVERGENCE_HOME` AUTORITAIRE (exit 2 si le chemin ne porte pas le
-// registre, aucun repli) ; le registre lui-même comparé EN PLUS des chemins qu'il liste (c'est ce
-// qui distingue la face croisée de la face locale — une modification COORDONNÉE fichier +
-// empreinte, d'un seul côté, ne se voit que d'ici) ; la règle *« tout fichier de ce registre se
-// modifie DANS LES DEUX DÉPÔTS au même commit logique »*, qui devient *« dans TOUS les dépôts qui
-// l'inscrivent »*.
+// registre, aucun repli) ; la règle *« tout fichier de ce registre se modifie DANS LES DEUX
+// DÉPÔTS au même commit logique »*, qui devient *« dans TOUS les dépôts qui l'inscrivent »*.
+//
+// CORRECTIF — LE REGISTRE EXCLU DE LUI-MÊME (successeur CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME,
+// découvert au passage par le lot 2 ci-dessus, corrigé le 2026-09-08, matière à trois dépôts —
+// IakaCockpit, iakaFrameGUI, iakaInstall). `fixtures/convergence.sha256` est l'INSTRUMENT de la
+// comparaison de cette face, jamais un OBJET qu'elle doit comparer : deux registres de tailles
+// différentes PAR CONSTRUCTION (29 entrées chez une sœur, 7 chez `iakaInstall`, AR-C3=b) ne
+// peuvent JAMAIS être byte-identiques entre eux, même quand l'intersection réelle qu'ils décrivent
+// l'est. Avant ce correctif, `lireRegistre()` préfixait `EMPREINTES` aux DEUX listes AVANT de
+// calculer l'intersection : le fichier-registre se retrouvait donc TOUJOURS dans l'ensemble
+// comparé, jamais dans le « hors comparaison », quel que soit son contenu réel — un écart nommé
+// GARANTI dès qu'un troisième dépôt au registre plus petit entrait en scène (mesuré : `iakaInstall`
+// contre chaque sœur rendait `exit 1`, 1 écart, sur ce seul fichier). Le registre est désormais
+// EXCLU de l'intersection ET du hors comparaison — la sortie le DIT explicitement, jamais un
+// silence (voir la ligne de mesure par frère, plus bas).
 //
 // HORS `test:all` par défaut : la mesure dépend d'un dépôt frère, donc faillible sur un clone
 // isolé. Tolérante à son absence : SKIP propre (exit 0), jamais un faux rouge.
@@ -167,8 +178,11 @@ for (const frere of mesures) {
     continue;
   }
   const ensembleFrere = new Set(cheminsFrere);
-  const compares = cheminsLocaux.filter((c) => ensembleFrere.has(c));
-  const horsComparaison = cheminsLocaux.filter((c) => !ensembleFrere.has(c));
+  // Le registre est l'INSTRUMENT de cette comparaison, pas un OBJET qu'elle compare (correctif
+  // CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME, 2026-09-08) : exclu ici de l'intersection ET du hors
+  // comparaison, quel que soit son contenu chez le frère.
+  const compares = cheminsLocaux.filter((c) => c !== EMPREINTES && ensembleFrere.has(c));
+  const horsComparaison = cheminsLocaux.filter((c) => c !== EMPREINTES && !ensembleFrere.has(c));
   totalCompares += compares.length;
   totalHorsComparaison += horsComparaison.length;
 
@@ -196,6 +210,7 @@ for (const frere of mesures) {
     `  ${frere.nom} (${frere.chemin}) : mesure — ${compares.length} chemin(s) compare(s), ` +
       `${horsComparaison.length} hors comparaison` +
       (horsComparaison.length > 0 ? ` [${horsComparaison.join(", ")}]` : "") +
+      ` (${EMPREINTES} exclu de la comparaison par construction — instrument, pas objet)` +
       (ecartsFrere.length > 0 ? `, ${ecartsFrere.length} ECART(S)` : ""),
   );
 }
