@@ -28,6 +28,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   debutZone,
+  detecterCablageSignatureActif,
+  ecartsCliquetSecurite,
   ecartsDeVitrine,
   ecrireZones,
   estHorsVitrine,
@@ -36,8 +38,10 @@ import {
   fichiersPromis,
   lireZones,
   nomsAttendus,
+  rendreSecurite,
   rendreVitrine,
   SENTINELLE_ABSENTS,
+  SENTINELLE_SECURITE,
   substituer,
   versionAnnoncee,
 } from "../lib/vitrine.mjs";
@@ -51,6 +55,7 @@ const LOCALE = lireJson("fixtures/vitrine-locale.json");
 const APP = lireJson("src-tauri/tauri.conf.json").productName;
 const VERSION = lireJson("package.json").version;
 const README = lire("README.md");
+const RELEASE_YML = lire(".github/workflows/release.yml");
 
 const CONTEXTE = {
   app: APP,
@@ -59,6 +64,8 @@ const CONTEXTE = {
   plateformes: TABLE.plateformes,
   absents: LOCALE.absents ?? [],
   gabarits: LOCALE.gabarits ?? {},
+  // AR-C5 = (a), CONVERGENCE-TROIS-FRERES (2026-09-08) — remonte depuis iakaInstall.
+  absencesDeSignature: LOCALE.absences_de_signature ?? [],
 };
 
 // LE NOM FICTIF PARTAGE PAR LES TEMOINS CI-DESSOUS, ET POURQUOI IL EST HISSE ICI (F-2, gardes de la
@@ -395,5 +402,105 @@ describe("CA-2 — la limite de `fichiersPromis` est EPINGLEE, et le pin mord da
     const bloc = ["```bash", `curl -LO https://exemple.test/${FANTOME}`, "```"].join("\n");
     const promis = fichiersPromis(`${README}\n\n${bloc}\n`);
     expect(promis).not.toContain(FANTOME);
+  });
+});
+
+describe("AR-C5 — la vitrine déclare ce qu'elle ne signe pas (encore)", () => {
+  it("les entrées d'absences_de_signature portent les quatre champs obligatoires", () => {
+    for (const a of CONTEXTE.absencesDeSignature) {
+      for (const champ of ["libelle", "motif", "depuis", "condition_de_levee", "procedure"]) {
+        expect(String(a[champ] ?? "").trim().length, `${a.cle} : champ « ${champ} »`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("les deux clés attendues (macos-notarisation, windows-signature) sont déclarées", () => {
+    expect(CONTEXTE.absencesDeSignature.map((a) => a.cle).sort()).toEqual(
+      ["macos-notarisation", "windows-signature"].sort(),
+    );
+  });
+
+  it("CONTREFACTUEL — une entrée privée d'un champ obligatoire fait JETER rendreSecurite", () => {
+    for (const champManquant of ["libelle", "motif", "depuis", "condition_de_levee", "procedure"]) {
+      const entree = { ...CONTEXTE.absencesDeSignature[0] };
+      delete entree[champManquant];
+      expect(
+        () => rendreSecurite({ absencesDeSignature: [entree] }),
+        `champ manquant : ${champManquant}`,
+      ).toThrow();
+    }
+  });
+
+  it("zone VIDE = affirmation explicite, zone PEUPLEE ne prétend pas 'toutes posées'", () => {
+    expect(rendreSecurite({ absencesDeSignature: [] })).toContain("Toutes les signatures");
+    expect(rendreSecurite({ absencesDeSignature: CONTEXTE.absencesDeSignature })).not.toContain(
+      "Toutes les signatures",
+    );
+    expect(rendreSecurite({ absencesDeSignature: CONTEXTE.absencesDeSignature })).toContain(
+      SENTINELLE_SECURITE,
+    );
+  });
+});
+
+describe("AR-C5 — le CLIQUET OFFLINE : une absence de signature qui redevient fausse DOIT rougir", () => {
+  it("TEMOIN POSITIF — le release.yml RÉEL ne câble aucun secret APPLE_*/WINDOWS_* actif", () => {
+    const { macos, windows } = detecterCablageSignatureActif(RELEASE_YML);
+    expect(macos, "release.yml câble un secret Apple ACTIF").toBe(false);
+    expect(windows, "release.yml câble un secret Windows ACTIF").toBe(false);
+    expect(
+      ecartsCliquetSecurite({
+        releaseYmlTexte: RELEASE_YML,
+        absencesDeSignature: CONTEXTE.absencesDeSignature,
+      }),
+    ).toEqual([]);
+  });
+
+  it("CONTREFACTUEL macOS — câbler APPLE_CERTIFICATE sur une COPIE fait rougir le cliquet, nommé", () => {
+    const muté = RELEASE_YML.replace(
+      "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+      'GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}',
+    );
+    expect(muté).not.toBe(RELEASE_YML);
+    const { macos } = detecterCablageSignatureActif(muté);
+    expect(macos, "le câblage ajouté n'a pas été détecté").toBe(true);
+    const ecarts = ecartsCliquetSecurite({
+      releaseYmlTexte: muté,
+      absencesDeSignature: CONTEXTE.absencesDeSignature,
+    });
+    expect(ecarts.length, "le cliquet ne mord pas sur un câblage Apple actif").toBeGreaterThan(0);
+    expect(ecarts.join(" ")).toMatch(/macos-notarisation/);
+    // Révocation : la mutation ne vit qu'en mémoire, le fichier versionné est inchangé.
+    expect(lire(".github/workflows/release.yml")).toBe(RELEASE_YML);
+  });
+
+  it("CONTREFACTUEL Windows — câbler WINDOWS_CERTIFICATE sur une COPIE fait rougir le cliquet, nommé", () => {
+    const muté = RELEASE_YML.replace(
+      "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+      'GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}',
+    );
+    expect(muté).not.toBe(RELEASE_YML);
+    const ecarts = ecartsCliquetSecurite({
+      releaseYmlTexte: muté,
+      absencesDeSignature: CONTEXTE.absencesDeSignature,
+    });
+    expect(ecarts.length, "le cliquet ne mord pas sur un câblage Windows actif").toBeGreaterThan(0);
+    expect(ecarts.join(" ")).toMatch(/windows-signature/);
+    expect(lire(".github/workflows/release.yml")).toBe(RELEASE_YML);
+  });
+
+  it("un commentaire qui NOMME la variable (sans la câbler en env:) ne fait PAS rougir", () => {
+    const texteAvecCommentaire = `# APPLE_CERTIFICATE et APPLE_CERTIFICATE_PASSWORD ne sont pas poses\n${RELEASE_YML}`;
+    const { macos } = detecterCablageSignatureActif(texteAvecCommentaire);
+    expect(macos, "un commentaire ne doit pas être lu comme un câblage").toBe(false);
+  });
+
+  it("une valeur VIDE dans le YAML (cle:) ne compte pas comme un câblage ACTIF", () => {
+    const { macos } = detecterCablageSignatureActif(
+      RELEASE_YML.replace(
+        "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+        "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n          APPLE_CERTIFICATE:",
+      ),
+    );
+    expect(macos).toBe(false);
   });
 });

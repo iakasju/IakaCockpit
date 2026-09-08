@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "REGISTRE DES FRERES — CONVERGENCE-TROIS-FRERES (AR-C1 = a, 2026-09-08). LOCAL A CE DEPOT,",
+    "NON PARTAGE : chaque depot nomme SES voisins, et leurs chemins relatifs different selon",
+    "d'ou on les lit — un fichier partage serait faux, meme raison que",
+    "fixtures/canaux-publication.json (motif `convergence.sha256:47-49`) et",
+    "fixtures/vitrine-locale.json (motif `:27-29`). Ce fichier N'ENTRE PAS au registre de",
+    "convergence de `fixtures/convergence.sha256`.",
+    "",
+    "`scripts/test-convergence.mjs` LIT ce fichier et cesse d'ENUMERER les depots voisins",
+    "(ancien hors-couverture, ferme par ce lot) : il reste NEUTRE, il ne nomme toujours aucun",
+    "depot en dur — toute la topologie vit ICI.",
+    "",
+    "Un frere NOMME mais ABSENT DU DISQUE (repertoire inexistant, ou ne portant pas encore",
+    "fixtures/convergence.sha256) produit un SKIP NOMME dans la face croisee — JAMAIS un rouge,",
+    "JAMAIS un vert muet (AR-C2 = a). C'est le cas d'`iakaInstall` aujourd'hui : il est nomme",
+    "ICI pour que la fenetre entre le lot 1 (les deux soeurs) et son propre lot 2 soit LISIBLE",
+    "dans la sortie, jamais un faux vert (AR-C4 = a)."
+  ],
+
+  "freres": [
+    {
+      "nom": "iakaFrameGUI",
+      "chemin": "../iakaFrameGUI",
+      "raison": "l'application jumelle directe — meme bundler, memes sept plateformes, meme convention de release ; registre de convergence attendu byte-identique au sien"
+    },
+    {
+      "nom": "iakaInstall",
+      "chemin": "../iakaInstall",
+      "raison": "troisieme frere de fait (AR-V4=a du lot vitrine, 2026-09-05) : porte deja une partie de la vitrine et de la garde de release, mais n'entre au registre de convergence que pour le SOUS-ENSEMBLE mesure byte-identique (AR-C3=b, lot 2 de CONVERGENCE-TROIS-FRERES, non encore joue) — nomme des maintenant pour que son absence soit un SKIP lisible, jamais un silence",
+      "registre": false
+    }
+  ]
+}

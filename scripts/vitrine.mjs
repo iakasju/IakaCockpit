@@ -40,6 +40,8 @@ export function contexteDuDepot(racine = ROOT) {
     horsVitrine: table.hors_vitrine,
     absents: locale.absents ?? [],
     gabarits: locale.gabarits ?? {},
+    // AR-C5 = (a), CONVERGENCE-TROIS-FRERES (2026-09-08) — remonte depuis iakaInstall.
+    absencesDeSignature: locale.absences_de_signature ?? [],
     readme: readFileSync(resolve(racine, "README.md"), "utf8"),
   };
 }
