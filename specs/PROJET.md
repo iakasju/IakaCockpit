@@ -705,6 +705,15 @@ Chaque feature reçoit son fichier dans `specs/instructions/` AVANT implémentat
   (phase 2), **volet de CRÉATION du graph de délégation / jalons** (+ variantes, features
   inter-agents). **Le re-cadrage architecture conversation/session viendra en lot séparé** (pas dans
   cette révision de vision).
+- **2026-09-08** — **Convergence à trois frères (`iakaInstall`, `IakaCockpit`, `iakaFrameGUI`) :
+  intersection, pas égalité.** `CONVERGENCE-TROIS-FRERES` (lot 1, cadré sur `iakaInstall`) tranche
+  que la garde de convergence à trois ne peut pas traiter la relation comme à deux (une liste
+  unique) : chaque dépôt nomme ses frères (`fixtures/freres.json`, local) et la face croisée compare
+  l'**intersection** des registres, un frère nommé absent produisant un **SKIP nommé** — jamais un
+  rouge, jamais un vert muet. `rendreSecurite()` (déclaration de notarisation/signature absente) est
+  remontée d'`iakaInstall` vers les deux sœurs, dont c'était le même défaut non déclaré (M-15).
+  `iakaInstall` reste hors du registre à trois tant que son propre lot (lot 2) n'a pas mesuré son
+  sous-ensemble byte-identique — décision écrite, pas un oubli.
 
 ---
 
