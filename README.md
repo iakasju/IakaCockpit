@@ -35,9 +35,27 @@ Tous les systèmes sont couverts. Prenez le fichier de votre plateforme sur la
 | **Linux (portable)** | `IakaCockpit_0.33.0_amd64.AppImage` |
 <!-- vitrine:fin:binaires -->
 
-> **macOS** — l'application n'est pas signée par un certificat Apple. Au premier lancement,
-> faites **clic droit → Ouvrir** puis confirmez : un double-clic direct serait bloqué.
+<!-- vitrine:debut:securite -->
+### Sécurité — ce que cette version ne signe pas (encore)
+
+Les binaires ci-dessus **existent** — ce n'est pas une plateforme manquante, c'est une
+étape de signature non encore posée. Chaque absence est déclarée, datée et levable :
+
+> **⚠️ Non signé — macOS — notarisation Apple, depuis 2026-09-08.**
+> Aucun certificat Apple Developer ID ni adhésion au Apple Developer Program (99 $/an) : les bundles macOS (`.dmg`) ne portent qu'une signature AD HOC. Mesuré STRUCTURELLEMENT le 2026-09-08 (convention CONVERGENCE-TROIS-FRERES) sur les fichiers de fabrication : `.github/workflows/release.yml` ne câble aucun secret `APPLE_*` sur l'étape `tauri-action`, `src-tauri/tauri.conf.json` ne porte aucune section `bundle.macOS`. Cette mesure ne télécharge ni ne monte d'asset réel — à la différence de la mesure faite chez `iakaInstall`, qui a vérifié `codesign`/`spctl` sur le binaire servi.
 >
+> **Levée :** Adhésion Apple Developer Program acquise ET secrets `APPLE_CERTIFICATE`/`APPLE_CERTIFICATE_PASSWORD` (plus `APPLE_ID`/`APPLE_PASSWORD`/`APPLE_TEAM_ID` ou `APPLE_API_*`) posés par le décideur dans les réglages du dépôt — acte refusé aux agents. Le jour où ce câblage devient ACTIF dans `release.yml`, le cliquet offline de ce fichier force le retrait de CETTE entrée.
+>
+> **Procédure :** Lancer l'application : macOS affiche « Not Opened ». Aller dans Réglages Système -> Confidentialité et sécurité, trouver l'application dans la section du bas, cliquer « Ouvrir quand même », confirmer, puis s'authentifier avec le mot de passe administrateur. Ce geste doit être fait DANS L'HEURE qui suit le message, et UNE SEULE FOIS par application. Depuis macOS 15 Sequoia, c'est la SEULE voie : aucun autre geste ne contourne ce message.
+>
+> **⚠️ Non signé — Windows — signature de code, depuis 2026-09-08.**
+> Aucun certificat de signature de code n'est posé : le `.msi` et le `.exe` (NSIS) de la release ne sont pas signés. Mesuré STRUCTURELLEMENT le 2026-09-08 : `.github/workflows/release.yml` ne câble aucun secret de signature Windows sur l'étape `tauri-action`, `src-tauri/tauri.conf.json` ne porte aucune section `bundle.windows.certificateThumbprint`.
+>
+> **Levée :** Certificat de signature de code acquis (idéalement EV) ET posé par le décideur — acte refusé aux agents. À dire sans le farder : un certificat NEUF ne fait PAS disparaître SmartScreen immédiatement, la réputation se construit avec le nombre d'installations dans le temps.
+>
+> **Procédure :** Au lancement de l'installeur, Windows affiche « Windows a protégé votre ordinateur » (Microsoft Defender SmartScreen). Cliquer « Informations complémentaires », puis « Exécuter quand même ».
+<!-- vitrine:fin:securite -->
+
 > **Linux** — l'AppImage se lance sans installation, après `chmod +x`.
 
 ### Construire depuis les sources

@@ -301,6 +301,18 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // prose de `fichiersPromis` ne promet plus que ce qu'elle mesure — mais restent inscrits SANS
     // faire monter ce plancher, puisqu'ils l'étaient déjà.
     //
+    // 2026-09-08, lot « RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE » (jumelle CONVERGENCE-TROIS-
+    // FRERES, transposition depuis iakaInstall) — VINGT-SIX -> VINGT-NEUF. TROIS fichiers NEUFS,
+    // byte-identiques, GENERIQUES (aucun nom de depot en dur) : `scripts/lib/release-
+    // publication.mjs` (garde STATIQUE de la convention de release, limite declaree dans son
+    // propre fichier) et ses deux tests, dont `scripts/__tests__/release-publier-shell.test.mjs`
+    // (JAMBE D'EXECUTION : extrait par marqueur les scripts shell des jobs de release et les
+    // rejoue avec un faux `gh` a l'arite du vrai). `.github/workflows/release.yml` LUI-MEME
+    // N'ENTRE PAS ici : les deux copies divergent deja (l. 72, l. 96-99, successeur
+    // CONVERGENCE-RELEASE-YML-ALIGNEMENT) — ce qui converge, c'est la garde, comme pour le bloc
+    // `latest:` deja inscrit (L44) : `fixtures/bloc-latest.sha256` est REFIXE au meme commit
+    // (le bloc passe de `needs: build` a `needs: publier`), sans faire monter ce plancher
+    // puisqu'il l'etait deja.
     // 2026-09-05, lot « garde de la face en ligne des canaux » — VINGT-QUATRE → VINGT-SIX. DEUX
     // fichiers NEUFS, byte-identiques : `scripts/lib/canaux-en-ligne.mjs` (la logique de verdict,
     // extraite du script déjà inscrit ci-dessus, ligne 57) et
@@ -313,7 +325,7 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(26);
+    ).toBeGreaterThanOrEqual(29);
 
     const derives = [];
     for (const ligne of registre) {

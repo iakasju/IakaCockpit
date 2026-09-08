@@ -14,11 +14,11 @@ f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-696e2be9bec93f730f3f5c8b96586b060ab6bd807887ef74c15599fb0b32f945  scripts/__tests__/forge-host-parity.test.mjs
+2896955aec6eabf350f7987048aa0b6b14c223d6e477526cedc7928863c16eb5  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
-02aecf98f2afff776f766bd664953b98a2c85c145af958627ffcac19dc44966e  scripts/test-convergence.mjs
+31a5204983261ace7e99285e7f66475a1083bcd8bb1268042ee9a4ec4645aaf2  scripts/test-convergence.mjs
 518f80198177d776cc6ed8e2eb96c35cb688c911567abcda0309ce11cbe7af9e  specs/instructions/cles-installeur-manifeste-updater.md
 91b45915631b231e80bd9544df616c0c4f0748d98d447562bdd22b63d1ca35ce  specs/instructions/gardes-tiedes.md
 # L42 — LA VITRINE. Ces cinq fichiers rendent la section « Installation » du README DERIVEE au lieu
@@ -28,10 +28,10 @@ b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/ve
 # (src-tauri/tauri.conf.json) et le reste de `fixtures/vitrine-locale.json`, qui est LOCAL a chaque
 # depot et n'a donc PAS sa place ici.
 56b0cca8b2dbada23161d6a30ffde710e03bded209d4112a67cbb57f8b84c439  fixtures/vitrine-assets.json
-f3942d89d5d5559c30ec9aa4becfbe0409450ef7595f71847b1d0c8202a73a5d  scripts/lib/vitrine.mjs
-8fddc688739ca8da0e038618e8c2ebd5154d2394e04687d7afe92b57353087ec  scripts/vitrine.mjs
+593fec375ac558bac2bb3c23a09218c9e5fc84142860685fa9e713514dff9737  scripts/lib/vitrine.mjs
+c7033eeced93c133fdcf8f0cb80b55e8acdbd6a30e0d0de4df98944e061e47c7  scripts/vitrine.mjs
 f1e736302421141f6cd7cc086fb53e36f915f6dccd56c5d9943b457ab9fbdbb4  scripts/vitrine-en-ligne.mjs
-c37bba4ea23994c4c329fbd7c965608074834ef790d1e37d6282c15a8e60a3b6  scripts/__tests__/vitrine.test.mjs
+4a15647b1fa3dd78577518e904bff7bd03739e05070f4726864902ec2a00275d  scripts/__tests__/vitrine.test.mjs
 # L44 — LA GARDE DU BLOC `latest:` DU WORKFLOW DE RELEASE. Le job qui désigne le pointeur de
 # release est écrit DEUX FOIS, une par dépôt jumeau. Mesuré au 2026-08-30 (L43) : les deux copies
 # étaient byte-identiques et RIEN ne gardait celle du GUI — la preuve en a été faite par mutation,
@@ -41,7 +41,7 @@ c37bba4ea23994c4c329fbd7c965608074834ef790d1e37d6282c15a8e60a3b6  scripts/__test
 # CONVERGE, C'EST LE BLOC. D'où une fixture qui porte son empreinte, byte-identique PAR
 # CONSTRUCTION, l'extracteur par marqueur qui la produit, et la garde locale qui la relit dans le
 # gate de chacun des deux dépôts.
-58c0851ad93c3102ca3a8b400e062eca0ed668325b4eccd84b96f3428092d8c9  fixtures/bloc-latest.sha256
+7436350624e988e7ccc890d3fbfc8b008782268a24002b15493f561342473265  fixtures/bloc-latest.sha256
 10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
 addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__tests__/bloc-latest.test.mjs
 # L45 — DETTE DE CANAL DE LA PUBLICATION. Ces trois fichiers sont GENERIQUES par construction : ils
@@ -88,3 +88,17 @@ f72c55e60ae1df9eb35b6f150d3084f0ca1d648907929c3aa5297e7ea10ea8fb  scripts/__test
 # TOP-LEVEL INTEGRAL, l'importer l'aurait execute). DEUX fichiers NEUFS : cliquet 24 -> 26.
 c1be6fc51651406fcfce2d5d3e8023218ee27d302757e2d85de1e2a833405441  scripts/lib/canaux-en-ligne.mjs
 029c70485e6991921db3c433f0d00334af84664bb61c6d62b7d0e8ed8b188bc6  scripts/__tests__/canaux-en-ligne.test.mjs
+# RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE (2026-09-08). Trois fichiers NEUFS, copies
+# BYTE-IDENTIQUE depuis `iakaInstall` (RELEASE-PARTIELLE-PUBLIEE, 2026-09-05), GENERIQUES par
+# construction (aucun nom de depot en dur) : `scripts/lib/release-publication.mjs` (garde
+# STATIQUE, lit le texte du workflow, limite declaree dans son propre fichier) et ses deux
+# tests — `scripts/__tests__/release-publication.test.mjs` (temoin positif + contrefactuels
+# nommes) et `scripts/__tests__/release-publier-shell.test.mjs` (JAMBE D'EXECUTION : extrait par
+# marqueur les scripts shell des jobs `prepare`/`publier`/`latest` et les rejoue avec un faux
+# `gh` a l'arite du vrai + le vrai `jq`, SKIP explicite si `jq` absent). `.github/workflows/
+# release.yml` lui-meme N'ENTRE PAS ici (les deux copies divergent deja, l. 72 et l. 96-99,
+# successeur CONVERGENCE-RELEASE-YML-ALIGNEMENT) — ce qui converge, c'est la garde, comme pour
+# le bloc `latest:` (L44, deja inscrit ci-dessus). Cliquet 26 -> 29.
+5421f10d73254ebcceea0313c981203192bbb2b6d23192e37ad85e6d53de03f5  scripts/lib/release-publication.mjs
+39627147da1b294ba0738d0418c196876e3fe9b62fede8e9c23720d0ae6ad31c  scripts/__tests__/release-publication.test.mjs
+891d75e89e4b0d7eecb354ca041f8f2390f29e91dc811412298b56f1112d3f94  scripts/__tests__/release-publier-shell.test.mjs

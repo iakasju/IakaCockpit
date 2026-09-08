@@ -26,6 +26,39 @@
 
   "absents": [],
 
+  "//absences_de_signature": [
+    "AR-C5 = (a), CONVERGENCE-TROIS-FRERES (2026-09-08) — REMONTE depuis `iakaInstall`",
+    "(amorcage-c3-vitrine-trois-freres.md, AR-V2, 2026-09-05) : les DEUX soeurs ont la MEME",
+    "absence de notarisation/signature qu'iakaInstall, et ne la declaraient nulle part avant ce",
+    "lot (M-15, mesure du cadrage : cette meme cle 'absents' est vide, rien ne parle de",
+    "signature). CE N'EST PAS `absents` : ici, le fichier EXISTE (il n'est pas absent), il n'est",
+    "simplement signe par PERSONNE. Mesure FAITE ici, DIFFERENTE de celle d'iakaInstall (qui a",
+    "telecharge et monte un .dmg reel, codesign/spctl) : ici la mesure est STRUCTURELLE, sur",
+    "les fichiers de fabrication eux-memes — `.github/workflows/release.yml` (aucun secret",
+    "APPLE_*/WINDOWS_* cable) et `src-tauri/tauri.conf.json` (aucune section",
+    "`bundle.macOS`/`bundle.windows.certificateThumbprint`). Le CLIQUET OFFLINE",
+    "(scripts/lib/vitrine.mjs, ecartsCliquetSecurite) fait tomber ces entrees si release.yml",
+    "cable un jour un env: APPLE_*/WINDOWS_* ACTIF sur l'etape tauri-action."
+  ],
+  "absences_de_signature": [
+    {
+      "cle": "macos-notarisation",
+      "libelle": "macOS — notarisation Apple",
+      "motif": "Aucun certificat Apple Developer ID ni adhésion au Apple Developer Program (99 $/an) : les bundles macOS (`.dmg`) ne portent qu'une signature AD HOC. Mesuré STRUCTURELLEMENT le 2026-09-08 (convention CONVERGENCE-TROIS-FRERES) sur les fichiers de fabrication : `.github/workflows/release.yml` ne câble aucun secret `APPLE_*` sur l'étape `tauri-action`, `src-tauri/tauri.conf.json` ne porte aucune section `bundle.macOS`. Cette mesure ne télécharge ni ne monte d'asset réel — à la différence de la mesure faite chez `iakaInstall`, qui a vérifié `codesign`/`spctl` sur le binaire servi.",
+      "depuis": "2026-09-08",
+      "condition_de_levee": "Adhésion Apple Developer Program acquise ET secrets `APPLE_CERTIFICATE`/`APPLE_CERTIFICATE_PASSWORD` (plus `APPLE_ID`/`APPLE_PASSWORD`/`APPLE_TEAM_ID` ou `APPLE_API_*`) posés par le décideur dans les réglages du dépôt — acte refusé aux agents. Le jour où ce câblage devient ACTIF dans `release.yml`, le cliquet offline de ce fichier force le retrait de CETTE entrée.",
+      "procedure": "Lancer l'application : macOS affiche « Not Opened ». Aller dans Réglages Système -> Confidentialité et sécurité, trouver l'application dans la section du bas, cliquer « Ouvrir quand même », confirmer, puis s'authentifier avec le mot de passe administrateur. Ce geste doit être fait DANS L'HEURE qui suit le message, et UNE SEULE FOIS par application. Depuis macOS 15 Sequoia, c'est la SEULE voie : aucun autre geste ne contourne ce message."
+    },
+    {
+      "cle": "windows-signature",
+      "libelle": "Windows — signature de code",
+      "motif": "Aucun certificat de signature de code n'est posé : le `.msi` et le `.exe` (NSIS) de la release ne sont pas signés. Mesuré STRUCTURELLEMENT le 2026-09-08 : `.github/workflows/release.yml` ne câble aucun secret de signature Windows sur l'étape `tauri-action`, `src-tauri/tauri.conf.json` ne porte aucune section `bundle.windows.certificateThumbprint`.",
+      "depuis": "2026-09-08",
+      "condition_de_levee": "Certificat de signature de code acquis (idéalement EV) ET posé par le décideur — acte refusé aux agents. À dire sans le farder : un certificat NEUF ne fait PAS disparaître SmartScreen immédiatement, la réputation se construit avec le nombre d'installations dans le temps.",
+      "procedure": "Au lancement de l'installeur, Windows affiche « Windows a protégé votre ordinateur » (Microsoft Defender SmartScreen). Cliquer « Informations complémentaires », puis « Exécuter quand même »."
+    }
+  ],
+
   "gabarits": {
     "sources": [
       "```bash",

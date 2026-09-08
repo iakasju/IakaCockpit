@@ -1,42 +1,62 @@
-// test-convergence.mjs — FACE CROISÉE de la garde de convergence (L41, défaut CONV).
+// test-convergence.mjs — FACE CROISÉE de la garde de convergence, version N-AIRE (2026-09-08).
 //
 // ┌─ FICHIER CONVERGENT ─────────────────────────────────────────────────────────────────────────┐
 // │ Ce fichier est BYTE-IDENTIQUE dans IakaCockpit et iakaFrameGUI, et il est lui-même inscrit    │
-// │ dans `fixtures/convergence.sha256`. Il ne nomme aucun des deux dépôts en dur : il désigne     │
-// │ « l'autre », quel qu'il soit — c'est ce qui le rend convergent.                               │
+// │ dans `fixtures/convergence.sha256`. Il ne nomme aucun dépôt en dur : il lit la liste NOMMÉE   │
+// │ de `fixtures/freres.json` — fichier LOCAL à chaque dépôt, hors registre (même raison que      │
+// │ `fixtures/canaux-publication.json` : le contenu diverge par nature) — c'est ce qui le rend    │
+// │ convergent.                                                                                    │
 // └──────────────────────────────────────────────────────────────────────────────────────────────┘
 //
-// LE DÉFAUT FERMÉ ICI. L40 a rendu six fichiers byte-identiques entre les deux applications, par
-// un `diff` passé UNE FOIS à la main au gate. Aucun test, aucun script, aucune entrée de suite ne
-// le rejouait : la convergence était gardée par la seule discipline — très exactement l'option
-// « discipline seule » que l'arbitrage AR-6 de L40 avait écartée au motif qu'elle « est ce qui a
-// déjà échoué ». C'est ainsi qu'un registre de hors-couverture et son contrôle de forme avaient
-// disparu d'un seul côté, sans que rien ne le signale.
+// LE DÉFAUT FERMÉ ICI (successeur CONVERGENCE-TROIS-FRERES, AR-C1/AR-C2/AR-C3 = a/a/b, cadré
+// 2026-09-08). L'ancienne version RÉSOLVAIT le frère par ÉNUMÉRATION (`readdirSync` des
+// répertoires voisins, premier trouvé qui porte le registre) — hors-couverture déclaré :
+// « un TROISIÈME dépôt le portant changerait la cible SANS RIEN DIRE ». À la seconde où
+// `iakaInstall` pose son propre `fixtures/convergence.sha256` (son lot 2), il devenait un frère
+// CANDIDAT pour les deux sœurs, dans un ordre que rien ne spécifiait. La convergence « à deux »
+// (une ÉGALITÉ sur une liste unique) et la convergence « à trois » (une INTERSECTION déclarée,
+// AR-C3=b) ne sont PAS la même relation : une garde qui traiterait la seconde comme la première
+// serait, au choix, MUETTE (la cible change sans le dire) ou MENTEUSE (15 chemins normalement
+// absents chez un tiers deviendraient des « écarts » à tort).
 //
-// LES DEUX FACES, ET POURQUOI IL EN FAUT DEUX (AR-5 = O2) :
-//   — FACE LOCALE (`forge-host-parity.test.mjs`, DANS le gate) : empreintes versionnées. Elle
-//     attrape l'édition EN PLACE d'une copie — le chemin réel par lequel la divergence est
-//     arrivée. Elle ne voit PAS une modification coordonnée fichier + empreinte d'un seul côté.
-//   — FACE CROISÉE (ce script, HORS gate) : comparaison octet à octet des deux arbres de travail.
-//     Elle voit tout, y compris la modification coordonnée — mais seulement quand le frère est là.
+// CE QUI CHANGE :
+//   — RÉSOLUTION NOMMÉE (AR-C1=a). Plus aucune énumération : `fixtures/freres.json` NOMME les
+//     autres dépôts (chemin relatif attendu + raison). Ce script reste NEUTRE : il ne nomme
+//     toujours aucun dépôt en dur, toute la topologie vit dans le fichier local.
+//   — N-1 AVEC SKIP NOMMÉ (AR-C2=a). Chaque frère NOMMÉ et PRÉSENT (répertoire existant, portant
+//     lui-même `fixtures/convergence.sha256`) est MESURÉ ; un frère NOMMÉ mais ABSENT DU DISQUE
+//     produit un SKIP EXPLICITE QUI LE NOMME, jamais un rouge. Zéro frère présent ⇒ SKIP global,
+//     exit 0 en le disant (comportement historique, conservé). La ligne de succès NE PEUT PAS
+//     être lue comme « tous les frères sont d'accord » quand l'un a été sauté : elle nomme les
+//     comptes des deux catégories. Forme reprise de `verifier-canaux-en-ligne.mjs:134` (le
+//     préfixe `OK` ne ment jamais à vide), jamais réinventée.
+//   — INTERSECTION DES REGISTRES (AR-C3=b). Chaque dépôt porte SON registre — la seule liste qui
+//     fasse foi POUR LUI. La face croisée compare, pour une paire donnée, l'INTERSECTION des deux
+//     registres : un chemin présent dans un seul est HORS COMPARAISON et DÉCLARÉ tel dans la
+//     sortie (jamais un écart). C'est ce qui rend `iakaInstall` mesurable un jour sans faire
+//     rougir la garde sur les 15 chemins qu'il ne porte pas par décision écrite (AR-V3=a).
 //
-// AUCUNE COMBINAISON OFFLINE N'EST SUFFISANTE : un dépôt ne peut pas voir ce qu'un autre dépôt
-// fait. Le prétendre serait exactement la garde tiède que ce lot corrige. CE QUI EST ACQUIS : la
-// divergence ne peut plus être silencieuse ET accidentelle ; elle exige désormais un geste
-// délibéré sur deux fichiers, dans un dépôt, en ignorant une face de garde documentée.
+// CE QUI NE BOUGE PAS D'UN OCTET : les deux faces et leur répartition (locale dans le gate,
+// croisée hors gate) ; `IAKA_CONVERGENCE_HOME` AUTORITAIRE (exit 2 si le chemin ne porte pas le
+// registre, aucun repli) ; le registre lui-même comparé EN PLUS des chemins qu'il liste (c'est ce
+// qui distingue la face croisée de la face locale — une modification COORDONNÉE fichier +
+// empreinte, d'un seul côté, ne se voit que d'ici) ; la règle *« tout fichier de ce registre se
+// modifie DANS LES DEUX DÉPÔTS au même commit logique »*, qui devient *« dans TOUS les dépôts qui
+// l'inscrivent »*.
 //
 // HORS `test:all` par défaut : la mesure dépend d'un dépôt frère, donc faillible sur un clone
-// isolé. Tolérante à son absence : SKIP propre (exit 0), jamais un faux rouge. Même posture, même
-// précédent que `test:handoff-parity` (IakaCockpit).
+// isolé. Tolérante à son absence : SKIP propre (exit 0), jamais un faux rouge.
 //
-// Usage : npm run test:convergence   (IAKA_CONVERGENCE_HOME pour pointer un frère explicite)
-import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+// Usage : npm run test:convergence   (IAKA_CONVERGENCE_HOME pour pointer un frère EXPLICITE,
+// UNIQUE, hors de `freres.json` — reste le remède autoritaire pour un clone jetable/CI.)
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const NOM = "test:convergence";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EMPREINTES = "fixtures/convergence.sha256";
+const CHEMIN_FRERES = "fixtures/freres.json";
 
 /** Un frère valable est un dépôt qui porte, lui aussi, le registre d'empreintes. */
 const estFrere = (c) => {
@@ -51,23 +71,25 @@ const estFrere = (c) => {
   }
 };
 
-// --- Résolution du frère -------------------------------------------------------------------------
-// IAKA_CONVERGENCE_HOME est AUTORITAIRE : s'il est posé et ne porte pas le registre, on ÉCHOUE au
-// lieu de se rabattre sur un voisin. Un repli silencieux mesurerait un autre dépôt que celui
-// demandé et rendrait un « OK » qui ne veut rien dire (même règle que `test:handoff-parity`).
-//
-// ┌─ HORS-COUVERTURE DÉCLARÉ — la résolution par ÉNUMÉRATION (relevé au gate) ───────────────────┐
-// │ Sans `IAKA_CONVERGENCE_HOME`, on retient LE PREMIER voisin qui porte le registre. Un          │
-// │ TROISIÈME dépôt le portant changerait donc la cible SANS RIEN DIRE, et le « OK » final        │
-// │ parlerait d'un autre dépôt que celui qu'on croit mesurer. Ce n'est pas un défaut de la        │
-// │ résolution — c'est le prix de ne nommer aucun dépôt en dur, qui est ce qui rend ce fichier    │
-// │ convergent. LE REMÈDE EXISTE ET IL EST AUTORITAIRE : poser `IAKA_CONVERGENCE_HOME`. La        │
-// │ sortie NOMME toujours le frère réellement mesuré : un « OK » se lit, il ne se suppose pas.    │
-// │ CONDITION DE LEVÉE : le jour où les fichiers partagés vivent dans un paquet publié (option    │
-// │ O1 d'AR-6 de L40), il n'y a plus de frère à résoudre.                                         │
-// └──────────────────────────────────────────────────────────────────────────────────────────────┘
+/** Lit et parse le registre d'empreintes d'un dépôt : [EMPREINTES, ...chemins listés]. */
+function lireRegistre(racine) {
+  const lignes = readFileSync(resolve(racine, EMPREINTES), "utf8")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith("#"));
+  return [EMPREINTES, ...lignes.map((l) => l.replace(/^[0-9a-f]{64}\s+/, ""))];
+}
+
+// --- Résolution du frère (ou des frères) --------------------------------------------------------
+// IAKA_CONVERGENCE_HOME reste AUTORITAIRE et bypasse `freres.json` : il désigne UN frère
+// EXPLICITE, hors nommage, pour un clone jetable ou un banc de CI. S'il est posé et ne porte pas
+// le registre, on ÉCHOUE au lieu de se rabattre sur un voisin — un repli silencieux mesurerait un
+// autre dépôt que celui demandé et rendrait un « OK » qui ne veut rien dire.
 const override = process.env.IAKA_CONVERGENCE_HOME;
-let frere;
+
+let mesures = [];
+let sautes = [];
+
 if (override) {
   if (!estFrere(override)) {
     console.error(
@@ -76,70 +98,133 @@ if (override) {
     );
     process.exit(2);
   }
-  frere = resolve(override);
+  mesures = [{ nom: `IAKA_CONVERGENCE_HOME=${override}`, chemin: resolve(override) }];
 } else {
-  // On ne nomme aucun dépôt : on énumère les emplacements où un frère peut se trouver, et on
-  // retient le premier qui porte le registre — en s'excluant soi-même.
-  const candidats = [];
-  // Cas courant : les deux dépôts sont côte à côte. Cas agrégat : ils sont deux sous-modules de
-  // `projects/`. On énumère, on ne devine pas de nom.
-  for (const racine of [resolve(ROOT, ".."), resolve(ROOT, "..", "..", "projects")]) {
-    try {
-      for (const e of readdirSync(racine)) candidats.push(resolve(racine, e));
-    } catch {
-      /* racine illisible ou absente : zéro candidat de ce côté */
+  // CA-D1 — AUCUNE ÉNUMÉRATION : la topologie vient ENTIÈREMENT de `fixtures/freres.json`.
+  let declaration;
+  try {
+    declaration = JSON.parse(readFileSync(resolve(ROOT, CHEMIN_FRERES), "utf8"));
+  } catch (e) {
+    console.error(
+      `${NOM} : ${CHEMIN_FRERES} absent ou illisible (${e?.message ?? e}) — ce fichier doit ` +
+        "toujours etre present dans un checkout normal (il est versionne). Aucun repli sur une " +
+        "enumeration de voisins.",
+    );
+    process.exit(2);
+  }
+  const freres = Array.isArray(declaration?.freres) ? declaration.freres : null;
+  if (!freres) {
+    console.error(`${NOM} : ${CHEMIN_FRERES} ne porte pas de tableau "freres" lisible.`);
+    process.exit(2);
+  }
+
+  // CONTREFACTUEL (CA-C2/CA-D1) — un tableau VIDE est un SKIP GLOBAL nommé, jamais une erreur et
+  // jamais un repli sur un voisin deviné : « vider freres.json » est un état valide (clone qui ne
+  // déclare aucun frère), pas une panne.
+  for (const f of freres) {
+    const chemin = resolve(ROOT, f.chemin);
+    if (estFrere(chemin)) {
+      mesures.push({ nom: f.nom, chemin });
+    } else {
+      const motif = !existsSync(chemin)
+        ? "repertoire absent du disque"
+        : `ne porte pas (encore) ${EMPREINTES}`;
+      sautes.push({ nom: f.nom, chemin: f.chemin, motif });
     }
   }
-  frere = candidats.find(estFrere);
 }
 
-if (!frere) {
-  console.log(
-    `${NOM} — SKIP : aucun depot frere portant ${EMPREINTES} (clone isole). Aucune mesure de ` +
-      "convergence croisee effectuee (definir IAKA_CONVERGENCE_HOME pour l'activer).",
-  );
+function ligneSautes() {
+  return sautes.map((s) => `${s.nom} (${s.chemin}) : ${s.motif}`).join(", ");
+}
+
+if (mesures.length === 0) {
+  if (sautes.length === 0) {
+    console.log(`${NOM} — SKIP : aucun frere declare dans ${CHEMIN_FRERES} (tableau vide).`);
+  } else {
+    console.log(
+      `${NOM} — SKIP GLOBAL : ${sautes.length} frere(s) nomme(s), AUCUN present sur ce disque ` +
+        `(clone isole) : ${ligneSautes()}. Aucune mesure de convergence croisee effectuee.`,
+    );
+  }
   process.exit(0);
 }
 
-// --- Mesure ---------------------------------------------------------------------------------------
-// Le registre d'empreintes est lui-même comparé : c'est ce qui distingue la face croisée de la
-// face locale. Une modification COORDONNÉE fichier + empreinte, d'un seul côté, fait diverger le
-// registre — et c'est le seul endroit d'où on peut la voir.
-const lignes = readFileSync(resolve(ROOT, EMPREINTES), "utf8")
-  .split("\n")
-  .map((l) => l.trim())
-  .filter((l) => l.length > 0 && !l.startsWith("#"));
-
-const chemins = [EMPREINTES, ...lignes.map((l) => l.replace(/^[0-9a-f]{64}\s+/, ""))];
+// --- Mesure, PAR FRÈRE, sur l'INTERSECTION des deux registres (AR-C3 = b) -----------------------
+const cheminsLocaux = lireRegistre(ROOT);
 const ecarts = [];
+const lignesRapport = [];
+let totalCompares = 0;
+let totalHorsComparaison = 0;
 
-for (const rel of chemins) {
-  const ici = resolve(ROOT, rel);
-  const la = resolve(frere, rel);
-  if (!existsSync(ici)) {
-    ecarts.push(`${rel} : ABSENT ici (${ROOT})`);
+for (const frere of mesures) {
+  let cheminsFrere;
+  try {
+    cheminsFrere = lireRegistre(frere.chemin);
+  } catch (e) {
+    ecarts.push(`${frere.nom} : registre illisible chez le frere (${e?.message ?? e})`);
+    lignesRapport.push(`  ${frere.nom} : ERREUR — registre illisible chez le frere`);
     continue;
   }
-  if (!existsSync(la)) {
-    ecarts.push(`${rel} : ABSENT chez le frere (${frere})`);
-    continue;
+  const ensembleFrere = new Set(cheminsFrere);
+  const compares = cheminsLocaux.filter((c) => ensembleFrere.has(c));
+  const horsComparaison = cheminsLocaux.filter((c) => !ensembleFrere.has(c));
+  totalCompares += compares.length;
+  totalHorsComparaison += horsComparaison.length;
+
+  const ecartsFrere = [];
+  for (const rel of compares) {
+    const ici = resolve(ROOT, rel);
+    const la = resolve(frere.chemin, rel);
+    if (!existsSync(ici)) {
+      ecartsFrere.push(`${rel} : ABSENT ici (${ROOT})`);
+      continue;
+    }
+    if (!existsSync(la)) {
+      ecartsFrere.push(`${rel} : ABSENT chez le frere (${frere.chemin})`);
+      continue;
+    }
+    const a = readFileSync(ici);
+    const b = readFileSync(la);
+    if (!a.equals(b)) {
+      ecartsFrere.push(`${rel} : DIVERGENT (${a.length} o ici, ${b.length} o chez le frere)`);
+    }
   }
-  const a = readFileSync(ici);
-  const b = readFileSync(la);
-  if (!a.equals(b)) {
-    ecarts.push(`${rel} : DIVERGENT (${a.length} o ici, ${b.length} o chez le frere)`);
-  }
+
+  for (const e of ecartsFrere) ecarts.push(`${frere.nom} : ${e}`);
+  lignesRapport.push(
+    `  ${frere.nom} (${frere.chemin}) : mesure — ${compares.length} chemin(s) compare(s), ` +
+      `${horsComparaison.length} hors comparaison` +
+      (horsComparaison.length > 0 ? ` [${horsComparaison.join(", ")}]` : "") +
+      (ecartsFrere.length > 0 ? `, ${ecartsFrere.length} ECART(S)` : ""),
+  );
+}
+for (const s of sautes) {
+  lignesRapport.push(`  ${s.nom} (${s.chemin}) : SKIP NOMME — ${s.motif}`);
 }
 
+for (const l of lignesRapport) console.log(l);
+
 if (ecarts.length > 0) {
-  console.error(`${NOM} : ${ecarts.length} fichier(s) convergent(s) ont DIVERGE\n`);
+  console.error(`\n${NOM} : ${ecarts.length} ecart(s) — fichier(s) convergent(s) ont DIVERGE\n`);
   for (const e of ecarts) console.error(`  - ${e}`);
   console.error(
-    `\nFrere mesure : ${frere}\n` +
-      "Tout fichier de ce registre se modifie DANS LES DEUX DEPOTS au meme commit logique.",
+    "\nTout fichier inscrit dans PLUSIEURS registres se modifie DANS TOUS CES DEPOTS au meme " +
+      "commit logique.",
   );
   process.exit(1);
 }
 
-console.log(`${NOM} : OK — ${chemins.length} fichier(s) byte-identiques avec ${frere}`);
+// CA-C4 — LA LIGNE DE SUCCÈS NE PEUT PAS ÊTRE VRAIE À VIDE : on est ici uniquement si
+// `mesures.length > 0` (le cas zéro-mesuré sort plus haut, AVANT ce point, avec un préfixe SKIP —
+// jamais OK). CA-C7 — L'ASYMÉTRIE EST DÉCLARÉE : la ligne distingue explicitement le compte de
+// frères MESURÉS et le compte de frères NOMMÉS-MAIS-SAUTÉS ; elle ne peut donc jamais être lue
+// comme « tous les frères nommés sont d'accord ».
+console.log(
+  `\n${NOM} : OK — ${mesures.length} frere(s) mesure(s) [${mesures.map((m) => m.nom).join(", ")}], ` +
+    `${totalCompares} chemin(s) compare(s), ${totalHorsComparaison} hors comparaison, ` +
+    `${sautes.length} frere(s) nomme(s) SKIP` +
+    (sautes.length > 0 ? ` [${sautes.map((s) => s.nom).join(", ")}]` : "") +
+    ".",
+);
 process.exit(0);

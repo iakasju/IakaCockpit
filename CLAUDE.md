@@ -380,6 +380,54 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
+- [x] **CONVERGENCE-TROIS-FRERES (lot 1)** — **résolution nommée N-1 + `rendreSecurite` remontée**
+      → `specs/instructions/release-brouillon-jusqua-matrice-verte-cockpit.md` (jumelle déposée par
+      🔷 Odin depuis `iakaInstall`, copie des Annexes A + C de
+      `iakaInstall/specs/instructions/convergence-trois-freres.md`).
+      *(**implémenté côté ⚒️ Gimli (posture portefeuille) — REMIS AU GATE 🏹 Legolas, non
+      auto-validé** (2026-09-08), branche `feat/convergence-trois-freres`. Cadré par 🔵 Gandalf sur
+      `iakaInstall`, 6 arbitrages TRANCHÉS : AR-C1=a, AR-C2=a, AR-C3=b, AR-C4=a, AR-C5=a, AR-C6=a.)*
+      **Annexe A/B (release, un seul commit logique avec `iakaFrameGUI`)** : transpose la convention
+      entière d'`iakaInstall` (`RELEASE-PARTIELLE-PUBLIEE`, 2026-09-05) — brouillon créé une seule
+      fois dans `prepare` par API, `release_id` passé à la matrice, `releaseId`+`releaseDraft: true`
+      remplacent `tagName`/`releaseName`+`releaseDraft: false`, job `publier` neuf `needs: [build]`
+      strict sans `if:`, `latest` bascule en `needs: publier` (`if: always()` conservé), levier
+      `casser` réservé au décideur pour le run de preuve. Deux gardes copiées **byte-identique**
+      depuis `iakaInstall` (`scripts/lib/release-publication.mjs` + son test statique,
+      `scripts/__tests__/release-publier-shell.test.mjs` jambe d'exécution — faux `gh` à l'arité du
+      vrai + vrai `jq`, reproduit puis corrige le défaut réel du run `34026373514`).
+      `fixtures/bloc-latest.sha256` refixé (motif daté, ancienne empreinte conservée).
+      **Annexe C (convergence, byte-identique avec `iakaFrameGUI`)** : `fixtures/freres.json`
+      (local, hors registre) nomme les deux autres dépôts ; `scripts/test-convergence.mjs` cesse
+      d'énumérer les voisins (`readdirSync` retiré), résolution N-1 avec **SKIP NOMMÉ** pour un
+      frère absent (jamais un rouge, jamais un vert muet), comparaison sur l'**intersection** des
+      deux registres (asymétrie dite dans la sortie). `rendreSecurite()` +
+      `detecterCablageSignatureActif()` + `ecartsCliquetSecurite()` remontent depuis la copie locale
+      d'`iakaInstall` : zone `securite` neuve au README (remplace la prose manuelle figée),
+      `fixtures/vitrine-locale.json` porte `absences_de_signature` (2 entrées, mesurées
+      STRUCTURELLEMENT sur ce dépôt — aucun secret `APPLE_*`/`WINDOWS_*` câblé, aucune section
+      `bundle.macOS`/`bundle.windows` — mesure différente de celle d'`iakaInstall`, dite comme
+      telle). Registre `fixtures/convergence.sha256` : **26 → 29** entrées (3 fichiers de garde de
+      release + résolution nommée).
+      **Preuve mesurée** — `npm run typecheck` `0` ; `npm run lint` `0` ; `npm run test` `0`,
+      **1063 passed (1063)** / 102 fichiers ; `npm run test:convergence` **OK — 1 frère mesuré
+      [iakaFrameGUI], 30 chemins comparés, 0 hors comparaison, 1 frère nommé SKIP [iakaInstall]** ;
+      `cargo test` `0`, **346 passed** (Rust **non touché**) ; `cargo fmt --check` `0` ; `cargo
+      clippy --all-targets -- -D warnings` `0`. **Contrefactuels joués et révoqués (preuve
+      sha256/diff)** : `freres.json` vidé ⇒ SKIP global nommé ; deux frères pointés vers un
+      répertoire inexistant ⇒ SKIP global nommé les deux ; octet muté dans un fichier convergent
+      ⇒ écart nommé, exit 1 ; `IAKA_CONVERGENCE_HOME` sans registre ⇒ exit 2 ; câblage
+      `APPLE_CERTIFICATE`/`WINDOWS_CERTIFICATE` actif sur une copie en mémoire ⇒ cliquet rouge
+      nommé (macOS et Windows séparément).
+      **Non fait, DÉCLARÉ successeur** : `iakaInstall` n'entre pas encore au registre à trois (SKIP
+      nommé mesuré) — c'est le **lot 2**, hors périmètre de cette session (canal d'écriture borné
+      aux deux sœurs, CA-R11) : registre local `iakaInstall/fixtures/convergence.sha256` (4-5
+      entrées mesurées byte-identiques), copie de `test-convergence.mjs`, rectification datée des
+      trois cartouches qui disent encore « `iakaInstall` N'ENTRE PAS à ce registre ». Successeur
+      nommé, non traité : `CONVERGENCE-RELEASE-YML-ALIGNEMENT` (les deux `release.yml` divergent
+      déjà, l. 72 et l. 96-99 — pas touché en passant). **Aucun tag, aucune release, aucun push**
+      exécuté par l'agent.
+
 - [ ] **L45** — **Dette de canal de la publication — le script ne promet plus la visibilité, il
       rend compte de ce qu'il a poussé**
       → `iakaframe/specs/instructions/dette-de-canal-de-la-publication.md` (copie **UNIQUE** —

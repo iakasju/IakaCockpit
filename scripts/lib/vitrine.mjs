@@ -7,6 +7,13 @@
 // │ depuis `fixtures/vitrine-locale.json`. C'est ce qui le rend convergent.                       │
 // └──────────────────────────────────────────────────────────────────────────────────────────────┘
 //
+// AR-C5 = (a), CONVERGENCE-TROIS-FRERES (2026-09-08) — `rendreSecurite()`, `SENTINELLE_SECURITE`,
+// `detecterCablageSignatureActif()` et `ecartsCliquetSecurite()` REMONTENT ici depuis la copie
+// locale d'`iakaInstall` (`amorcage-c3-vitrine-trois-freres.md`, AR-V2, 2026-09-05) : les DEUX
+// sœurs ont la MÊME absence de notarisation macOS / signature Windows non déclarée (M-15), et le
+// mandat de CONVERGENCE-TROIS-FRERES (§ AR-C5) est de la déclarer chez elles AUSSI, pas seulement
+// chez le troisième frère. Ce bloc est désormais BYTE-IDENTIQUE dans les TROIS dépôts.
+//
 // LE DEFAUT FERME ICI (L42, defauts H-1 et H-4). La section « Installation » des trois README du
 // portefeuille etait de la PROSE RECOPIEE A LA MAIN : un numero de version en quatre endroits et un
 // tableau de noms de fichiers versionnes. Elle se perimait en silence, et rien ne rougissait. Le
@@ -39,6 +46,14 @@ export const finZone = (nom) => `<!-- vitrine:fin:${nom} -->`;
  * texte deplace les deux cotes ensemble.
  */
 export const SENTINELLE_ABSENTS = "> **⚠️ Non fourni pour ";
+
+/**
+ * L'OUVERTURE d'un bloc d'ABSENCE DE SIGNATURE, symetrique de `SENTINELLE_ABSENTS` mais pour un
+ * defaut DIFFERENT : le fichier EXISTE (il n'est pas dans `absents`), il n'est simplement signe
+ * par PERSONNE. Remontee depuis `iakaInstall` (AR-C5 = a, 2026-09-08) : les deux sœurs ont la
+ * meme absence de notarisation/signature, et ne le disaient nulle part avant ce lot.
+ */
+export const SENTINELLE_SECURITE = "> **⚠️ Non signé — ";
 
 /**
  * Substitue `{APP}` et `{V}` dans un motif. Rien d'autre n'est interprete : un motif est une
@@ -138,6 +153,56 @@ export function rendreBinaires({ app, depot, version, plateformes, absents = [] 
 }
 
 /**
+ * Rend la ZONE « securite » — REMONTEE depuis `iakaInstall` (AR-C5 = a, 2026-09-08).
+ *
+ * Ce n'est PAS `rendreBinaires` : la ou `absents[]` declare qu'un FICHIER n'existe pas,
+ * `absencesDeSignature[]` declare qu'un fichier EXISTANT n'est signe par PERSONNE (ni notarisation
+ * macOS, ni certificat Windows). Loger ce defaut dans `absents` ferait JETER `rendreBinaires` (cle
+ * inconnue de la table des plateformes) ou mentirait (le cliquet E-5 rougirait puisque le fichier
+ * declare absent est bel et bien present).
+ *
+ * REFUS, PAS LIGNE MUETTE : une entree privee d'un des quatre champs obligatoires (`libelle`,
+ * `motif`, `condition_de_levee`, `procedure`) fait JETER cette fonction, calque exact du refus de
+ * `rendreBinaires` sur une cle d'absent inconnue.
+ *
+ * @param {{absencesDeSignature?: Array<{cle:string, libelle:string, motif:string, depuis:string, condition_de_levee:string, procedure:string}>}} p
+ */
+export function rendreSecurite({ absencesDeSignature = [] }) {
+  const l = [];
+  l.push("### Sécurité — ce que cette version ne signe pas (encore)");
+  l.push("");
+  if (absencesDeSignature.length === 0) {
+    l.push("Toutes les signatures attendues sont posées : aucune absence déclarée.");
+    return l.join("\n");
+  }
+  l.push(
+    "Les binaires ci-dessus **existent** — ce n'est pas une plateforme manquante, c'est une",
+  );
+  l.push("étape de signature non encore posée. Chaque absence est déclarée, datée et levable :");
+  l.push("");
+  for (const a of absencesDeSignature) {
+    for (const champ of ["libelle", "motif", "depuis", "condition_de_levee", "procedure"]) {
+      if (!String(a[champ] ?? "").trim()) {
+        throw new Error(
+          `absence_de_signature « ${a.cle ?? "(sans clé)"} » : champ « ${champ} » manquant ou ` +
+            "vide. Une absence de signature sans ce champ est un REFUS, pas une ligne muette.",
+        );
+      }
+    }
+    l.push(`${SENTINELLE_SECURITE}${a.libelle}, depuis ${a.depuis}.**`);
+    l.push(`> ${a.motif}`);
+    l.push(">");
+    l.push(`> **Levée :** ${a.condition_de_levee}`);
+    l.push(">");
+    l.push(`> **Procédure :** ${a.procedure}`);
+    l.push(">");
+  }
+  // Retire le dernier ">" isolé pour ne pas laisser une ligne de citation vide en fin de zone.
+  if (l[l.length - 1] === ">") l.pop();
+  return l.join("\n");
+}
+
+/**
  * Rend une zone LIBRE a partir d'un gabarit de lignes porte par `fixtures/vitrine-locale.json`.
  *
  * POURQUOI UN GABARIT ET PAS DU TEXTE EN DUR ICI. Le bloc « Construire depuis les sources » porte
@@ -150,9 +215,26 @@ export function rendreGabarit(lignes, { app, version }) {
   return lignes.map((ligne) => substituer(ligne, { app, version })).join("\n");
 }
 
-/** Rend TOUTES les zones d'un coup. Point d'entree unique du generateur. */
-export function rendreVitrine({ app, depot, version, plateformes, absents = [], gabarits = {} }) {
-  const zones = { binaires: rendreBinaires({ app, depot, version, plateformes, absents }) };
+/**
+ * Rend TOUTES les zones d'un coup. Point d'entree unique du generateur.
+ *
+ * `absencesDeSignature` (REMONTE ici, AR-C5 = a, 2026-09-08) produit une zone `securite`
+ * supplementaire, TOUJOURS presente (meme vide : elle affirme alors qu'aucune absence n'est
+ * declaree, plutot que de disparaitre en silence).
+ */
+export function rendreVitrine({
+  app,
+  depot,
+  version,
+  plateformes,
+  absents = [],
+  gabarits = {},
+  absencesDeSignature = [],
+}) {
+  const zones = {
+    binaires: rendreBinaires({ app, depot, version, plateformes, absents }),
+    securite: rendreSecurite({ absencesDeSignature }),
+  };
   for (const [nom, lignes] of Object.entries(gabarits)) {
     zones[nom] = rendreGabarit(lignes, { app, version });
   }
@@ -508,4 +590,124 @@ export function evaluerCanalEnLigne({
   }
 
   return { ecarts, constats };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+// LE CLIQUET OFFLINE (AR-C5 = a, CONVERGENCE-TROIS-FRERES, 2026-09-08) — REMONTE depuis
+// `iakaInstall` (AR-V2 exigence 1, amorcage-c3-vitrine-trois-freres.md, 2026-09-05).
+//
+// POURQUOI IL EXISTE. Le cliquet naturel d'une declaration d'absence de signature serait de
+// MESURER la release reelle (codesign/spctl sur un binaire telecharge) — pas jouable en gate
+// (reseau, macOS, quarantaine). Le cliquet retenu est LOCAL ET EXACT : si `.github/workflows/
+// release.yml` porte un cablage `env:` ACTIF d'une variable de signature Apple ou Windows sur
+// l'etape `tauri-action`, la declaration d'absence CORRESPONDANTE doit avoir disparu de
+// `absences_de_signature`. Sans ce cliquet, l'aveu survivrait a sa propre peremption.
+//
+// DETECTION, ET SA LIMITE DECLAREE. On ne cherche PAS un nom de variable n'importe ou dans le
+// fichier (un commentaire qui EXPLIQUE l'absence nommerait forcement `APPLE_ID` ou
+// `APPLE_CERTIFICATE` en toutes lettres et ferait rougir la garde sur son PROPRE commentaire). On
+// cherche un cablage `env:` STRUCTUREL : une ligne `NOM_DE_VARIABLE: valeur` (valeur non vide) a
+// l'interieur d'un bloc `env:` du workflow.
+//
+// CE QUE CE CLIQUET NE VOIT PAS, DECLARE. Un cablage pose ailleurs qu'un bloc `env:` reste
+// invisible. Angle mort STRUCTUREL de toute garde qui lit du texte plutot que d'executer un
+// comportement (meme limite que `scripts/lib/release-publication.mjs`, CA-R6).
+const NOMS_SIGNATURE_APPLE = [
+  "APPLE_CERTIFICATE",
+  "APPLE_CERTIFICATE_PASSWORD",
+  "APPLE_SIGNING_IDENTITY",
+  "APPLE_ID",
+  "APPLE_PASSWORD",
+  "APPLE_TEAM_ID",
+  "APPLE_API_KEY",
+  "APPLE_API_ISSUER",
+  "APPLE_API_KEY_PATH",
+];
+const NOMS_SIGNATURE_WINDOWS = [
+  "WINDOWS_CERTIFICATE",
+  "WINDOWS_CERTIFICATE_PASSWORD",
+  "WINDOWS_CERTIFICATE_THUMBPRINT",
+];
+
+/**
+ * Cherche, dans le TEXTE d'un workflow, des blocs `env:` et y detecte un cablage ACTIF (cle
+ * connue, valeur non vide) d'une variable de signature Apple ou Windows.
+ *
+ * Pure : prend une CHAINE, n'ouvre aucun fichier. Le contrefactuel joue sur une COPIE EN MEMOIRE
+ * du workflow, jamais sur le fichier versionne.
+ *
+ * @param {string} texte
+ * @returns {{macos: boolean, windows: boolean, detail: string[]}}
+ */
+export function detecterCablageSignatureActif(texte) {
+  const lignes = String(texte).split("\n");
+  const detail = [];
+  let macos = false;
+  let windows = false;
+  let dansEnv = false;
+  let indentEnv = null;
+
+  for (const ligne of lignes) {
+    if (ligne.trim() === "" || /^\s*#/.test(ligne)) continue;
+    const indent = ligne.length - ligne.trimStart().length;
+
+    if (/^\s*env:\s*$/.test(ligne)) {
+      dansEnv = true;
+      indentEnv = indent;
+      continue;
+    }
+    if (dansEnv && indent <= indentEnv) {
+      dansEnv = false;
+      indentEnv = null;
+    }
+    if (!dansEnv) continue;
+
+    const m = /^\s*([A-Z0-9_]+)\s*:\s*(\S.*)$/.exec(ligne);
+    if (!m) continue;
+    const [, cle, valeur] = m;
+    if (valeur.trim().length === 0) continue; // cablee mais VIDE textuellement dans le YAML lui-meme
+
+    if (NOMS_SIGNATURE_APPLE.includes(cle)) {
+      macos = true;
+      detail.push(`${cle} câblé (env:) — ${ligne.trim()}`);
+    }
+    if (NOMS_SIGNATURE_WINDOWS.includes(cle)) {
+      windows = true;
+      detail.push(`${cle} câblé (env:) — ${ligne.trim()}`);
+    }
+  }
+
+  return { macos, windows, detail };
+}
+
+/**
+ * Le CLIQUET lui-meme : compare le cablage detecte aux entrees encore DECLAREES dans
+ * `absences_de_signature`. Rend la liste des ECARTS — jamais ne leve : c'est l'appelant (le test
+ * de garde) qui decide d'echouer, exactement comme `ecartsDeVitrine`.
+ *
+ * @param {{releaseYmlTexte: string, absencesDeSignature: Array<{cle:string}>}} p
+ * @returns {string[]}
+ */
+export function ecartsCliquetSecurite({ releaseYmlTexte, absencesDeSignature }) {
+  const { macos, windows, detail } = detecterCablageSignatureActif(releaseYmlTexte);
+  const ecarts = [];
+  const declaree = (cle) => (absencesDeSignature ?? []).some((a) => a.cle === cle);
+
+  if (macos && declaree("macos-notarisation")) {
+    ecarts.push(
+      "release.yml câble désormais un secret de signature Apple ACTIF, mais " +
+        "fixtures/vitrine-locale.json déclare toujours « macos-notarisation » comme absente. " +
+        `La déclaration a survécu à sa raison d'être : ${detail.filter((d) => d.startsWith("APPLE")).join("; ")}. ` +
+        "Retirer l'entrée « macos-notarisation » de absences_de_signature.",
+    );
+  }
+  if (windows && declaree("windows-signature")) {
+    ecarts.push(
+      "release.yml câble désormais un secret de signature Windows ACTIF, mais " +
+        "fixtures/vitrine-locale.json déclare toujours « windows-signature » comme absente. " +
+        `La déclaration a survécu à sa raison d'être : ${detail.filter((d) => d.startsWith("WINDOWS")).join("; ")}. ` +
+        "Retirer l'entrée « windows-signature » de absences_de_signature.",
+    );
+  }
+  return ecarts;
 }
