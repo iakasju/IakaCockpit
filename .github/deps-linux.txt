@@ -1,0 +1,19 @@
+# LOCAL a chaque depot, hors fixtures/convergence.sha256 (motif : convergence.sha256:27-29,
+# meme forme que fixtures/vitrine-locale.json). Sa donnee est PROPRE A CE PRODUIT — voir
+# CONVERGENCE-RELEASE-YML-ALIGNEMENT § 1.1 (AR-Y1, D-1) : l'aligner avec le GUI installerait
+# des paquets dont ce produit n'a pas besoin, ou en manquerait pour celui-ci.
+#
+# Les 5 premiers sont communs a la convention Tauri Linux (webkit2gtk, indicateur, rsvg,
+# patchelf, gtk3). Les 3 derniers sont PROPRES a ce depot, exiges par des dependances Rust
+# absentes du GUI (src-tauri/Cargo.toml) :
+#   libasound2-dev <- cpal = "0.15" (capture micro, en-tetes ALSA)
+#   cmake          <- whisper-rs = "0.12" (compile whisper.cpp via CMake)
+#   pkg-config     <- decouverte des *-sys de la chaine ALSA (corollaire de cpal)
+libwebkit2gtk-4.1-dev
+libappindicator3-dev
+librsvg2-dev
+patchelf
+libgtk-3-dev
+libasound2-dev
+cmake
+pkg-config

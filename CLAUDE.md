@@ -380,6 +380,106 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
 
 <!-- Liste des lots priorisés. Chaque entrée pointe vers son instruction. -->
 
+- [x] **CONVERGENCE-RELEASE-YML-ALIGNEMENT** — **le fichier convergent ne porte plus aucune donnée
+      locale : les deux `release.yml` sont désormais byte-identiques**
+      → `specs/instructions/convergence-release-yml-alignement.md` (copie **UNIQUE**, ici — ni
+      `iakaFrameGUI` ni `iakaInstall` n'en portent de copie). *(**implémenté côté ⚒️ Gimli — REMIS
+      AU GATE 🏹 Legolas, non auto-validé** (2026-09-08), branche
+      `feat/convergence-release-yml-alignement`. Cadré par 🔵 Gandalf sur ordre de mission
+      portefeuille 🔷 Odin, **6 arbitrages TRANCHÉS** (autonomie maximale) : AR-Y1 deps Linux →
+      (b) `.github/deps-linux.txt` local ; minisign → (a) rédaction commune citant les deux
+      repères ; cartouches/identifiants → (a) citer la paire. AR-Y2 → (a) `release.yml` entre au
+      registre, byte-identique intégralement. AR-Y3 → (a) le Cockpit reste la référence, sans
+      générateur. AR-Y4 → **NON** pour `iakaInstall` dans ce lot ; successeur nommé
+      `CONVERGENCE-RELEASE-YML-TROIS-FRERES`. AR-Y5 → (a) deux faces + garde neuve + jambe
+      d'exécution avec faux `apt-get`. AR-Y6 → (b) puis (a) : dispatch Linux sur tag de test puis
+      run nominal, **actes du décideur**.)*
+      **Étape 0 (mesures rejouées par la machine, table du cadrage confirmée à l'octet)** :
+      `diff -u` des deux `release.yml` (426 lignes chacun) ⇒ **exactement les quatre familles**
+      annoncées, D-1 aux lignes **123-124** (dépendances Linux), D-2 aux lignes **164-167**
+      (commentaire minisign), D-3/D-4 aux lignes **27, 77, 142, 171, 209, 329** (cartouches et
+      identifiants `CA-A5`/`CA-B5`) — aucune divergence non listée, aucune divergence listée
+      absente. `fixtures/convergence.sha256` : **29 entrées** des deux côtés, `diff` **vide**.
+      Empreinte du bloc `latest:` **avant travaux** : `55b39b01dfe655c28f24f678481a050f75fca16e5e347f54a2b74f071502eaf7`
+      (témoin CA-Y7). `npm run test:convergence` avant travaux : exit `0` des deux côtés
+      (⚠️ **écart déclaré avec le cadrage** : celui-ci anticipait « 30 chemins » sans shell ; la
+      mesure réelle rend **36 chemins** au total car `iakaInstall` est un **second frère** depuis
+      le lot `CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME`, fait non connu du cadrage — **la mesure
+      gagne**, l'écart ne porte pas sur la table § 1 donc n'a pas déclenché d'arrêt). Cargo.toml :
+      Cockpit porte `cpal = "0.15"` et `whisper-rs = "0.12"` (`src-tauri/Cargo.toml:45-46`), le
+      GUI ne porte **ni l'un ni l'autre** — D-1 confirmé légitime par la mesure, pas une opinion.
+      **Livré** : `.github/deps-linux.txt` par dépôt (Cockpit **8** entrées dont
+      `libasound2-dev`/`cmake`/`pkg-config` nommément justifiés par `cpal`/`whisper-rs`/la chaîne
+      `*-sys` ALSA ; GUI **5** entrées, aucune dépendance système supplémentaire) ; l'étape
+      `Dependances systeme Linux` lit désormais le fichier via `xargs -r -a` (`-r` : jamais
+      d'appel à vide) ; commentaire minisign en rédaction **commune** citant les deux repères
+      (`IakaCockpit : L34` et `iakaFrameGUI : auto-update.md, étape 6a`) ; les 7 emplacements
+      D-3/D-4 réécrits en **paire** (`…-COCKPIT/-GUI`, `CA-A5/CA-B5`). **`diff` des deux
+      `release.yml` : VIDE** (CA-Y1, mesure charnière). Garde neuve `scripts/lib/deps-linux.mjs`
+      (cœur pur, modèle `release-publication.mjs`) + `scripts/__tests__/deps-linux.test.mjs`
+      (**7/7 verts**, témoin positif + 3 contrefactuels nommés, verrou anti-témoin-vide sur un
+      paquet **fictif** `libfoo-inexistant-fantome-dev` absent des deux fichiers réels — même
+      discipline que le `fantome-de-vitrine` de L42-F1). **Bug trouvé et corrigé en rouge
+      d'abord** dans `paquetsEnDurDansWorkflow` : `\s+` traversait les retours à la ligne et
+      capturait le contenu de l'étape SUIVANTE quand `apt-get install -y` finissait sa propre
+      ligne (cas réel du texte actuel) — corrigé en `[ \t]*` sur ce segment précis, prouvé par le
+      test rouge puis vert. La jambe d'exécution `scripts/__tests__/release-publier-shell.test.mjs`
+      est **étendue** à l'étape Linux (faux `sudo`/`apt-get` journalisant leurs arguments, **vrai**
+      `xargs` du poste — SKIP **explicitement nommé** si le `xargs` local n'est pas GNU, R-2 —
+      **3 tests SKIP sur ce Mac** qui n'a que le `xargs` BSD ; comportement GNU réel
+      **vérifié séparément en conteneur `ubuntu:22.04`** : `xargs -r -a` transmet les 8 paquets
+      dans l'ordre au nominal, n'appelle rien sur fichier vide — comportement exact que ces tests
+      attendent). Registre `fixtures/convergence.sha256` : **29 → 32** entrées (le workflow + les
+      2 fichiers de garde neufs), cliquet de complétude du test de parité local monté à l'identique
+      (`29 → 32`) ; cartouches périmés « l. 72 »/« l. 96-99 » **rectifiés en les datant** dans
+      `fixtures/convergence.sha256`, `fixtures/bloc-latest.sha256`, `scripts/lib/bloc-latest.mjs`
+      et ce `CLAUDE.md` (jamais effacés, règle 4 du corpus). `fixtures/bloc-latest.sha256` :
+      **empreinte inchangée** (CA-Y7 vérifié après travaux, valeur identique), seul le cartouche
+      daté a bougé.
+      **CA-Y1 rejoué en réel** : un octet muté dans `.github/workflows/release.yml` (nom du
+      workflow) ⇒ `npm run test:convergence` nomme `.github/workflows/release.yml : DIVERGENT` ;
+      révoqué, `sha256` identique avant/après
+      (`a394663e40ad9fdefdb04c6ce4d73d58c95bffd2a71a4272d4235e7dc9f7348d`).
+      **Mesure finale, chaîne qualité** : `npm run typecheck` `0` ; `npm run lint` `0` ;
+      `npm run test` `0`, **1071 passed | 3 skipped (1074)** (avant : 1064 ; +7 = les tests
+      `deps-linux.test.mjs`, aucun supprimé, les 3 skip = la jambe Linux, SKIP nommé sur ce
+      poste) ; `npm run vitrine:check` `0` ; `cargo fmt --check` `0` ; `cargo clippy --all-targets
+      -- -D warnings` `0` ; `cargo test` `0`, **346 passed** (Rust **non touché**,
+      `git diff --stat -- '*.rs'` **vide**).
+      ⚠️ **`npm run test:convergence` : 1 ÉCART MESURÉ, PAS 0 — DÉCLARÉ, PAS RÉSOLU EN SILENCE.**
+      Fait **mesuré, non anticipé par le cadrage** (§ 0.1 : *« ce cadrage n'a pas de shell »*) :
+      `scripts/__tests__/release-publier-shell.test.mjs` était déjà partagé **à trois** avec
+      `iakaInstall` depuis le lot 1 de `CONVERGENCE-TROIS-FRERES` ; l'étendre ici (mandaté par
+      § 5 étape 3.3 de l'instruction) le fait diverger de la copie `iakaInstall`
+      (`26505 o` ici contre `19925 o` chez le frère) — mesuré identique **dans les deux sens**
+      (Cockpit↔GUI **0 écart**, chacun↔`iakaInstall` **1 écart**, le même fichier). `iakaInstall`
+      est **lecture seule** pour ce lot (ordre de mission 🔷 Odin) : la divergence n'est **pas**
+      corrigée ici, elle est **déclarée** et relève du successeur ci-dessous. `test:convergence`
+      reste **hors gate** par construction (dépend d'un dépôt frère) : ce 1 écart **ne bloque
+      aucune** des mesures de gate ci-dessus.
+      **Successeur INSCRIT (AR-Y4), NON TRAITÉ** : **`CONVERGENCE-RELEASE-YML-TROIS-FRERES`** —
+      condition d'entrée écrite par le cadrage : *« quand `UPDATER-DE-LA-FACADE` a tranché si
+      `iakaInstall` porte un updater, puisque c'est cela qui décide si le bloc `env:` minisign est
+      commun ou local »*. Porte en plus, mesuré par ce lot : (a) faire entrer `iakaInstall` au
+      registre à trois pour `release.yml` (AR-Y4) ; (b) refermer la divergence neuve sur
+      `release-publier-shell.test.mjs` ci-dessus ; (c) corriger la ligne de dépendances Linux
+      d'`iakaInstall` (`iakaInstall/.github/workflows/release.yml:132-133` porte les **huit**
+      paquets du Cockpit, dont `libasound2-dev`/`cmake`/`pkg-config` — probablement inutiles chez
+      lui, mesuré mais **non corrigé ici**, c'est un lot sur un troisième dépôt).
+      **NON COUVERT PAR CONSTRUCTION, DÉCLARÉ TEL (CA-Y13)** : le **run de preuve** (AR-Y6) —
+      qu'`apt-get` installe réellement les paquets lus dans le fichier — n'est prouvable que par
+      un run réel sur `ubuntu-22.04`. **Acte du décideur, remote `github`** :
+      `gh workflow run release.yml --repo <owner>/IakaCockpit --ref feat/convergence-release-yml-alignement -f tag=v0.0.0-test -f platforms=linux`
+      (idem sur `iakaFrameGUI`), vérifier le job `build (linux)` **vert**, puis le run **nominal**
+      4/4 au prochain vrai tag de chaque dépôt. Le brouillon créé par le dispatch **reste** (sa
+      suppression est un acte du décideur, AR-3 d'`iakaInstall`). Ce lot se clôt **« mesuré, non
+      recetté »** sur ce seul point.
+      **`iakaInstall` non touché** : aucune écriture, y compris documentaire — l'instruction
+      (§ 4, geste 6) demandait d'inscrire le successeur dans les **trois** `CLAUDE.md`,
+      `iakaInstall` compris ; l'ordre de mission 🔷 Odin imposant `iakaInstall` **lecture seule**
+      prime, l'écriture y est **omise délibérément** et signalée ici plutôt que faite en
+      contradiction avec la consigne de plus haut rang.
+
 - [x] **CONVERGENCE-TROIS-FRERES (lot 1)** — **résolution nommée N-1 + `rendreSecurite` remontée**
       → `specs/instructions/release-brouillon-jusqua-matrice-verte-cockpit.md` (jumelle déposée par
       🔷 Odin depuis `iakaInstall`, copie des Annexes A + C de
@@ -427,6 +527,11 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       nommé, non traité : `CONVERGENCE-RELEASE-YML-ALIGNEMENT` (les deux `release.yml` divergent
       déjà, l. 72 et l. 96-99 — pas touché en passant). **Aucun tag, aucune release, aucun push**
       exécuté par l'agent.
+      ⚠️ **RECTIFICATION DATÉE (2026-09-08, lot `CONVERGENCE-RELEASE-YML-ALIGNEMENT`)** : les
+      références « l. 72 » et « l. 96-99 » ci-dessus dataient d'AVANT l'insertion du job
+      `prepare` le même jour (`RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT`) ; aux fichiers
+      d'alors, elles vivaient déjà en réalité aux lignes 123-124 et 164-167. **Ce successeur est
+      désormais TRAITÉ** — voir l'entrée dédiée plus bas.
 
 - [x] `CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME` — **soldé** (2026-09-08, ⚒️ Gimli, ordre de mission
       portefeuille 🔷 Odin, branche `fix/convergence-registre-exclu` depuis `main`, **REMIS AU GATE
@@ -549,6 +654,9 @@ reprise** dans le `.md` (ce qui vient d'être fait, ce qui reste, prochaine éta
       **pas** écrit comme telle.
       **Reste dû, nommé** : `CONVERGENCE-RELEASE-YML-ALIGNEMENT` (les deux `release.yml`
       diffèrent l. 72 et l. 96-99) ; **CA-5**, la transposition du banc à ce dépôt.
+      ⚠️ **RECTIFICATION DATÉE (2026-09-08)** : `CONVERGENCE-RELEASE-YML-ALIGNEMENT` est
+      **désormais TRAITÉ** (entrée dédiée plus bas) — les deux `release.yml` sont byte-identiques.
+      **CA-5 reste dû**, inchangé.
 
 - [ ] **L43** — **Contrefactuel du vol de `latest` : sur la topologie du banc, la branche
       `--latest=false` n'a PAS rendu le `latest` au plus haut semver**

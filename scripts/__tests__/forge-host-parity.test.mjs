@@ -321,11 +321,26 @@ describe(`canal de distribution (${PRODUIT}) — cohérence, publicité, mesure`
     // avant son propre lot — aucun test ne l'exécutait). `scripts/verifier-canaux-en-ligne.mjs`
     // lui-même (déjà inscrit ligne 57) est aussi modifié, sans faire monter ce plancher puisqu'il
     // l'était déjà.
+    //
+    // 2026-09-08, lot « CONVERGENCE-RELEASE-YML-ALIGNEMENT » — VINGT-NEUF → TRENTE-DEUX. Le
+    // fichier convergent ne porte plus AUCUNE donnée locale (dépendances Linux sorties dans
+    // `.github/deps-linux.txt`, hors registre, motif écrit dans ce fichier ; commentaire minisign
+    // réécrit en rédaction commune ; cartouches D-3/D-4 réécrits en paire) :
+    // `.github/workflows/release.yml` est désormais byte-identique et ENTRE ICI (+1). Deux
+    // fichiers de garde NEUFS, GÉNÉRIQUES : `scripts/lib/deps-linux.mjs` (cœur pur) et
+    // `scripts/__tests__/deps-linux.test.mjs` (sa garde locale, témoin + 3 contrefactuels
+    // nommés). `scripts/__tests__/release-publier-shell.test.mjs` (déjà inscrit ci-dessus) est
+    // ÉTENDU à l'étape Linux, sans faire monter ce plancher puisqu'il l'était déjà. ⚠️ Fait
+    // MESURÉ, non anticipé par le cadrage (§ 0.1 : « ce cadrage n'a pas de shell ») : cette
+    // extension casse la convergence à TROIS avec `iakaInstall` sur ce même fichier
+    // (`npm run test:convergence` y nomme désormais 1 écart) — `iakaInstall` est hors périmètre
+    // de ce lot (lecture seule, AR-Y4 = non), la divergence est déclarée, pas résolue en
+    // silence ; elle relève du successeur `CONVERGENCE-RELEASE-YML-TROIS-FRERES`.
     expect(
       registre.length,
       "le registre de convergence a PERDU des entrées : un fichier a cessé d'être gardé sans que " +
         "rien ne le dise. Si le retrait est délibéré, baisser ce plancher DANS LE MÊME COMMIT.",
-    ).toBeGreaterThanOrEqual(29);
+    ).toBeGreaterThanOrEqual(32);
 
     const derives = [];
     for (const ligne of registre) {
