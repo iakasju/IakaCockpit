@@ -298,5 +298,15 @@
     "dirty": false,
     "files": 1451,
     "note": "CONVERGENCE-TROIS-FRERES lot 1 livre et fusionne (Odin, gate Legolas PASS transverse, byte-identique avec la soeur) : freres.json nomme les 3 freres, face croisee N-1 avec SKIP nomme, intersection, rendreSecurite + absences_de_signature (mesure structurelle), release.yml = brouillon dans prepare + releaseId + publier strict par id + latest derriere + 2 gardes (statique + execution shell), cliquet bloc-latest refixe, registre 26 -> 29. Reste au decideur : prochain tag = premier run reel de la politique brouillon ici ; secrets Apple/Windows ; CONVERGENCE-RELEASE-YML-ALIGNEMENT. Lot 2 = iakaInstall."
+  },
+  {
+    "date": "2026-09-08 10:30",
+    "reason": "pause",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "45a063f merge: CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME — le registre est l instrument, pas l objet (gate Legolas PASS transverse 3 depots)",
+    "dirty": false,
+    "files": 1453,
+    "note": "CONVERGENCE A TROIS FRERES ACHEVEE le 2026-09-08 (Odin) : registre exclu de sa propre comparaison (instrument, pas objet ; correctif byte-identique dans les 3 depots, test rouge d abord), iakaInstall entre a la convergence avec un registre local de 7 entrees (intersection, AR-C3b). Les six sens de test:convergence rendent 0 ecart. Gates Legolas PASS transverses. Reste au decideur : prochain tag de chaque soeur = 1er run reel de leur politique brouillon (IakaCockpit annonce 0.33.0 sans tag) ; CONVERGENCE-RELEASE-YML-ALIGNEMENT ; remontee du bloc contrefactuel de vitrine-en-ligne.test.mjs chez les soeurs."
   }
 ]

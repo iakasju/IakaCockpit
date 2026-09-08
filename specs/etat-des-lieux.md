@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-09-08 09:33 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-09-08 10:30 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,25 +9,25 @@
 |---|---|
 | Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | 5078798 merge: CONVERGENCE-TROIS-FRERES lot 1 — freres nommes, face croisee N-1, rendreSecurite, release brouillon jusqu a matrice verte (gate Legolas PASS, byte-identique avec la soeur) |
+| Dernier commit | 45a063f merge: CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME — le registre est l instrument, pas l objet (gate Legolas PASS transverse 3 depots) |
 | Arbre | propre |
-| Fichiers (suivis + non ignores) | 1451 |
-| Note | CONVERGENCE-TROIS-FRERES lot 1 livre et fusionne (Odin, gate Legolas PASS transverse, byte-identique avec la soeur) : freres.json nomme les 3 freres, face croisee N-1 avec SKIP nomme, intersection, rendreSecurite + absences_de_signature (mesure structurelle), release.yml = brouillon dans prepare + releaseId + publier strict par id + latest derriere + 2 gardes (statique + execution shell), cliquet bloc-latest refixe, registre 26 -> 29. Reste au decideur : prochain tag = premier run reel de la politique brouillon ici ; secrets Apple/Windows ; CONVERGENCE-RELEASE-YML-ALIGNEMENT. Lot 2 = iakaInstall. |
+| Fichiers (suivis + non ignores) | 1453 |
+| Note | CONVERGENCE A TROIS FRERES ACHEVEE le 2026-09-08 (Odin) : registre exclu de sa propre comparaison (instrument, pas objet ; correctif byte-identique dans les 3 depots, test rouge d abord), iakaInstall entre a la convergence avec un registre local de 7 entrees (intersection, AR-C3b). Les six sens de test:convergence rendent 0 ecart. Gates Legolas PASS transverses. Reste au decideur : prochain tag de chaque soeur = 1er run reel de leur politique brouillon (IakaCockpit annonce 0.33.0 sans tag) ; CONVERGENCE-RELEASE-YML-ALIGNEMENT ; remontee du bloc contrefactuel de vitrine-en-ligne.test.mjs chez les soeurs. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `45a063f` | 2026-09-08 | merge: CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME — le registre est l instrument, pas l objet (gate Legolas PASS transverse 3 depots) |
+| `2d7a49f` | 2026-09-08 | docs(qualite): gate convergence lot 2 + registre exclu — PASS |
+| `4cf8493` | 2026-09-08 | docs: CONVERGENCE-REGISTRE-EXCLU-DE-LUI-MEME soldee (correctif a trois depots) |
+| `1090eba` | 2026-09-08 | chore(convergence): registre refixe apres correctif de test-convergence.mjs |
+| `84a9083` | 2026-09-08 | fix(convergence): exclure le registre de la comparaison croisee (il est l'instrument, pas l'objet) |
+| `fab1746` | 2026-09-08 | test(convergence): frere au registre sous-ensemble strict est ROUGE (registre compare a tort) |
+| `0ce1dc3` | 2026-09-08 | chore(iakaframe): update etat des lieux + commit global (pause) |
 | `5078798` | 2026-09-08 | merge: CONVERGENCE-TROIS-FRERES lot 1 — freres nommes, face croisee N-1, rendreSecurite, release brouillon jusqu a matrice verte (gate Legolas PASS, byte-identique avec la soeur) |
 | `13c3247` | 2026-09-08 | docs(qualite): gate CONVERGENCE-TROIS-FRERES lot 1 — PASS |
 | `303b121` | 2026-09-08 | docs: consigne CONVERGENCE-TROIS-FRERES (lot 1) — backlog, decisions, instruction jumelle |
-| `f67b977` | 2026-09-08 | feat(convergence): resolution nommee N-1 + rendreSecurite remontee (lot 1) |
-| `7a9aaaf` | 2026-09-08 | feat(release): brouillon jusqu'a matrice verte — jumelle iakaInstall |
-| `79f01a2` | 2026-09-06 | docs(specs): cadrage ENDPOINT-404-COMPTE-COMME-INTERROGE — 5 arbitrages tranches (reco) |
-| `c370a47` | 2026-09-05 | docs(etat): pause — recit de reprise reecrit apres le scellement v0.33.0 |
-| `74cc99a` | 2026-09-05 | chore(claude): autorise WebFetch sur testing-library.com et docs.github.com |
-| `e0d1104` | 2026-09-05 | docs(version): scelle v0.33.0 — note de qualite + etat des lieux |
-| `5487457` | 2026-09-05 | docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
 
 ## Reprise du travail (a completer par Cowork)
 
@@ -146,6 +146,7 @@ sans execution — `canauxDeclares()` vers `commitAndPushManifest` n'est mordue 
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-08 10:30 | pause | v0.32.2 | main | CONVERGENCE A TROIS FRERES ACHEVEE le 2026-09-08 (Odin) : registre exclu de sa propre comparaison (instrument, pas objet ; correctif byte-identique dans les 3 depots, test rouge d abord), iakaInstall entre a la convergence avec un registre local de 7 entrees (intersection, AR-C3b). Les six sens de test:convergence rendent 0 ecart. Gates Legolas PASS transverses. Reste au decideur : prochain tag de chaque soeur = 1er run reel de leur politique brouillon (IakaCockpit annonce 0.33.0 sans tag) ; CONVERGENCE-RELEASE-YML-ALIGNEMENT ; remontee du bloc contrefactuel de vitrine-en-ligne.test.mjs chez les soeurs. |
 | 2026-09-08 09:33 | pause | v0.32.2 | main | CONVERGENCE-TROIS-FRERES lot 1 livre et fusionne (Odin, gate Legolas PASS transverse, byte-identique avec la soeur) : freres.json nomme les 3 freres, face croisee N-1 avec SKIP nomme, intersection, rendreSecurite + absences_de_signature (mesure structurelle), release.yml = brouillon dans prepare + releaseId + publier strict par id + latest derriere + 2 gardes (statique + execution shell), cliquet bloc-latest refixe, registre 26 -> 29. Reste au decideur : prochain tag = premier run reel de la politique brouillon ici ; secrets Apple/Windows ; CONVERGENCE-RELEASE-YML-ALIGNEMENT. Lot 2 = iakaInstall. |
 | 2026-09-05 21:59 | pause | v0.32.2 | main | Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous. |
 | 2026-09-05 17:14 | version | v0.33.0 | main | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
