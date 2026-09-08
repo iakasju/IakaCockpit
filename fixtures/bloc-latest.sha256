@@ -17,4 +17,14 @@
 #
 # Valeur du 2026-08-30 (avant le lot L44), conservee : on date, on n'efface pas.
 #   3547f66746fae90721879ad0115cb84764ff5a2da5c07fd251b75c2634457173
-a938007eba112e3aa1d60bdf22fdbcabd6876dc2961a6b1c7ae7b9d63c86a597  .github/workflows/release.yml#latest
+#
+# Valeur du 2026-09-01 (lot L44) au 2026-09-08 (avant RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE,
+# lot jumeau de CONVERGENCE-TROIS-FRERES), conservee : on date, on n'efface pas.
+#   a938007eba112e3aa1d60bdf22fdbcabd6876dc2961a6b1c7ae7b9d63c86a597
+#
+# REFIXATION DU 2026-09-08 — jumelles RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI, un
+# seul commit logique. Le bloc `latest:` passe de `needs: build` a `needs: publier` (le brouillon ne
+# devient public qu'apres le job `publier`, lui-meme `needs: [build]` strict, sans quoi `latest`
+# et `publier` demarreraient ensemble et `latest` lirait la release encore brouillon) —
+# `if: always()` CONSERVE a l'identique.
+55b39b01dfe655c28f24f678481a050f75fca16e5e347f54a2b74f071502eaf7  .github/workflows/release.yml#latest
