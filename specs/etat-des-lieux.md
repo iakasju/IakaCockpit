@@ -1,6 +1,6 @@
 # Etat des lieux - IakaCockpit
 
-> Genere par iakaframe (CLI) le 2026-09-05 21:59 (motif: pause).
+> Genere par iakaframe (CLI) le 2026-09-08 09:33 (motif: pause).
 > A regenerer a chaque changement de version et a chaque pause/reprise.
 
 ## Etat courant
@@ -9,25 +9,25 @@
 |---|---|
 | Version | v0.32.2 |
 | Branche | main |
-| Dernier commit | 74cc99a chore(claude): autorise WebFetch sur testing-library.com et docs.github.com |
+| Dernier commit | 5078798 merge: CONVERGENCE-TROIS-FRERES lot 1 — freres nommes, face croisee N-1, rendreSecurite, release brouillon jusqu a matrice verte (gate Legolas PASS, byte-identique avec la soeur) |
 | Arbre | propre |
-| Fichiers (suivis + non ignores) | 1444 |
-| Note | Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous. |
+| Fichiers (suivis + non ignores) | 1451 |
+| Note | CONVERGENCE-TROIS-FRERES lot 1 livre et fusionne (Odin, gate Legolas PASS transverse, byte-identique avec la soeur) : freres.json nomme les 3 freres, face croisee N-1 avec SKIP nomme, intersection, rendreSecurite + absences_de_signature (mesure structurelle), release.yml = brouillon dans prepare + releaseId + publier strict par id + latest derriere + 2 gardes (statique + execution shell), cliquet bloc-latest refixe, registre 26 -> 29. Reste au decideur : prochain tag = premier run reel de la politique brouillon ici ; secrets Apple/Windows ; CONVERGENCE-RELEASE-YML-ALIGNEMENT. Lot 2 = iakaInstall. |
 
 ## Commits recents
 
 | Hash | Date | Sujet |
 |---|---|---|
+| `5078798` | 2026-09-08 | merge: CONVERGENCE-TROIS-FRERES lot 1 — freres nommes, face croisee N-1, rendreSecurite, release brouillon jusqu a matrice verte (gate Legolas PASS, byte-identique avec la soeur) |
+| `13c3247` | 2026-09-08 | docs(qualite): gate CONVERGENCE-TROIS-FRERES lot 1 — PASS |
+| `303b121` | 2026-09-08 | docs: consigne CONVERGENCE-TROIS-FRERES (lot 1) — backlog, decisions, instruction jumelle |
+| `f67b977` | 2026-09-08 | feat(convergence): resolution nommee N-1 + rendreSecurite remontee (lot 1) |
+| `7a9aaaf` | 2026-09-08 | feat(release): brouillon jusqu'a matrice verte — jumelle iakaInstall |
+| `79f01a2` | 2026-09-06 | docs(specs): cadrage ENDPOINT-404-COMPTE-COMME-INTERROGE — 5 arbitrages tranches (reco) |
+| `c370a47` | 2026-09-05 | docs(etat): pause — recit de reprise reecrit apres le scellement v0.33.0 |
 | `74cc99a` | 2026-09-05 | chore(claude): autorise WebFetch sur testing-library.com et docs.github.com |
 | `e0d1104` | 2026-09-05 | docs(version): scelle v0.33.0 — note de qualite + etat des lieux |
 | `5487457` | 2026-09-05 | docs(backlog): L50 — le lot des canaux n'avait aucune entree a son nom |
-| `f3bcac0` | 2026-09-05 | fix(version): package-lock.json etait un CINQUIEME porteur que rien ne gardait |
-| `b57bac3` | 2026-09-05 | chore(version): 0.32.2 -> 0.33.0 sur les quatre porteurs |
-| `4adfcdc` | 2026-09-05 | merge: garde de la face en ligne des canaux — et un defaut de classement corrige (gate PASS) |
-| `6c43818` | 2026-09-05 | docs(backlog): inscrit les deux successeurs de la face en ligne des canaux (CA-10) |
-| `2179370` | 2026-09-05 | fix(quality): rectifie la ligne canaux en ligne — chaque endpoint INTERROGE (AR-3) |
-| `556a5d5` | 2026-09-05 | chore(convergence): inscrit canaux-en-ligne au registre, cliquet 24 -> 26 |
-| `adf81df` | 2026-09-05 | test(canaux-en-ligne): garde la face en ligne des canaux (20 tests, unitaires + sous-processus) |
 
 ## Reprise du travail (a completer par Cowork)
 
@@ -146,6 +146,7 @@ sans execution — `canauxDeclares()` vers `commitAndPushManifest` n'est mordue 
 
 | Date | Motif | Version | Branche | Note |
 |---|---|---|---|---|
+| 2026-09-08 09:33 | pause | v0.32.2 | main | CONVERGENCE-TROIS-FRERES lot 1 livre et fusionne (Odin, gate Legolas PASS transverse, byte-identique avec la soeur) : freres.json nomme les 3 freres, face croisee N-1 avec SKIP nomme, intersection, rendreSecurite + absences_de_signature (mesure structurelle), release.yml = brouillon dans prepare + releaseId + publier strict par id + latest derriere + 2 gardes (statique + execution shell), cliquet bloc-latest refixe, registre 26 -> 29. Reste au decideur : prochain tag = premier run reel de la politique brouillon ici ; secrets Apple/Windows ; CONVERGENCE-RELEASE-YML-ALIGNEMENT. Lot 2 = iakaInstall. |
 | 2026-09-05 21:59 | pause | v0.32.2 | main | Pause apres scellement v0.33.0. Tout est pousse sur GitHub (NAS et iakabox injoignables toute la journee). Reprise : voir le recit ci-dessous. |
 | 2026-09-05 17:14 | version | v0.33.0 | main | Scellement v0.33.0 : 7 lots gates. 1030 front / 346 Rust, couverture 81,01 %. Note de qualite : docs/qualite/v0.33.0.md. AUCUN acte de publication : tag et release appartiennent au decideur. |
 | 2026-09-04 22:59 | pause | v0.32.2 | main | L37 persistance de la Table (+ correctif CA-6 course boot) et L46 identite du runner : livres, gates PASS, recette CA-11 verte. Reste : recette CA-10 du badge, S-1 statut vivant du roster (preexistant). |
