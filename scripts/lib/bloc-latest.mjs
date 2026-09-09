@@ -20,6 +20,15 @@
 // CONVERGENCE-RELEASE-YML-ALIGNEMENT. Ce qui doit converger n'est pas le fichier, c'est LE BLOC :
 // on inscrit donc une FIXTURE qui porte son empreinte, byte-identique PAR CONSTRUCTION.
 //
+// RECTIFICATION DATEE (2026-09-08, CONVERGENCE-RELEASE-YML-ALIGNEMENT). Les references de ligne
+// ci-dessus etaient perimees a leur ecriture (le job `prepare`, insere le meme jour, avait deja
+// deplace les deux divergences aux lignes 123-124 et 164-167). Le successeur est TRAITE : la
+// donnee locale (dependances Linux) vit dans `.github/deps-linux.txt` (hors registre, motif
+// ecrit dans ce fichier), le commentaire minisign est commun aux deux depots, et
+// `.github/workflows/release.yml` est byte-identique ET ENTRE DESORMAIS AU REGISTRE de
+// convergence — ce module et sa fixture restent neanmoins necessaires : ils prouvent que LE
+// BLOC precisement n'a pas bouge (CA-Y7), independamment du sort du reste du fichier.
+//
 // EXTRACTION PAR MARQUEUR, JAMAIS PAR NUMERO DE LIGNE — c'est toute la lecon de D-2 (un
 // `chemin:ligne` ment des qu'une ligne est inseree au-dessus). Le bloc va de la ligne qui vaut
 // EXACTEMENT `  latest:` jusqu'a la fin du fichier, et l'unicite de cette ligne est ASSERTEE :

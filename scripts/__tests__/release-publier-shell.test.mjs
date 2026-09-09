@@ -47,6 +47,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   chmodSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -57,6 +58,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { extraireJobs } from "../lib/release-publication.mjs";
+import { lireDeps } from "../lib/deps-linux.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CHEMIN_WORKFLOW = ".github/workflows/release.yml";
@@ -110,6 +112,10 @@ const JOBS = extraireJobs(WORKFLOW);
 const SCRIPT_PREPARE_ACTUEL = extraireEtapeRun(JOBS.prepare, /^ {6}-\s*id:\s*brouillon\s*$/);
 const SCRIPT_PUBLIER_ACTUEL = extraireEtapeRun(JOBS.publier, /^ {6}-\s*name:\s*Publier le brouillon/);
 const SCRIPT_LATEST_ACTUEL = extraireEtapeRun(JOBS.latest, /^ {6}-\s*name:\s*Designer explicitement le latest/);
+const SCRIPT_DEPS_LINUX_ACTUEL = extraireEtapeRun(
+  JOBS.build,
+  /^ {6}-\s*name:\s*Dependances systeme Linux\s*$/,
+);
 
 // Copie FIGEE, EN DUR, du script EXACT de l'etape `publier` TEL QUE MESURE au run 34026373514
 // (AVANT correctif) — jamais re-extraite depuis le fichier reel (qui, une fois corrige, ne le
@@ -281,12 +287,40 @@ function jqDisponible() {
 }
 const JQ_OK = jqDisponible();
 
+// --- faux `sudo` (execute simplement l'argv suivant, resolu via PATH) et faux `apt-get`
+// (journalise chaque invocation, exit 0) — CA-Y3 : preuve que les paquets LUS dans le fichier
+// sont bien ceux PASSES a `apt-get`, chose qu'une garde de TEXTE ne peut jamais prouver.
+const FAKE_SUDO_SOURCE = [
+  "#!/usr/bin/env node",
+  'import { spawnSync } from "node:child_process";',
+  "const [cmd, ...reste] = process.argv.slice(2);",
+  'const r = spawnSync(cmd, reste, { stdio: "inherit" });',
+  "process.exit(r.status ?? 1);",
+  "",
+].join("\n");
+
+const FAKE_APT_GET_SOURCE = [
+  "#!/usr/bin/env node",
+  'import { appendFileSync } from "node:fs";',
+  "const LOG = process.env.APT_FAKE_LOG;",
+  "const args = process.argv.slice(2);",
+  'if (LOG) appendFileSync(LOG, JSON.stringify(args) + "\\n");',
+  "process.exit(0);",
+  "",
+].join("\n");
+
 let binDir;
 beforeAll(() => {
   binDir = mkdtempSync(join(tmpdir(), "release-publier-shell-bin-"));
   const cheminGh = join(binDir, "gh");
   writeFileSync(cheminGh, FAKE_GH_SOURCE);
   chmodSync(cheminGh, 0o755);
+  const cheminSudo = join(binDir, "sudo");
+  writeFileSync(cheminSudo, FAKE_SUDO_SOURCE);
+  chmodSync(cheminSudo, 0o755);
+  const cheminAptGet = join(binDir, "apt-get");
+  writeFileSync(cheminAptGet, FAKE_APT_GET_SOURCE);
+  chmodSync(cheminAptGet, 0o755);
 });
 afterAll(() => {
   if (binDir) rmSync(binDir, { recursive: true, force: true });
@@ -450,6 +484,117 @@ describe.skipIf(!JQ_OK)(
         expect(sortie, sortie).toMatch(/latest effectif \(v0\.1\.1\) n'est pas le plus haut semver \(v9\.9\.9\)/);
         // la derive n'est pas maquillee : le monde simule montre bien que rien n'a change.
         expect(r.monde.latestTag).toBe("v0.1.1");
+      });
+    });
+  },
+);
+
+// --- JAMBE D'EXECUTION DE L'ETAPE LINUX (CONVERGENCE-RELEASE-YML-ALIGNEMENT, AR-Y5(a)) ---
+//
+// R-2 (instruction) : `xargs -a` (lecture d'une liste d'arguments depuis un fichier) est GNU
+// (findutils), PAS POSIX — absent du `xargs` BSD livre par defaut sur macOS. Cette jambe utilise
+// le VRAI `xargs` du poste (jamais un faux : re-simuler `xargs` reviendrait a ne plus tester
+// l'interaction reelle entre le script et l'outil qui l'execute sur `ubuntu-22.04`) ; si le
+// `xargs` du poste ne supporte pas `-r -a`, ces tests sont SKIP, EXPLICITEMENT nommes comme
+// tels (jamais un vert silencieux) — meme discipline que le SKIP `jq` ci-dessus. La preuve
+// definitive sur `ubuntu-22.04` (ou GNU findutils est present) reste le run de preuve AR-Y6,
+// CA-Y13, NON COUVERT PAR CONSTRUCTION.
+function xargsGnuOk() {
+  const dir = mkdtempSync(join(tmpdir(), "release-publier-shell-xargs-"));
+  try {
+    const f = join(dir, "liste.txt");
+    writeFileSync(f, "x\n");
+    const r = spawnSync("xargs", ["-r", "-a", f, "true"]);
+    return r.status === 0;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+const XARGS_GNU_OK = xargsGnuOk();
+
+/**
+ * Rejoue le script de l'etape "Dependances systeme Linux" avec le VRAI `xargs` du poste et les
+ * faux `sudo`/`apt-get` ci-dessus, dans un repertoire de travail temporaire portant SEULEMENT
+ * `.github/deps-linux.txt` (le contenu local a tester, jamais le fichier reel touche sur
+ * disque). Rend { status, stdout, stderr, appels } — `appels` = un tableau par invocation
+ * journalisee du faux `apt-get` (son argv, ex. `["update"]` ou `["install","-y","pkg1",...]`).
+ */
+function rejouerDepsLinux(script, { contenuDeps }) {
+  const scratch = mkdtempSync(join(tmpdir(), "release-publier-shell-deps-"));
+  mkdirSync(join(scratch, ".github"), { recursive: true });
+  writeFileSync(join(scratch, ".github", "deps-linux.txt"), contenuDeps);
+  const log = join(scratch, "apt-log.jsonl");
+  writeFileSync(log, "");
+
+  const resultat = spawnSync("bash", ["-c", script], {
+    cwd: scratch,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      PATH: `${binDir}:${process.env.PATH}`,
+      APT_FAKE_LOG: log,
+    },
+  });
+
+  const appels = readFileSync(log, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
+  rmSync(scratch, { recursive: true, force: true });
+  return { ...resultat, appels };
+}
+
+/** Les invocations du faux `apt-get` dont le premier argument vaut `install`. */
+function appelsInstall(appels) {
+  return appels.filter((a) => a[0] === "install");
+}
+
+/** Les paquets passes a une invocation `apt-get install -y <pkg> ...` (tout ce qui suit `-y`). */
+function paquetsDe(appelInstall) {
+  const iY = appelInstall.indexOf("-y");
+  return iY === -1 ? [] : appelInstall.slice(iY + 1);
+}
+
+describe.skipIf(!XARGS_GNU_OK)(
+  XARGS_GNU_OK
+    ? "release-publier-shell — jambe EXECUTION, etape Linux (xargs GNU present, CA-Y3)"
+    : "release-publier-shell — SKIP EXPLICITE : `xargs -r -a` (GNU findutils) absent de ce poste (R-2) — la preuve definitive est le run de preuve sur ubuntu-22.04 (AR-Y6, CA-Y13)",
+  () => {
+    describe("etape `Dependances systeme Linux` (job build)", () => {
+      it("NOMINAL — les N paquets du fichier REEL .github/deps-linux.txt sont recus par apt-get install -y, DANS L'ORDRE", () => {
+        const reels = lireDeps(readFileSync(resolve(ROOT, ".github/deps-linux.txt"), "utf8"));
+        expect(reels.length).toBeGreaterThan(0);
+        const r = rejouerDepsLinux(SCRIPT_DEPS_LINUX_ACTUEL, {
+          contenuDeps: reels.join("\n") + "\n",
+        });
+        expect(r.status, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`).toBe(0);
+        const installs = appelsInstall(r.appels);
+        expect(installs.length, JSON.stringify(r.appels)).toBe(1);
+        expect(paquetsDe(installs[0])).toEqual(reels);
+        expect(r.appels.filter((a) => a[0] === "update").length).toBe(1);
+      });
+
+      it("CONTREFACTUEL (i) — un paquet AJOUTE au fichier local : apt-get en reçoit N+1", () => {
+        const reels = lireDeps(readFileSync(resolve(ROOT, ".github/deps-linux.txt"), "utf8"));
+        const PAQUET_EXTRA = "libfoo-inexistant-fantome-dev";
+        expect(reels, "verrou anti-temoin-vide : ce paquet ne doit pas deja etre reel").not.toContain(
+          PAQUET_EXTRA,
+        );
+        const r = rejouerDepsLinux(SCRIPT_DEPS_LINUX_ACTUEL, {
+          contenuDeps: [...reels, PAQUET_EXTRA].join("\n") + "\n",
+        });
+        expect(r.status, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`).toBe(0);
+        const installs = appelsInstall(r.appels);
+        expect(installs.length, JSON.stringify(r.appels)).toBe(1);
+        expect(paquetsDe(installs[0]).length).toBe(reels.length + 1);
+        expect(paquetsDe(installs[0])).toContain(PAQUET_EXTRA);
+      });
+
+      it("CONTREFACTUEL (ii) — fichier VIDE : `apt-get install` n'est JAMAIS appele (xargs -r), 'update' l'est quand meme", () => {
+        const r = rejouerDepsLinux(SCRIPT_DEPS_LINUX_ACTUEL, { contenuDeps: "" });
+        expect(r.status, `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`).toBe(0);
+        expect(appelsInstall(r.appels).length, JSON.stringify(r.appels)).toBe(0);
+        expect(r.appels.filter((a) => a[0] === "update").length).toBe(1);
       });
     });
   },

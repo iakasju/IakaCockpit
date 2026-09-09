@@ -10,6 +10,16 @@
 # (l. 96-99). Les aligner trancherait EN PASSANT une question de build. Successeur nomme :
 # CONVERGENCE-RELEASE-YML-ALIGNEMENT.
 #
+# RECTIFICATION DATEE (2026-09-08, CONVERGENCE-RELEASE-YML-ALIGNEMENT) : les references de ligne
+# ci-dessus etaient deja perimees a leur ecriture (le job `prepare`, insere le meme jour, avait
+# deplace les deux divergences aux lignes 123-124 et 164-167). Le successeur nomme est TRAITE :
+# la donnee locale (dependances Linux) vit desormais dans `.github/deps-linux.txt` (hors
+# registre), le commentaire minisign est commun, et `.github/workflows/release.yml` est
+# byte-identique ET ENTRE AU REGISTRE de convergence. CETTE FIXTURE RESTE : elle continue de
+# garder le bloc `latest:`, qui N'A PAS BOUGE d'un octet (CA-Y7), et le motif AR-3 = (b) reste
+# valable en general (une fixture d'extraction par marqueur reste plus robuste qu'un registre de
+# fichier entier pour un bloc qui doit rester stable independamment du reste du fichier).
+#
 # POUR REGENERER, apres une modification VOULUE du bloc DANS LES DEUX DEPOTS :
 #   node -e "import('./scripts/lib/bloc-latest.mjs').then(m=>console.log(m.empreinte(m.lireBloc('.'))))"
 # puis reporter la valeur ici DES DEUX COTES, regenerer `fixtures/convergence.sha256` et rejouer

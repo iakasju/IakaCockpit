@@ -14,7 +14,7 @@ f4919781e7027b4cdefa700a979121181e0185160b68fb089fa7be860a3e3eef  fixtures/tauri
 91e41e4974d8b4233201a416684fb295daead28a7537310b341855ff1eccce80  scripts/lib/pin-tauri-action.mjs
 e1fdb20ad3b3dc88aff9d8088b506405fa3fbab01bcd2c7c7e5e7da7fce4ae2c  fixtures/updater-cles.json
 730f66216ad72d52786b9138d56ac1c9c7f2b7b59a55ff799679ecfab0e86d89  scripts/__tests__/canal-mesure.test.mjs
-2896955aec6eabf350f7987048aa0b6b14c223d6e477526cedc7928863c16eb5  scripts/__tests__/forge-host-parity.test.mjs
+af8451fc02553d91a5e07c2bcde7be192a166c5a5dedc33d6db77de68133d22b  scripts/__tests__/forge-host-parity.test.mjs
 6e9d8c34c26ec6c04154c4c8f88d92b682cd7eb2dc6bb70479670a8c773caee7  scripts/__tests__/verifier-mesures.test.mjs
 b50d3e15b52bfa80400723140f41c645f9031e3d823f121e044b9ca4c2c56545  scripts/lib/verifier-mesures.mjs
 26668d5e3d577095e0ddf52f417a327e2277f2eae894ea9faf2a89d043e3eb9c  scripts/mesurer-artefacts.mjs
@@ -41,8 +41,17 @@ f1e736302421141f6cd7cc086fb53e36f915f6dccd56c5d9943b457ab9fbdbb4  scripts/vitrin
 # CONVERGE, C'EST LE BLOC. D'où une fixture qui porte son empreinte, byte-identique PAR
 # CONSTRUCTION, l'extracteur par marqueur qui la produit, et la garde locale qui la relit dans le
 # gate de chacun des deux dépôts.
-7436350624e988e7ccc890d3fbfc8b008782268a24002b15493f561342473265  fixtures/bloc-latest.sha256
-10e090bae2693ed34c2d9775483a89912cda63b6ac3836670283947be72009d9  scripts/lib/bloc-latest.mjs
+#
+# RECTIFICATION DATEE (2026-09-08, CONVERGENCE-RELEASE-YML-ALIGNEMENT) : les references « l. 72 »
+# et « l. 96-99 » ci-dessus dataient d'AVANT l'insertion du job `prepare` le meme jour (elles
+# vivaient deja, aux fichiers d'alors, aux lignes 123-124 et 164-167) ET SONT DESORMAIS SANS OBJET
+# — la donnee locale (dependances Linux) est sortie dans `.github/deps-linux.txt` (hors registre,
+# motif ecrit dans ce fichier), le commentaire minisign est reecrit en redaction commune, et
+# `.github/workflows/release.yml` est NON SEULEMENT byte-identique mais ENTRE DESORMAIS AU
+# REGISTRE (voir plus bas, cliquet 29 -> 32) : la phrase « N'ENTRE PAS ICI » ci-dessus est
+# devenue FAUSSE et n'est conservee que comme trace historique de l'etat d'avant ce lot.
+4f10fc43df88d09e2270aa0a2778190ae3d22141276fe294dd911933f56448f6  fixtures/bloc-latest.sha256
+ab5ac6457e436ef1c6d0fad3b13c4155657c8eda311563abbc6a0c6b57a18f64  scripts/lib/bloc-latest.mjs
 addaee6eb80163a67019f6c1128cb017747d954cc434cd2c00dfc8ffab74a2e6  scripts/__tests__/bloc-latest.test.mjs
 # L45 — DETTE DE CANAL DE LA PUBLICATION. Ces trois fichiers sont GENERIQUES par construction : ils
 # ne nomment ni l'un ni l'autre depot (le registre par-repo, fixtures/canaux-publication.json, N'EST
@@ -99,6 +108,26 @@ c1be6fc51651406fcfce2d5d3e8023218ee27d302757e2d85de1e2a833405441  scripts/lib/ca
 # release.yml` lui-meme N'ENTRE PAS ici (les deux copies divergent deja, l. 72 et l. 96-99,
 # successeur CONVERGENCE-RELEASE-YML-ALIGNEMENT) — ce qui converge, c'est la garde, comme pour
 # le bloc `latest:` (L44, deja inscrit ci-dessus). Cliquet 26 -> 29.
+#
+# RECTIFICATION DATEE (2026-09-08, CONVERGENCE-RELEASE-YML-ALIGNEMENT) : SANS OBJET DESORMAIS —
+# `.github/workflows/release.yml` ENTRE au registre (voir plus bas), les references de ligne
+# etaient perimees des leur ecriture (le job `prepare` avait deja deplace les deux divergences
+# aux lignes 123-124 et 164-167 le jour meme). Conservee ici comme trace historique.
 5421f10d73254ebcceea0313c981203192bbb2b6d23192e37ad85e6d53de03f5  scripts/lib/release-publication.mjs
 39627147da1b294ba0738d0418c196876e3fe9b62fede8e9c23720d0ae6ad31c  scripts/__tests__/release-publication.test.mjs
-891d75e89e4b0d7eecb354ca041f8f2390f29e91dc811412298b56f1112d3f94  scripts/__tests__/release-publier-shell.test.mjs
+9700f609b7a1ff3a40a39add3497f648dd332eb49a8d06b00bf4625ce2fc827b  scripts/__tests__/release-publier-shell.test.mjs
+# CONVERGENCE-RELEASE-YML-ALIGNEMENT (2026-09-08). Le fichier convergent ne portait plus AUCUNE
+# donnee locale (dependances Linux -> `.github/deps-linux.txt`, hors registre, motif ecrit dans
+# ce fichier ; commentaire minisign reecrit en redaction commune citant les deux reperes ;
+# cartouches D-3/D-4 reecrits en paire `-COCKPIT/-GUI` et `CA-A5/CA-B5`) : `.github/workflows/
+# release.yml` est desormais BYTE-IDENTIQUE entre les deux depots et ENTRE ICI (+1). Deux
+# fichiers de garde NEUFS, GENERIQUES (aucun nom de depot en dur) : `scripts/lib/deps-linux.mjs`
+# (coeur pur, modele exact de `release-publication.mjs`) et son test
+# `scripts/__tests__/deps-linux.test.mjs` (temoin positif + 3 contrefactuels nommes, verrou
+# anti-temoin-vide sur un paquet FICTIF absent des deux `deps-linux.txt` reels). La jambe
+# d'execution `scripts/__tests__/release-publier-shell.test.mjs` (deja au registre ci-dessus) est
+# ETENDUE a l'etape Linux (faux `sudo`/`apt-get`, vrai `xargs` du poste — SKIP explicite si le
+# `xargs` local n'est pas GNU, R-2). Cliquet 29 -> 32.
+a394663e40ad9fdefdb04c6ce4d73d58c95bffd2a71a4272d4235e7dc9f7348d  .github/workflows/release.yml
+88b5dcd174a17a137d4d68b59b7391de1b4d944526ff8e5901ea3ec5c29cfb36  scripts/lib/deps-linux.mjs
+a4d019ec572b9d3960c484a41e0edfdf5dfd1aec1b795244bd7c0a11f726c511  scripts/__tests__/deps-linux.test.mjs

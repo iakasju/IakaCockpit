@@ -24,7 +24,7 @@ on:
           - linux
           - macos
       casser:
-        # AR-5(a) / CA-A5, RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT (2026-09-08) — LEVIER
+        # AR-5(a) / CA-A5/CA-B5, RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI (2026-09-08) — LEVIER
         # DE SABOTAGE VOLONTAIRE, RESERVE AU DECIDEUR. Convention transposee TELLE QUELLE depuis
         # iakaInstall (RELEASE-PARTIELLE-PUBLIEE, 2026-09-05) : seul un run REEL avec un build
         # volontairement casse prouve que la release reste en brouillon — aucune garde statique
@@ -74,7 +74,7 @@ jobs:
           echo "plateformes retenues : $(echo "$M" | jq -r '[.[].key]|join(", ")')"
           echo "matrix=$M" >> "$GITHUB_OUTPUT"
 
-      # AR-1(a) + AR-2(b), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT (2026-09-08) —
+      # AR-1(a) + AR-2(b), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI (2026-09-08) —
       # CREATION SERIALISEE DU BROUILLON, UNE SEULE FOIS. Convention transposee depuis
       # iakaInstall (RELEASE-PARTIELLE-PUBLIEE, 2026-09-05), lue au SHA epingle de tauri-action
       # (84b9d35b5fc46c1e45415bdb6144030364f7ebc5, action-v0.6.2) : `src/index.ts:178`
@@ -120,8 +120,7 @@ jobs:
         if: matrix.key == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
-            librsvg2-dev patchelf libgtk-3-dev libasound2-dev cmake pkg-config
+          xargs -r -a .github/deps-linux.txt sudo apt-get install -y
 
       - uses: actions/setup-node@v4
         with:
@@ -139,7 +138,7 @@ jobs:
       - name: Installer les dependances
         run: npm ci
 
-      # AR-5(a) / CA-A5 — SABOTAGE VOLONTAIRE, RESERVE AU DECIDEUR, AVANT `tauri-action`.
+      # AR-5(a) / CA-A5/CA-B5 — SABOTAGE VOLONTAIRE, RESERVE AU DECIDEUR, AVANT `tauri-action`.
       # Convention transposee depuis iakaInstall (RELEASE-PARTIELLE-PUBLIEE, 2026-09-05).
       # Honore UNIQUEMENT sur `workflow_dispatch` (jamais sur un `push` de tag : sur ce
       # declencheur `github.event.inputs.casser` est structurellement vide, la comparaison a
@@ -161,14 +160,15 @@ jobs:
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # action-v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # L34 : signature minisign des artefacts updater. Sans ces deux secrets,
-          # le bundler ne produit AUCUN `.sig` et la mise a jour automatique ne peut
-          # pas fonctionner (le client refuse une charge utile non signee). Leur
-          # renseignement cote GitHub est un gate humain.
+          # Signature minisign des artefacts de mise a jour (IakaCockpit : L34 ; iakaFrameGUI :
+          # auto-update.md, etape 6a). Sans ces deux secrets, le bundler ne produit AUCUN fichier
+          # `.sig` et l'auto-update ne sert a rien : le client refuse une charge utile non signee.
+          # Leur pose dans les reglages du depot est un GATE HUMAIN — elle ne peut pas etre faite
+          # depuis le depot.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          # AR-1(a)+AR-2(b), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT (2026-09-08) —
+          # AR-1(a)+AR-2(b), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI (2026-09-08) —
           # `releaseId` (sortie de `prepare`, ci-dessus) REMPLACE `tagName`/`releaseName` : au
           # SHA epingle, `src/index.ts:178` saute la recherche/creation de release des que
           # `releaseId` est fourni, `src/index.ts:211` attache directement les artefacts a CET
@@ -206,7 +206,7 @@ jobs:
           includeUpdaterJson: false
           args: ${{ matrix.args }}
 
-  # AR-1(a), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT (2026-09-08) — LA RELEASE NE DEVIENT
+  # AR-1(a), RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI (2026-09-08) — LA RELEASE NE DEVIENT
   # PUBLIQUE QU'APRES LE DERNIER BUILD VERT. Convention transposee depuis iakaInstall
   # (RELEASE-PARTIELLE-PUBLIEE, 2026-09-05). `needs: [build]` STRICT, SANS `if:` : par la
   # semantique meme de GitHub Actions (docs *Use jobs in a workflow* : « if a job fails [...]
@@ -326,7 +326,7 @@ jobs:
   # │ Mesures, arbitrages et residu complets : specs/instructions/re-cadrage-garde-latest.md.       │
   # └───────────────────────────────────────────────────────────────────────────────────────────────┘
   #
-  # MIS A JOUR le 2026-09-08 (RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT, jumelle du lot
+  # MIS A JOUR le 2026-09-08 (RELEASE-BROUILLON-JUSQUA-MATRICE-VERTE-COCKPIT/-GUI, jumelle du lot
   # CONVERGENCE-TROIS-FRERES) — ETAT ANTERIEUR CI-DESSUS CONSERVE, ON DATE, ON N'EFFACE PAS.
   # `needs` passe de `build` a `publier`. Sans cet ordre, `latest` et `publier` demarreraient
   # ENSEMBLE : `latest` lirait la release ENCORE BROUILLON (filtree par `select(.draft|not)`,
