@@ -308,5 +308,15 @@
     "dirty": false,
     "files": 1453,
     "note": "CONVERGENCE A TROIS FRERES ACHEVEE le 2026-09-08 (Odin) : registre exclu de sa propre comparaison (instrument, pas objet ; correctif byte-identique dans les 3 depots, test rouge d abord), iakaInstall entre a la convergence avec un registre local de 7 entrees (intersection, AR-C3b). Les six sens de test:convergence rendent 0 ecart. Gates Legolas PASS transverses. Reste au decideur : prochain tag de chaque soeur = 1er run reel de leur politique brouillon (IakaCockpit annonce 0.33.0 sans tag) ; CONVERGENCE-RELEASE-YML-ALIGNEMENT ; remontee du bloc contrefactuel de vitrine-en-ligne.test.mjs chez les soeurs."
+  },
+  {
+    "date": "2026-09-09 22:48",
+    "reason": "pause",
+    "version": "v0.32.2",
+    "branch": "main",
+    "commit": "5338001 merge: CONVERGENCE-RELEASE-YML-ALIGNEMENT — deps Linux sorties dans .github/deps-linux.txt, release.yml byte-identique au registre (gate Legolas PASS transverse)",
+    "dirty": false,
+    "files": 1458,
+    "note": "CONVERGENCE-RELEASE-YML-ALIGNEMENT achevee le 2026-09-09 (Odin) : les dependances Linux vivent dans .github/deps-linux.txt (local, hors registre ; Cockpit 8 dont cpal/whisper-rs, GUI 5, iakaInstall 5), release.yml des soeurs byte-identique et au registre (32), garde deps-linux + jambe d execution etendue byte-identiques dans les 3 depots (iakaInstall registre 9). Six sens de test:convergence a 0 ecart apres fusion. Gates Legolas PASS. Reste au decideur : run de preuve (dispatch Linux sur tag de test puis tag reel, remote github) ; successeurs CONVERGENCE-RELEASE-YML-TROIS-FRERES, remontee du bloc contrefactuel."
   }
 ]
